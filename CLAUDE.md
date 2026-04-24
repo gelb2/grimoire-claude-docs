@@ -29,6 +29,7 @@
 |------|------|------|
 | grimoire-web | 프론트엔드 (멀티테넌트 뷰어, 작가 대시보드) | Next.js 16+ (App Router), TypeScript, Tailwind CSS 4 |
 | grimoire-server | 백엔드 API (테마 생성, 원고 파싱, 인증) | NestJS, TypeScript, Prisma, PostgreSQL |
+| **grimoire-claude-docs** (2026-04-25 신설, PRIVATE) | 루트 workspace 박제 — CLAUDE.md + PLANNING_GRIMOIRE.md + `.claude/`(Skills/Agents/Hooks) + prompt-engineering + research + seed-data/classics | Markdown + Shell + JSON (런타임 코드 없음) |
 
 ### 출발점
 
@@ -222,9 +223,11 @@ DeerDevil (사슴악마 단편소설 웹 뷰어)을 프로토타입으로 하여
 
 ## 8. Git 브랜치 전략
 
-### 브랜치 구조 (2개 레포 공통, 2026-04-19 inhouse 제거)
+> **3개 레포 공통 규칙** (grimoire-server / grimoire-web / grimoire-claude-docs, 2026-04-19 inhouse 제거, 2026-04-25 claude-docs 합류)
+
+### 브랜치 구조
 ```
-main              ← 배포용 (직접 커밋 절대 금지)
+main              ← 배포용 / 정본용 (직접 커밋 절대 금지)
 develop           ← 통합 브랜치 (feature/bugfix 머지 대상) + QA
 ├── feature/{name}
 └── bugfix/{name}
@@ -234,22 +237,28 @@ develop           ← 통합 브랜치 (feature/bugfix 머지 대상) + QA
 ```
 feature/* ──→ develop ──→ main
 bugfix/*  ──↗              ↓
-                         tag: v{version}
+                         tag: v{version}  (server/web만, claude-docs는 태그 없음)
 ```
 
-### 절대 금지 사항
+### 절대 금지 사항 (3개 레포 공통)
 - main에 직접 커밋/푸시
 - main에서 feature/bugfix 브랜치 생성
 - 역방향 머지 (main → develop)
 
-### Claude 작업 규칙
+### Claude 작업 규칙 (3개 레포 공통)
 1. 작업 시 `develop`에서 `feature/{name}` 또는 `bugfix/{name}` 브랜치 생성
-1.5. localhost 스킴에서 테스트 통과 확인 (유닛 + E2E) 후 다음 단계 진행
+1.5. localhost 스킴에서 테스트 통과 확인 (유닛 + E2E) 후 다음 단계 진행 — 단 claude-docs는 런타임 코드 없으므로 "문서·스크립트 무결성 체크"로 대체 (예: settings.json JSON 유효성, shell script `bash -n` 구문 체크)
 2. 작업 완료 후 `develop`에 `--no-ff` 머지
 3. 머지 후 feature/bugfix 브랜치 삭제
 4. develop → main 머지는 사용자 요청 시에만
 
-### 커밋 메시지 컨벤션
+### grimoire-claude-docs 특수사항
+- **기본 브랜치**: `main` (2026-04-25 초기화 시점부터 main 단일로 운영 중이나, 향후 develop 분기 도입 시 위 규칙 그대로 적용)
+- **빌드/테스트 수단**: 런타임 코드 없음. Hook/Skill 스크립트 수정 시 shell 구문 체크 + skill-injector/bash-guard 스모크 테스트로 대체
+- **Pre-push hook**: 아직 미도입 (server/web 참고하여 추후 도입 권장)
+- **origin**: https://github.com/gelb2/grimoire-claude-docs (PRIVATE)
+
+### 커밋 메시지 컨벤션 (3개 레포 공통)
 - 형식: `{type}: {한국어 메시지}`
 - 타입: `feat`, `fix`, `test`, `chore`, `docs`, `refactor`, `merge`
 - 머지 커밋: `merge: feature/{name} → develop ({설명})`
