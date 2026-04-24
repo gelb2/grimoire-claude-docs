@@ -1,0 +1,1077 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ProjectGrimoire — 문서 관계도 v2.0</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --bg: #0a0a0f;
+    --panel: #141622;
+    --panel-deep: #0f1019;
+    --panel-ink: #08080e;
+    --border: #2a2a3a;
+    --border-soft: #1a1a2a;
+    --fg: #e0e0e0;
+    --muted: #888;
+    --dim: #555;
+    --gold: #d4a853;
+    --blue: #53a8d4;
+    --green: #53d4a8;
+    --purple: #a853d4;
+    --orange: #d47a53;
+    --cyan: #53d4d4;
+    --red: #d45353;
+    --teal: #14B8A6;
+    --mint: #5EEAD4;
+    --sepia: #c4a46a;
+    --deer-bg: #07070a;
+  }
+  body {
+    font-family: -apple-system, 'SUIT Variable', 'Pretendard', sans-serif;
+    background: var(--bg);
+    color: var(--fg);
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 40px 24px;
+    line-height: 1.6;
+  }
+  h1 { text-align: center; font-size: 1.6rem; margin-bottom: 8px; color: #fff; font-weight: 700; }
+  .subtitle { text-align: center; font-size: 0.85rem; color: var(--muted); margin-bottom: 8px; }
+  .updated { text-align: center; font-size: 0.75rem; color: var(--dim); margin-bottom: 8px; }
+  .truth { text-align: center; font-size: 0.72rem; color: #6a6a8a; margin-bottom: 32px; font-style: italic; }
+  .truth code { background: var(--border-soft); padding: 2px 6px; border-radius: 4px; color: #8aa8d4; font-family: 'SF Mono', 'JetBrains Mono', monospace; }
+
+  .toc {
+    background: var(--panel-deep);
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--sepia);
+    padding: 16px 24px;
+    margin: 24px 0 32px;
+    border-radius: 8px;
+  }
+  .toc strong { color: var(--sepia); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.16em; display: block; margin-bottom: 10px; }
+  .toc ol { margin: 0; padding-left: 20px; columns: 2; column-gap: 32px; }
+  .toc li { margin-bottom: 4px; font-size: 0.82rem; color: var(--muted); break-inside: avoid; }
+  .toc a { color: #8aa8d4; text-decoration: none; }
+  .toc a:hover { color: var(--sepia); text-decoration: underline; }
+
+  h2 {
+    font-size: 1.1rem;
+    margin-top: 56px;
+    margin-bottom: 8px;
+    color: #fff;
+    border-left: 3px solid var(--sepia);
+    padding-left: 12px;
+    font-weight: 600;
+  }
+  h2 + p.desc { font-size: 0.82rem; color: var(--muted); margin: 0 0 16px 15px; }
+  h3 {
+    font-size: 0.92rem;
+    margin-top: 24px;
+    margin-bottom: 10px;
+    color: var(--gold);
+    font-weight: 600;
+  }
+
+  .cards { display: flex; flex-wrap: wrap; gap: 12px; }
+  .card {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 18px;
+    min-width: 220px;
+    max-width: 300px;
+    flex: 1 1 220px;
+    background: var(--panel);
+    transition: border-color 0.2s, transform 0.2s;
+  }
+  .card:hover { border-color: #3a3a4a; transform: translateY(-1px); }
+  .card .name { font-weight: 600; font-size: 0.88rem; margin-bottom: 4px; color: #fff; }
+  .card .desc { font-size: 0.72rem; color: var(--muted); line-height: 1.5; }
+  .card .repo { font-size: 0.6rem; padding: 2px 8px; border-radius: 10px; display: inline-block; margin-top: 8px; font-weight: 500; }
+
+  .repo-root { background: #3b2e1a; color: var(--gold); }
+  .repo-server { background: #1a2e3b; color: var(--blue); }
+  .repo-web { background: #1a3b2e; color: var(--green); }
+  .repo-agent { background: #2e1a3b; color: var(--purple); }
+  .repo-dir { background: #1a3b3b; color: var(--cyan); }
+  .repo-live { background: #3b2a1a; color: var(--orange); }
+
+  .card-method { border-left: 3px solid var(--purple); border-color: #3a2050; background: #15101c; }
+  .card-canon-research { border-left: 3px solid var(--purple); }
+  .card-live-research { border-left: 3px solid var(--orange); }
+
+  .mermaid {
+    background: var(--panel-deep);
+    padding: 24px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    margin: 16px 0;
+    overflow-x: auto;
+    text-align: center;
+  }
+
+  .section-box {
+    margin: 20px 0;
+    padding: 24px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--panel-deep);
+  }
+  .section-title {
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-bottom: 16px;
+    color: var(--sepia);
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.78rem;
+    background: var(--panel);
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+  th {
+    background: var(--panel-ink);
+    color: var(--sepia);
+    padding: 10px 14px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    border-bottom: 1px solid var(--border);
+  }
+  td { padding: 10px 14px; border-bottom: 1px solid var(--border-soft); color: var(--fg); }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--panel-ink); }
+  td.center { text-align: center; }
+  td code { color: #8aa8d4; background: var(--border-soft); padding: 2px 6px; border-radius: 4px; font-size: 0.9em; }
+
+  code {
+    background: var(--border-soft);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: 'SF Mono', 'JetBrains Mono', monospace;
+    font-size: 0.88em;
+    color: #8aa8d4;
+  }
+
+  .tree {
+    font-family: 'SF Mono', Menlo, monospace;
+    font-size: 0.74rem;
+    color: #c0c0c0;
+    line-height: 1.6;
+    white-space: pre;
+    background: var(--panel-ink);
+    padding: 20px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow-x: auto;
+  }
+  .tree .root-md { color: var(--gold); font-weight: 600; }
+  .tree .method-md { color: var(--purple); font-weight: 600; }
+  .tree .dir { color: var(--cyan); font-weight: 600; }
+  .tree .canon { color: var(--purple); }
+  .tree .live { color: var(--orange); }
+  .tree .srv { color: var(--blue); }
+  .tree .web { color: var(--green); }
+  .tree .deer { color: var(--sepia); }
+  .tree .comment { color: var(--dim); font-style: italic; }
+
+  .rule-box {
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--sepia);
+    background: var(--panel);
+    padding: 12px 16px;
+    border-radius: 0 8px 8px 0;
+    margin: 10px 0;
+    font-size: 0.82rem;
+    color: var(--fg);
+  }
+  .rule-box strong { color: var(--sepia); }
+
+  .info-box {
+    border: 1px solid #1a3b2e;
+    border-left: 3px solid var(--green);
+    background: #0f1a15;
+    padding: 14px 18px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+    font-size: 0.82rem;
+    color: var(--fg);
+  }
+  .info-box strong { color: var(--green); }
+
+  .deer-box {
+    border: 1px solid #2a2418;
+    border-left: 3px solid var(--sepia);
+    background: linear-gradient(135deg, var(--deer-bg) 0%, #0d0d12 100%);
+    padding: 18px 22px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+    font-size: 0.84rem;
+    color: #cdc8bc;
+  }
+  .deer-box strong { color: var(--sepia); }
+
+  pre.verify {
+    background: var(--panel-ink);
+    padding: 18px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow-x: auto;
+    font-size: 0.74rem;
+    line-height: 1.6;
+    color: #c0c0c0;
+    font-family: 'SF Mono', 'JetBrains Mono', monospace;
+  }
+  pre.verify .cmt { color: var(--dim); }
+
+  .sync-table td.check { font-weight: 700; color: var(--green); text-align: center; }
+  .sync-table td.absent { color: var(--dim); text-align: center; }
+  .sync-table td.deer { font-weight: 700; color: var(--sepia); text-align: center; }
+
+  .legend { display: flex; flex-direction: column; gap: 8px; }
+  .legend-row { display: flex; align-items: center; gap: 12px; font-size: 0.76rem; color: var(--muted); }
+  .legend-swatch { width: 28px; height: 14px; border-radius: 4px; flex-shrink: 0; background: var(--panel); }
+
+  .badge {
+    display: inline-block;
+    font-size: 0.65rem;
+    padding: 2px 8px;
+    border-radius: 10px;
+    margin-left: 6px;
+    font-weight: 500;
+  }
+
+  .zone-hdr {
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: var(--dim);
+    margin-top: 20px;
+    margin-bottom: 10px;
+    padding-left: 4px;
+  }
+
+  /* ========== Pyramid ========== */
+  .pyramid-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 32px 20px;
+    background: linear-gradient(180deg, var(--panel-ink) 0%, var(--bg) 100%);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    margin: 16px 0;
+    overflow-x: auto;
+  }
+  .pyramid-layer {
+    width: 100%;
+    background: var(--panel-deep);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 18px;
+    transition: max-width 0.3s ease;
+    position: relative;
+  }
+  .pyramid-layer.tier-l0 { max-width: 560px; border-top: 2px solid var(--purple); }
+  .pyramid-layer.tier-l1 { max-width: 860px; border-top: 2px solid var(--gold); }
+  .pyramid-layer.tier-l2 { max-width: 960px; border-top: 2px solid var(--gold); }
+  .pyramid-layer.tier-l3-shared { max-width: 1160px; border-top: 2px solid var(--blue); }
+  .pyramid-layer.tier-l3-repo { max-width: 1260px; border-top: 2px solid var(--blue); }
+  .pyramid-layer.tier-l4 { max-width: 1340px; border-top: 2px solid var(--dim); }
+
+  .layer-tag {
+    font-size: 0.66rem;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    margin-bottom: 10px;
+    text-align: center;
+    font-weight: 600;
+  }
+  .layer-tag.t-purple { color: var(--purple); }
+  .layer-tag.t-gold { color: var(--gold); }
+  .layer-tag.t-blue { color: var(--blue); }
+  .layer-tag.t-dim { color: var(--muted); }
+  .layer-tag small { font-size: 0.82em; color: var(--dim); font-weight: 400; text-transform: none; letter-spacing: normal; margin-left: 6px; }
+
+  .pyramid-cards {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .p-card {
+    font-size: 0.72rem;
+    font-family: 'SF Mono', Menlo, monospace;
+    padding: 6px 10px;
+    border-radius: 6px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    color: var(--fg);
+    white-space: nowrap;
+  }
+  .p-card.method { border-left: 3px solid var(--purple); background: #15101c; color: var(--purple); }
+  .p-card.planning-big { border: 2px solid var(--gold); background: #1a1810; color: var(--gold); font-weight: 700; padding: 10px 18px; font-size: 0.84rem; letter-spacing: 0.02em; }
+  .p-card.rule { border-left: 3px solid var(--gold); background: #1a1810; color: var(--gold); }
+  .p-card.rule-server { border-left: 3px solid var(--gold); background: #181a22; color: var(--blue); }
+  .p-card.rule-web { border-left: 3px solid var(--gold); background: #181a22; color: var(--green); }
+  .p-card.canon-server { border-left: 3px solid var(--blue); background: #10202a; color: var(--blue); }
+  .p-card.canon-web { border-left: 3px solid var(--green); background: #102a20; color: var(--green); }
+  .p-card.live { border-left: 3px solid var(--orange); background: #1a1410; color: var(--orange); }
+  .p-card.history-srv { border-left: 3px solid var(--blue); background: var(--panel); color: var(--blue); opacity: 0.9; }
+  .p-card.history-web { border-left: 3px solid var(--green); background: var(--panel); color: var(--green); opacity: 0.9; }
+  .p-card.deer { border-left: 3px solid var(--sepia); background: var(--deer-bg); color: var(--sepia); }
+  .p-card.sync-badge::after { content: ' ⇄'; color: var(--teal); font-weight: 700; margin-left: 2px; }
+  .p-card.server-only::after { content: ' 🔒'; font-size: 0.78em; opacity: 0.7; }
+
+  .pyramid-arrow {
+    font-size: 1.1rem;
+    color: var(--dim);
+    line-height: 1;
+    margin: -2px 0;
+  }
+
+  .canon-row {
+    display: grid;
+    grid-template-columns: 3fr 1fr;
+    gap: 12px;
+    margin-top: 10px;
+  }
+  .canon-row .canon-col,
+  .canon-row .live-col {
+    padding: 10px 12px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+  }
+  .canon-row .canon-col { border-left: 3px solid var(--purple); }
+  .canon-row .live-col { border-left: 3px solid var(--orange); }
+  .canon-row .col-label { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.12em; margin-bottom: 8px; font-weight: 600; }
+  .canon-row .canon-col .col-label { color: var(--purple); }
+  .canon-row .live-col .col-label { color: var(--orange); }
+  .canon-row .col-cards { display: flex; flex-wrap: wrap; gap: 4px; }
+
+  .repo-split {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .repo-split .repo-col {
+    padding: 10px 12px;
+    background: var(--panel);
+    border-radius: 8px;
+  }
+  .repo-split .repo-col.srv { border: 1px solid var(--border); border-left: 3px solid var(--blue); }
+  .repo-split .repo-col.web { border: 1px solid var(--border); border-left: 3px solid var(--green); }
+  .repo-split .rc-label { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.12em; margin-bottom: 8px; font-weight: 600; }
+  .repo-split .repo-col.srv .rc-label { color: var(--blue); }
+  .repo-split .repo-col.web .rc-label { color: var(--green); }
+  .repo-split .rc-cards { display: flex; flex-wrap: wrap; gap: 6px; }
+
+  footer {
+    margin-top: 80px;
+    padding: 24px 0;
+    border-top: 1px solid var(--border);
+    color: var(--dim);
+    font-size: 0.76rem;
+    text-align: center;
+  }
+  footer code { color: #8aa8d4; }
+</style>
+</head>
+<body>
+
+<h1>ProjectGrimoire — 문서 관계도 v2.0</h1>
+<p class="subtitle">2레포(server + web) · 5층 위계 + Layer 0 방법론 · 7 에이전트 · 시각 정본 사슴악마(deerdevil)</p>
+<p class="updated">마지막 업데이트 2026-04-18 · 대상 PLANNING v0.2 · reports/ + research/ 폴더 계층 정리</p>
+<p class="truth">단일 진실은 <code>CLAUDE.md §5 문서 피라미드</code> + <code>§14 에이전트 정의</code> · 이 HTML 은 시각 보조일 뿐이며 불일치 시 CLAUDE.md 가 정답</p>
+
+<div class="toc">
+  <strong>목차</strong>
+  <ol>
+    <li><a href="#methodology">Layer 0 · 프롬프트 방법론 3정본</a></li>
+    <li><a href="#pyramid">Layer 1~4 축약 피라미드 (Mermaid)</a></li>
+    <li><a href="#full-pyramid">전체 .md 파일 위계 피라미드 (카드)</a></li>
+    <li><a href="#canonical">공유 정본 server ↔ web 동기화</a></li>
+    <li><a href="#agents">에이전트 시스템 + reports/</a></li>
+    <li><a href="#reference-flow">참조 흐름 (상위 → 하위)</a></li>
+    <li><a href="#folder-tree">루트 폴더 구조 (ASCII)</a></li>
+    <li><a href="#research-split">research/ + reports/ 분리</a></li>
+    <li><a href="#repo-docs">레포별 문서 구조</a></li>
+    <li><a href="#grimoire-rules">Grimoire 고유 제약 (§0 + 사슴악마)</a></li>
+    <li><a href="#rules">불변 규칙 R1~R8</a></li>
+    <li><a href="#verify">검증 명령어</a></li>
+    <li><a href="#legend">범례 + 변경 이력</a></li>
+  </ol>
+</div>
+
+<!-- ========== Section 1: Layer 0 ========== -->
+<h2 id="methodology">1. Layer 0 — 프롬프트 방법론</h2>
+<p class="desc">모든 세션·에이전트 작업 전 필독 (CLAUDE.md §15). 기획·규칙·명세·코드 모든 작업에 방법론이 스며든다.</p>
+
+<div class="cards">
+  <div class="card card-method">
+    <div class="name">GMP-v2.2.md</div>
+    <div class="desc">범용 메타프롬프트 프로토콜 · XML 태그 구조 · 이중 앵커링 · Chain-of-Verification · 우선순위 라벨 [MUST]/[SHOULD]/[NICE]</div>
+    <span class="repo repo-agent">prompt-engineering/</span>
+  </div>
+  <div class="card card-method">
+    <div class="name">prd-generation-prompt-gmp2.md</div>
+    <div class="desc">PRD 자동 생성 · 3 서브에이전트 (도메인검증자→기능설계자→기술설계자) · Step-Back Abstraction · 11섹션 구조</div>
+    <span class="repo repo-agent">prompt-engineering/</span>
+  </div>
+  <div class="card card-method">
+    <div class="name">vibe-coding-unified-guide.md</div>
+    <div class="desc">바이브코딩 통합 가이드 · Phase 0~5 게이트 · 서브에이전트 7종 · PROGRESS.md 핸드오프 · 작업 프롬프트 11종</div>
+    <span class="repo repo-agent">prompt-engineering/</span>
+  </div>
+</div>
+
+<!-- ========== Section 2: 축약 피라미드 ========== -->
+<h2 id="pyramid">2. Layer 1~4 축약 피라미드 (Mermaid)</h2>
+<p class="desc">CLAUDE.md §5 정본 관계 개요. 상세 파일 단위는 §3 전체 위계 피라미드 참조. 변경 전파는 <strong>위 → 아래 단방향</strong>만 허용.</p>
+
+<div class="mermaid">
+flowchart TB
+    L0["<b>Layer 0 — 방법론</b><br/>prompt-engineering/ 3정본<br/>GMP · PRD · vibe-coding"]
+    L1["<b>Layer 1 — 전략·전술 통합</b><br/>PLANNING_GRIMOIRE.md (v0.2)<br/>§0 원가 철칙 · 마일스톤 · 기능 명세"]
+    L2["<b>Layer 2 — 규칙</b><br/>CLAUDE.md (루트 + server + web)<br/>언어 · 패키지 · 테스트 · Git · 동기화"]
+    L3["<b>Layer 3 — 명세</b><br/>docs/ (server 정본 + web 정본 + server-only)<br/>api-contract · data-model · theme-spec · ai-cost-table"]
+    L4["<b>Layer 4 — 구현·이력</b><br/>코드 (server/web) · 테스트 · CHANGELOG · TODO · TECH_STATUS"]
+    VC{{"시각 정본<br/>사슴악마 deerdevil<br/>모든 시각 렌더링의 기준"}}
+
+    L0 -.->|스며듦| L1
+    L0 -.->|스며듦| L2
+    L1 -->|전파| L2
+    L2 -->|전파| L3
+    L3 -->|전파| L4
+    L4 -.->|역방향 금지<br/>불일치 시 중단| L3
+    VC -.->|검수 게이트| L4
+
+    classDef l0 fill:#1a1020,color:#a853d4,stroke:#a853d4,stroke-width:2px
+    classDef l1 fill:#2a2010,color:#d4a853,stroke:#d4a853,stroke-width:2px
+    classDef l2 fill:#1a1810,color:#d4a853,stroke:#3a3020,stroke-width:1.5px
+    classDef l3 fill:#102a20,color:#53d4a8,stroke:#53d4a8,stroke-width:1.5px
+    classDef l4 fill:#141622,color:#aaa,stroke:#2a2a3a,stroke-width:1px
+    classDef vc fill:#1a1810,color:#c4a46a,stroke:#c4a46a,stroke-width:2px
+
+    class L0 l0
+    class L1 l1
+    class L2 l2
+    class L3 l3
+    class L4 l4
+    class VC vc
+</div>
+
+<!-- ========== Section 3: FULL PYRAMID ========== -->
+<h2 id="full-pyramid">3. 전체 .md 파일 위계 피라미드</h2>
+<p class="desc">ProjectGrimoire 가 관리하는 <strong>모든 .md 문서</strong>를 Layer 0~4 에 배치. 위가 좁고 아래로 갈수록 넓어진다. 각 카드는 실제 파일 1개이며 색은 소유자(server 🔵 / web 🟢 / root 🟡 / 방법론 🟣 / Live 🟠 / 사슴악마 🎨)를 뜻한다. <code>⇄</code> 표식은 server↔web 동기화 대상, <code>🔒</code> 는 server-only.</p>
+
+<div class="pyramid-wrapper">
+
+  <div class="pyramid-layer tier-l0">
+    <div class="layer-tag t-purple">Layer 0 · 방법론 <small>prompt-engineering/ · 3 파일</small></div>
+    <div class="pyramid-cards">
+      <div class="p-card method">GMP-v2.2.md</div>
+      <div class="p-card method">prd-generation-prompt-gmp2.md</div>
+      <div class="p-card method">vibe-coding-unified-guide.md</div>
+    </div>
+  </div>
+
+  <div class="pyramid-arrow">↓</div>
+
+  <div class="pyramid-layer tier-l1">
+    <div class="layer-tag t-gold">Layer 1 · 전략·전술 통합 <small>1 기획서 + 10 Canonical research</small></div>
+    <div class="pyramid-cards">
+      <div class="p-card planning-big">PLANNING_GRIMOIRE.md (v0.2)</div>
+    </div>
+    <div class="canon-row">
+      <div class="canon-col">
+        <div class="col-label">🟣 research/ Canonical (이론·조사·제안) · 수정 사용자 승인 필수</div>
+        <div class="col-cards">
+          <div class="p-card method">MARKET_ANALYSIS.md</div>
+          <div class="p-card method">RESEARCH_ANIMATION.md</div>
+          <div class="p-card method">FEATURE_AI_ANALYSIS.md</div>
+          <div class="p-card method">FUNDING_RESEARCH_2026.md</div>
+          <div class="p-card method">FUNDING_STRATEGY.md</div>
+          <div class="p-card method">PROPOSAL_DATA_BROKERAGE.md</div>
+          <div class="p-card method">PROPOSAL_DIGITAL_SHOWROOM.md</div>
+          <div class="p-card method">RESEARCH_HANLINE_API.md</div>
+          <div class="p-card method">RESEARCH_PLATFORM_CASES.md</div>
+          <div class="p-card method">RESEARCH_COMPETITIVE_LANDSCAPE.md</div>
+        </div>
+      </div>
+      <div class="live-col">
+        <div class="col-label">🟠 Live · researcher 자율</div>
+        <div class="col-cards">
+          <div class="p-card live">reports/AI_COST_MONITOR.md</div>
+          <div class="p-card live">reports/SWEEP_REPORT.md</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="pyramid-arrow">↓</div>
+
+  <div class="pyramid-layer tier-l2">
+    <div class="layer-tag t-gold">Layer 2 · 규칙 <small>3 CLAUDE + AUTOMATION + SYNC_STATUS</small></div>
+    <div class="pyramid-cards">
+      <div class="p-card rule">CLAUDE.md (root)</div>
+      <div class="p-card rule-server">CLAUDE.md (server)</div>
+      <div class="p-card rule-web">CLAUDE.md (web)</div>
+      <div class="p-card rule">AUTOMATION.md</div>
+      <div class="p-card rule">SYNC_STATUS.md</div>
+    </div>
+  </div>
+
+  <div class="pyramid-arrow">↓</div>
+
+  <div class="pyramid-layer tier-l3-shared">
+    <div class="layer-tag t-blue">Layer 3 · 공유 정본 <small>docs/ — 10 동기화 + 1 server-only</small></div>
+    <div class="pyramid-cards">
+      <div class="p-card canon-server sync-badge">api-contract.md</div>
+      <div class="p-card canon-server sync-badge">data-model.md</div>
+      <div class="p-card canon-server sync-badge">glossary.md</div>
+      <div class="p-card canon-server sync-badge">environments.md</div>
+      <div class="p-card canon-server sync-badge">ai-analysis-spec.md</div>
+      <div class="p-card canon-server sync-badge">TERMS_OF_SERVICE.md</div>
+      <div class="p-card canon-server sync-badge">PRIVACY_POLICY.md</div>
+      <div class="p-card canon-server sync-badge">DEPLOY.md</div>
+      <div class="p-card canon-web sync-badge">theme-spec.md</div>
+      <div class="p-card canon-web sync-badge">design-tokens.md</div>
+      <div class="p-card canon-server server-only">ai-cost-table.md</div>
+    </div>
+  </div>
+
+  <div class="pyramid-arrow">↓</div>
+
+  <div class="pyramid-layer tier-l3-repo">
+    <div class="layer-tag t-blue">Layer 3 · 레포 전용 명세 <small>server 6 + web 2 + 시각 정본</small></div>
+    <div class="repo-split">
+      <div class="repo-col srv">
+        <div class="rc-label">🔵 server 전용</div>
+        <div class="rc-cards">
+          <div class="p-card canon-server">SCHEMA.md</div>
+          <div class="p-card canon-server">SECURITY.md</div>
+          <div class="p-card canon-server">INFRASTRUCTURE.md</div>
+          <div class="p-card canon-server">MIGRATION.md</div>
+          <div class="p-card canon-server">PARSER.md</div>
+          <div class="p-card canon-server">ADR.md</div>
+        </div>
+      </div>
+      <div class="repo-col web">
+        <div class="rc-label">🟢 web 전용 (사슴악마 시각 정본)</div>
+        <div class="rc-cards">
+          <div class="p-card canon-web">DESIGN.md</div>
+          <div class="p-card canon-web">SCREENS.md</div>
+          <div class="p-card deer">/deerdevil/ (라이브 정본)</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="pyramid-arrow">↓</div>
+
+  <div class="pyramid-layer tier-l4">
+    <div class="layer-tag t-dim">Layer 4 · 구현·이력 <small>server 4 + web 5 + reports/ 7~8 (+ 코드/테스트)</small></div>
+    <div class="repo-split">
+      <div class="repo-col srv">
+        <div class="rc-label">🔵 server 이력</div>
+        <div class="rc-cards">
+          <div class="p-card history-srv">CHANGELOG.md</div>
+          <div class="p-card history-srv">TODO.md</div>
+          <div class="p-card history-srv">TESTING.md</div>
+          <div class="p-card history-srv">TECH_STATUS.md</div>
+        </div>
+      </div>
+      <div class="repo-col web">
+        <div class="rc-label">🟢 web 이력</div>
+        <div class="rc-cards">
+          <div class="p-card history-web">CHANGELOG.md</div>
+          <div class="p-card history-web">TODO.md</div>
+          <div class="p-card history-web">TESTING.md</div>
+          <div class="p-card history-web">TECH_STATUS.md</div>
+          <div class="p-card history-web">REMOTE_TEST.md</div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-top: 10px;">
+      <div class="canon-col" style="border-left: 3px solid var(--teal);">
+        <div class="col-label" style="color: var(--teal);">🤖 reports/ · 에이전트 일일 산출물 (launchd 18:04~23:21 KST)</div>
+        <div class="col-cards">
+          <div class="p-card live">SWEEP_REPORT.md</div>
+          <div class="p-card live">AI_COST_MONITOR.md</div>
+          <div class="p-card live">COST_AUDIT_REPORT.md</div>
+          <div class="p-card live">PLANNER_REPORT.md</div>
+          <div class="p-card live">VISUAL_CANON_REPORT.md</div>
+          <div class="p-card live">DEV_REPORT.md</div>
+          <div class="p-card live">QA_REPORT.md</div>
+          <div class="p-card live">COST_ALERT.md (조건부)</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="info-box">
+  <strong>피라미드 판독법:</strong>
+  <ul style="margin-top: 6px; padding-left: 20px; font-size: 0.78rem;">
+    <li><strong>너비</strong>: Layer 0 (방법론 3파일 · 가장 좁음) → Layer 4 (구현·이력 · 가장 넓음). 개수에 비례한 "저변 확장" 형태.</li>
+    <li><strong>색</strong>: 🟣 보라(방법론·Canonical) / 🟡 금(기획·규칙 · root 정본) / 🔵 파랑(server 정본) / 🟢 초록(web 정본) / 🟠 주황(Live 캐시 + reports) / ⚪ 회색(이력) / 🎨 세피아(사슴악마 정본).</li>
+    <li><strong><code>⇄</code> 표식</strong>: server ↔ web 양방향 동기화 대상 10개.</li>
+    <li><strong><code>🔒</code> 표식</strong>: server-only 1개 (ai-cost-table.md · cost-accountant 단독 관리).</li>
+    <li><strong>제외</strong>: ACCOUNTS.md (시크릿 · 참조 금지) · DOC_MAP.html (이 파일) · 작가 원고 .md (DeerDevil_MDfiles/ · seed-data/classics/ · content/ · 수정·인용·로깅 금지).</li>
+  </ul>
+</div>
+
+<!-- ========== Section 4: Canonical Sync ========== -->
+<h2 id="canonical">4. 공유 정본 — server ↔ web 동기화 매트릭스</h2>
+<p class="desc">§3 피라미드 Layer 3 공유 정본 11개의 레포별 존재 여부. 정본 방향은 반드시 지켜야 한다.</p>
+
+<table class="sync-table">
+  <tr><th>문서</th><th>정본</th><th>server</th><th>web</th><th>비고</th></tr>
+  <tr><td><code>api-contract.md</code></td><td><span class="badge repo-server">server</span></td><td class="check">✅</td><td class="check">✅</td><td>API 엔드포인트 전체 명세</td></tr>
+  <tr><td><code>data-model.md</code></td><td><span class="badge repo-server">server</span></td><td class="check">✅</td><td class="check">✅</td><td>DB 스키마 · Prisma schema.prisma 해설</td></tr>
+  <tr><td><code>glossary.md</code></td><td><span class="badge repo-server">server</span></td><td class="check">✅</td><td class="check">✅</td><td>도메인 용어 정의</td></tr>
+  <tr><td><code>environments.md</code></td><td><span class="badge repo-server">server</span></td><td class="check">✅</td><td class="check">✅</td><td>4환경 (localhost/dev/inhouse/prod) · APP_ENV</td></tr>
+  <tr><td><code>ai-analysis-spec.md</code></td><td><span class="badge repo-server">server</span></td><td class="check">✅</td><td class="check">✅</td><td>AI 분석 · RAG · 시맨틱 캐싱 · 채팅</td></tr>
+  <tr><td><code>TERMS_OF_SERVICE.md</code></td><td><span class="badge repo-server">server</span></td><td class="check">✅</td><td class="check">✅</td><td>이용약관</td></tr>
+  <tr><td><code>PRIVACY_POLICY.md</code></td><td><span class="badge repo-server">server</span></td><td class="check">✅</td><td class="check">✅</td><td>개인정보보호방침</td></tr>
+  <tr><td><code>DEPLOY.md</code></td><td><span class="badge repo-server">server</span></td><td class="check">✅</td><td class="check">✅</td><td>수동 배포 절차 (make deploy-{env})</td></tr>
+  <tr><td><code>theme-spec.md</code></td><td><span class="badge repo-web">web</span></td><td class="check">✅</td><td class="check">✅</td><td>테마 파라미터 + CSS Variables 매핑</td></tr>
+  <tr><td><code>design-tokens.md</code></td><td><span class="badge repo-web">web</span></td><td class="check">✅</td><td class="check">✅</td><td>색상·타이포·간격 디자인 토큰</td></tr>
+  <tr><td><code>ai-cost-table.md</code></td><td><span class="badge repo-server">server</span></td><td class="deer">🔒</td><td class="absent">—</td><td>cost-accountant 단독 관리 · §0 마진 검증</td></tr>
+</table>
+
+<div class="info-box">
+  <strong>동기화 규칙:</strong>
+  <ol style="margin-top: 6px; padding-left: 20px;">
+    <li>정본 레포에서 먼저 수정</li>
+    <li>같은 작업 세션 내에 복사 (다음 날로 미루지 않음)</li>
+    <li>pre-push 훅의 docs 동기화 검증 (양쪽 바이트 단위 diff)</li>
+    <li>SYNC_STATUS.md 업데이트</li>
+  </ol>
+</div>
+
+<!-- ========== Section 5: Agents ========== -->
+<h2 id="agents">5. 에이전트 시스템 + reports/</h2>
+<p class="desc">매일 18:04~23:21 KST launchd 로 실행되는 에이전트 7개 + 센서 스크립트 4개. Zenith(06~11) · RoadRage(12~17) 와 시간대 겹치지 않음.</p>
+
+<div class="mermaid">
+flowchart LR
+    subgraph input["입력 (사용자 / 문서)"]
+        user["사용자 요청"]
+        planning["PLANNING_GRIMOIRE.md"]
+        claudemd["CLAUDE.md §0 + §14"]
+    end
+
+    subgraph pe["Layer 0 · 프롬프트 정본"]
+        gmp["GMP-v2.2"]
+        prd_gen["prd-generation"]
+        vibe["vibe-coding"]
+    end
+
+    subgraph agents[".claude/agents/ (7)"]
+        researcher["researcher<br/>18:04"]
+        ca["cost-accountant<br/>19:08 · §0"]
+        planner["planner<br/>20:11"]
+        vck["visual-canon-keeper<br/>21:14 · 사슴악마"]
+        devs["server + web<br/>22:17"]
+        qa["qa<br/>23:21"]
+    end
+
+    subgraph reports["reports/ (7~8 산출물)"]
+        sweep["SWEEP_REPORT"]
+        cost_mon["AI_COST_MONITOR"]
+        cost_alert["COST_ALERT (조건부)"]
+        cost_audit["COST_AUDIT_REPORT"]
+        planner_r["PLANNER_REPORT"]
+        vc_r["VISUAL_CANON_REPORT"]
+        dev["DEV_REPORT"]
+        qa_r["QA_REPORT"]
+    end
+
+    subgraph ops["센서 스크립트 (.claude/scripts/)"]
+        sserver["sensor-server.sh"]
+        sweb["sensor-web.sh"]
+        sdocs["sensor-docs-sync.sh"]
+        ssec["sensor-security-gate.sh"]
+    end
+
+    input --> pe
+    pe --> agents
+
+    researcher --> sweep
+    researcher --> cost_mon
+    researcher -.->|5%+ 변동 시| cost_alert
+    cost_alert -.->|즉시 알림| ca
+    ca --> cost_audit
+    cost_mon --> ca
+    planner --> planner_r
+    sweep --> planner
+    cost_audit --> planner
+    vck --> vc_r
+    devs --> dev
+    planner_r --> devs
+    vc_r -.->|CRITICAL 검수| devs
+    qa --> qa_r
+
+    devs --> sserver
+    devs --> sweb
+    devs --> sdocs
+    qa --> sserver
+    qa --> sweb
+    qa --> sdocs
+    qa --> ssec
+
+    dev --> qa
+    cost_audit --> qa
+    vc_r --> qa
+
+    classDef agentNode fill:#10202a,color:#5EEAD4,stroke:#14B8A6,stroke-width:2px
+    classDef grimoireAgent fill:#1a1810,color:#c4a46a,stroke:#c4a46a,stroke-width:2px
+    classDef reportNode fill:#2a2010,color:#d4a853,stroke:#d4a853,stroke-width:1px
+    classDef alertNode fill:#2a1010,color:#d45353,stroke:#d45353,stroke-width:1.5px
+    classDef inputNode fill:#141622,color:#aaa,stroke:#2a2a3a,stroke-width:1px
+    classDef peNode fill:#1a1020,color:#a853d4,stroke:#a853d4,stroke-width:1.5px
+    classDef opsNode fill:#102a20,color:#53d4a8,stroke:#53d4a8,stroke-width:1px
+
+    class researcher,planner,devs,qa agentNode
+    class ca,vck grimoireAgent
+    class sweep,cost_mon,cost_audit,planner_r,vc_r,dev,qa_r reportNode
+    class cost_alert alertNode
+    class user,planning,claudemd inputNode
+    class gmp,prd_gen,vibe peNode
+    class sserver,sweb,sdocs,ssec opsNode
+</div>
+
+<div class="info-box">
+  <strong>Grimoire 고유 에이전트 2개:</strong>
+  <ul style="margin-top: 6px; padding-left: 20px;">
+    <li><strong>cost-accountant</strong> — §0 크레딧-원가 철칙 전담 수호. <code>ai-cost-table.md</code> 단독 관리. 새 AI 기능은 마진 ≥3배 검증 없이 기획 진행 불가.</li>
+    <li><strong>visual-canon-keeper</strong> — 사슴악마(deerdevil) 시각 정본 수호. 새 UI/테마/포맷 출력은 이 에이전트 검수 없이 구현 불가. 디자이너 역할 겸직.</li>
+  </ul>
+  Zenith/RoadRage 대비 Grimoire 는 copywriter 없음 (작가 본인 콘텐츠) · designer 는 visual-canon-keeper 가 겸직.
+</div>
+
+<!-- ========== Section 6: Reference Flow ========== -->
+<h2 id="reference-flow">6. 참조 흐름 — 신규 기능 추가 시</h2>
+<p class="desc">CLAUDE.md §6 워크플로우. 역순으로 하면 위계 깨짐. AI 기능·시각 컴포넌트는 별도 게이트 통과 필수.</p>
+
+<div class="mermaid">
+flowchart TB
+    start(["신규 기능 요청"]) --> check1{"PLANNING 에<br/>명시됐나?"}
+
+    check1 -->|예| planning_active["PLANNING<br/>Active 섹션"]
+    check1 -->|아니오| planning_first["PLANNING 먼저<br/>업데이트<br/>(사용자 승인)"]
+    planning_first --> planning_active
+
+    planning_active --> check2{"AI 기능<br/>포함?"}
+
+    check2 -->|예| ca_approval["cost-accountant<br/>사전 승인<br/>마진 ≥3배"]
+    check2 -->|아니오| check3{"시각 컴포넌트<br/>추가?"}
+
+    ca_approval --> check3
+    check3 -->|예| vck_approval["visual-canon-keeper<br/>사전 검수<br/>사슴악마 정본"]
+    check3 -->|아니오| docs_update
+
+    vck_approval --> docs_update["docs/ 정본 수정<br/>server 에서"]
+    docs_update --> docs_sync["web 복사<br/>+ SYNC_STATUS"]
+    docs_sync --> code_impl["코드 구현<br/>server + web"]
+    code_impl --> tests["테스트 통과<br/>+ qa 전수검사"]
+    tests --> shipped["Shipped<br/>CHANGELOG + TODO"]
+
+    classDef start fill:#2a2010,color:#d4a853,stroke:#d4a853,stroke-width:2px
+    classDef gate fill:#2a2010,color:#d4a853,stroke:#d4a853,stroke-width:1.5px
+    classDef action fill:#10202a,color:#5EEAD4,stroke:#14B8A6,stroke-width:1.5px
+    classDef approval fill:#1a1810,color:#c4a46a,stroke:#c4a46a,stroke-width:1.5px
+    classDef ending fill:#102a20,color:#53d4a8,stroke:#53d4a8,stroke-width:2px
+
+    class start start
+    class check1,check2,check3 gate
+    class planning_active,planning_first,docs_update,docs_sync,code_impl,tests action
+    class ca_approval,vck_approval approval
+    class shipped ending
+</div>
+
+<!-- ========== Section 7: Folder Tree ========== -->
+<h2 id="folder-tree">7. 루트 폴더 구조</h2>
+<p class="desc">2026-04-18 기준 실제 디렉토리. reports/ + research/ 폴더 정리 완료 (루트 평평 구조 → 계층화).</p>
+
+<pre class="tree">
+<span class="dir">ProjectGrimoire/</span>
+├── <span class="root-md">CLAUDE.md</span>                         <span class="comment"># L2 — 워크스페이스 헌법 (§0 ZERO-TOLERANCE · §14 에이전트 · §15 프롬프트 정본)</span>
+├── <span class="root-md">PLANNING_GRIMOIRE.md</span>              <span class="comment"># L1 — 최상위 정본 (전략·전술 통합 · §0 크레딧-원가 철칙)</span>
+├── <span class="root-md">AUTOMATION.md</span>                     <span class="comment"># L2 — launchd 에이전트 자동화 설정 &amp; 스케줄</span>
+├── <span class="root-md">SYNC_STATUS.md</span>                    <span class="comment"># 서버-웹 연결 실측 매트릭스</span>
+├── <span class="root-md">ACCOUNTS.md</span>                       <span class="comment"># 시크릿 (git 미추적 · 에이전트 참조 금지)</span>
+├── <span class="root-md">DOC_MAP.html</span>                      <span class="comment"># 이 파일 · 시각 보조</span>
+│
+├── <span class="dir">research/</span>                         <span class="comment"># L1 보조 — 이론·조사·제안 (10 파일)</span>
+│   ├── <span class="canon">MARKET_ANALYSIS.md</span>                <span class="comment"># 🟣 시장 분석</span>
+│   ├── <span class="canon">RESEARCH_ANIMATION.md</span>             <span class="comment"># 🟣 애니메이션 기술 조사</span>
+│   ├── <span class="canon">FEATURE_AI_ANALYSIS.md</span>            <span class="comment"># 🟣 AI 분석 + 맥락보정</span>
+│   ├── <span class="canon">FUNDING_RESEARCH_2026.md</span>          <span class="comment"># 🟣 2026 공공 지원사업 조사</span>
+│   ├── <span class="canon">FUNDING_STRATEGY.md</span>               <span class="comment"># 🟣 공공 자금 신청 전략</span>
+│   ├── <span class="canon">PROPOSAL_DATA_BROKERAGE.md</span>        <span class="comment"># 🟣 B2B 데이터 브로커리지 제안</span>
+│   ├── <span class="canon">PROPOSAL_DIGITAL_SHOWROOM.md</span>      <span class="comment"># 🟣 디지털 쇼룸 아키텍처 제안</span>
+│   ├── <span class="canon">RESEARCH_HANLINE_API.md</span>           <span class="comment"># 🟣 경쟁 서비스 한줄 기술 분석</span>
+│   ├── <span class="canon">RESEARCH_PLATFORM_CASES.md</span>        <span class="comment"># 🟣 글로벌 플랫폼 사례</span>
+│   └── <span class="canon">RESEARCH_COMPETITIVE_LANDSCAPE.md</span> <span class="comment"># 🟠 Live 캐시 (researcher 자율 갱신)</span>
+│
+├── <span class="dir">reports/</span>                          <span class="comment"># 🤖 에이전트 산출물 7~8종 · launchd 매일 갱신 (덮어쓰기)</span>
+│   ├── SWEEP_REPORT.md                  <span class="comment"># researcher (18:04)</span>
+│   ├── AI_COST_MONITOR.md               <span class="comment"># researcher (18:04)</span>
+│   ├── COST_ALERT.md                    <span class="comment"># researcher 조건부 (5%+ 변동 시)</span>
+│   ├── COST_AUDIT_REPORT.md             <span class="comment"># cost-accountant (19:08)</span>
+│   ├── PLANNER_REPORT.md                <span class="comment"># planner (20:11)</span>
+│   ├── VISUAL_CANON_REPORT.md           <span class="comment"># visual-canon-keeper (21:14)</span>
+│   ├── DEV_REPORT.md                    <span class="comment"># server + web (22:17)</span>
+│   └── QA_REPORT.md                     <span class="comment"># qa (23:21) → 배포 게이트</span>
+│
+├── <span class="dir">prompt-engineering/</span>               <span class="comment"># L0 — 방법론 3정본 (CLAUDE §15)</span>
+│   ├── <span class="method-md">GMP-v2.2.md</span>
+│   ├── <span class="method-md">prd-generation-prompt-gmp2.md</span>
+│   └── <span class="method-md">vibe-coding-unified-guide.md</span>
+│
+├── <span class="dir">.claude/</span>
+│   ├── <span class="dir">agents/</span>                       <span class="comment"># 에이전트 정의 7개</span>
+│   │   ├── grimoire-planner.md
+│   │   ├── grimoire-researcher.md
+│   │   ├── <span class="deer">grimoire-cost-accountant.md</span>      <span class="comment"># 🎨 Grimoire 고유</span>
+│   │   ├── <span class="deer">grimoire-visual-canon-keeper.md</span>  <span class="comment"># 🎨 Grimoire 고유 (사슴악마 정본)</span>
+│   │   ├── grimoire-qa.md
+│   │   ├── grimoire-server.md
+│   │   └── grimoire-web.md
+│   ├── <span class="dir">prompts/</span>                      <span class="comment"># launchd 호출용 에이전트 프롬프트 (.txt)</span>
+│   ├── <span class="dir">knowledge/</span>                    <span class="comment"># 공유 지식 (agent-system.md · sensors.md)</span>
+│   └── <span class="dir">scripts/</span>                      <span class="comment"># 센서 스크립트 (sensor-server/web/docs-sync/security-gate)</span>
+│
+├── <span class="dir">.launchd-logs/</span>                    <span class="comment"># launchd 시스템 로그 (git 미추적)</span>
+│
+├── <span class="srv">grimoire-server/</span>                  <span class="comment"># NestJS + Prisma + PostgreSQL (Hexagonal)</span>
+└── <span class="web">grimoire-web/</span>                     <span class="comment"># Next.js App Router + Tailwind CSS 4 (FSD) · 🎨 /deerdevil/ 시각 정본</span>
+</pre>
+
+<!-- ========== Section 8: Research + Reports Split ========== -->
+<h2 id="research-split">8. research/ + reports/ 분리</h2>
+<p class="desc">research/ (사용자 승인 Canonical) vs reports/ (에이전트 자동 산출) 명확한 분리. 2026-04-18 폴더 정리로 루트 평평 구조 해소.</p>
+
+<div class="cards">
+  <div class="card card-canon-research">
+    <div class="name">🟣 research/ Canonical — 10 파일</div>
+    <div class="desc">
+      MARKET_ANALYSIS · RESEARCH_ANIMATION · FEATURE_AI_ANALYSIS · FUNDING_* (2) · PROPOSAL_* (2) · RESEARCH_* (3)<br><br>
+      변동 드묾. <strong>수정은 사용자 승인 필수</strong>. researcher 는 RESEARCH_COMPETITIVE_LANDSCAPE 만 자율 갱신.
+    </div>
+    <span class="repo repo-root">root/research/</span>
+  </div>
+  <div class="card card-live-research">
+    <div class="name">🤖 reports/ 에이전트 산출물 — 7~8 파일</div>
+    <div class="desc">
+      SWEEP_REPORT · AI_COST_MONITOR · (조건부)COST_ALERT · COST_AUDIT_REPORT · PLANNER_REPORT · VISUAL_CANON_REPORT · DEV_REPORT · QA_REPORT<br><br>
+      매일 launchd 에 의해 갱신 (덮어쓰기). <strong>사용자 수정 금지</strong> — 다음 실행 시 덮어써짐.
+    </div>
+    <span class="repo repo-live">root/reports/</span>
+  </div>
+</div>
+
+<!-- ========== Section 9: Repo Docs ========== -->
+<h2 id="repo-docs">9. 레포별 문서 구조</h2>
+
+<div class="zone-hdr">▼ server 레포 전용 + web 레포 전용</div>
+<table>
+  <tr><th>문서</th><th>server</th><th>web</th><th>역할</th></tr>
+  <tr><td><code>CLAUDE.md</code></td><td class="center">✅</td><td class="center">✅</td><td>루트 상속 + 레포 고유 규칙</td></tr>
+  <tr><td><code>CHANGELOG.md</code></td><td class="center">✅</td><td class="center">✅</td><td>기능 완료 즉시 기록</td></tr>
+  <tr><td><code>TODO.md</code></td><td class="center">✅</td><td class="center">✅</td><td>작업 시작·완료 시</td></tr>
+  <tr><td><code>TESTING.md</code></td><td class="center">✅</td><td class="center">✅</td><td>테스트 전략 (숫자 하드코딩 금지)</td></tr>
+  <tr><td><code>TECH_STATUS.md</code></td><td class="center">✅</td><td class="center">✅</td><td>구현 상태 (버전/개수 하드코딩 금지)</td></tr>
+  <tr><td><code>docs/*.md</code></td><td class="center">✅ 11</td><td class="center">✅ 10</td><td>공유 정본 (§4) · ai-cost-table은 server-only</td></tr>
+  <tr><td><code>SCHEMA.md</code></td><td class="center">✅</td><td class="absent">—</td><td>Prisma 스키마 상세</td></tr>
+  <tr><td><code>SECURITY.md</code></td><td class="center">✅</td><td class="absent">—</td><td>배포 전 체크리스트 · 보안 정책</td></tr>
+  <tr><td><code>INFRASTRUCTURE.md</code></td><td class="center">✅</td><td class="absent">—</td><td>Azure 구성 (Container Apps · Postgres · Blob)</td></tr>
+  <tr><td><code>MIGRATION.md</code></td><td class="center">✅</td><td class="absent">—</td><td>Prisma 마이그레이션 규칙 + 롤백</td></tr>
+  <tr><td><code>PARSER.md</code></td><td class="center">✅</td><td class="absent">—</td><td>원고 파서(MD/DOCX/HWPX) 규격</td></tr>
+  <tr><td><code>ADR.md</code></td><td class="center">✅</td><td class="absent">—</td><td>아키텍처 결정 기록</td></tr>
+  <tr><td><code>DESIGN.md</code></td><td class="absent">—</td><td class="center">✅</td><td>Tailwind UI 시스템 + 사슴악마 변주</td></tr>
+  <tr><td><code>SCREENS.md</code></td><td class="absent">—</td><td class="center">✅</td><td>라우트 → 컴포넌트 매핑</td></tr>
+  <tr><td><code>REMOTE_TEST.md</code></td><td class="absent">—</td><td class="center">✅</td><td>원격 테스트 설정</td></tr>
+</table>
+
+<!-- ========== Section 10: Grimoire Unique ========== -->
+<h2 id="grimoire-rules">10. Grimoire 고유 제약 — §0 원가 철칙 + 사슴악마 시각 정본</h2>
+<p class="desc">Zenith/RoadRage 와 다른 Grimoire 만의 2대 제약. 두 제약 모두 기획·구현 단계에서 강제 게이트로 작용.</p>
+
+<div class="deer-box">
+  <strong>🎨 사슴악마(deerdevil) 시각 정본</strong>
+  <ul style="margin-top: 8px; padding-left: 20px; font-size: 0.82rem;">
+    <li><strong>기준</strong>: 운영 <code>/deerdevil/</code> 라우트의 작가공간 · 에피소드 뷰어 · 에피소드 목록</li>
+    <li><strong>색상</strong>: bgPrimary <code>#07070a</code> · textPrimary <code>#cdc8bc</code> · accent <code>#9a8060</code> (세피아)</li>
+    <li><strong>타이포</strong>: EB_Garamond + Noto_Serif_KR · 타이틀 이탤릭 세리프 · 본문 세리프</li>
+    <li><strong>장식</strong>: antler (사슴뿔) 디바이더 + 헤더 아이콘 · "Inspired by the sensibility of A24" 푸터</li>
+    <li><strong>애니메이션</strong>: typing 이펙트 (15ms/char)</li>
+    <li><strong>레이아웃</strong>: series + preface + 에피소드 카드 그리드 + 일러두기/번외/후기</li>
+    <li><strong>강제 게이트</strong>: 새 UI 컴포넌트 · 테마 에디터 출력 · 새 포맷(DOCX/HWPX) 렌더링 모두 visual-canon-keeper 검수 필수. 불일치 시 배포 차단.</li>
+  </ul>
+</div>
+
+<div class="rule-box">
+  <strong>💰 §0 크레딧-원가 철칙 (PLANNING_GRIMOIRE.md)</strong><br>
+  <ul style="margin-top: 6px; padding-left: 20px; font-size: 0.82rem;">
+    <li><strong>공식</strong>: 크레딧 판매 수익 ≥ AI API 원가 × 3 (안전 마진 3배)</li>
+    <li><strong>검증자</strong>: cost-accountant 에이전트 · <code>docs/ai-cost-table.md</code> 단독 관리</li>
+    <li><strong>트리거</strong>: researcher 가 매일 Claude/OpenAI/Gemini 공식 가격 확인 · 5%+ 변동 시 <code>reports/COST_ALERT.md</code> 생성 → cost-accountant 즉시 알림</li>
+    <li><strong>강제 게이트</strong>: 새 AI 기능 기획 시 cost-accountant 승인 없이 구현 금지. 마진 &lt;50% 하락 검출 시 사용자 에스컬레이션.</li>
+  </ul>
+</div>
+
+<!-- ========== Section 11: Immutable Rules ========== -->
+<h2 id="rules">11. 불변 규칙 R1~R8</h2>
+<p class="desc">깨짐 시 작업 중단 → 복구 절차. CLAUDE.md §0 ZERO-TOLERANCE · §5 문서 피라미드 · §6 워크플로우 파생.</p>
+
+<div class="rule-box">
+  <strong>R1. 하위에서 상위 불일치 발견 시</strong><br>
+  → 작업 중단 → 상위부터 수정 → 하위로 재전파. 코드를 고쳐서 상위 문서 불일치를 덮지 않는다.
+</div>
+<div class="rule-box">
+  <strong>R2. PLANNING 에 없는 기능을 코드가 구현 금지</strong><br>
+  → 먼저 PLANNING_GRIMOIRE.md 업데이트 (사용자 승인 필수) → 구현.
+</div>
+<div class="rule-box">
+  <strong>R3. 정본 아닌 레포에서 직접 수정 금지</strong><br>
+  → 예: web 의 <code>api-contract.md</code> 는 server 에서 먼저 수정 후 복사. pre-push docs 동기화 훅이 차단.
+</div>
+<div class="rule-box">
+  <strong>R4. 숫자 하드코딩 금지 (규칙 문서)</strong><br>
+  → TECH_STATUS / CHANGELOG / CLAUDE.md 에 테스트 수·라우트 수·모델 수 숫자 박지 않는다. "<code>npm test</code> 실행으로 확인" 식 참조.
+</div>
+<div class="rule-box">
+  <strong>R5. 작가 소설 본문 수정·인용·로깅 금지 (전 에이전트 공통)</strong><br>
+  → <code>grimoire-web/DeerDevil_MDfiles/</code> · <code>seed-data/classics/</code> · DB <code>episodes.raw_md</code> · <code>episodes.blocks</code> 모두 보호 대상. 리포트/커밋 메시지에 인용 금지.
+</div>
+<div class="rule-box">
+  <strong>R6. §0 원가 철칙 게이트 우회 금지</strong><br>
+  → 새 AI 기능은 cost-accountant 마진 ≥3배 검증 없이 기획 진행 불가. qa 게이트가 배포 차단.
+</div>
+<div class="rule-box">
+  <strong>R7. 사슴악마 시각 정본 불일치 금지</strong><br>
+  → 새 UI/테마/포맷 출력은 visual-canon-keeper 검수 필수. <code>reports/VISUAL_CANON_REPORT.md</code> CRITICAL 이 있으면 배포 차단.
+</div>
+<div class="rule-box">
+  <strong>R8. ACCOUNTS.md 전체 에이전트 참조 금지</strong><br>
+  → Polar / Anthropic / OpenAI 시크릿 키 포함. 어느 에이전트도 Read 하지 않는다.
+</div>
+
+<!-- ========== Section 12: Verify Commands ========== -->
+<h2 id="verify">12. 검증 명령어</h2>
+<p class="desc">문서 정합성·에이전트 상태·배포 게이트 자동 확인. shell 에 복사 붙여넣기 가능.</p>
+
+<pre class="verify"><span class="cmt"># 1) docs/ 공유 정본 server ↔ web SHA256 일치 확인 (10 동기화 파일)</span>
+for f in api-contract.md data-model.md glossary.md environments.md \
+         ai-analysis-spec.md TERMS_OF_SERVICE.md PRIVACY_POLICY.md \
+         theme-spec.md design-tokens.md DEPLOY.md; do
+  SERVER=$(shasum -a 256 grimoire-server/docs/$f 2&gt;/dev/null | awk '{print $1}')
+  WEB=$(shasum -a 256 grimoire-web/docs/$f 2&gt;/dev/null | awk '{print $1}')
+  [ "$SERVER" = "$WEB" ] &amp;&amp; echo "✅ $f" || echo "❌ $f"
+done
+
+<span class="cmt"># 2) reports/ 파일 7~8개 존재 확인 (COST_ALERT 는 조건부)</span>
+ls reports/ | wc -l
+
+<span class="cmt"># 3) research/ 파일 10개 확인 (루트 평평 구조 정리 후)</span>
+ls research/*.md | wc -l
+
+<span class="cmt"># 4) launchd 에이전트 활성 확인</span>
+launchctl list | grep grimoire
+
+<span class="cmt"># 5) 레포 각 main 기준 배포 버전 확인</span>
+(cd grimoire-server &amp;&amp; git log -1 --format='%h %s' main)
+(cd grimoire-web &amp;&amp; git log -1 --format='%h %s' main)
+
+<span class="cmt"># 6) 테스트 전수 (실측 명령으로 확인 — 숫자 하드코딩 금지 규칙)</span>
+(cd grimoire-server &amp;&amp; npm test 2&gt;&amp;1 | tail -3)
+(cd grimoire-web &amp;&amp; npm test -- --run 2&gt;&amp;1 | tail -3)
+
+<span class="cmt"># 7) 사슴악마 시각 정본 API 응답 확인</span>
+curl -s https://api.grimoire-book.com/api/themes/deerdevil | head -c 300
+
+<span class="cmt"># 8) 센서 독립 실행 (developers/qa 대용)</span>
+.claude/scripts/sensor-server.sh
+.claude/scripts/sensor-web.sh
+.claude/scripts/sensor-docs-sync.sh
+.claude/scripts/sensor-security-gate.sh</pre>
+
+<!-- ========== Section 13: Legend ========== -->
+<h2 id="legend">13. 범례 + 변경 이력</h2>
+
+<div class="section-box">
+  <div class="section-title">카드 보더 색상</div>
+  <div class="legend">
+    <div class="legend-row"><div class="legend-swatch" style="border-left: 3px solid var(--purple);"></div> Layer 0 — 프롬프트 방법론 (최외곽 정본) / research Canonical</div>
+    <div class="legend-row"><div class="legend-swatch" style="border-left: 3px solid var(--gold);"></div> Layer 1 / 2 — 기획·규칙 (root 정본)</div>
+    <div class="legend-row"><div class="legend-swatch" style="border-left: 3px solid var(--blue);"></div> server 정본 (api-contract · data-model · ai-cost-table 등)</div>
+    <div class="legend-row"><div class="legend-swatch" style="border-left: 3px solid var(--green);"></div> web 정본 (theme-spec · design-tokens)</div>
+    <div class="legend-row"><div class="legend-swatch" style="border-left: 3px solid var(--orange);"></div> Live 캐시 + reports/ (에이전트 자동 갱신)</div>
+    <div class="legend-row"><div class="legend-swatch" style="border-left: 3px solid var(--cyan);"></div> 디렉토리 (research/ · reports/ · .claude/ · prompt-engineering/)</div>
+    <div class="legend-row"><div class="legend-swatch" style="border-left: 3px solid var(--teal);"></div> 에이전트 노드 (researcher · planner · qa 등)</div>
+    <div class="legend-row"><div class="legend-swatch" style="border-left: 3px solid var(--sepia);"></div> 사슴악마 시각 정본 (deerdevil 관련 · Grimoire 고유)</div>
+    <div class="legend-row"><div class="legend-swatch" style="border-left: 3px solid var(--dim);"></div> Layer 4 — 구현·이력 (CHANGELOG · TODO)</div>
+    <div class="legend-row"><span style="color:var(--teal); font-weight:700;">⇄</span> server ↔ web 양방향 동기화 대상 10파일 &nbsp;|&nbsp; 🔒 server-only 1파일 (ai-cost-table.md)</div>
+  </div>
+</div>
+
+<div class="section-box">
+  <div class="section-title">변경 이력</div>
+  <table>
+    <tr><th>버전</th><th>날짜</th><th>변경</th></tr>
+    <tr><td><strong>v2.0</strong></td><td>2026-04-18</td><td>RoadRage DOC_MAP v1.2 스타일 전면 도입 · 전체 .md 파일 위계 피라미드 카드 시각화 · Mermaid 3 다이어그램 (Layer 피라미드 · 에이전트 flow · 참조 flow) · ASCII 폴더 트리에 reports/ + research/ 계층 반영 · §10 Grimoire 고유 제약 (§0 원가 + 사슴악마 시각 정본) 독립 섹션 · 다크 테마 + 사슴악마 세피아 accent</td></tr>
+    <tr><td>v1.1</td><td>2026-04-16</td><td>CLAUDE.md §14 에이전트 체인 + 시각 정본 연결 반영</td></tr>
+    <tr><td>v1.0</td><td>2026-03-29</td><td>최초 작성 · 레포 동기화 매트릭스 · 폴더 구조 라이트 테마</td></tr>
+  </table>
+</div>
+
+<footer>
+  ProjectGrimoire 문서 관계도 · DOC_MAP v2.0 · 2026-04-18<br>
+  <code>CLAUDE.md §5 + §14 + §15</code> 정본 · 변경 시 이 파일 직접 수정
+</footer>
+
+<script>
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: 'dark',
+    themeVariables: {
+      fontFamily: 'SUIT Variable, Pretendard, -apple-system, sans-serif',
+      darkMode: true,
+      background: '#111320',
+      primaryColor: '#c4a46a',
+      primaryTextColor: '#e0e0e0',
+      primaryBorderColor: '#c4a46a',
+      lineColor: '#888',
+      secondaryColor: '#141622',
+      tertiaryColor: '#0d0f1a',
+      textColor: '#e0e0e0',
+      mainBkg: '#141622',
+      clusterBkg: '#0a0c14',
+      clusterBorder: '#2a2a3a',
+      edgeLabelBackground: '#141622',
+      labelTextColor: '#e0e0e0',
+    },
+  });
+</script>
+</body>
+</html>

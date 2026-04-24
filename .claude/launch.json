@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "grimoire-server",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "start:dev", "--prefix", "grimoire-server"],
+      "port": 3000
+    },
+    {
+      "name": "grimoire-web",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev", "--prefix", "grimoire-web"],
+      "port": 3001
+    }
+  ]
+}

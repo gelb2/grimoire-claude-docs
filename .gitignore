@@ -1,0 +1,54 @@
+# ============================================================
+# ProjectGrimoire 루트 workspace .gitignore
+# ============================================================
+# 목적: CLAUDE.md·PLANNING·.claude·prompt-engineering·research를
+#       PRIVATE git repo로 박제. grimoire-server/web은 독립 관리.
+# ============================================================
+
+# ──────────────── 독립 git 레포 (별도 repo로 관리)
+grimoire-server/
+grimoire-web/
+
+# ──────────────── 의존성
+node_modules/
+
+# ──────────────── 런타임·빌드 산출물 (재생성 가능)
+.launchd-logs/
+
+# reports/ — 자율 에이전트 매일 덮어쓰기. INCIDENT만 보존, 나머지 제외
+reports/AI_COST_MONITOR.md
+reports/COST_AUDIT_REPORT.md
+reports/DEV_REPORT.md
+reports/PLANNER_REPORT.md
+reports/QA_REPORT.md
+reports/SWEEP_REPORT.md
+reports/VISUAL_CANON_REPORT.md
+
+# ──────────────── 로컬 IDE / OS
+.idea/
+.obsidian/
+.DS_Store
+**/.DS_Store
+
+# ──────────────── Obsidian 임시 파일
+무제.base
+*.base
+
+# ──────────────── Claude Code — 사용자별 (공유 금지)
+.claude/settings.local.json
+
+# ──────────────── 민감 파일 (절대 커밋 금지)
+# ACCOUNTS.md: API 키·계정·웹훅 시크릿 포함
+ACCOUNTS.md
+.env
+.env.*
+*.pem
+*.key
+*.p12
+secrets/
+credentials.json
+
+# ──────────────── 기타
+*.log
+*.tmp
+.cache/
