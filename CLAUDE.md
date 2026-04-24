@@ -391,6 +391,20 @@ chmod +x .githooks/pre-push
 5. "기록하겠습니다"가 아니라 **실제로 Write tool로 파일을 생성/수정**해야 한다
 6. 세션 기록에는 최소한 다음을 포함: 작업 목록, 커밋 요약, 버전, 배포 여부, 미해결 이슈
 
+### 서브에이전트 리포트 박제 규칙 (2026-04-25 신설)
+
+> **사유**: 세션 #1 회귀분석에서 "grimoire-qa 5/5 PASS"를 표 요약만 남기고 raw output 미첨부한 것이 발견됨. Fowler "sensors optimised for LLM consumption" 원칙 + grimoire-qa 에이전트 프롬프트 `[MUST] raw stdout 전체 첨부` 위반. 재발 방지.
+
+서브에이전트(grimoire-qa / researcher / cost-accountant / visual-canon-keeper / planner / server / web)를 `Task` tool로 호출해 그 결과를 세션 메모리 · PROGRESS · HANDOVER 등에 기록할 때:
+
+- **[MUST]** 서브에이전트가 반환한 **raw 리포트 원문 전체**를 별도 섹션으로 첨부. 요약·표 재가공본만 남기면 검증 투명성 FAIL
+- **[MUST]** raw 원문 섹션은 `<details>` 또는 `## 서브에이전트 원본 리포트 — {에이전트명}` 헤더로 구분해 Claude 자가 요약과 구별 가능해야 함
+- **[SHOULD]** 요약·표는 raw 위에 추가적으로 작성 — 독자 편의. 단 raw를 대체하면 안 됨
+- **[SHOULD]** 서브에이전트 호출 명령(프롬프트 요약 + subagent_type + agentId) 함께 기록하여 재현성 확보
+- **[MUST NOT]** "grimoire-qa PASS 판정" 같이 결과만 재서술하고 원본 미인용. 이는 Claude 자가 요약을 qa 독립 검증으로 위장하는 행위로 간주됨
+
+적용 범위: 본 절대 규칙 이전 작성된 기록(세션 #1 등)은 **소급 적용 안 함**. 본 규칙 신설 이후 서브에이전트 호출 결과부터 준수.
+
 ---
 
 ## 13. 참고 프로젝트
