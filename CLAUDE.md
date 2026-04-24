@@ -29,7 +29,7 @@
 |------|------|------|
 | grimoire-web | 프론트엔드 (멀티테넌트 뷰어, 작가 대시보드) | Next.js 16+ (App Router), TypeScript, Tailwind CSS 4 |
 | grimoire-server | 백엔드 API (테마 생성, 원고 파싱, 인증) | NestJS, TypeScript, Prisma, PostgreSQL |
-| **grimoire-claude-docs** (2026-04-25 신설, PRIVATE) | 루트 workspace 박제 — CLAUDE.md + PLANNING_GRIMOIRE.md + `.claude/`(Skills/Agents/Hooks) + prompt-engineering + research + seed-data/classics | Markdown + Shell + JSON (런타임 코드 없음) |
+| **grimoire-claude-docs** (2026-04-25 신설, PRIVATE, 원격: `gelb2/grimoire-claude-docs`) | 루트 workspace 박제 — CLAUDE.md + PLANNING_GRIMOIRE.md + `.claude/`(Skills/Agents/Hooks) + prompt-engineering + research(Harness Engineering 정본) + seed-data/classics | Markdown + Shell + JSON (런타임 코드 없음) |
 
 ### 출발점
 
@@ -159,6 +159,8 @@ DeerDevil (사슴악마 단편소설 웹 뷰어)을 프로토타입으로 하여
 | UI 디자인 시스템 | `DESIGN.md` | web only |
 | Prisma 스키마 상세 | `SCHEMA.md` | server only |
 | AI 분석 명세 | `docs/ai-analysis-spec.md` | server (정본) → web (복사) |
+| **Harness Engineering (AI 에이전트 설계 방법론)** | `research/HARNESS_ENGINEERING.md` | **root (grimoire-claude-docs) 정본** — server/web에 복사본 두지 않음 (개념이 server/web보다 상위층) |
+| **Skills·Agents·Hooks 구현체** | `.claude/skills/` + `.claude/agents/` + `.claude/settings.json` + `.claude/scripts/` | **root only** (server/web는 `.claude/` 없음) |
 | 이용약관 | `docs/TERMS_OF_SERVICE.md` | server (정본) → web (복사) |
 | 개인정보보호방침 | `docs/PRIVACY_POLICY.md` | server (정본) → web (복사) |
 
@@ -370,6 +372,18 @@ chmod +x .githooks/pre-push
 
 > **모든 세션(로컬/리모트/웹) 종료 전에 반드시 아래를 수행한다. 예외 없음.**
 
+### 메모리 디렉토리 위치 (절대 경로)
+
+메모리 파일들의 **실제 저장 위치**는 루트 workspace가 아닌 사용자 홈의 Claude Code 프로젝트 디렉토리:
+
+```
+/Users/sokol/.claude/projects/-Users-sokol-Desktop-Git-ProjectGrimoire/memory/
+```
+
+짧게 쓸 때는 `memory/...`로 표기하되, 실제로는 위 절대 경로를 가리킨다. 루트 workspace나 grimoire-claude-docs repo에는 **포함되지 않음** (Claude Code가 사용자별 관리하는 영역).
+
+### 절대 규칙
+
 1. 코드 변경이 있었으면 `memory/project_session_YYYYMMDD[_N].md` 작성
 2. `memory/MEMORY.md` 인덱스에 해당 파일 추가
 3. `memory/project_remaining_tasks.md` 현행화 (완료/추가 항목 반영)
@@ -390,12 +404,14 @@ chmod +x .githooks/pre-push
 
 ---
 
-## 14. 멀티 에이전트 구조
+## 14. 멀티 에이전트 · Skills · Hooks 구조 (Harness Engineering 실제 구성)
 
-> 2026-04-15 도입. projectZenith 패턴 차용 + Grimoire 고유 역할(cost-accountant, visual-canon-keeper).
-> 상세 인벤토리: `memory/agents_structure.md` 참조.
+> 2026-04-15 Agents 도입. projectZenith 패턴 차용 + Grimoire 고유 역할.
+> 2026-04-25 Skills 3종 + Hooks 6이벤트 + 루트 workspace PRIVATE repo 박제 (`gelb2/grimoire-claude-docs`).
+> 상세 방법론: `research/HARNESS_ENGINEERING.md` (루트 정본)
+> 세션 기록: `memory/project_session_20260425.md`, `project_session_20260425_2.md` (절대 경로는 §12 참조)
 
-### 에이전트 7개 (`.claude/agents/`)
+### 14.1 Agents 7개 (`.claude/agents/*.md`)
 
 | 에이전트 | 역할 | 도구 |
 |---------|------|------|
@@ -407,31 +423,66 @@ chmod +x .githooks/pre-push
 | server | NestJS 백엔드 개발 | +Bash |
 | web | Next.js 프론트엔드 개발 | +Bash |
 
-### 일일 자율 실행 (launchd, 18:00~23:30 KST)
+각 에이전트 `.md` 하단에 "Skills 프로토콜 참조" 섹션으로 `.claude/skills/*/SKILL.md` 경로 embed (ouroboros 방식 — 공식 스펙상 서브에이전트는 Skill 자동 발동 불가).
 
+### 14.2 Skills 3종 (`.claude/skills/<name>/SKILL.md`, 2026-04-25 도입)
+
+| Skill | 트리거 (UserPromptSubmit hook이 자동 매칭) | 용도 |
+|---|---|---|
+| macos-tcc-handling | "python3.13", "TCC", "다이얼로그", "매번 허용", "docker login", "credsStore" 등 11개 | Docker credsStore=desktop → osxkeychain 강제 |
+| production-bug-triage | "fetch aborted", "작품을 불러올 수", "signal timed out", "cold start", "502/504" 등 16개 | curl → 코드 → 수치 3단계 Chain-of-Verification |
+| claude-in-chrome-recovery | "not connected", "extension", "tabs_context_mcp", "navigate" 등 9개 | Chrome MCP 최소 3회 재시도 + javascript_tool URL 확인 |
+
+### 14.3 Hooks 6이벤트 7스크립트 (`.claude/settings.json`)
+
+| Hook | matcher | 스크립트 | 용도 |
+|---|---|---|---|
+| SessionStart | - | check-memory-freshness.sh | 메모리 freshness 체크 |
+| Stop | - | stop-memory-guard.sh | 응답 종료 시 메모리 강제 기록 |
+| UserPromptSubmit | - | user-prompt-memory-check.sh | 메모리 참조 가드 |
+| UserPromptSubmit | - | skill-injector.sh (2026-04-25) | Skill triggers 키워드 매칭 → 자동 주입 |
+| PreCompact | - | pre-compact-memory-guard.sh | 컨텍스트 압축 전 메모리 보호 |
+| PreToolUse | Bash | pretouluse-bash-guard.sh (2026-04-25) | `git push origin main`, `rm -rf /`, `git reset --hard` 차단 |
+| PostToolUse | Edit\|Write | post-edit-tsc.sh (2026-04-25) | `.ts/.tsx/.cts/.mts` 편집 후 해당 레포 `tsc --noEmit` 자동 |
+
+### 14.4 Sensors 4개 (`.claude/scripts/sensor-*.sh`, 2026-04-16 이전 도입)
+
+| Sensor | 용도 |
+|---|---|
+| sensor-docs-sync.sh | server ↔ web docs 9종 해시 일치 검증 |
+| sensor-security-gate.sh | 인증/권한/레이트리밋 코드 패턴 검증 |
+| sensor-server.sh | server 빌드/테스트 게이트 |
+| sensor-web.sh | web 빌드/테스트 게이트 |
+
+### 14.5 Knowledge 3개 (`.claude/knowledge/`, 2026-04-18 도입)
+- README.md · agent-system.md · sensors.md (정적 참조 문서)
+
+### 14.6 자율 실행 현황 (2026-04-25 기준)
+
+launchd plist 비활성 상태 (실측: `~/Library/LaunchAgents/com.grimoire.*.plist` 없음). 2026-04-19 세션에서 "재활성 보류" 결정. 현재 에이전트는 **on-demand Task tool 호출**로만 사용.
+
+원래 계획했던 스케줄(참조용):
 ```
-18:04  researcher          → reports/SWEEP_REPORT.md + reports/AI_COST_MONITOR.md
-19:08  cost-accountant     → reports/COST_AUDIT_REPORT.md
-20:11  planner             → reports/PLANNER_REPORT.md
-21:14  visual-canon-keeper → reports/VISUAL_CANON_REPORT.md
-22:17  server + web (병렬) → reports/DEV_REPORT.md
-23:21  qa                  → reports/QA_REPORT.md → 배포 게이트
+18:04 researcher / 19:08 cost-accountant / 20:11 planner /
+21:14 visual-canon-keeper / 22:17 server+web / 23:21 qa
 ```
 
-plist 위치: `~/Library/LaunchAgents/com.grimoire.{에이전트}.plist`
-로그 위치: `.launchd-logs/{에이전트}.log`
-
-### 핵심 제약 (Grimoire 고유)
+### 14.7 핵심 제약 (Grimoire 고유)
 1. **PLANNING §0 원가 철칙**: 새 AI 기능은 cost-accountant 마진 ≥3배 검증 없이 기획 진행 불가
 2. **사슴악마 시각 정본**: 새 UI/테마/포맷 출력은 visual-canon-keeper 정본 검수 없이 구현 불가
 3. **작가 콘텐츠 보호**: 소설 본문 수정·인용·로깅 전 에이전트 공통 금지
 
-### Zenith 대비 차이 + 미도입 항목
+### 14.8 Zenith 대비 차이
 - copywriter 없음 (작가 본인 콘텐츠, 시스템 텍스트 적음)
 - designer 역할은 visual-canon-keeper 겸직
 - iOS 에이전트 없음 (웹 전용 플랫폼)
 - cost-accountant는 Grimoire 고유 (Zenith에 없음)
-- **미도입**: sensor-*.sh 센서 스크립트, `.claude/knowledge/` 디렉토리, `TASK_QUEUE.json`, `AUTOMATION.md`
+
+### 14.9 미도입 항목 (실측 확정, 2026-04-25)
+- `TASK_QUEUE.json` — 태스크 큐 파일
+- launchd 자율 실행 — 결정: **비활성 유지** (토큰 비용 + cost-accountant 마진 미연동 이슈)
+- Slash commands (`.claude/commands/*.md`) — Phase 2 P1 계획 (dev-login-smoke, deploy-precheck, refund-logic-audit)
+- `.mcp.json` 도메인 특화 MCP — Phase 3 P3
 
 ---
 

@@ -453,31 +453,43 @@ v2 추가 제안:
 - ✅ 3대 레포 분석
 - ✅ Skills 개념 정리
 
-### Phase 1 — 1~2일 (P0)
+### Phase 1 — 1~2일 (P0) — **완료 (2026-04-25)**
 
 **목표**: Edit 직후 강제 검증 축 확보 + 재발 방지 skill 3종
 
-- [ ] `grimoire-web/.githooks/pre-push` 이식 (server 스크립트 그대로)
-- [ ] 루트 `.claude/settings.json`에 `PostToolUse` hook 추가
+- [x] `grimoire-web/.githooks/pre-push` 이식 — 실제로는 2026-04-17에 이미 이식 완료 상태 (422 bytes, 4단계 tsc/test/build/docs). 2026-04-25 검증 PASS.
+- [x] 루트 `.claude/settings.json`에 `PostToolUse` hook 추가 (matcher=Edit|Write, timeout=60)
   ```json
   "PostToolUse": [{
     "matcher": "Edit|Write",
     "hooks": [{
       "type": "command",
-      "command": "bash /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/scripts/post-edit-tsc.sh \"$CLAUDE_TOOL_INPUT_file_path\"",
-      "timeout": 30
+      "command": "bash /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/scripts/post-edit-tsc.sh",
+      "timeout": 60
     }]
   }]
   ```
-  `post-edit-tsc.sh`는 파일 경로 기반으로 해당 레포 판별 → `npx tsc --noEmit` 실행 → 실패 시 stderr로 리포트
-- [ ] `.claude/skills/` 디렉토리 신설 + 3 skill
-  - `.claude/skills/macos-tcc-handling/SKILL.md`
-  - `.claude/skills/production-bug-triage/SKILL.md`
-  - `.claude/skills/claude-in-chrome-recovery/SKILL.md`
+  `post-edit-tsc.sh`는 stdin JSON + 인자 fallback 양쪽 지원. `.ts/.tsx/.cts/.mts` 화이트리스트, 그 외는 조용히 exit 0. 파일 경로 기반으로 grimoire-server/ 또는 grimoire-web/ 판별 → `npx tsc --noEmit` 실행 → 실패 시 stderr 20줄만 출력, Claude 흐름은 차단하지 않음.
+- [x] `.claude/skills/` 디렉토리 신설 + 3 skill (2026-04-25)
+  - `.claude/skills/macos-tcc-handling/SKILL.md` — credsStore=desktop → osxkeychain 강제. "매번 허용" 답변 금지
+  - `.claude/skills/production-bug-triage/SKILL.md` — curl → 코드 경로 → 수치 근거 3단계 Chain-of-Verification
+  - `.claude/skills/claude-in-chrome-recovery/SKILL.md` — 최소 3회 재시도 + javascript_tool URL 확인 + 새 탭 우회
 
-### Phase 2 — 3~5일 (P1)
+**독립 검증**: grimoire-qa 서브에이전트 5/5 PASS (`grimoire-server/PROGRESS_HARNESS_P0.md` 참조).
+
+### Phase 2 — 3~5일 (P1) — **부분 완료 (2026-04-25 세션 #2)**
 
 **목표**: Slash commands + dev-login-smoke + db-sync 예외 옵션
+
+이번 세션 #2에서 Hook 중심 변주로 다음을 먼저 완료:
+
+- [x] **UserPromptSubmit `skill-injector.sh`** — Skill frontmatter `triggers:` 키워드 매칭 → `hookSpecificOutput.additionalContext`로 자동 주입. oh-my-claudecode 패턴 차용. 세션 내 중복 주입 방지
+- [x] **PreToolUse `pretouluse-bash-guard.sh` (matcher=Bash)** — `git push origin main` / `git reset --hard` / `rm -rf /` 등 destructive 명령 exit 2 차단. `SKIP_INTERACTIVE=1 make deploy-prod`는 경고만
+- [x] **Skill 3종 `triggers:` frontmatter 추가** — 36개 키워드 (macos-tcc 11 / bug-triage 16 / chrome 9)
+- [x] **Agent 7개 ouroboros 방식 Skill 참조** — 각 에이전트 `.md` 하단에 "Skills 프로토콜 참조" 섹션 + SKILL.md 경로 (Claude Code 공식 스펙상 서브에이전트는 Skill 자동 발동 불가. 프롬프트에 경로 박아서 Read로 로드하게 함)
+- [x] **루트 workspace PRIVATE repo 박제** — `gelb2/grimoire-claude-docs` 생성. CLAUDE.md·PLANNING·`.claude/`·prompt-engineering·research·seed-data 전부 버전 관리. ACCOUNTS.md / settings.local.json / 서브 레포 2개는 `.gitignore`로 제외
+
+미수행 (Phase 2 잔여):
 
 - [ ] `.claude/commands/dev-login-smoke.md` — deerdevil 실계정 로그인 시도 후 401 또는 "signal timed out" 감지 시 경고
 - [ ] `.claude/commands/deploy-precheck.md` — preflight 수동 호출 + git 브랜치 정합성
@@ -485,12 +497,13 @@ v2 추가 제안:
 - [ ] `grimoire-server/scripts/db-sync.ts`에 `--preserve-accounts` 옵션 추가 — 예외 목록의 email/password는 마스킹 스킵
 - [ ] `grimoire-web/src/app/login/page.tsx` 테스트 계정 하드코딩 교체
 
-### Phase 3 — 1주 (P2)
+### Phase 3 — 1주 (P2) — **부분 완료 (2026-04-25)**
 
 **목표**: 모델 티어링 + CLAUDE.md 현행화 + HANDOVER 자동화
 
+- [x] **PreToolUse hook — main 직접 push 차단** (세션 #2 Phase 2와 중복, 위 `pretouluse-bash-guard.sh` 참조)
+- [x] **CLAUDE.md §14 "미도입" 목록 실측 반영** (2026-04-25 drift 해소 작업에서 처리)
 - [ ] oh-my-claudecode 참조 — Haiku/Sonnet/Opus 티어링 정책. `ai-cost-table.md` 마진 재검증 (cost-accountant 필수)
-- [ ] CLAUDE.md §14 "미도입" 목록 실측 반영. sensors/knowledge/AUTOMATION 실재 인정
 - [ ] `.claude/commands/handover-refresh.md` — git log + TODO + 배포 상태 자동 수집해 HANDOVER.md 갱신
 - [ ] superpowers `verification-before-completion` skill 이식 (MIT — 선별 복사 가능)
 - [ ] superpowers `writing-plans` 2~5분 단위 분할 규칙 grimoire-planner 에이전트에 이식
@@ -502,10 +515,11 @@ v2 추가 제안:
 - [ ] `.mcp.json` — Polar 크레딧 조회 MCP 정의 및 실증
 - [ ] Azure Container App 상태 MCP (`az containerapp logs/show` 래퍼)
 - [ ] Ouroboros Ambiguity Score 개념 차용 — 기획 단계 게이트
-- [ ] PreToolUse hook — main 직접 push 차단
+- [x] PreToolUse hook — main 직접 push 차단 ✅ (세션 #2에서 선제 완료)
 - [ ] Sensor hit-rate 메트릭 (`.claude/scripts/sensor-*.sh` 실행 결과를 집계)
 - [ ] Claude SDK / OpenAI SDK signal 전파 (서버 abort 시 실제 API 호출도 cancel)
-- [ ] launchd 재활성 여부 결정 + AUTOMATION.md 현행화
+- [ ] launchd 재활성 여부 결정 — **"비활성 유지" 결정 (2026-04-25)**: plist 부재 + 매일 토큰 비용 + cost-accountant 마진 검증 미연동. 재활성 보류
+- [ ] AUTOMATION.md 현행화
 
 ### Phase 5 — 장기 실험
 

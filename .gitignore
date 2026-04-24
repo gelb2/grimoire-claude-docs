@@ -36,6 +36,7 @@ reports/VISUAL_CANON_REPORT.md
 
 # ──────────────── Claude Code — 사용자별 (공유 금지)
 .claude/settings.local.json
+.claude/state/
 
 # ──────────────── 민감 파일 (절대 커밋 금지)
 # ACCOUNTS.md: API 키·계정·웹훅 시크릿 포함
