@@ -797,7 +797,7 @@ gh repo create gelb2/grimoire-workspace --private --source=. --remote=origin --p
 
 각 에이전트 `.md` 하단에 "Skills 프로토콜 참조" 섹션으로 `.claude/skills/*/SKILL.md` 경로 embed (ouroboros 방식 — 공식 스펙상 서브에이전트는 Skill 자동 발동 불가).
 
-### 14.2 Skills 7종 (`.claude/skills/<name>/SKILL.md`)
+### 14.2 Skills 9종 (`.claude/skills/<name>/SKILL.md`)
 
 | Skill | 트리거 / 호출 | 용도 |
 |---|---|---|
@@ -805,9 +805,11 @@ gh repo create gelb2/grimoire-workspace --private --source=. --remote=origin --p
 | production-bug-triage | UserPromptSubmit 자동 매칭 (16 키워드) | curl → 코드 → 수치 3단계 Chain-of-Verification |
 | claude-in-chrome-recovery | UserPromptSubmit 자동 매칭 (9 키워드) | Chrome MCP 3회 재시도 + javascript_tool URL 확인 |
 | verification-before-completion | UserPromptSubmit 자동 매칭 (17 키워드) | Gate 1·2·3 (코드/기능/회귀) 실측 증거 강제 |
-| **refund-logic-audit** (2026-04-25 #7 마이그레이션) | 사용자 명시 호출 `/refund-logic-audit` (`disable-model-invocation: true`) | UI 환불 문구 ↔ 서버 catch 정합성 |
-| **dev-login-smoke** (2026-04-25 #7 마이그레이션) | 사용자 명시 호출 `/dev-login-smoke` (동일) | db-sync 회귀 감지 + dev preflight |
-| **deploy-precheck** (2026-04-25 #7 마이그레이션) | 사용자 명시 호출 `/deploy-precheck` (동일) | 수동 배포 직전 7-step 게이트 |
+| refund-logic-audit (2026-04-25 #7 마이그레이션) | 사용자 명시 호출 `/refund-logic-audit` (`disable-model-invocation: true`) | UI 환불 문구 ↔ 서버 catch 정합성 |
+| dev-login-smoke (2026-04-25 #7 마이그레이션) | 사용자 명시 호출 `/dev-login-smoke` (동일) | db-sync 회귀 감지 + dev preflight |
+| deploy-precheck (2026-04-25 #7 마이그레이션) | 사용자 명시 호출 `/deploy-precheck` (동일) | 수동 배포 직전 7-step 게이트 |
+| **writing-plans** (2026-04-25 #8 신설, superpowers MIT 차용) | UserPromptSubmit 자동 매칭 (10 키워드: "계획 짜", "분할", "단계별로" 등) | 큰 작업(≥30분) 분할 메타 절차 (sub-task 2~5분 단위) |
+| **handover-refresh** (2026-04-25 #8 신설) | 사용자 명시 호출 `/handover-refresh [dry-run\|apply]` | grimoire-server/HANDOVER.md 자동 수집 갱신 (git log + memory + sensor + 배포 + TODO) |
 
 ### 14.3 Hooks 8 이벤트 10 스크립트 (`.claude/settings.json`)
 
@@ -824,7 +826,7 @@ gh repo create gelb2/grimoire-workspace --private --source=. --remote=origin --p
 | PostToolUse | Edit\|Write | post-edit-spec-check.sh | spec/test 누락 감지 (usecase/lib/adapter/features 화이트리스트) |
 | **PostToolBatch** (2026-04-25 #7 신설) | - (전체) | post-batch-tsc.sh | parallel batch 완료 후 server+web tsc 일괄 (debounce 60s, 빌드 중복 60% ↓ 목표) |
 
-### 14.4 Sensors 8개 (`.claude/scripts/sensor-*.sh`)
+### 14.4 Sensors 9개 (`.claude/scripts/sensor-*.sh`)
 
 | Sensor | 용도 |
 |---|---|
@@ -835,7 +837,8 @@ gh repo create gelb2/grimoire-workspace --private --source=. --remote=origin --p
 | sensor-secret-leak.sh | git tracked 파일 평문 시크릿 탐지 (라이브 prefix + 약한 default) |
 | sensor-log.sh | sensor 실행 결과 jsonl 적재 (7일 LRU TTL) |
 | sensor-hit-rate-report.sh | 주간 sensor별 PASS/WARN/FAIL 집계 + silent sensor 식별 |
-| **sensor-orchestration-ratio.sh** (2026-04-25 #7 신설, P1 placeholder) | 패턴 1 KPI: 메인 직접 작업 vs subagent 호출 비율 (P2 단계 transcript 파싱 추가 예정) |
+| sensor-orchestration-ratio.sh (2026-04-25 #7 신설, P1 placeholder) | 패턴 1 KPI: 메인 직접 작업 vs subagent 호출 비율 (P2 transcript 파싱) |
+| **sensor-credit-atomicity.sh** (2026-04-25 #8 신설, Requisite Variety 갭) | 결제·환불·CreditLog 원자성 정합 검사 (4 항목: $transaction / audit trail / 환불 분기 / webhook secret 하드코딩) |
 
 ### 14.5 Knowledge 3개 (`.claude/knowledge/`)
 - README.md · agent-system.md · sensors.md (정적 참조 문서)
