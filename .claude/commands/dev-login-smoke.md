@@ -72,10 +72,11 @@ az postgres flexible-server firewall-rule create \
   --rule-name "$RULE_NAME" \
   --start-ip-address "$MY_IP" --end-ip-address "$MY_IP" --output none
 
-PGPASSWORD='REMOVED_CREDENTIAL_010' psql \
+PGPASSWORD="REMOVED_CREDENTIAL_015" psql \
   -h grimoire-db-dev.postgres.database.azure.com \
   -U grimoireadmin -d grimoire \
   -c "SELECT email, slug, name, LENGTH(password_hash) as pw_len FROM authors WHERE slug = '$SLUG';"
+# DEV_DB_PW: ACCOUNTS.md (로컬 vault) 참조
 
 # 작업 후 반드시 방화벽 규칙 제거
 az postgres flexible-server firewall-rule delete \
