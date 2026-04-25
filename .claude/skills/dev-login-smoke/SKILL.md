@@ -1,7 +1,12 @@
 ---
+name: dev-login-smoke
 description: dev 환경 로그인 가능성 스모크 테스트. db-sync --mask-pii 회귀로 dev 로그인 불가 상태가 됐는지 감지. preflight HTTP + db-sync --preserve-accounts 정합성 + dev API 응답 3종 검증.
 argument-hint: "[선택: 검사할 작가 slug, 기본=deerdevil]"
+disable-model-invocation: true
+allowed-tools: Read, Bash, Grep
 ---
+
+> **2026-04-25 세션 #7**: `.claude/commands/dev-login-smoke.md`에서 마이그레이션. `disable-model-invocation: true`로 사용자 명시 호출만 허용 (`/dev-login-smoke`).
 
 # Dev Login Smoke Test
 

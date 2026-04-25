@@ -1,7 +1,12 @@
 ---
+name: refund-logic-audit
 description: 웹 UI에 추가된 환불 관련 문구("자동 환불", "환불됩니다", "크레딧 반환" 등)가 실제 서버 환불 로직(processRefund/refundCredit/abortableRace catch 블록)과 정합한지 grep + 코드 트레이싱으로 감사. UI 거짓말 차단.
 argument-hint: "[선택: 검사할 문구 또는 키워드, 미입력 시 표준 환불 패턴 4종 자동 검사]"
+disable-model-invocation: true
+allowed-tools: Read, Grep, Glob, Bash
 ---
+
+> **2026-04-25 세션 #7**: `.claude/commands/refund-logic-audit.md`에서 마이그레이션. Anthropic 공식 권장 ("Custom commands have been merged into skills"). `disable-model-invocation: true`로 사용자 명시 호출만 허용 (`/refund-logic-audit`).
 
 # Refund Logic Audit — 환불 UI 문구와 서버 로직 정합성 감사
 

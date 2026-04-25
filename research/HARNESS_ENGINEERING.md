@@ -797,16 +797,19 @@ gh repo create gelb2/grimoire-workspace --private --source=. --remote=origin --p
 
 각 에이전트 `.md` 하단에 "Skills 프로토콜 참조" 섹션으로 `.claude/skills/*/SKILL.md` 경로 embed (ouroboros 방식 — 공식 스펙상 서브에이전트는 Skill 자동 발동 불가).
 
-### 14.2 Skills 4종 (`.claude/skills/<name>/SKILL.md`)
+### 14.2 Skills 7종 (`.claude/skills/<name>/SKILL.md`)
 
-| Skill | 트리거 (UserPromptSubmit hook 자동 매칭) | 용도 |
+| Skill | 트리거 / 호출 | 용도 |
 |---|---|---|
-| macos-tcc-handling | 11개 ("python3.13", "TCC", "다이얼로그", "매번 허용", "credsStore" 등) | Docker credsStore=desktop → osxkeychain |
-| production-bug-triage | 16개 ("fetch aborted", "작품을 불러올 수", "signal timed out", "cold start" 등) | curl → 코드 → 수치 3단계 Chain-of-Verification |
-| claude-in-chrome-recovery | 9개 ("not connected", "extension", "tabs_context_mcp", "navigate" 등) | Chrome MCP 최소 3회 재시도 + javascript_tool URL 확인 |
-| verification-before-completion | 17개 ("완료", "PASS", "배포 끝", "이상 없음" 등) | Gate 1·2·3 (코드/기능/회귀) 실측 증거 강제 |
+| macos-tcc-handling | UserPromptSubmit 자동 매칭 (11 키워드) | Docker credsStore=desktop → osxkeychain |
+| production-bug-triage | UserPromptSubmit 자동 매칭 (16 키워드) | curl → 코드 → 수치 3단계 Chain-of-Verification |
+| claude-in-chrome-recovery | UserPromptSubmit 자동 매칭 (9 키워드) | Chrome MCP 3회 재시도 + javascript_tool URL 확인 |
+| verification-before-completion | UserPromptSubmit 자동 매칭 (17 키워드) | Gate 1·2·3 (코드/기능/회귀) 실측 증거 강제 |
+| **refund-logic-audit** (2026-04-25 #7 마이그레이션) | 사용자 명시 호출 `/refund-logic-audit` (`disable-model-invocation: true`) | UI 환불 문구 ↔ 서버 catch 정합성 |
+| **dev-login-smoke** (2026-04-25 #7 마이그레이션) | 사용자 명시 호출 `/dev-login-smoke` (동일) | db-sync 회귀 감지 + dev preflight |
+| **deploy-precheck** (2026-04-25 #7 마이그레이션) | 사용자 명시 호출 `/deploy-precheck` (동일) | 수동 배포 직전 7-step 게이트 |
 
-### 14.3 Hooks 6 이벤트 8 스크립트 (`.claude/settings.json`)
+### 14.3 Hooks 8 이벤트 10 스크립트 (`.claude/settings.json`)
 
 | Hook | matcher | 스크립트 | 용도 |
 |---|---|---|---|
@@ -815,11 +818,13 @@ gh repo create gelb2/grimoire-workspace --private --source=. --remote=origin --p
 | UserPromptSubmit | - | user-prompt-memory-check.sh | 메모리 참조 가드 |
 | UserPromptSubmit | - | skill-injector.sh | Skill triggers 키워드 매칭 → 자동 주입 |
 | PreCompact | - | pre-compact-memory-guard.sh | 컨텍스트 압축 전 메모리 보호 |
+| **InstructionsLoaded** (2026-04-25 #7 신설) | session_start | instructions-drift-check.sh | CLAUDE.md 로드 시 research §14 표기 vs 실측 drift 자동 감지 (audit only) |
 | PreToolUse | Bash | pretouluse-bash-guard.sh | `git push origin main` / `rm -rf /` / `git reset --hard` 차단 |
 | PostToolUse | Edit\|Write | post-edit-tsc.sh | `.ts/.tsx/.cts/.mts` 편집 후 해당 레포 `tsc --noEmit` 자동 |
 | PostToolUse | Edit\|Write | post-edit-spec-check.sh | spec/test 누락 감지 (usecase/lib/adapter/features 화이트리스트) |
+| **PostToolBatch** (2026-04-25 #7 신설) | - (전체) | post-batch-tsc.sh | parallel batch 완료 후 server+web tsc 일괄 (debounce 60s, 빌드 중복 60% ↓ 목표) |
 
-### 14.4 Sensors 7개 (`.claude/scripts/sensor-*.sh`)
+### 14.4 Sensors 8개 (`.claude/scripts/sensor-*.sh`)
 
 | Sensor | 용도 |
 |---|---|
@@ -830,16 +835,14 @@ gh repo create gelb2/grimoire-workspace --private --source=. --remote=origin --p
 | sensor-secret-leak.sh | git tracked 파일 평문 시크릿 탐지 (라이브 prefix + 약한 default) |
 | sensor-log.sh | sensor 실행 결과 jsonl 적재 (7일 LRU TTL) |
 | sensor-hit-rate-report.sh | 주간 sensor별 PASS/WARN/FAIL 집계 + silent sensor 식별 |
+| **sensor-orchestration-ratio.sh** (2026-04-25 #7 신설, P1 placeholder) | 패턴 1 KPI: 메인 직접 작업 vs subagent 호출 비율 (P2 단계 transcript 파싱 추가 예정) |
 
 ### 14.5 Knowledge 3개 (`.claude/knowledge/`)
 - README.md · agent-system.md · sensors.md (정적 참조 문서)
 
-### 14.6 Slash commands 3개 (`.claude/commands/*.md`)
-- `/refund-logic-audit` — UI 환불 문구 ↔ 서버 catch 블록 grep 정합성
-- `/dev-login-smoke` — db-sync --mask-pii 회귀 감지 (preflight + 정합성 + dev DB 실측)
-- `/deploy-precheck` — 수동 배포 직전 7-step 게이트 (sanity / git / secret / docs / build / CA / preflight)
+### 14.6 Slash commands 0개 (`.claude/commands/*.md` 폐기)
 
-> **공식 권장**: Anthropic 2026 release에서 commands → skills 마이그레이션 권장. 다음 작업으로 `disable-model-invocation: true` + `paths:` 부착해 skill로 전환 검토.
+> **2026-04-25 세션 #7**: Anthropic 공식 권장 ("Custom commands have been merged into skills")에 따라 3개 commands를 §14.2 Skills 7종 중 하단 3개(`refund-logic-audit` / `dev-login-smoke` / `deploy-precheck`)로 마이그레이션 + `disable-model-invocation: true` 부착. 사용자 명시 호출 (`/skill-name`)만 허용. commands 디렉토리는 비어있으나 보존.
 
 ### 14.7 자율 실행 현황 (2026-04-25 결정)
 

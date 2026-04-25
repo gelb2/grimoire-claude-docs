@@ -409,12 +409,8 @@ chmod +x .githooks/pre-push
 
 ## 13. 참고 프로젝트
 
-| 프로젝트 | 참고 대상 |
-|---------|----------|
-| DeerDevil | MD 파서, 블록 시스템, CSS Variables, 타이핑 이펙트, E2E 테스트 |
-| projectZenith | 폴더 구조, 문서 동기화, Azure 배포, 브랜치 전략, CI/CD, **멀티 에이전트 구조** |
-| YECHANGPE_urbanProjectAuto | Claude API 래퍼, 구조화 프롬프트, JSON 파싱 에러 복구, 결과 캐싱 |
-| Tajook | 크레딧 시스템 (적립/차감/로그), 재가입 방지, RLS, 관리자 크레딧 부여 |
+> **본 §13의 표는 2026-04-25 세션 #7에서 패턴 3 진행에 따라 `research/REFERENCE_PROJECTS.md`로 분리.**
+> 4개 외부 프로젝트(DeerDevil / projectZenith / YECHANGPE / Tajook)와 차용 영역 + 미차용 보류 결정은 그쪽 참조.
 
 ---
 

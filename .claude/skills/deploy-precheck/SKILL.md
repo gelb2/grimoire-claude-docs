@@ -1,7 +1,12 @@
 ---
+name: deploy-precheck
 description: 수동 배포(make deploy-{dev,prod}) 직전 정합성 종합 검증. server/web 양 레포 git 상태 + 브랜치 정합성 + sensor-secret-leak + 양 레포 docs 동기화 + Container Apps 상태 sanity. GitHub Actions 미사용 환경에서 manual deploy 게이트.
 argument-hint: "[배포 대상 환경: dev | prod] (기본 dev)"
+disable-model-invocation: true
+allowed-tools: Read, Bash, Grep, Glob
 ---
+
+> **2026-04-25 세션 #7**: `.claude/commands/deploy-precheck.md`에서 마이그레이션. `disable-model-invocation: true`로 사용자 명시 호출만 허용 (`/deploy-precheck`).
 
 # Deploy Precheck — 수동 배포 직전 정합성 게이트
 
