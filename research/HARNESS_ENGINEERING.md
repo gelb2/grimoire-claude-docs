@@ -797,7 +797,7 @@ gh repo create gelb2/grimoire-workspace --private --source=. --remote=origin --p
 
 각 에이전트 `.md` 하단에 "Skills 프로토콜 참조" 섹션으로 `.claude/skills/*/SKILL.md` 경로 embed (ouroboros 방식 — 공식 스펙상 서브에이전트는 Skill 자동 발동 불가).
 
-### 14.2 Skills 9종 (`.claude/skills/<name>/SKILL.md`)
+### 14.2 Skills 10종 (`.claude/skills/<name>/SKILL.md`)
 
 | Skill | 트리거 / 호출 | 용도 |
 |---|---|---|
@@ -808,8 +808,9 @@ gh repo create gelb2/grimoire-workspace --private --source=. --remote=origin --p
 | refund-logic-audit (2026-04-25 #7 마이그레이션) | 사용자 명시 호출 `/refund-logic-audit` (`disable-model-invocation: true`) | UI 환불 문구 ↔ 서버 catch 정합성 |
 | dev-login-smoke (2026-04-25 #7 마이그레이션) | 사용자 명시 호출 `/dev-login-smoke` (동일) | db-sync 회귀 감지 + dev preflight |
 | deploy-precheck (2026-04-25 #7 마이그레이션) | 사용자 명시 호출 `/deploy-precheck` (동일) | 수동 배포 직전 7-step 게이트 |
-| **writing-plans** (2026-04-25 #8 신설, superpowers MIT 차용) | UserPromptSubmit 자동 매칭 (10 키워드: "계획 짜", "분할", "단계별로" 등) | 큰 작업(≥30분) 분할 메타 절차 (sub-task 2~5분 단위) |
-| **handover-refresh** (2026-04-25 #8 신설) | 사용자 명시 호출 `/handover-refresh [dry-run\|apply]` | grimoire-server/HANDOVER.md 자동 수집 갱신 (git log + memory + sensor + 배포 + TODO) |
+| writing-plans (2026-04-25 #8 신설, superpowers MIT 차용) | UserPromptSubmit 자동 매칭 (10 키워드: "계획 짜", "분할", "단계별로" 등) | 큰 작업(≥30분) 분할 메타 절차 (sub-task 2~5분 단위) |
+| handover-refresh (2026-04-25 #8 신설) | 사용자 명시 호출 `/handover-refresh [dry-run\|apply]` | grimoire-server/HANDOVER.md 자동 수집 갱신 (git log + memory + sensor + 배포 + TODO) |
+| **gc-sweep** (2026-04-26 #9 신설) | 사용자 명시 호출 `/gc-sweep [dry-run\|stage\|apply]` | Fowler GC 축 1.5/5 → 3+/5 갭 해소. 7 카테고리(skills/sensors/hooks/memory/scripts/agents/prompts) 미참조·stale 자산 식별 |
 
 ### 14.3 Hooks 8 이벤트 10 스크립트 (`.claude/settings.json`)
 
@@ -837,15 +838,29 @@ gh repo create gelb2/grimoire-workspace --private --source=. --remote=origin --p
 | sensor-secret-leak.sh | git tracked 파일 평문 시크릿 탐지 (라이브 prefix + 약한 default) |
 | sensor-log.sh | sensor 실행 결과 jsonl 적재 (7일 LRU TTL) |
 | sensor-hit-rate-report.sh | 주간 sensor별 PASS/WARN/FAIL 집계 + silent sensor 식별 |
-| sensor-orchestration-ratio.sh (2026-04-25 #7 신설, P1 placeholder) | 패턴 1 KPI: 메인 직접 작업 vs subagent 호출 비율 (P2 transcript 파싱) |
-| **sensor-credit-atomicity.sh** (2026-04-25 #8 신설, Requisite Variety 갭) | 결제·환불·CreditLog 원자성 정합 검사 (4 항목: $transaction / audit trail / 환불 분기 / webhook secret 하드코딩) |
+| **sensor-orchestration-ratio.sh (2026-04-26 #9 P2 완성)** | **패턴 1 KPI: jsonl(`~/.claude/projects/.../*.jsonl`) Python 파싱. 메인 Edit/Write vs Task tool 호출 비율 + sidechain 분리 + subagent 타입 분포. 임계값: ≥0.20 PASS / 0.05~0.20 WARN / <0.05 FAIL. **2026-04-26 첫 P2 실측: 696 main vs 0 task = 0.0000 (FAIL — 패턴 1 도입했지만 실제 적용 0%)** |
+| sensor-credit-atomicity.sh (2026-04-25 #8 신설, Requisite Variety 갭) | 결제·환불·CreditLog 원자성 정합 검사 (4 항목: $transaction / audit trail / 환불 분기 / webhook secret 하드코딩) |
 
-### 14.5 Knowledge 3개 (`.claude/knowledge/`)
-- README.md · agent-system.md · sensors.md (정적 참조 문서)
+### 14.5 Knowledge 4개 (`.claude/knowledge/`)
+- README.md · agent-system.md · sensors.md · **agent-interaction-matrix.md (2026-04-26 #9 신설 — 7×7 핸드오프 매트릭스 + 산출물 정합 + 트리거 규칙 + 금지 조합)**
 
 ### 14.6 Slash commands 0개 (`.claude/commands/*.md` 폐기)
 
-> **2026-04-25 세션 #7**: Anthropic 공식 권장 ("Custom commands have been merged into skills")에 따라 3개 commands를 §14.2 Skills 7종 중 하단 3개(`refund-logic-audit` / `dev-login-smoke` / `deploy-precheck`)로 마이그레이션 + `disable-model-invocation: true` 부착. 사용자 명시 호출 (`/skill-name`)만 허용. commands 디렉토리는 비어있으나 보존.
+> **2026-04-25 세션 #7**: Anthropic 공식 권장 ("Custom commands have been merged into skills")에 따라 3개 commands를 §14.2 Skills 10종 중 (`refund-logic-audit` / `dev-login-smoke` / `deploy-precheck`)로 마이그레이션 + `disable-model-invocation: true` 부착. 사용자 명시 호출 (`/skill-name`)만 허용. commands 디렉토리는 비어있으나 보존.
+
+### 14.6.1 Prompts 7개 (`.claude/prompts/*.txt` — 2026-04-26 #9 server/web 분리)
+
+| 에이전트 | prompts 파일 |
+|---|---|
+| planner | planner.txt |
+| researcher | researcher.txt |
+| cost-accountant | cost-accountant.txt |
+| visual-canon-keeper | visual-canon-keeper.txt |
+| **server** (2026-04-26 신설) | **server.txt** ← 이전 developers.txt를 분리 |
+| **web** (2026-04-26 신설) | **web.txt** ← 이전 developers.txt를 분리 |
+| qa | qa.txt |
+
+매핑·호출 예시: `.claude/prompts/README.md` 참조. `developers.txt`는 server.txt + web.txt로 분리되어 제거됨 (§9.4 P0 해소).
 
 ### 14.7 자율 실행 현황 (2026-04-25 결정)
 

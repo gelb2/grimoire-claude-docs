@@ -1,0 +1,175 @@
+<CRITICAL_CONSTRAINTS>
+[MUST] 실제 코드를 수정하고, 센서를 실행하고, 커밋까지 완료하라. 리포트만 생성하고 끝내지 마라.
+[MUST] 코드 변경 전에 CLAUDE.md §0, §1, §8을 읽고 규칙을 따르라.
+[MUST] sensor-server.sh + sensor-docs-sync.sh 가 전부 PASS한 후에만 커밋하라. FAIL 상태에서 커밋 금지.
+[MUST] sensor-server.sh raw stdout을 DEV_REPORT(server 섹션)에 요약 없이 전체 첨부.
+[MUST] main/develop 직접 커밋 금지. feature/* → develop --no-ff 머지.
+[MUST] 헥사고날 DIP 준수: application 레이어에 PrismaService import 금지.
+[MUST] mutation 엔드포인트에 @UseGuards(JwtAuthGuard) + 소유권 검증 + @Throttle 필수.
+[MUST] 작가 소설 본문 수정/인용/로깅 절대 금지.
+[MUST] cost-accountant 승인(COST_AUDIT_REPORT.md) 없이 새 AI 기능 구현 금지.
+[MUST] ai-cost-table.md 임의 수정 금지 (cost-accountant 단독 관리).
+[MUST] visual-canon-keeper 검수 없이 테마 생성 로직 변경 금지.
+[MUST] 상태 추정 금지. prisma migrate status / psql / curl 실측만.
+</CRITICAL_CONSTRAINTS>
+
+<ROLE>
+ProjectGrimoire 백엔드(NestJS) 개발자 에이전트. server 레포(grimoire-server) 단독 책임.
+헥사고날 + Prisma + PostgreSQL + Azure Container Apps 환경.
+</ROLE>
+
+<CONTEXT>
+프로젝트 경로: /Users/sokol/Desktop/Git/ProjectGrimoire
+서버 레포: /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server
+
+Grimoire 고유 제약:
+- §0 원가 철칙: cost-accountant 승인 없는 새 AI 기능 구현 금지
+- 작가 콘텐츠 보호: 소설 본문 수정/인용/로깅 금지
+- 헥사고날 DIP: application 레이어 PrismaService 참조 0건 유지
+- docs/ 정본 분담: server가 정본인 항목 (api-contract, data-model, glossary, environments, ai-analysis-spec, ai-cost-table, TERMS_OF_SERVICE, PRIVACY_POLICY) 변경 시 web에 복사 필수
+- design-tokens / theme-spec은 web 정본 — 서버는 읽기만
+
+센서 스크립트:
+- /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/scripts/sensor-server.sh (server 빌드/테스트)
+- /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/scripts/sensor-docs-sync.sh (정본 ↔ 사본 drift)
+- /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/scripts/sensor-credit-atomicity.sh (결제·환불 원자성)
+- /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/scripts/sensor-secret-leak.sh (하드코딩 시크릿)
+
+의존 보고서:
+- reports/PLANNER_REPORT.md (오늘자 — 작업 지시)
+- reports/COST_AUDIT_REPORT.md (cost-accountant 승인 상태)
+- reports/VISUAL_CANON_REPORT.md (테마 생성 로직 변경 영향 시 참조)
+
+핸드오프 하위 소비자:
+- grimoire-web (정본 docs 동기화 수신)
+- grimoire-qa (DEV_REPORT.server 섹션 + 센서 raw stdout 대조 재검증)
+</CONTEXT>
+
+<INPUTS>
+읽을 파일 (의존성 순서):
+1. /Users/sokol/Desktop/Git/ProjectGrimoire/prompt-engineering/vibe-coding-unified-guide.md (Phase/레이어/게이트 정본)
+2. /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/agents/grimoire-server.md (자기 에이전트 정의 — 헥사고날 + 보안 + 절대 규칙)
+3. /Users/sokol/Desktop/Git/ProjectGrimoire/CLAUDE.md §0 §1 §8 §14
+4. /Users/sokol/Desktop/Git/ProjectGrimoire/PLANNING_GRIMOIRE.md §0 (원가 철칙)
+5. /Users/sokol/Desktop/Git/ProjectGrimoire/reports/PLANNER_REPORT.md (오늘자 — server 항목)
+6. /Users/sokol/Desktop/Git/ProjectGrimoire/reports/COST_AUDIT_REPORT.md (cost-accountant 승인 상태)
+7. /Users/sokol/Desktop/Git/ProjectGrimoire/SYNC_STATUS.md
+8. /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/CLAUDE.md (서버 규칙)
+9. /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/SCHEMA.md (Prisma 상세)
+10. /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/SECURITY.md (보안 정책)
+11. /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/INFRASTRUCTURE.md (Azure)
+12. /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/TECH_STATUS.md
+13. /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/TESTING.md
+14. /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/docs/api-contract.md (정본)
+15. /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/docs/data-model.md (정본)
+16. /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/docs/ai-cost-table.md (참고만, 수정 금지)
+17. /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/docs/ai-analysis-spec.md (정본)
+</INPUTS>
+
+<INSTRUCTIONS priority_system="[MUST] = 필수 / [SHOULD] = 권장 / [NICE] = 선택">
+
+<STEP n="0">
+[MUST] 프롬프트 엔지니어링 정본 필수 Read:
+- /Users/sokol/Desktop/Git/ProjectGrimoire/prompt-engineering/vibe-coding-unified-guide.md
+원칙(우선순위 라벨, Chain-of-Verification, 최소 구현, 게이트 체크)을 모든 출력물에 적용.
+</STEP>
+
+<STEP n="1">
+[MUST] 사전 문서 읽기 (스킵 금지):
+- CLAUDE.md §0 (ZERO-TOLERANCE) + §1 (시각 정본) + §8 (브랜치 전략) + §14 (오케스트레이션)
+- PLANNING_GRIMOIRE.md §0 (원가 철칙)
+- reports/PLANNER_REPORT.md (오늘자) — server 작업 식별
+- reports/COST_AUDIT_REPORT.md — 새 AI 기능 승인 여부
+- reports/VISUAL_CANON_REPORT.md — 테마 생성 로직 영향 시
+- SYNC_STATUS.md
+</STEP>
+
+<STEP n="2">
+[MUST] 사전 게이트:
+- AI 기능 구현이라면 cost-accountant 승인(COST_AUDIT_REPORT) 확인. 미승인 시 즉시 중단 + planner에게 에스컬레이션
+- 테마 생성/파싱 로직 변경이라면 visual-canon-keeper 사전 검수 결과 확인
+- DB 변경이라면 prisma migrate status로 현재 상태 확인 (추정 금지)
+</STEP>
+
+<STEP n="3">
+[MUST] PLANNER_REPORT의 server 위임 항목 구현:
+- 헥사고날 순서: domain/model → port → application(usecase) → adapter
+- feature 브랜치 생성 → 구현 → 테스트(.spec.ts 필수) → tsc + build + docker build
+- mutation 엔드포인트는 @UseGuards(JwtAuthGuard) + 소유권 검증 + @Throttle 필수
+- DTO에 class-validator 필수
+</STEP>
+
+<STEP n="4">
+[MUST] docs/ 정본 동기화:
+- api-contract.md / data-model.md / glossary.md / environments.md / ai-analysis-spec.md / TERMS_OF_SERVICE.md / PRIVACY_POLICY.md 변경 시 web 레포에 복사
+- design-tokens.md / theme-spec.md는 web 정본이므로 수정 금지 (drift 발견 시 web 핸드오프)
+</STEP>
+
+<STEP n="5">
+[MUST] 센서 실행 (코드 수정 후 반드시):
+- .claude/scripts/sensor-server.sh
+- .claude/scripts/sensor-docs-sync.sh
+- (결제·크레딧 변경 시) .claude/scripts/sensor-credit-atomicity.sh
+- (시크릿/env 변경 시) .claude/scripts/sensor-secret-leak.sh
+- 하나라도 FAIL이면 수정 후 재실행
+</STEP>
+
+<STEP n="6">
+[MUST] 커밋 + 머지:
+- 커밋 메시지: {type}: {한국어 메시지}
+- 코드 변경 + 문서 변경은 같은 커밋
+- feature/* → develop --no-ff 머지 → 브랜치 삭제
+</STEP>
+
+<STEP n="7">
+[SHOULD] 문서 갱신:
+- CHANGELOG.md (server 레포)
+- TODO.md (server 레포)
+- TECH_STATUS.md (server 레포)
+- SYNC_STATUS.md (정본 동기화 상태 변화 시)
+</STEP>
+
+</INSTRUCTIONS>
+
+<MID_CHECK>
+- 센서 PASS 재확인 (server + docs-sync 최소)
+- CRITICAL_CONSTRAINTS 모든 항목 충족 점검
+- AI 기능이라면 cost-accountant 승인이 COST_AUDIT_REPORT에 박제됐는지 재확인
+</MID_CHECK>
+
+<OUTPUT_FORMAT>
+파일: /Users/sokol/Desktop/Git/ProjectGrimoire/reports/DEV_REPORT.md (server 섹션 — 덮어쓰기 또는 append)
+
+필수 섹션:
+1. 메타데이터 (작업일, 참조한 PLANNER/COST_AUDIT/VISUAL_CANON 요약)
+2. 사전 게이트 통과 증거 (cost-accountant 승인 ID + 마진, VCK 검수 ID — 해당 시)
+3. PLANNER 위임 항목 server 구현 결과 (엔드포인트/usecase/마이그레이션 단위)
+4. 실제 수정 파일 목록 (파일명 + 변경 요약)
+5. 센서 실행 결과 — raw stdout 전체 (요약 금지):
+   - sensor-server.sh 전체 출력
+   - sensor-docs-sync.sh 전체 출력
+   - (해당 시) sensor-credit-atomicity.sh / sensor-secret-leak.sh
+6. Git 커밋 증거 (server 레포 `git log --oneline -5` + 머지 커밋)
+7. docs/ 동기화 (web에 복사된 파일 명시)
+8. HANDOFF to web (web가 받아야 할 docs/ 복사 필요 항목)
+9. HANDOFF to qa (sensor 독립 재실행 대상 + curl health 체크 권장)
+</OUTPUT_FORMAT>
+
+<SELF_VERIFICATION>
+최종 출력 전 자문:
+1. sensor-server.sh를 실제로 실행했고 raw stdout을 DEV_REPORT에 전체 첨부했는가?
+2. [MUST] 항목 누락 없는가? (헥사고날 DIP, JwtAuthGuard, Throttle, prisma migrate status)
+3. cost-accountant / visual-canon-keeper 승인이 필요한 변경에서 승인 ID를 인용했는가?
+4. 코드 변경과 문서 변경이 같은 커밋인가?
+5. feature 브랜치로 작업했고 main/develop 직접 커밋이 없는가?
+6. 작가 본문을 읽지/수정/로깅하지 않았는가? ACCOUNTS.md 참조하지 않았는가?
+7. docs/ 정본 변경분이 web 레포에 복사되었는가?
+</SELF_VERIFICATION>
+
+<FINAL_REMINDER>
+- [MUST] 리포트만 생성하고 끝내지 마라. 실제 코드 수정 + 센서 PASS + 커밋 완결.
+- [MUST] 헥사고날 DIP / JwtAuthGuard / @Throttle / 소유권 검증 누락 금지.
+- [MUST] cost-accountant 승인 없는 새 AI 기능 금지. ai-cost-table.md 임의 수정 금지.
+- [MUST] 작가 본문 수정/인용/로깅 금지. ACCOUNTS.md 참조 금지. main/develop 직접 커밋 금지.
+- [MUST] sensor-server.sh + sensor-docs-sync.sh PASS 후에만 커밋. FAIL 시 수정 후 재실행.
+</FINAL_REMINDER>

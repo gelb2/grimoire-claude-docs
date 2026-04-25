@@ -1,69 +1,186 @@
 #!/usr/bin/env bash
-# sensor-orchestration-ratio.sh — 패턴 1 (오케스트레이션 분리) 측정 sensor
+# sensor-orchestration-ratio.sh — 패턴 1 (오케스트레이션 분리) 측정 sensor (P2)
 #
-# 측정 정의 (2026-04-25 세션 #7 신설, 초기 버전):
-#   orchestration_ratio = (subagent 호출 횟수) / (메인 직접 코드 작업 횟수)
+# 측정 정의:
+#   orchestration_ratio = task_calls / (main_edits + main_writes)
+#   - main_edits: 메인 Claude가 직접 호출한 Edit 도구 (isSidechain=false + role=assistant + name=Edit)
+#   - main_writes: 메인 Claude가 직접 호출한 Write 도구
+#   - task_calls: 메인 Claude가 spawn한 subagent 호출 (Task tool, isSidechain=false)
 #
 # 데이터 소스:
-#   - 메인 직접 코드 작업: post-edit-tsc.sh가 적재한 sensor-hits.jsonl 항목 중
-#     "sensor":"sensor-server"|"sensor-web" 또는 post-edit-tsc 자체 발동 카운트
-#   - subagent 호출: transcript_path를 파싱해서 Task tool 호출 카운트
-#     (현 단계에선 측정 어려움 → placeholder)
+#   - $HOME/.claude/projects/-Users-sokol-Desktop-Git-ProjectGrimoire/*.jsonl
+#   - 최근 7일 (mtime 기준)
 #
-# 현 단계 (P1):
-#   - sensor 자체는 작동하나 정확한 KPI 산출은 P2 단계 (transcript 파싱 추가)
-#   - 일단 sensor-hits.jsonl에서 메인 작업 횟수만 카운트 + 추정치 출력
+# 임계값 (Fowler "Steering Loop" + 패턴 1 권장):
+#   - ratio ≥ 0.20: PASS (5건당 1건 이상 subagent 위임)
+#   - 0.05 ≤ ratio < 0.20: WARN (위임 부족)
+#   - ratio < 0.05: FAIL (메인이 사실상 모두 직접 — 패턴 1 위배)
 #
-# 다음 단계 (P2):
-#   - transcript_path를 stdin JSON에서 받아 Task 호출 카운트 추출
-#   - 정확한 ratio 계산
+# 추가 산출물:
+#   - subagent type 분포 (어떤 에이전트가 자주 호출되는지)
+#   - sidechain edits (subagent 내부 작업량)
 #
-# Fowler "Steering Loop" 효과 측정 (HARNESS §3) — 패턴 1 KPI
+# 적재 위치:
+#   - .claude/state/orchestration-ratio.jsonl (시계열 누적)
 
 set -u
 
 LOG_DIR="/Users/sokol/Desktop/Git/ProjectGrimoire/.claude/state"
-HITS_FILE="$LOG_DIR/sensor-hits.jsonl"
 RATIO_FILE="$LOG_DIR/orchestration-ratio.jsonl"
+JSONL_DIR="$HOME/.claude/projects/-Users-sokol-Desktop-Git-ProjectGrimoire"
 
 mkdir -p "$LOG_DIR"
 
-echo "=== Orchestration Ratio Sensor (P1 placeholder) ==="
-echo "측정 시점: $(date +'%Y-%m-%d %H:%M:%S')"
-echo ""
+QUIET=0
+STRICT=0
+DAYS=7
+for arg in "$@"; do
+  case "$arg" in
+    --quiet) QUIET=1 ;;
+    --strict) STRICT=1 ;;
+    --days=*) DAYS="${arg#--days=}" ;;
+  esac
+done
 
-if [ ! -f "$HITS_FILE" ]; then
-  echo "[orchestration-ratio] sensor-hits.jsonl 없음. sensor-log.sh로 적재 시작 후 측정 가능."
+if [ ! -d "$JSONL_DIR" ]; then
+  [ "$QUIET" -eq 0 ] && echo "[orchestration-ratio] JSONL 디렉토리 없음: $JSONL_DIR"
   exit 0
 fi
 
-# 메인 직접 작업 추정 (post-edit-tsc + post-edit-spec-check 발동 카운트)
-MAIN_EDITS=$(grep -c "\"sensor\":\"post-edit" "$HITS_FILE" 2>/dev/null) || MAIN_EDITS=0
+[ "$QUIET" -eq 0 ] && echo "=== Orchestration Ratio Sensor (P2) ==="
+[ "$QUIET" -eq 0 ] && echo "측정 시점: $(date +'%Y-%m-%d %H:%M:%S')"
+[ "$QUIET" -eq 0 ] && echo "분석 범위: 최근 ${DAYS}일"
+[ "$QUIET" -eq 0 ] && echo ""
 
-# subagent 호출 (현 단계 측정 불가 — placeholder)
-SUBAGENT_CALLS="?"
+# Python으로 JSONL 파싱 (sed/awk로는 불가능)
+RESULT=$(python3 << PYEOF
+import json, glob, os, time, sys
+from collections import Counter
 
-echo "최근 7일 (sensor-log.sh prune):"
-echo "  메인 직접 코드 작업 (post-edit-* 발동): $MAIN_EDITS"
-echo "  subagent 호출 횟수: $SUBAGENT_CALLS (P2 transcript 파싱 후 측정)"
-echo ""
+JSONL_DIR = "$JSONL_DIR"
+DAYS = $DAYS
 
-if [ "$MAIN_EDITS" -gt 0 ]; then
-  echo "  메인 작업 수 PASS — 데이터 적재 중"
-else
-  echo "  ⚠️ post-edit-* sensor 적재 0건 — sensor-log.sh가 post-edit-tsc.sh / post-edit-spec-check.sh에 호출되어야 측정 가능"
+cutoff = time.time() - DAYS * 86400
+files = sorted(
+    glob.glob(f"{JSONL_DIR}/*.jsonl"),
+    key=lambda f: os.path.getmtime(f),
+    reverse=True
+)
+recent = [f for f in files if os.path.getmtime(f) > cutoff]
+
+main_edits = 0
+main_writes = 0
+task_calls = 0
+sidechain_edits = 0
+sidechain_writes = 0
+stypes = Counter()
+file_count = len(recent)
+
+for fpath in recent:
+    try:
+        with open(fpath) as f:
+            for line in f:
+                try:
+                    obj = json.loads(line)
+                except:
+                    continue
+                msg = obj.get('message', {})
+                if not isinstance(msg, dict):
+                    continue
+                if msg.get('role') != 'assistant':
+                    continue
+                content = msg.get('content', [])
+                if not isinstance(content, list):
+                    continue
+                sidechain = obj.get('isSidechain', False)
+                for c in content:
+                    if not isinstance(c, dict) or c.get('type') != 'tool_use':
+                        continue
+                    name = c.get('name', '')
+                    if name == 'Edit':
+                        if sidechain:
+                            sidechain_edits += 1
+                        else:
+                            main_edits += 1
+                    elif name == 'Write':
+                        if sidechain:
+                            sidechain_writes += 1
+                        else:
+                            main_writes += 1
+                    elif name == 'Task' and not sidechain:
+                        task_calls += 1
+                        stype = c.get('input', {}).get('subagent_type', 'unknown')
+                        stypes[stype] += 1
+    except Exception as e:
+        print(f"WARN: {fpath} skip ({e})", file=sys.stderr)
+
+m_total = main_edits + main_writes
+ratio = task_calls / m_total if m_total > 0 else 0
+
+# stdout: pipe-separated for shell parsing
+print(f"FILES|{file_count}")
+print(f"MAIN_EDITS|{main_edits}")
+print(f"MAIN_WRITES|{main_writes}")
+print(f"MAIN_TOTAL|{m_total}")
+print(f"TASK_CALLS|{task_calls}")
+print(f"SIDECHAIN_EDITS|{sidechain_edits}")
+print(f"SIDECHAIN_WRITES|{sidechain_writes}")
+print(f"RATIO|{ratio:.4f}")
+for s, c in stypes.most_common():
+    print(f"STYPE|{s}|{c}")
+PYEOF
+)
+
+# 결과 파싱
+FILES=$(echo "$RESULT" | grep "^FILES|" | cut -d'|' -f2)
+MAIN_EDITS=$(echo "$RESULT" | grep "^MAIN_EDITS|" | cut -d'|' -f2)
+MAIN_WRITES=$(echo "$RESULT" | grep "^MAIN_WRITES|" | cut -d'|' -f2)
+MAIN_TOTAL=$(echo "$RESULT" | grep "^MAIN_TOTAL|" | cut -d'|' -f2)
+TASK_CALLS=$(echo "$RESULT" | grep "^TASK_CALLS|" | cut -d'|' -f2)
+SIDECHAIN_EDITS=$(echo "$RESULT" | grep "^SIDECHAIN_EDITS|" | cut -d'|' -f2)
+SIDECHAIN_WRITES=$(echo "$RESULT" | grep "^SIDECHAIN_WRITES|" | cut -d'|' -f2)
+RATIO=$(echo "$RESULT" | grep "^RATIO|" | cut -d'|' -f2)
+
+if [ "$QUIET" -eq 0 ]; then
+  echo "분석 jsonl 파일: $FILES"
+  echo "메인 Edit / Write: $MAIN_EDITS / $MAIN_WRITES (총 $MAIN_TOTAL)"
+  echo "메인 → Task 호출: $TASK_CALLS"
+  echo "Sidechain Edit / Write: $SIDECHAIN_EDITS / $SIDECHAIN_WRITES"
+  echo "Ratio: $RATIO (Task / Main code edits)"
+  echo ""
+  echo "Subagent 분포:"
+  echo "$RESULT" | grep "^STYPE|" | while IFS='|' read -r _ s c; do
+    echo "  $s: $c"
+  done
+  echo ""
 fi
 
-echo ""
-echo "[기록] $RATIO_FILE"
+# 임계값 판정
+RESULT_STATUS="PASS"
+EXIT_CODE=0
+
+if [ "$MAIN_TOTAL" -lt 10 ]; then
+  RESULT_STATUS="SKIP"
+  [ "$QUIET" -eq 0 ] && echo "[RESULT] SKIP — 메인 작업 표본 부족 ($MAIN_TOTAL < 10)"
+elif awk -v r="$RATIO" 'BEGIN{exit !(r < 0.05)}'; then
+  RESULT_STATUS="FAIL"
+  EXIT_CODE=$([ "$STRICT" -eq 1 ] && echo 1 || echo 0)
+  [ "$QUIET" -eq 0 ] && echo "[RESULT] FAIL — ratio $RATIO < 0.05 (패턴 1 위배: 메인이 사실상 모두 직접 작업)"
+elif awk -v r="$RATIO" 'BEGIN{exit !(r < 0.20)}'; then
+  RESULT_STATUS="WARN"
+  [ "$QUIET" -eq 0 ] && echo "[RESULT] WARN — ratio $RATIO < 0.20 (subagent 위임 부족)"
+else
+  [ "$QUIET" -eq 0 ] && echo "[RESULT] PASS — ratio $RATIO ≥ 0.20"
+fi
+
+# JSONL 적재
 TS=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-printf '{"ts":"%s","main_edits":%s,"subagent_calls":"%s","status":"P1_placeholder"}\n' "$TS" "$MAIN_EDITS" "$SUBAGENT_CALLS" >> "$RATIO_FILE"
+printf '{"ts":"%s","files":%s,"main_edits":%s,"main_writes":%s,"main_total":%s,"task_calls":%s,"sidechain_edits":%s,"sidechain_writes":%s,"ratio":%s,"status":"%s","days":%s}\n' \
+  "$TS" "$FILES" "$MAIN_EDITS" "$MAIN_WRITES" "$MAIN_TOTAL" "$TASK_CALLS" \
+  "$SIDECHAIN_EDITS" "$SIDECHAIN_WRITES" "$RATIO" "$RESULT_STATUS" "$DAYS" \
+  >> "$RATIO_FILE"
 
-echo "=== 끝 ==="
-echo ""
-echo "다음 진화 (P2 후보):"
-echo "  - post-edit-tsc.sh / post-edit-spec-check.sh에 sensor-log.sh append 호출 추가"
-echo "  - transcript_path 파싱으로 Task 호출 카운트 추출 (정확한 ratio)"
-echo "  - 주간 집계 (sensor-hit-rate-report.sh와 통합)"
+[ "$QUIET" -eq 0 ] && echo "[기록] $RATIO_FILE"
+[ "$QUIET" -eq 0 ] && echo "=== 끝 ==="
 
-exit 0
+exit $EXIT_CODE

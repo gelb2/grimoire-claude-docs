@@ -15,7 +15,8 @@
 | 파일 | 원 위치 | 용도 | 독자 |
 |------|---------|------|------|
 | `README.md` | 신규 | 이 디렉토리 설명 + 계층 원칙 | 전 에이전트 |
-| `agent-system.md` | CLAUDE.md §14 상세 | 에이전트 7개 인벤토리 + 오케스트레이션 + 정본 매핑 | planner, qa |
+| `agent-system.md` | CLAUDE.md §14 상세 | 에이전트 7개 인벤토리 + 오케스트레이션 + 정본 매핑 (역할 개요) | planner, qa |
+| `agent-interaction-matrix.md` (2026-04-26 신설) | research §8.8 명시 TODO | 7×7 핸드오프 매트릭스 + 산출물 정합 + 트리거 규칙 + 금지 조합 | 전 에이전트 (특히 planner/qa) |
 | `sensors.md` | 신규 | 센서 스크립트 사용법 + dev/qa 대조 규칙 | server, web, qa |
 
 ## 사용 규칙
