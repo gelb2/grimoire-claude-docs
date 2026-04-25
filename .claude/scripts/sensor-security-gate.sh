@@ -342,7 +342,25 @@ check_dangerous_html() {
     exit 2  # WARN
   fi
 }
-run_step "[8/8] dangerouslySetInnerHTML 사용" check_dangerous_html
+run_step "[8/9] dangerouslySetInnerHTML 사용" check_dangerous_html
+
+# ─────────────────────────────────────────────────────────────
+# §9 (2026-04-25 신설) Secret Hardcode Leak Detector
+# 별도 스크립트 sensor-secret-leak.sh에 위임
+# ─────────────────────────────────────────────────────────────
+check_secret_leak() {
+  local sensor_path="$(dirname "${BASH_SOURCE[0]}")/sensor-secret-leak.sh"
+  if [ ! -x "$sensor_path" ]; then
+    echo "sensor-secret-leak.sh 미존재 또는 실행권한 없음: $sensor_path"
+    return 1
+  fi
+  local output
+  output=$(bash "$sensor_path" 2>&1)
+  local rc=$?
+  echo "$output" | tail -20
+  return $rc
+}
+run_step "[9/9] Secret Hardcode Leak (live API key + 알려진 약한 default)" check_secret_leak
 
 # ============================================
 # 최종 요약
@@ -352,9 +370,9 @@ DURATION=$((END_TIME - START_TIME))
 
 echo ""
 echo "=== 보안 게이트 요약 ==="
-echo "PASS: $PASS_COUNT/8"
-echo "WARN: $WARN_COUNT/8"
-echo "FAIL: $FAIL_COUNT/8"
+echo "PASS: $PASS_COUNT/9"
+echo "WARN: $WARN_COUNT/9"
+echo "FAIL: $FAIL_COUNT/9"
 echo "실행 시간: ${DURATION}s"
 
 if [ $FAIL_COUNT -eq 0 ]; then
