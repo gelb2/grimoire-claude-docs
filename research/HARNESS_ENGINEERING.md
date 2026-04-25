@@ -888,12 +888,20 @@ launchd plist 비활성 상태. 2026-04-19 세션 + 세션 #5에서 "비활성 �
 - iOS 에이전트 없음 (웹 전용 플랫폼)
 - cost-accountant는 Grimoire 고유 (Zenith에 없음)
 
-### 14.10 미도입·보류 결정 항목 (실측 확정, 2026-04-25)
+### 14.10 미도입·보류 결정 항목 (실측 확정, 2026-04-25 / 2026-04-26 갱신)
 - `TASK_QUEUE.json` — 태스크 큐 파일 (미도입)
 - launchd 자율 실행 — **비활성 유지** (위 §14.7)
 - `.mcp.json` 도메인 특화 MCP — Phase 4 P3, DB 권한 위험으로 보류
-- `/handover-refresh` slash — Phase 3 P2 후보
+- `/handover-refresh` slash — ✅ **2026-04-25 #8 완료** (skill로 도입)
 - 모델 티어링 (Haiku/Sonnet/Opus) — cost-accountant 사전 시뮬 필수
+- **Ouroboros Ambiguity Score 차용** (2026-04-26 #9 보류 결정)
+  - 출처: Q00/ouroboros (§5.2, §10 Phase 4)
+  - 메커니즘: PRD/요구사항 모호도 0~1 점수 (Goal 40% / Constraint 30% / Success 30%, brownfield 시 Context 15% 추가). 임계값 ≤0.2일 때만 코딩 진입
+  - ProjectGrimoire 적용 기대: planner agent가 PLANNER_REPORT 생성 시 ambiguity score 자동 계산 → CRITICAL이면 사용자 에스컬레이션
+  - 보류 사유: NLP/LLM 자체 판정에 추가 Anthropic API 호출 필요 → §0 원가 철칙 강제 종속 (cost-accountant 사전 시뮬 통과 필수). 현재 cost-accountant 시뮬 미수행 상태로 진행 시 §0 위반 위험
+  - 재개 조건: cost-accountant가 ambiguity score 호출당 토큰 비용 마진 ≥3배 검증 통과 시 P3 후보로 부활
+  - 임시 대안: planner.txt 프롬프트에 Ouroboros 5축(Goal/Context/Constraint/Success/Risk) 명시 자가 평가 항목 추가 (추가 API 호출 없이 LLM 자체 판정 - **본 항목은 다음 P3 후보로 별도 박제 권장**)
+- **Stop callback Slack 알림** (Phase 5 — launchd 재활성 결정 의존, 현재 보류)
 
 ---
 
