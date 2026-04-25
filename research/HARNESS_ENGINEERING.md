@@ -776,3 +776,218 @@ gh repo create gelb2/grimoire-workspace --private --source=. --remote=origin --p
 - [Medium — David R Oliver "Skills and Hooks Starter Kit" (2026-02)](https://medium.com/@davidroliver/skills-and-hooks-starter-kit-for-claude-code-c867af2ace32)
 - [Medium — Jiten Oswal "Ultimate Claude Code CLI Deep Dive" (2026-04)](https://medium.com/@jiten.p.oswal/the-ultimate-claude-code-cli-deep-dive-guide-to-the-newest-commands-from-april-2026-release-1eeb25b03c52)
 - [Medium — Ewan Mak "Everything Claude Code: 82K-Star Agent Harness" (2026-03)](https://medium.com/@tentenco/everything-claude-code-inside-the-82k-star-agent-harness-thats-dividing-the-developer-community-4fe54feccbc1)
+
+---
+
+## 14. ProjectGrimoire 멀티 에이전트·Skills·Hooks 구성 인벤토리 (2026-04-25 이동)
+
+> **이동 사유**: 루트 `CLAUDE.md` §14에 있던 본문(약 80줄)을 패턴 3(SSOT + CLAUDE.md 좁게) 채택에 따라 본 research 문서로 이동. CLAUDE.md §14는 이 §14를 가리키는 1줄 pointer로 슬림화. CLAUDE.md 19.6KB → 약 16KB로 축소.
+
+### 14.1 Agents 7개 (`.claude/agents/*.md`)
+
+| 에이전트 | 역할 | 도구 |
+|---------|------|------|
+| planner | 기획 Draft + 원가 게이트 트리거 | Read/Write/Edit/Glob/Grep |
+| researcher | 경쟁사 모니터링 + AI 가격 추적 | +WebSearch/WebFetch |
+| cost-accountant | PLANNING §0 크레딧-원가 마진 ≥3배 검증 (Grimoire 고유) | +Bash |
+| visual-canon-keeper | 사슴악마 시각 정본 수호 + 디자이너 겸직 (Grimoire 고유) | +Bash |
+| qa | 전수검사 + 배포 게이트 판정 | +Bash |
+| server | NestJS 백엔드 개발 | +Bash |
+| web | Next.js 프론트엔드 개발 | +Bash |
+
+각 에이전트 `.md` 하단에 "Skills 프로토콜 참조" 섹션으로 `.claude/skills/*/SKILL.md` 경로 embed (ouroboros 방식 — 공식 스펙상 서브에이전트는 Skill 자동 발동 불가).
+
+### 14.2 Skills 4종 (`.claude/skills/<name>/SKILL.md`)
+
+| Skill | 트리거 (UserPromptSubmit hook 자동 매칭) | 용도 |
+|---|---|---|
+| macos-tcc-handling | 11개 ("python3.13", "TCC", "다이얼로그", "매번 허용", "credsStore" 등) | Docker credsStore=desktop → osxkeychain |
+| production-bug-triage | 16개 ("fetch aborted", "작품을 불러올 수", "signal timed out", "cold start" 등) | curl → 코드 → 수치 3단계 Chain-of-Verification |
+| claude-in-chrome-recovery | 9개 ("not connected", "extension", "tabs_context_mcp", "navigate" 등) | Chrome MCP 최소 3회 재시도 + javascript_tool URL 확인 |
+| verification-before-completion | 17개 ("완료", "PASS", "배포 끝", "이상 없음" 등) | Gate 1·2·3 (코드/기능/회귀) 실측 증거 강제 |
+
+### 14.3 Hooks 6 이벤트 8 스크립트 (`.claude/settings.json`)
+
+| Hook | matcher | 스크립트 | 용도 |
+|---|---|---|---|
+| SessionStart | - | check-memory-freshness.sh | 메모리 freshness 체크 |
+| Stop | - | stop-memory-guard.sh | 응답 종료 시 메모리 강제 기록 |
+| UserPromptSubmit | - | user-prompt-memory-check.sh | 메모리 참조 가드 |
+| UserPromptSubmit | - | skill-injector.sh | Skill triggers 키워드 매칭 → 자동 주입 |
+| PreCompact | - | pre-compact-memory-guard.sh | 컨텍스트 압축 전 메모리 보호 |
+| PreToolUse | Bash | pretouluse-bash-guard.sh | `git push origin main` / `rm -rf /` / `git reset --hard` 차단 |
+| PostToolUse | Edit\|Write | post-edit-tsc.sh | `.ts/.tsx/.cts/.mts` 편집 후 해당 레포 `tsc --noEmit` 자동 |
+| PostToolUse | Edit\|Write | post-edit-spec-check.sh | spec/test 누락 감지 (usecase/lib/adapter/features 화이트리스트) |
+
+### 14.4 Sensors 7개 (`.claude/scripts/sensor-*.sh`)
+
+| Sensor | 용도 |
+|---|---|
+| sensor-docs-sync.sh | server ↔ web docs 9종 해시 일치 검증 |
+| sensor-security-gate.sh | 보안 9 항목 (인증/권한/레이트리밋 + §9 secret-leak) |
+| sensor-server.sh | server 빌드/테스트 게이트 |
+| sensor-web.sh | web 빌드/테스트 게이트 |
+| sensor-secret-leak.sh | git tracked 파일 평문 시크릿 탐지 (라이브 prefix + 약한 default) |
+| sensor-log.sh | sensor 실행 결과 jsonl 적재 (7일 LRU TTL) |
+| sensor-hit-rate-report.sh | 주간 sensor별 PASS/WARN/FAIL 집계 + silent sensor 식별 |
+
+### 14.5 Knowledge 3개 (`.claude/knowledge/`)
+- README.md · agent-system.md · sensors.md (정적 참조 문서)
+
+### 14.6 Slash commands 3개 (`.claude/commands/*.md`)
+- `/refund-logic-audit` — UI 환불 문구 ↔ 서버 catch 블록 grep 정합성
+- `/dev-login-smoke` — db-sync --mask-pii 회귀 감지 (preflight + 정합성 + dev DB 실측)
+- `/deploy-precheck` — 수동 배포 직전 7-step 게이트 (sanity / git / secret / docs / build / CA / preflight)
+
+> **공식 권장**: Anthropic 2026 release에서 commands → skills 마이그레이션 권장. 다음 작업으로 `disable-model-invocation: true` + `paths:` 부착해 skill로 전환 검토.
+
+### 14.7 자율 실행 현황 (2026-04-25 결정)
+
+launchd plist 비활성 상태. 2026-04-19 세션 + 세션 #5에서 "비활성 유지" 결정. 사유:
+- plist 부재 (실측: `~/Library/LaunchAgents/com.grimoire.*.plist` 없음)
+- 매일 토큰 비용 발생
+- cost-accountant 마진 검증 미연동
+
+현재 에이전트는 **on-demand Task tool 호출**로만 사용. 단 Fowler memo의 "Garbage Collection" 축이 비어있는 갭 (성숙도 진단 1.5/5).
+
+원래 계획했던 스케줄(참조용):
+```
+18:04 researcher / 19:08 cost-accountant / 20:11 planner /
+21:14 visual-canon-keeper / 22:17 server+web / 23:21 qa
+```
+
+### 14.8 핵심 제약 (Grimoire 고유)
+1. **PLANNING §0 원가 철칙**: 새 AI 기능은 cost-accountant 마진 ≥3배 검증 없이 기획 진행 불가
+2. **사슴악마 시각 정본**: 새 UI/테마/포맷 출력은 visual-canon-keeper 정본 검수 없이 구현 불가
+3. **작가 콘텐츠 보호**: 소설 본문 수정·인용·로깅 전 에이전트 공통 금지
+
+### 14.9 Zenith 대비 차이
+- copywriter 없음 (작가 본인 콘텐츠, 시스템 텍스트 적음)
+- designer 역할은 visual-canon-keeper 겸직
+- iOS 에이전트 없음 (웹 전용 플랫폼)
+- cost-accountant는 Grimoire 고유 (Zenith에 없음)
+
+### 14.10 미도입·보류 결정 항목 (실측 확정, 2026-04-25)
+- `TASK_QUEUE.json` — 태스크 큐 파일 (미도입)
+- launchd 자율 실행 — **비활성 유지** (위 §14.7)
+- `.mcp.json` 도메인 특화 MCP — Phase 4 P3, DB 권한 위험으로 보류
+- `/handover-refresh` slash — Phase 3 P2 후보
+- 모델 티어링 (Haiku/Sonnet/Opus) — cost-accountant 사전 시뮬 필수
+
+---
+
+## 15. 현장 운영 4 패턴 (2026-04-25 신설)
+
+> **사유**: 외부 팀(다른 회사 사람) 인터뷰에서 도출된 4 패턴이 Fowler 정본 문서에 직접 명시되지 않은 "현장 결정 지점"임을 확인. 외부 자료 (Anthropic 공식 / HumanLayer / sshh.io / Builder.io / PrestaShop / AddyOsmani)로 검증한 결과 4 패턴 모두 실재. ProjectGrimoire가 이 4축에서 어디에 위치하는지 명시 + 향후 진화 방향 결정 근거.
+
+### 15.1 패턴 1 — 오케스트레이션 분리
+
+**정의**: 메인 Claude(채팅 세션) = 지시·조율만. 실제 코드 작성은 서브에이전트/팀에이전트가 수행. 메인의 컨텍스트 보호 + 격리 + 병렬.
+
+**Anthropic 입장**: 권장 (단 agent teams는 experimental, `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` 필요).
+
+**대표 사례**:
+- Anthropic 공식 "Orchestrate teams of Claude Code sessions" — lead session = "coordinating work, assigning tasks, synthesizing results", teammates = "work independently in own context window"
+- AddyOsmani "Code Agent Orchestra" — "central AI thread coordinates specialist agents - it doesn't write code itself"
+- HumanLayer "subagent-driven-development" — 2-stage review (spec → quality)
+
+**장단점**:
+- ✅ 컨텍스트 격리 + 병렬화
+- ❌ 토큰 비용 선형 증가 + 조율 오버헤드. 실패 모드: lead가 직접 구현해버림 ("Wait for your teammates to complete")
+
+### 15.2 패턴 2 — CLAUDE.md = 도메인/인프라/문서 허브
+
+**정의**: CLAUDE.md를 모든 정보의 **진입점(허브)**로. 도메인 지식 + 인프라 + 외부 문서 링크를 한 파일에 모음.
+
+**Anthropic 입장**: 중립~약권장 (best-practices가 CLAUDE.md 자체는 권장하나 크기 한도는 명시 안 함).
+
+**대표 사례**:
+- Builder.io / DataCamp — "agent's constitution, primary source of truth", 13~25KB까지 정당화
+- shanraisshan/claude-code-best-practice 레포
+
+### 15.3 패턴 3 — 루트 기획서 = SSOT, CLAUDE.md = 좁게 (코드 컨벤션·팀 규약만)
+
+**정의**: 진실의 근원은 별도 기획 문서. CLAUDE.md는 좁게 (컨벤션·규약만).
+
+**Anthropic 입장**: 중립.
+
+**대표 사례 + 임계값 근거**:
+- HumanLayer "Writing a good CLAUDE.md": "official recommendation under 200 lines, some teams under 60"
+- **sshh.io** (결정적): "instruction-following degrades at 150-200 total instructions" — 시스템 프롬프트가 ~50 슬롯 차지 → 가용 100~150 슬롯
+- PrestaShop Issue #41152: `CONTEXT.md` = AI-agnostic SSOT, `CLAUDE.md` = pointer
+
+**장단점**:
+- ✅ Attention 보존 + instruction-following 유지
+- ❌ 도메인 컨텍스트 분산 → 신규 세션 진입 비용 ↑
+
+### 15.4 패턴 4 — Skill / Sub-agent / Team-agent 취향껏
+
+**정의**: 표준 정답 없음 — 팀 선호대로.
+
+**Anthropic 입장**: 분기 기준 제공, 강제는 안 함.
+- "rules that apply to nearly every task → CLAUDE.md, specific workflows that only matter sometimes → Skill"
+- "Use subagents when... quick focused workers report back. Use agent teams when... share findings, challenge each other"
+
+**대표 사례**: Anthropic Skills 공식 블로그 + Level Up Coding "Mental Model" + AntStack Field Guide.
+
+### 15.5 4 패턴 양립성
+
+**패턴 2 vs 3은 직접 모순**. 결정적 데이터: sshh.io의 "150-200 instruction degradation". CLAUDE.md를 허브로 키우면 instruction-following 자체가 깨진다 → 패턴 2를 무한 확장하는 팀은 임계값 도달 시 **자동으로 패턴 3으로 강제 수렴**.
+
+**패턴 1·4는 패턴 2·3 어느 쪽과도 양립 가능**.
+
+**패턴 1 + 패턴 3 조합은 시너지**: 메인이 코드 작성 안 하면 두꺼운 도메인 컨텍스트가 메인에 들어갈 필요 없음 (subagent에게만 필요) → 패턴 1로 갈수록 CLAUDE.md 슬림화가 자연스러움.
+
+### 15.6 출처
+- [Anthropic Agent Teams](https://code.claude.com/docs/en/agent-teams)
+- [Skills explained](https://claude.com/blog/skills-explained)
+- [HumanLayer — Writing a good CLAUDE.md](https://www.humanlayer.dev/blog/writing-a-good-claude-md)
+- [sshh.io — How I Use Every Claude Code Feature](https://blog.sshh.io/p/how-i-use-every-claude-code-feature)
+- [Builder.io — How to Write a Good CLAUDE.md](https://www.builder.io/blog/claude-md-guide)
+- [PrestaShop #41152 — CONTEXT.md SSOT](https://github.com/PrestaShop/PrestaShop/issues/41152)
+- [AddyOsmani — Code Agent Orchestra](https://addyosmani.com/blog/code-agent-orchestra/)
+
+---
+
+## 16. ProjectGrimoire 4 패턴 위치 + 진화 결정 (2026-04-25)
+
+### 16.1 채택 결정 — 패턴 1 + 패턴 3 동시 진행
+
+사용자 결정 (2026-04-25, 세션 #6): **패턴 1 (오케스트레이션 분리) + 패턴 3 (CLAUDE.md 슬림화) 동시 진행**.
+
+근거:
+- 패턴 1·3 조합 시너지 (§15.5)
+- CLAUDE.md (19.6KB) + PLANNING (61KB) 합계 ~80KB → instruction degradation 임계값 근접
+- §14 Multi-Agent 구조 본문(80줄)이 일상 작업 무관 메타 정보 → 본 research §14.X로 이동 적합
+
+### 16.2 즉시 실행 항목 (세션 #6)
+
+1. **§14 본문 이동**: CLAUDE.md §14 약 80줄 → 본 문서 §14 (위)로 이동
+2. **CLAUDE.md §14 슬림화**: 1줄 pointer + 메인 Claude 조율 강화 규칙 1줄
+3. **목표 사이즈**: CLAUDE.md ~16KB (현 19.6KB에서 약 18% 축소)
+
+### 16.3 패턴 1 강화 규칙 (CLAUDE.md에 추가)
+
+> 메인 Claude(채팅 세션)는 가능하면 지시·조율만 한다. 실제 코드 작성·테스트·빌드는 server/web subagent에게 위임한다. 단 다음 경우는 메인이 직접 진행:
+> - 문서·메모리·`.claude/` 설정 변경 (조율 자체)
+> - 단순 grep/실측·sanity 명령 (Bash 1~3개 수준)
+> - 사용자가 "직접 해" 명시 지시
+> - subagent 호출 비용이 작업 크기 대비 비효율적 (15초 미만 작업)
+
+### 16.4 향후 진화 (P1~P3)
+
+- **P1 (1주)**: 메인 Claude의 코드 직접 작성 빈도 측정 → `sensor-orchestration-ratio.sh` 신설 검토
+- **P2 (1개월)**: §13 참고 프로젝트, §15 프롬프트 엔지니어링 정본 등도 별도 파일로 분리 검토 (CLAUDE.md ~12KB 목표)
+- **P3 (3개월)**: agent teams (`CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`) experimental 도입 — cost-accountant 마진 시뮬 선행 필수
+
+### 16.5 KPI
+
+다음 세션부터 sensor-hit-rate-report에 신규 metric 추가 검토:
+- `orchestration_ratio` = (subagent 호출 횟수) / (메인 Claude 직접 Bash·Edit 횟수)
+- 목표: 패턴 1 강화에 따라 점진 상승
+
+### 16.6 사용자 직접 결정 보류 항목 (이번 세션 미수행)
+- agent teams experimental 도입 (cost 영향)
+- launchd 자율 실행 부활 (GC 축 1.5/5 갭 해소용)
+- 모델 티어링 (subagent 별 model:)
+

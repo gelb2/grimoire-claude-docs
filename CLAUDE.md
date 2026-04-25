@@ -418,85 +418,26 @@ chmod +x .githooks/pre-push
 
 ---
 
-## 14. 멀티 에이전트 · Skills · Hooks 구조 (Harness Engineering 실제 구성)
+## 14. 멀티 에이전트 · Skills · Hooks 구조 (요약 + 정본 pointer)
 
-> 2026-04-15 Agents 도입. projectZenith 패턴 차용 + Grimoire 고유 역할.
-> 2026-04-25 Skills 3종 + Hooks 6이벤트 + 루트 workspace PRIVATE repo 박제 (`gelb2/grimoire-claude-docs`).
-> 상세 방법론: `research/HARNESS_ENGINEERING.md` (루트 정본)
-> 세션 기록: `memory/project_session_20260425.md`, `project_session_20260425_2.md` (절대 경로는 §12 참조)
+> **본 §14의 본문은 2026-04-25 세션 #6에서 패턴 3(SSOT + CLAUDE.md 좁게) 채택에 따라 `research/HARNESS_ENGINEERING.md` §14로 이동했습니다.** 상세 인벤토리(Agents 7 / Skills 4 / Hooks 6이벤트 8스크립트 / Sensors 7 / Knowledge 3 / Slash 3 / launchd 비활성 결정 / Zenith 대비 차이 / 미도입 보류 항목)는 그쪽을 참조.
 
-### 14.1 Agents 7개 (`.claude/agents/*.md`)
-
-| 에이전트 | 역할 | 도구 |
-|---------|------|------|
-| planner | 기획 Draft + 원가 게이트 트리거 | Read/Write/Edit/Glob/Grep |
-| researcher | 경쟁사 모니터링 + AI 가격 추적 | +WebSearch/WebFetch |
-| cost-accountant | PLANNING §0 크레딧-원가 마진 ≥3배 검증 (Grimoire 고유) | +Bash |
-| visual-canon-keeper | 사슴악마 시각 정본 수호 + 디자이너 겸직 (Grimoire 고유) | +Bash |
-| qa | 전수검사 + 배포 게이트 판정 | +Bash |
-| server | NestJS 백엔드 개발 | +Bash |
-| web | Next.js 프론트엔드 개발 | +Bash |
-
-각 에이전트 `.md` 하단에 "Skills 프로토콜 참조" 섹션으로 `.claude/skills/*/SKILL.md` 경로 embed (ouroboros 방식 — 공식 스펙상 서브에이전트는 Skill 자동 발동 불가).
-
-### 14.2 Skills 3종 (`.claude/skills/<name>/SKILL.md`, 2026-04-25 도입)
-
-| Skill | 트리거 (UserPromptSubmit hook이 자동 매칭) | 용도 |
-|---|---|---|
-| macos-tcc-handling | "python3.13", "TCC", "다이얼로그", "매번 허용", "docker login", "credsStore" 등 11개 | Docker credsStore=desktop → osxkeychain 강제 |
-| production-bug-triage | "fetch aborted", "작품을 불러올 수", "signal timed out", "cold start", "502/504" 등 16개 | curl → 코드 → 수치 3단계 Chain-of-Verification |
-| claude-in-chrome-recovery | "not connected", "extension", "tabs_context_mcp", "navigate" 등 9개 | Chrome MCP 최소 3회 재시도 + javascript_tool URL 확인 |
-
-### 14.3 Hooks 6이벤트 7스크립트 (`.claude/settings.json`)
-
-| Hook | matcher | 스크립트 | 용도 |
-|---|---|---|---|
-| SessionStart | - | check-memory-freshness.sh | 메모리 freshness 체크 |
-| Stop | - | stop-memory-guard.sh | 응답 종료 시 메모리 강제 기록 |
-| UserPromptSubmit | - | user-prompt-memory-check.sh | 메모리 참조 가드 |
-| UserPromptSubmit | - | skill-injector.sh (2026-04-25) | Skill triggers 키워드 매칭 → 자동 주입 |
-| PreCompact | - | pre-compact-memory-guard.sh | 컨텍스트 압축 전 메모리 보호 |
-| PreToolUse | Bash | pretouluse-bash-guard.sh (2026-04-25) | `git push origin main`, `rm -rf /`, `git reset --hard` 차단 |
-| PostToolUse | Edit\|Write | post-edit-tsc.sh (2026-04-25) | `.ts/.tsx/.cts/.mts` 편집 후 해당 레포 `tsc --noEmit` 자동 |
-
-### 14.4 Sensors 4개 (`.claude/scripts/sensor-*.sh`, 2026-04-16 이전 도입)
-
-| Sensor | 용도 |
-|---|---|
-| sensor-docs-sync.sh | server ↔ web docs 9종 해시 일치 검증 |
-| sensor-security-gate.sh | 인증/권한/레이트리밋 코드 패턴 검증 |
-| sensor-server.sh | server 빌드/테스트 게이트 |
-| sensor-web.sh | web 빌드/테스트 게이트 |
-
-### 14.5 Knowledge 3개 (`.claude/knowledge/`, 2026-04-18 도입)
-- README.md · agent-system.md · sensors.md (정적 참조 문서)
-
-### 14.6 자율 실행 현황 (2026-04-25 기준)
-
-launchd plist 비활성 상태 (실측: `~/Library/LaunchAgents/com.grimoire.*.plist` 없음). 2026-04-19 세션에서 "재활성 보류" 결정. 현재 에이전트는 **on-demand Task tool 호출**로만 사용.
-
-원래 계획했던 스케줄(참조용):
-```
-18:04 researcher / 19:08 cost-accountant / 20:11 planner /
-21:14 visual-canon-keeper / 22:17 server+web / 23:21 qa
-```
-
-### 14.7 핵심 제약 (Grimoire 고유)
+### 14.1 핵심 제약 (Grimoire 고유 — 매 세션 강제)
 1. **PLANNING §0 원가 철칙**: 새 AI 기능은 cost-accountant 마진 ≥3배 검증 없이 기획 진행 불가
 2. **사슴악마 시각 정본**: 새 UI/테마/포맷 출력은 visual-canon-keeper 정본 검수 없이 구현 불가
 3. **작가 콘텐츠 보호**: 소설 본문 수정·인용·로깅 전 에이전트 공통 금지
 
-### 14.8 Zenith 대비 차이
-- copywriter 없음 (작가 본인 콘텐츠, 시스템 텍스트 적음)
-- designer 역할은 visual-canon-keeper 겸직
-- iOS 에이전트 없음 (웹 전용 플랫폼)
-- cost-accountant는 Grimoire 고유 (Zenith에 없음)
+### 14.2 메인 Claude 오케스트레이션 규칙 (2026-04-25 세션 #6 신설, 패턴 1 강화)
 
-### 14.9 미도입 항목 (실측 확정, 2026-04-25)
-- `TASK_QUEUE.json` — 태스크 큐 파일
-- launchd 자율 실행 — 결정: **비활성 유지** (토큰 비용 + cost-accountant 마진 미연동 이슈)
-- Slash commands (`.claude/commands/*.md`) — Phase 2 P1 계획 (dev-login-smoke, deploy-precheck, refund-logic-audit)
-- `.mcp.json` 도메인 특화 MCP — Phase 3 P3
+> 메인 Claude(채팅 세션)는 **가능하면 지시·조율만** 한다. 실제 코드 작성·테스트·빌드는 server/web subagent에게 위임한다.
+
+다음 경우는 메인이 직접 진행:
+- 문서·메모리·`.claude/` 설정 변경 (조율 자체)
+- 단순 grep/실측·sanity 명령 (Bash 1~3개 수준)
+- 사용자가 "직접 해" 명시 지시
+- subagent 호출 비용이 작업 크기 대비 비효율적 (15초 미만 작업)
+
+근거: `research/HARNESS_ENGINEERING.md` §15.1 (패턴 1 — 오케스트레이션 분리) + §15.5 (패턴 1+3 시너지) + §16 (ProjectGrimoire 채택 결정).
 
 ---
 
