@@ -836,7 +836,7 @@ gh repo create gelb2/grimoire-workspace --private --source=. --remote=origin --p
 - 표시: docs 브랜치 + server/web ahead main + cost-margin 상태 + deploy-drift 상태 (ANSI 색상)
 - 효과: Ambient Affordance — sensor 호출 없이 항상 가시화
 
-### 14.3 Hooks 8 이벤트 10 스크립트 (`.claude/settings.json`)
+### 14.3 Hooks 9 이벤트 12 스크립트 (`.claude/settings.json`) — 2026-04-27 #9 PostToolUseFailure 추가
 
 | Hook | matcher | 스크립트 | 용도 |
 |---|---|---|---|
@@ -850,6 +850,7 @@ gh repo create gelb2/grimoire-workspace --private --source=. --remote=origin --p
 | PostToolUse | Edit\|Write | post-edit-tsc.sh | `.ts/.tsx/.cts/.mts` 편집 후 해당 레포 `tsc --noEmit` 자동 |
 | PostToolUse | Edit\|Write | post-edit-spec-check.sh | spec/test 누락 감지 (usecase/lib/adapter/features 화이트리스트) |
 | **PostToolBatch** (2026-04-25 #7 신설) | - (전체) | post-batch-tsc.sh | parallel batch 완료 후 server+web tsc 일괄 (debounce 60s, 빌드 중복 60% ↓ 목표) |
+| **PostToolUseFailure** (2026-04-27 #9 F2 신설) | - (전체) | posttooluse-failure-handler.sh | 도구 실패 시 적재 + Chrome MCP 한정 정책 처리 (1회 재시도 신호 / reCAPTCHA 즉시 차단 / prod 도메인 자동 재시도 안 함). additionalContext로 Claude에게 재시도 신호만 전달, 실제 재시도는 Claude 판단 |
 
 ### 14.4 Sensors 12개 (`.claude/scripts/sensor-*.sh`)
 
@@ -934,6 +935,15 @@ gh repo create gelb2/grimoire-workspace --private --source=. --remote=origin --p
 - `.mcp.json` 도메인 특화 MCP — Phase 4 P3, DB 권한 위험으로 보류
 - `/handover-refresh` slash — ✅ **2026-04-25 #8 완료** (skill로 도입)
 - 모델 티어링 (Haiku/Sonnet/Opus) — cost-accountant 사전 시뮬 필수
+- **모델 티어링 (subagent별 model: 차등)** (2026-04-27 #9 사용자 결정 — ⛔ 무기한 보류)
+  - 사용자 결정: "모두 Opus 유지" — Haiku/Sonnet 다운그레이드 안 함
+  - 사유: cost-accountant / VCK / qa는 정밀 추론 필수 (실수 시 §0 위반 또는 시각 정본 깨짐). server/web도 코드 정밀도 위해 Opus 유지가 안전. 토큰 비용 절감보다 품질 우선
+  - 재검토 조건: 월간 토큰 비용이 crit 임계 도달 시 사용자 결정
+- **Azure Container App read-only MCP (G2)** (2026-04-27 #9 보류 결정)
+  - 사유: settings.local.json에 `Bash(az containerapp show:*)` + 관련 az 권한 18건 이미 등록됨 → MCP 도입 없이도 사용자 직접 + 메인 bash 호출(사용자 명시 의도)로 작동
+  - 차단 케이스: sensor 자동 호출 시점 (사용자 명시 의도 부재) — MCP 도입해도 같은 보안 평가 적용
+  - 현재 정합: `deploy-image-verify` skill로 사용자 명시 호출 가이드 (의도 명시 + 안내 → 차단 회피)
+  - 재검토 조건: 자율 실행(launchd) 부활 시 (현재 영구 비활성)
 - **Ouroboros Ambiguity Score 차용** (2026-04-26 #9 보류 결정)
   - 출처: Q00/ouroboros (§5.2, §10 Phase 4)
   - 메커니즘: PRD/요구사항 모호도 0~1 점수 (Goal 40% / Constraint 30% / Success 30%, brownfield 시 Context 15% 추가). 임계값 ≤0.2일 때만 코딩 진입

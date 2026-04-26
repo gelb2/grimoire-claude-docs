@@ -89,6 +89,17 @@
           }
         ]
       }
+    ],
+    "PostToolUseFailure": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/scripts/posttooluse-failure-handler.sh",
+            "timeout": 10
+          }
+        ]
+      }
     ]
   }
 }

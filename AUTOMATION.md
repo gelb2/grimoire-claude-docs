@@ -82,7 +82,7 @@
 
 ---
 
-## 1.6. Hooks 인벤토리 (8 이벤트 / 11 스크립트 — 2026-04-26 기준)
+## 1.6. Hooks 인벤토리 (9 이벤트 / 12 스크립트 — 2026-04-27 기준)
 
 `.claude/settings.json` 의 hooks 필드 정의. 이벤트별 스크립트 트리거.
 
@@ -96,6 +96,7 @@
 | PreToolUse | `pretooluse-bash-guard.sh` | Bash 실행 전 위험 패턴 차단 |
 | PostToolUse | `post-edit-tsc.sh` + `post-edit-spec-check.sh` | Edit/Write 후 tsc + spec 자동 검증 |
 | PostToolBatch | `post-batch-tsc.sh` (debounce 60s) | Edit 폭주 후 일괄 검증 (lock 파일 기반) |
+| **PostToolUseFailure** (2026-04-27 F2) | `posttooluse-failure-handler.sh` | 도구 실패 시 적재 + Chrome MCP 정책 (재시도 신호 / reCAPTCHA 차단 / prod 안전) |
 
 ---
 
@@ -348,4 +349,6 @@ Skill의 `triggers` 키워드가 사용자 메시지에 포함되어야 발동. 
 | 2026-04-27 #9 H'+I'+F 묶음 | H': sensor-deploy-drift health 임계값 조정 (max-time 10s→60s, cold start 의심 분류 추가). I': cost-accountant agent 위임 (패턴 1 KPI 첫 위임 사례) — WARN 5건 정밀 분석, 분석/베스트가 모든 시뮬의 FAIL 약점 식별, planner 핸드오프 박제. F: worktree-isolation skill 신설 (HARNESS §8.10 안전망, obra/superpowers MIT). Skills 11→12, .gitignore에 .worktrees/ 추가. |
 | 2026-04-27 #9 분석 4 크레딧 인상 + W 배포 | cost-accountant agent 위임 (패턴 1 2번째) → ai-cost-table.md §3-2 4 크레딧 재계산 + 시뮬 (베스트 2.79→3.35× FAIL 약점 해소). server `domain/model/config.ts` ANALYSIS_CREDIT_COST 3→4 + spec 30/30 PASS + ai-analysis-spec 갱신. server `e8e34ab` + web `bab239b` 3 레포 develop→main + prod 배포. claude-docs `9a4f04a` main 머지. |
 | 2026-04-27 #9 X 묶음 (AAA+BBB+EEE) | AAA: sensor-cost-margin 메시지 강화 (조기 경보 + planner 시점 권장 명시). BBB: researcher agent 위임 (패턴 1 3번째) — AI 가격 변동 0% / 환율 +0.16% / Claude Opus 4.7 신규 박제. EEE: deploy-image-verify skill 신설. Skills 12→13. |
-| **2026-04-27 #9 X-4 묶음 (Statusline + §15.7.3 + consolidate-memory)** | **§15.7.3.1 위임 3건 박제 (cost-accountant 2 + researcher 1, 누적 합치율 8/9 = 88.9%) + §15.7.3.2 jsonl flush 지연 한계 박제. statusline.sh 신설 (HARNESS §8.5 Ambient Affordance — docs 브랜치 + server/web ahead + cost-margin + deploy-drift 상태 표시). consolidate-memory skill 적용 (96 파일 카테고리화, stale 후보 11건 + skill 흡수 후보 6건 식별, 사용자 검토용 .consolidation-report-20260427.md 박제). settings.json statusLine 등록.** |
+| 2026-04-27 #9 X-4 묶음 (Statusline + §15.7.3 + consolidate-memory) | §15.7.3.1 위임 3건 박제 (cost-accountant 2 + researcher 1, 누적 합치율 8/9 = 88.9%) + §15.7.3.2 jsonl flush 지연 한계 박제. statusline.sh 신설 (HARNESS §8.5 Ambient Affordance). consolidate-memory skill 적용 (96 파일 카테고리화, stale 후보 11건 + skill 흡수 후보 6건). settings.json statusLine 등록. |
+| 2026-04-27 #9 sensor-feedback-promotion 30일 단축 | NEW_DAYS 90→30. PROMOTE 0→1건 진입 (feedback_chrome_verify). OBSERVE_NEW 5건 11~25일 후 자동 PROMOTE. 메모리 손실 노출 시간 ↓ |
+| **2026-04-27 #9 모델 티어링 보류 + G2 보류 + F2 도입** | **사용자 결정: (1) 모델 티어링 — 모두 Opus 유지 무기한 보류 (품질 우선). (2) G2 Azure read-only MCP — 보류 (settings.local.json `Bash(az containerapp show:*)` 권한 18건 이미 등록됨, MCP 도입 가치 낮음). (3) F2 PostToolUseFailure hook 신설 — Chrome MCP 실패 시 정책 처리 (reCAPTCHA 차단 / prod 자동 재시도 안 함 / dev 1회 재시도 신호). Hooks 8→9 이벤트, Scripts 27→28.** |
