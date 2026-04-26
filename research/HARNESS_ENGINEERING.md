@@ -864,20 +864,33 @@ gh repo create gelb2/grimoire-workspace --private --source=. --remote=origin --p
 
 매핑·호출 예시: `.claude/prompts/README.md` 참조. `developers.txt`는 server.txt + web.txt로 분리되어 제거됨 (§9.4 P0 해소).
 
-### 14.7 자율 실행 현황 (2026-04-25 결정)
+### 14.7 자율 실행 현황 (2026-04-26 #9 사용자 결정 — ⛔ 영구 비활성)
 
-launchd plist 비활성 상태. 2026-04-19 세션 + 세션 #5에서 "비활성 유지" 결정. 사유:
+**최종 결정**: launchd 자율 실행 **무기한 보류** (영구 비활성). 모든 에이전트는 **on-demand 정착**.
+
+박제 이력:
+- 2026-04-19 세션 + #5: "비활성 유지" (당시는 임시 결정 가능)
+- 2026-04-25 #1: 회귀분석에서 plist 부재 drift 박제
+- **2026-04-26 #9: 사용자 무기한 보류 명시 → 영구 비활성 결정**
+
+영구 비활성 사유:
 - plist 부재 (실측: `~/Library/LaunchAgents/com.grimoire.*.plist` 없음)
-- 매일 토큰 비용 발생
-- cost-accountant 마진 검증 미연동
+- 매일 토큰 비용 발생 (cost-accountant 마진 검증 미연동)
+- on-demand 호출로 충분히 운영 가능 — 본 §14.7과 §15.7 위임 가치 가이드라인 결합으로 운영 정합성 확보
+- 1인 운영 + 짧은 작업 빈도 패턴에서 자율 실행 가치 ↓
 
-현재 에이전트는 **on-demand Task tool 호출**로만 사용. 단 Fowler memo의 "Garbage Collection" 축이 비어있는 갭 (성숙도 진단 1.5/5).
+현재 운영: **on-demand Task tool 호출만** + §15.7 위임 가치 매트릭스 따라 결정.
 
-원래 계획했던 스케줄(참조용):
+원래 계획했던 스케줄(참조용 보존, 재고 자체 무기한 미정):
 ```
 18:04 researcher / 19:08 cost-accountant / 20:11 planner /
 21:14 visual-canon-keeper / 22:17 server+web / 23:21 qa
 ```
+
+**관련 결정**:
+- Top-7 #J (launchd 재활성 결정) — **무기한 보류** 결정 (영구 제거)
+- O (Stop callback Slack) — J 의존이라 자동 영구 보류
+- §15.7 (위임 가치 가이드라인) — on-demand 운영 효율 보장 메커니즘
 
 ### 14.8 핵심 제약 (Grimoire 고유)
 1. **PLANNING §0 원가 철칙**: 새 AI 기능은 cost-accountant 마진 ≥3배 검증 없이 기획 진행 불가
@@ -892,7 +905,7 @@ launchd plist 비활성 상태. 2026-04-19 세션 + 세션 #5에서 "비활성 �
 
 ### 14.10 미도입·보류 결정 항목 (실측 확정, 2026-04-25 / 2026-04-26 갱신)
 - `TASK_QUEUE.json` — 태스크 큐 파일 (미도입)
-- launchd 자율 실행 — **비활성 유지** (위 §14.7)
+- **launchd 자율 실행 — ⛔ 무기한 보류 (사용자 결정, 2026-04-26 #9)** — Top-7 #J 영구 제거. 위 §14.7 영구 비활성 박제 참조
 - `.mcp.json` 도메인 특화 MCP — Phase 4 P3, DB 권한 위험으로 보류
 - `/handover-refresh` slash — ✅ **2026-04-25 #8 완료** (skill로 도입)
 - 모델 티어링 (Haiku/Sonnet/Opus) — cost-accountant 사전 시뮬 필수

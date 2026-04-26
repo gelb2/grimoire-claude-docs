@@ -74,6 +74,13 @@ for cand in $SPEC_CANDIDATES; do
   fi
 done
 
+# sensor-log 적재 — orchestration ratio 정확도 향상 (FOUND=1=PASS, 0=WARN)
+SENSOR_LOG="/Users/sokol/Desktop/Git/ProjectGrimoire/.claude/scripts/sensor-log.sh"
+if [ -x "$SENSOR_LOG" ]; then
+  RC=$([ "$FOUND" -eq 1 ] && echo 0 || echo 2)
+  bash "$SENSOR_LOG" "post-edit-spec-check" "$RC" "found=$FOUND file=$FILE_PATH" 2>/dev/null || true
+fi
+
 if [ "$FOUND" -eq 0 ]; then
   {
     echo "[post-edit-spec-check] 경고: $FILE_PATH 에 대응하는 spec/test 파일이 없습니다."
