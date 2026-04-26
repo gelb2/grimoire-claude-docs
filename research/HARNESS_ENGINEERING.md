@@ -74,12 +74,25 @@ Claude Code의 **Skill**은 `.claude/skills/<skill-name>/SKILL.md` 규약으로 
 ---
 name: skill-name
 description: 이 skill이 언제 발동되어야 하는지 (Claude가 trigger 판단)
-allowed-tools: Read, Edit, Bash   # 선택
+allowed-tools: Read, Edit, Bash      # 선택
+disable-model-invocation: true       # 명시 호출만 허용 (사용자 결정)
+triggers:                            # UserPromptSubmit 자동 매칭 키워드
+  - "키워드1"
+  - "키워드2"
+# 2026-04-27 researcher 위임 검증으로 발견된 신규 필드 (현 인벤토리 대부분 미반영, P2 마이그레이션 가치):
+model: opus | sonnet | haiku         # skill 내부 모델 지정
+effort: low | medium | high          # 작업 강도 (Claude 자체 평가)
+paths:                               # 적용 파일 glob 패턴
+  - "grimoire-server/**/*.ts"
+hooks:                               # skill-scoped hooks (settings.json hooks 분리)
+  PreToolUse: bash /path/to/hook.sh
 ---
 
 # Skill 본문 (Markdown)
 구체적 절차, 체크리스트, 참조 파일 경로 등.
 ```
+
+> **2026-04-27 researcher 검증**: Anthropic 공식 docs에서 `model`/`effort`/`paths`/`hooks` 신규 필드 확인. 현 ProjectGrimoire 13 skills는 대부분 `name`/`description`/`allowed-tools`/`triggers`/`disable-model-invocation`만 사용. **P2 마이그레이션 가치** (특히 `paths`/`hooks` 필드로 sensor-skill 연동 가능).
 
 ### 6.2 Agent vs Skill 비교
 
@@ -136,7 +149,7 @@ P0~P1 구현 후보:
 
 ## 7. 커뮤니티 3대 레포 심층 분석 (v2 신설)
 
-### 7.1 [obra/superpowers](https://github.com/obra/superpowers) — 167k stars, MIT
+### 7.1 [obra/superpowers](https://github.com/obra/superpowers) — 168k stars, MIT (2026-04-27 갱신, 167k → 168k)
 
 **정체성**: "A complete software development methodology for your coding agents." TDD + systematic debugging + collaboration 프로토콜 번들.
 
@@ -174,7 +187,7 @@ P0~P1 구현 후보:
 
 **라이선스 주의**: MIT지만 패키지 그대로 install 시 167k의 범용 규칙이 ProjectGrimoire 도메인 규칙과 충돌 가능. **선별적 이식 권장**.
 
-### 7.2 [Yeachan-Heo/oh-my-claudecode](https://github.com/Yeachan-Heo/oh-my-claudecode) — 31.1k stars, MIT (한국 개발자)
+### 7.2 [Yeachan-Heo/oh-my-claudecode](https://github.com/Yeachan-Heo/oh-my-claudecode) — 31.4k stars, MIT (한국 개발자, 2026-04-27 갱신: 31.1k → 31.4k, v4.13.4 2026-04-24)
 
 **정체성**: "Teams-first Multi-agent orchestration for Claude Code." "Don't learn Claude Code. Just use OMC."
 
@@ -224,7 +237,7 @@ omc setup
 
 **경고**: 19개 agent를 일괄 install하면 ProjectGrimoire의 7개 도메인 agent와 중복/충돌. **선별 이식 권장**.
 
-### 7.3 [Q00/ouroboros](https://github.com/Q00/ouroboros) — 2.7k stars, MIT
+### 7.3 [Q00/ouroboros](https://github.com/Q00/ouroboros) — 2.7k stars, MIT (2026-04-27 갱신: v0.30.0 2026-04-26 어제 출시 — 활발 유지)
 
 **정체성**: "Specification-first workflow engine for AI coding agents." "Stop prompting. Start specifying."
 
@@ -273,7 +286,7 @@ claude plugin marketplace add Q00/ouroboros
 
 | 축 | superpowers | oh-my-claudecode | ouroboros |
 |---|---|---|---|
-| 규모 | 167k ⭐ | 31.1k ⭐ | 2.7k ⭐ |
+| 규모 | 168k ⭐ | 31.4k ⭐ | 2.7k ⭐ |
 | 철학 | TDD + systematic | Teams-first | Spec-first |
 | 언어 | (설정 파일 중심) | TypeScript | Python |
 | 설치 | Claude plugin | plugin / npm | pip / plugin |
@@ -345,10 +358,23 @@ $ARGUMENTS 변수로 사용자 입력 받기
 - 위험 명령(`rm -rf`, `git reset --hard`)은 `deny`로 차단 가능
 - ProjectGrimoire 추가 후보: `Bash(git status)`, `Bash(git diff*)`, `Bash(npm test*)`, `Bash(npx tsc --noEmit)` 등 반복 명령 auto-approve
 
-### 8.4 Output Styles (`.claude/output-styles/*.md`)
+### 8.4 Output Styles (`.claude/output-styles/*.md`) — ⛔ 2026-04-27 #9 P3 보류 결정
 
-- 응답 스타일 템플릿 (개발자용 / 경영진용 / 리뷰용 등)
-- ProjectGrimoire에서는 **미탐색 영역**. 현재 필요도 낮음
+**공식 명세** (researcher 검증):
+- 위치: `~/.claude/output-styles/` 또는 `.claude/output-styles/*.md`
+- frontmatter: `name`, `description`, `keep-coding-instructions`만
+- settings.local.json `outputStyle` 필드로 활성
+- **시스템 프롬프트의 코딩 부분을 끔** (keep-coding-instructions: false 기본)
+
+**ProjectGrimoire 부적합 사유**:
+- 작가별 응답 스타일 시도 → **세션당 1개만 활성** → 작가 슬러그별 전환 불가
+- server/web 도메인별 스타일 → 이미 subagent에 system prompt 분리됨 (중복 투자)
+- cost-accountant 마진 표 양식 → agent OUTPUT_SPEC에 박제됨 (불필요)
+- 핵심 충돌: **세션당 1개 한계 + 코딩 지시 비활성화 기본**이 Grimoire 워크플로우(코드+문서+분석 혼재)와 충돌
+
+**재검토 조건**: Anthropic이 **per-agent override** 도입 시 (현재 미지원).
+
+§14.10 미도입·보류 결정 항목 박제 완료.
 
 ### 8.5 Statusline (`.claude/statusline.sh`) — ✅ 2026-04-27 #9 도입
 
@@ -383,11 +409,34 @@ ProjectGrimoire 전용 MCP 후보:
 - **Azure Container App status MCP** — `az containerapp` 호출 래퍼
 - **Grimoire DB admin MCP** — dev 방화벽 열고 쿼리 (위험성 높음, 권한 엄격)
 
-### 8.7 Plugins (marketplace)
+### 8.7 Plugins (marketplace) — 2026-04-27 #9 평가 (선별 차용 유지)
 
-Claude Code 2026-04 릴리스에서 plugin marketplace 본격화:
-- `obra/superpowers`, `Yeachan-Heo/oh-my-claudecode`, `Q00/ouroboros` 등 install 가능
-- 한 레포 install 시 agents/skills/commands 일괄 주입
+**공식 marketplace** (researcher 검증):
+- `claude-plugins-official` (자동 활성)
+- 명령: `/plugin install <name>@claude-plugins-official`
+- 카탈로그: [claude.com/plugins](https://claude.com/plugins)
+- 카테고리: code intelligence (LSP 11종) / external integrations (github/gitlab/atlassian/linear/notion/figma/vercel/firebase/supabase/slack/sentry) / dev workflows / output styles
+
+**ProjectGrimoire 평가 (2026-04-27 researcher)**:
+
+| Plugin | 평가 | 결정 |
+|---|---|---|
+| **typescript-lsp** ★ | server/web 양쪽 즉시 도입 가치 (편집 직후 자동 진단 + 타입 정보 + 정의로 점프) | **사용자 결정 영역 P1** (Grimoire 컨벤션 무관) |
+| github plugin | gh CLI 이미 활용 중 → 중복 | 보류 |
+| commit-commands | 한국어 커밋 컨벤션 + Pre-Push Hook과 충돌 | 보류 |
+| superpowers/systematic-debugging | verification-before-completion 이미 보유, 보완 가치 | P2 선별 차용 |
+| 외부 integrations (slack/notion 등) | 현재 운영 패턴에 미사용 | 보류 |
+
+**install vs 선별 차용 트레이드오프**:
+
+| 방식 | 장점 | 단점 |
+|---|---|---|
+| install | 자동 업데이트 + 네임스페이스 충돌 방지 + 의존성 자동 해결 | 외부 변경 영향 직접 수신 |
+| **선별 차용 (현재)** | 라이선스 명시 + 한국어 컨벤션 맞춤 + §0 원가 게이트 통합 | 수동 업데이트 |
+
+**최종 결정**: **선별 차용 유지** (한국어 + §0 원가 게이트 + 사슴악마 정본 종속). 단 **typescript-lsp는 사용자 결정 영역**으로 분리.
+
+**자체 marketplace 후보**: `gelb2/grimoire-plugins` (3 레포 동기화 자동화) — P2 검토.
 
 ### 8.8 Knowledge (`.claude/knowledge/*.md`)
 
@@ -781,9 +830,10 @@ gh repo create gelb2/grimoire-workspace --private --source=. --remote=origin --p
 - [Claude Code Skills 공식 문서](https://code.claude.com/docs/en/skills)
 
 ### 커뮤니티 3대 레포 (v2 심층 분석 포함)
-- [GitHub — obra/superpowers](https://github.com/obra/superpowers) — 167k ⭐, MIT, TDD+systematic methodology
-- [GitHub — Yeachan-Heo/oh-my-claudecode](https://github.com/Yeachan-Heo/oh-my-claudecode) — 31.1k ⭐, MIT, Teams-first multi-agent
-- [GitHub — Q00/ouroboros](https://github.com/Q00/ouroboros) — 2.7k ⭐, MIT, Spec-first workflow engine
+- [GitHub — obra/superpowers](https://github.com/obra/superpowers) — 168k ⭐ (v5.0.7), MIT, TDD+systematic methodology
+- [GitHub — Yeachan-Heo/oh-my-claudecode](https://github.com/Yeachan-Heo/oh-my-claudecode) — 31.4k ⭐ (v4.13.4), MIT, Teams-first multi-agent
+- [GitHub — Q00/ouroboros](https://github.com/Q00/ouroboros) — 2.7k ⭐ (v0.30.0 2026-04-26), MIT, Spec-first workflow engine
+- **stars/버전 갱신: 2026-04-27 researcher 위임 검증**
 
 ### 부가 참고
 - [GitHub — Chachamaru127/claude-code-harness](https://github.com/Chachamaru127/claude-code-harness) — Go guardrail engine
@@ -939,6 +989,18 @@ gh repo create gelb2/grimoire-workspace --private --source=. --remote=origin --p
   - 사용자 결정: "모두 Opus 유지" — Haiku/Sonnet 다운그레이드 안 함
   - 사유: cost-accountant / VCK / qa는 정밀 추론 필수 (실수 시 §0 위반 또는 시각 정본 깨짐). server/web도 코드 정밀도 위해 Opus 유지가 안전. 토큰 비용 절감보다 품질 우선
   - 재검토 조건: 월간 토큰 비용이 crit 임계 도달 시 사용자 결정
+- **§8.4 Output Styles (`.claude/output-styles/*.md`)** (2026-04-27 #9 P3 보류 결정 — researcher 평가)
+  - 사유: 세션당 1개만 활성 → 작가 슬러그별 전환 불가
+  - server/web subagent에 system prompt 이미 분리 → 도메인별 스타일 중복 투자
+  - cost-accountant 마진 표 양식 등은 agent OUTPUT_SPEC에 박제됨 → 불필요
+  - keep-coding-instructions 기본 false (코딩 지시 비활성화) → Grimoire 워크플로우(코드+문서+분석 혼재)와 충돌
+  - 재검토 조건: Anthropic이 **per-agent override** 도입 시
+- **§8.7 Plugins marketplace 일괄 install** (2026-04-27 #9 보류 결정 — researcher 평가)
+  - 결정: **선별 차용 유지** (한국어 컨벤션 + §0 원가 게이트 + 사슴악마 정본 종속 맞춤화)
+  - github plugin: gh CLI 이미 활용 → 중복
+  - commit-commands: 한국어 커밋 컨벤션 + Pre-Push Hook과 충돌 → 보류
+  - **예외 ★ typescript-lsp**: 사용자 결정 영역으로 분리 (Grimoire 자체 컨벤션 무관, IDE 통합 가치, 사용자 승인 시 P1)
+  - 자체 grimoire-plugins marketplace: P2 (3 레포 동기화 자동화 가치)
 - **Azure Container App read-only MCP (G2)** (2026-04-27 #9 보류 결정)
   - 사유: settings.local.json에 `Bash(az containerapp show:*)` + 관련 az 권한 18건 이미 등록됨 → MCP 도입 없이도 사용자 직접 + 메인 bash 호출(사용자 명시 의도)로 작동
   - 차단 케이스: sensor 자동 호출 시점 (사용자 명시 의도 부재) — MCP 도입해도 같은 보안 평가 적용
