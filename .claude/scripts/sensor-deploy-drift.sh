@@ -100,23 +100,33 @@ check_repo_drift "server" "$SERVER"
 check_repo_drift "web" "$WEB"
 
 # 3. dev/prod health endpoint
+# Container Apps scale-to-zero 환경에서 cold start 시 응답이 ~30초 걸릴 수 있음 (실측 기준).
+# max-time 60s + 시간대별 임계값 차등화:
+#   - <2s: PASS (warm pool 정상 응답)
+#   - 2~10s: PASS (정상 범위, 일반 응답)
+#   - 10~35s: WARN (cold start 의심, dev 환경에서는 정상)
+#   - 35~60s: WARN (cold start ↑, prod이면 검토)
+#   - >60s 또는 응답 없음: FAIL (서버 다운 가능성)
+# 307 리다이렉트도 정상 응답으로 인정 (web 루트 → /explore)
 check_health() {
   local label="$1" url="$2"
   local response code time
-  response=$(curl -s -o /dev/null -w "%{http_code} %{time_total}" --max-time 10 "$url" 2>/dev/null)
+  response=$(curl -s -o /dev/null -w "%{http_code} %{time_total}" --max-time 60 "$url" 2>/dev/null)
   code=$(echo "$response" | awk '{print $1}')
   time=$(echo "$response" | awk '{print $2}')
-  if [ "$code" = "200" ]; then
+  if [ "$code" = "200" ] || [ "$code" = "307" ] || [ "$code" = "308" ]; then
     local time_int=$(awk -v t="$time" 'BEGIN{print int(t)}')
-    if [ "$time_int" -lt 1 ]; then
-      check "$label health" "PASS" "HTTP 200 (${time}s)"
-    elif [ "$time_int" -lt 3 ]; then
-      check "$label health" "WARN" "HTTP 200 (${time}s, 응답 느림)"
+    if [ "$time_int" -lt 2 ]; then
+      check "$label health" "PASS" "HTTP $code (${time}s, warm)"
+    elif [ "$time_int" -lt 10 ]; then
+      check "$label health" "PASS" "HTTP $code (${time}s, 정상 응답)"
+    elif [ "$time_int" -lt 35 ]; then
+      check "$label health" "WARN" "HTTP $code (${time}s, cold start 의심)"
     else
-      check "$label health" "FAIL" "HTTP 200 (${time}s, 매우 느림 — cold start?)"
+      check "$label health" "WARN" "HTTP $code (${time}s, 매우 느림 — prod이면 검토)"
     fi
   elif [ -z "$code" ] || [ "$code" = "000" ]; then
-    check "$label health" "FAIL" "응답 없음 (네트워크/서버 다운)"
+    check "$label health" "FAIL" "응답 없음 (60s 타임아웃 — 서버 다운 가능성)"
   else
     check "$label health" "FAIL" "HTTP $code (${time}s)"
   fi
