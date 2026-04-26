@@ -350,7 +350,23 @@ $ARGUMENTS 변수로 사용자 입력 받기
 - 응답 스타일 템플릿 (개발자용 / 경영진용 / 리뷰용 등)
 - ProjectGrimoire에서는 **미탐색 영역**. 현재 필요도 낮음
 
-### 8.5 Statusline (`.claude/statusline.sh`)
+### 8.5 Statusline (`.claude/statusline.sh`) — ✅ 2026-04-27 #9 도입
+
+**도입 시점**: 2026-04-27 #9
+**스크립트**: `.claude/scripts/statusline.sh`
+**settings.json 등록**: `statusLine: { type: "command", command: "...", padding: 0 }`
+
+**표시 항목** (Ambient Affordance, §3):
+1. claude-docs 현재 브랜치
+2. server / web develop ahead origin/main (배포 대기 commit 수, ANSI 색상)
+3. sensor-cost-margin 최근 상태 (PASS/WARN/FAIL + 평균 안전배수)
+4. sensor-deploy-drift 최근 상태 (PASS/WARN/FAIL + PASS/WARN 카운트)
+
+**호출 빈도**: assistant 메시지 후 + 권한 모드 변경 + Vim 토글, 300ms debounce
+**색상**: ANSI escape codes (녹/노/빨/회색)
+**비용**: <1초 (git rev-list + tail jsonl)
+
+**효과**: sensor 결과를 매번 호출 없이 항상 가시화 → 본 세션의 server/web develop ahead main 8건 같은 상황 즉시 인지 가능 (능동 → 수동/ambient).
 
 - 터미널 하단에 실시간 정보 표시
 - 후보: 현재 브랜치 / 마지막 테스트 결과 / 배포 상태 / 크레딧 카운터
@@ -815,6 +831,11 @@ gh repo create gelb2/grimoire-workspace --private --source=. --remote=origin --p
 | worktree-isolation (2026-04-27 #9 F 신설, obra/superpowers MIT) | 사용자 명시 호출 `/worktree-isolation <start <branch>\|finish\|discard\|list>` | Edit 폭주 작업 (≥50 호출 또는 ≥1시간 다중 도메인) 시 git worktree 격리. 메인 develop 오염 방지 + rollback 안전망 (HARNESS §8.10) |
 | **deploy-image-verify** (2026-04-27 #9 EEE 신설) | 사용자 명시 호출 `/deploy-image-verify [server\|web\|both]` | sensor-deploy-drift가 권한 차단으로 자동 측정 불가한 영역(운영 Container App image SHA vs git main HEAD) 사용자 직접 az 명령 안내 + SHA 비교 |
 
+### 14.2.1 Statusline (2026-04-27 #9 신설)
+- `.claude/scripts/statusline.sh` — settings.json statusLine 등록 → assistant 메시지 후 자동 호출
+- 표시: docs 브랜치 + server/web ahead main + cost-margin 상태 + deploy-drift 상태 (ANSI 색상)
+- 효과: Ambient Affordance — sensor 호출 없이 항상 가시화
+
 ### 14.3 Hooks 8 이벤트 10 스크립트 (`.claude/settings.json`)
 
 | Hook | matcher | 스크립트 | 용도 |
@@ -1046,6 +1067,26 @@ subagent 위임은 다음 비용 동반:
 | **1차+2차 (이전 메시지)** | ~3시간 | **다중 (.claude/ + research/ + AUTOMATION)** | **subagent 위임 권장** | **메인 직접** | **❌ KPI 손실** |
 
 본 세션 합치율: **5/6 = 83%**. 1차+2차에서만 부적합 결정 (subagent 위임 가치 있었으나 메인 직접 처리 → 패턴 1 KPI 0.0 유지).
+
+##### 15.7.3.1 위임 3건 추가 박제 (2026-04-26 #9 H'+I'+F + W + X 묶음)
+
+| 작업 | 위임 대상 | 매트릭스 매칭 | 효과 | 합치 |
+|---|---|---|---|---|
+| I' (WARN 5건 정밀 분석) | cost-accountant | ✅ "AI 기능 마진 검증 / 가격 변동" 외부 검증 도메인 | 분석/베스트 FAIL 약점 식별 + planner 핸드오프 박제 | ✅ |
+| 분석 4 크레딧 재계산 + 시뮬 | cost-accountant | ✅ "ai-cost-table.md 단독 관리" + 가격 변경 시 마진 검증 | ai-cost-table 직접 갱신 + §0 위반 차단 (베스트 2.79→3.35× FAIL→PASS) | ✅ |
+| BBB (AI_COST_MONITOR 갱신) | researcher | ✅ "시장 조사 / AI 가격 모니터링" | staleAfter 갱신 + Claude Opus 4.7 신규 박제 | ✅ |
+
+**누적 합치율 (본 세션): 8/9 = 88.9%** (1차+2차 5/6 + 위임 3건 3/3).
+
+##### 15.7.3.2 sensor-orchestration-ratio 측정 한계 발견
+
+본 세션 #9에서 위임 3건 모두 §15.7.3.1처럼 박제했으나 sensor-orchestration-ratio가 ratio 0.0000을 보고. 원인:
+
+- **진행 중 세션의 jsonl flush 지연** (Claude Code가 세션 종료 후 또는 일정 시점에 flush)
+- 본 세션 jsonl(`af2dbdaa-...jsonl`) Task 박제 0건 (실제 위임 3건과 불일치)
+- 다음 세션 진입 시 본 세션 위임 3건이 jsonl에 박제되어 측정 가능
+
+**해결**: §15.7.3 합치율은 **메인 자가 박제**(본 절)와 **sensor 자동 측정**(sensor-orchestration-ratio jsonl) 두 채널 병행. 다음 세션부터 ratio 0.0 → 양수 진입 예상.
 
 #### 15.7.4 다음 세션 부터 적용 규칙
 
