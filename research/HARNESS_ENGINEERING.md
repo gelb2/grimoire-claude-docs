@@ -828,7 +828,7 @@ gh repo create gelb2/grimoire-workspace --private --source=. --remote=origin --p
 | PostToolUse | Edit\|Write | post-edit-spec-check.sh | spec/test 누락 감지 (usecase/lib/adapter/features 화이트리스트) |
 | **PostToolBatch** (2026-04-25 #7 신설) | - (전체) | post-batch-tsc.sh | parallel batch 완료 후 server+web tsc 일괄 (debounce 60s, 빌드 중복 60% ↓ 목표) |
 
-### 14.4 Sensors 10개 (`.claude/scripts/sensor-*.sh`)
+### 14.4 Sensors 12개 (`.claude/scripts/sensor-*.sh`)
 
 | Sensor | 용도 |
 |---|---|
@@ -841,7 +841,9 @@ gh repo create gelb2/grimoire-workspace --private --source=. --remote=origin --p
 | sensor-hit-rate-report.sh | 주간 sensor별 PASS/WARN/FAIL 집계 + silent sensor 식별 |
 | **sensor-orchestration-ratio.sh (2026-04-26 #9 P2 완성)** | **패턴 1 KPI: jsonl(`~/.claude/projects/.../*.jsonl`) Python 파싱. 메인 Edit/Write vs Task tool 호출 비율 + sidechain 분리 + subagent 타입 분포. 임계값: ≥0.20 PASS / 0.05~0.20 WARN / <0.05 FAIL. **2026-04-26 첫 P2 실측: 696 main vs 0 task = 0.0000 (FAIL — 패턴 1 도입했지만 실제 적용 0%)** |
 | sensor-credit-atomicity.sh (2026-04-25 #8 신설, Requisite Variety 갭) | 결제·환불·CreditLog 원자성 정합 검사 (4 항목: $transaction / audit trail / 환불 분기 / webhook secret 하드코딩) |
-| **sensor-feedback-promotion.sh (2026-04-26 #9 신설, X-L)** | memory/feedback_*.md 영향력 측정 (다른 정본/메모리/skill 참조 카운트). count ≥3 + 신규 90일 면제 → PROMOTE 후보 식별. HARNESS §8.9 v2. 첫 실측 (2026-04-26): PROMOTE 0 / OBSERVE 10 / KEEP 18. |
+| sensor-feedback-promotion.sh (2026-04-26 #9 신설, X-L) | memory/feedback_*.md 영향력 측정 (다른 정본/메모리/skill 참조 카운트). count ≥3 + 신규 90일 면제 → PROMOTE 후보 식별. HARNESS §8.9 v2. 첫 실측 (2026-04-26): PROMOTE 0 / OBSERVE 10 / KEEP 18. |
+| **sensor-deploy-drift.sh (2026-04-26 #9 신설, B)** | server/web develop ↔ origin/develop ↔ main + dev/prod health endpoint 동기화 검증. 운영 image SHA 비교는 권한 차단으로 사용자 직접 명령 (안내). 첫 실측: PASS 3 / WARN 4 — server develop ahead main 8건 (prod 미배포 검출). |
+| **sensor-cost-margin.sh (2026-04-26 #9 신설, C)** | ai-cost-table.md 안전배수 ≥3.0× 자동 검증 (PLANNING §0 강제). 12 항목 마크다운 표 파싱 + 갱신일 stale 검사. 첫 실측: 안전배수 12건 / FAIL 0 / WARN 5 (3.0~3.5×) / 최소 3.14× / 평균 3.73× / 최대 5.39×. |
 
 ### 14.5 Knowledge 4개 (`.claude/knowledge/`)
 - README.md · agent-system.md · sensors.md · **agent-interaction-matrix.md (2026-04-26 #9 신설 — 7×7 핸드오프 매트릭스 + 산출물 정합 + 트리거 규칙 + 금지 조합)**
