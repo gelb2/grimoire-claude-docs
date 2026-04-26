@@ -797,7 +797,7 @@ gh repo create gelb2/grimoire-workspace --private --source=. --remote=origin --p
 
 각 에이전트 `.md` 하단에 "Skills 프로토콜 참조" 섹션으로 `.claude/skills/*/SKILL.md` 경로 embed (ouroboros 방식 — 공식 스펙상 서브에이전트는 Skill 자동 발동 불가).
 
-### 14.2 Skills 12종 (`.claude/skills/<name>/SKILL.md`)
+### 14.2 Skills 13종 (`.claude/skills/<name>/SKILL.md`)
 
 | Skill | 트리거 / 호출 | 용도 |
 |---|---|---|
@@ -812,7 +812,8 @@ gh repo create gelb2/grimoire-workspace --private --source=. --remote=origin --p
 | handover-refresh (2026-04-25 #8 신설) | 사용자 명시 호출 `/handover-refresh [dry-run\|apply]` | grimoire-server/HANDOVER.md 자동 수집 갱신 (git log + memory + sensor + 배포 + TODO) |
 | gc-sweep (2026-04-26 #9 신설) | 사용자 명시 호출 `/gc-sweep [dry-run\|stage\|apply]` | Fowler GC 축 1.5/5 → 3+/5 갭 해소. 7 카테고리(skills/sensors/hooks/memory/scripts/agents/prompts) 미참조·stale 자산 식별 |
 | feedback-to-skill (2026-04-26 #9 신설, X-L) | 사용자 명시 호출 `/feedback-to-skill <feedback-name\|dry-run>` | memory/feedback_*.md PROMOTE 후보를 draft skill로 변환 → 사용자 confirm 후 정식 승격 (HARNESS §8.9 v2 Memory Session-to-Skill) |
-| **worktree-isolation** (2026-04-27 #9 F 신설, obra/superpowers MIT) | 사용자 명시 호출 `/worktree-isolation <start <branch>\|finish\|discard\|list>` | Edit 폭주 작업 (≥50 호출 또는 ≥1시간 다중 도메인) 시 git worktree 격리. 메인 develop 오염 방지 + rollback 안전망 (HARNESS §8.10) |
+| worktree-isolation (2026-04-27 #9 F 신설, obra/superpowers MIT) | 사용자 명시 호출 `/worktree-isolation <start <branch>\|finish\|discard\|list>` | Edit 폭주 작업 (≥50 호출 또는 ≥1시간 다중 도메인) 시 git worktree 격리. 메인 develop 오염 방지 + rollback 안전망 (HARNESS §8.10) |
+| **deploy-image-verify** (2026-04-27 #9 EEE 신설) | 사용자 명시 호출 `/deploy-image-verify [server\|web\|both]` | sensor-deploy-drift가 권한 차단으로 자동 측정 불가한 영역(운영 Container App image SHA vs git main HEAD) 사용자 직접 az 명령 안내 + SHA 비교 |
 
 ### 14.3 Hooks 8 이벤트 10 스크립트 (`.claude/settings.json`)
 

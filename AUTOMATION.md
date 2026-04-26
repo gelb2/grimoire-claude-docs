@@ -60,7 +60,7 @@
 
 ---
 
-## 1.5. Skills 인벤토리 (12개 — 2026-04-27 기준)
+## 1.5. Skills 인벤토리 (13개 — 2026-04-27 기준)
 
 > Skill은 트리거 키워드 또는 사용자 명시 호출(`/skill-name`)로 발동. agent와 달리 도구 호출 단위.
 
@@ -77,6 +77,7 @@
 | `refund-logic-audit` | 명시 호출 | 결제·환불 로직 감사 |
 | `verification-before-completion` | 키워드 | 완료 선언 전 실측 증거 강제 |
 | `worktree-isolation` (2026-04-27 F) | 명시 호출 | Edit 폭주 작업 시 git worktree 격리 (HARNESS §8.10 안전망) |
+| `deploy-image-verify` (2026-04-27 EEE) | 명시 호출 | Container App image SHA vs git main HEAD 정합 검증 (sensor-deploy-drift 보완) |
 | `writing-plans` (2026-04-25 #8) | 키워드 (≥30분 게이트) | 큰 작업 sub-task 분할 |
 
 ---
@@ -344,4 +345,6 @@ Skill의 `triggers` 키워드가 사용자 메시지에 포함되어야 발동. 
 | 2026-04-26 #9 1차 묶음 (A+D+E+H) | A: launchd 영구 보류 박제 (4 문서). D: post-edit hooks → sensor-log 통합. E: gc-sweep 첫 dry-run (청소 후보 0건). H: orchestration sensor §15.7 합치 분석 추가 (server/web 47.3% + ratio 0.0 → WARN 자동 판정). |
 | 2026-04-26 #9 2차 묶음 (B+C) | B: sensor-deploy-drift — develop ↔ main ↔ health 정합 (첫 실측: server develop ahead main 8건 검출). C: sensor-cost-margin — ai-cost-table 안전배수 ≥3.0× 자동 검증 (12 항목 / FAIL 0 / WARN 5 / 평균 3.73×). 본 문서 갱신 (Sensors 10 → 12). |
 | 2026-04-27 #9 prod 배포 + Chrome 검증 | 3 레포 develop → main 머지 + push (server `f5d6b1e` / web `4c6216b` / claude-docs `16a7f7a`). server/web prod 배포 (image `prod-f5d6b1e6cc...` / `prod-4c6216b18f...`). Chrome MCP prod 시각 정본 검증 (사슴악마 작가공간 모든 요소 정합). |
-| **2026-04-27 #9 H'+I'+F 묶음** | **H': sensor-deploy-drift health 임계값 조정 (max-time 10s→60s, cold start 의심 분류 추가). I': cost-accountant agent 위임 (패턴 1 KPI 첫 위임 사례) — WARN 5건 정밀 분석, 분석/베스트가 모든 시뮬의 FAIL 약점 식별, planner 핸드오프 박제. F: worktree-isolation skill 신설 (HARNESS §8.10 안전망, obra/superpowers MIT). Skills 11→12, .gitignore에 .worktrees/ 추가.** |
+| 2026-04-27 #9 H'+I'+F 묶음 | H': sensor-deploy-drift health 임계값 조정 (max-time 10s→60s, cold start 의심 분류 추가). I': cost-accountant agent 위임 (패턴 1 KPI 첫 위임 사례) — WARN 5건 정밀 분석, 분석/베스트가 모든 시뮬의 FAIL 약점 식별, planner 핸드오프 박제. F: worktree-isolation skill 신설 (HARNESS §8.10 안전망, obra/superpowers MIT). Skills 11→12, .gitignore에 .worktrees/ 추가. |
+| 2026-04-27 #9 분석 4 크레딧 인상 + W 배포 | cost-accountant agent 위임 (패턴 1 2번째) → ai-cost-table.md §3-2 4 크레딧 재계산 + 시뮬 (베스트 2.79→3.35× FAIL 약점 해소). server `domain/model/config.ts` ANALYSIS_CREDIT_COST 3→4 + spec 30/30 PASS + ai-analysis-spec 갱신. server `e8e34ab` + web `bab239b` 3 레포 develop→main + prod 배포 (image `prod-e8e34ab062f4...` / `prod-bab239b08667...`). claude-docs `9a4f04a` main 머지. |
+| **2026-04-27 #9 X 묶음 (AAA+BBB+EEE)** | **AAA: sensor-cost-margin 메시지 강화 (조기 경보 + planner 시점 권장 명시). BBB: researcher agent 위임 (패턴 1 3번째) — AI 가격 변동 0% / 환율 +0.16% / COST_ALERT 미생성 / Claude Opus 4.7 신규 박제. EEE: deploy-image-verify skill 신설 (Container App image SHA vs git main HEAD 정합 검증, 사용자 az 명령 안내). Skills 12→13.** |
