@@ -797,7 +797,7 @@ gh repo create gelb2/grimoire-workspace --private --source=. --remote=origin --p
 
 각 에이전트 `.md` 하단에 "Skills 프로토콜 참조" 섹션으로 `.claude/skills/*/SKILL.md` 경로 embed (ouroboros 방식 — 공식 스펙상 서브에이전트는 Skill 자동 발동 불가).
 
-### 14.2 Skills 10종 (`.claude/skills/<name>/SKILL.md`)
+### 14.2 Skills 11종 (`.claude/skills/<name>/SKILL.md`)
 
 | Skill | 트리거 / 호출 | 용도 |
 |---|---|---|
@@ -810,7 +810,8 @@ gh repo create gelb2/grimoire-workspace --private --source=. --remote=origin --p
 | deploy-precheck (2026-04-25 #7 마이그레이션) | 사용자 명시 호출 `/deploy-precheck` (동일) | 수동 배포 직전 7-step 게이트 |
 | writing-plans (2026-04-25 #8 신설, superpowers MIT 차용) | UserPromptSubmit 자동 매칭 (10 키워드: "계획 짜", "분할", "단계별로" 등) | 큰 작업(≥30분) 분할 메타 절차 (sub-task 2~5분 단위) |
 | handover-refresh (2026-04-25 #8 신설) | 사용자 명시 호출 `/handover-refresh [dry-run\|apply]` | grimoire-server/HANDOVER.md 자동 수집 갱신 (git log + memory + sensor + 배포 + TODO) |
-| **gc-sweep** (2026-04-26 #9 신설) | 사용자 명시 호출 `/gc-sweep [dry-run\|stage\|apply]` | Fowler GC 축 1.5/5 → 3+/5 갭 해소. 7 카테고리(skills/sensors/hooks/memory/scripts/agents/prompts) 미참조·stale 자산 식별 |
+| gc-sweep (2026-04-26 #9 신설) | 사용자 명시 호출 `/gc-sweep [dry-run\|stage\|apply]` | Fowler GC 축 1.5/5 → 3+/5 갭 해소. 7 카테고리(skills/sensors/hooks/memory/scripts/agents/prompts) 미참조·stale 자산 식별 |
+| **feedback-to-skill** (2026-04-26 #9 신설, X-L) | 사용자 명시 호출 `/feedback-to-skill <feedback-name\|dry-run>` | memory/feedback_*.md PROMOTE 후보를 draft skill로 변환 → 사용자 confirm 후 정식 승격 (HARNESS §8.9 v2 Memory Session-to-Skill) |
 
 ### 14.3 Hooks 8 이벤트 10 스크립트 (`.claude/settings.json`)
 
@@ -827,7 +828,7 @@ gh repo create gelb2/grimoire-workspace --private --source=. --remote=origin --p
 | PostToolUse | Edit\|Write | post-edit-spec-check.sh | spec/test 누락 감지 (usecase/lib/adapter/features 화이트리스트) |
 | **PostToolBatch** (2026-04-25 #7 신설) | - (전체) | post-batch-tsc.sh | parallel batch 완료 후 server+web tsc 일괄 (debounce 60s, 빌드 중복 60% ↓ 목표) |
 
-### 14.4 Sensors 9개 (`.claude/scripts/sensor-*.sh`)
+### 14.4 Sensors 12개 (`.claude/scripts/sensor-*.sh`)
 
 | Sensor | 용도 |
 |---|---|
@@ -840,6 +841,9 @@ gh repo create gelb2/grimoire-workspace --private --source=. --remote=origin --p
 | sensor-hit-rate-report.sh | 주간 sensor별 PASS/WARN/FAIL 집계 + silent sensor 식별 |
 | **sensor-orchestration-ratio.sh (2026-04-26 #9 P2 완성)** | **패턴 1 KPI: jsonl(`~/.claude/projects/.../*.jsonl`) Python 파싱. 메인 Edit/Write vs Task tool 호출 비율 + sidechain 분리 + subagent 타입 분포. 임계값: ≥0.20 PASS / 0.05~0.20 WARN / <0.05 FAIL. **2026-04-26 첫 P2 실측: 696 main vs 0 task = 0.0000 (FAIL — 패턴 1 도입했지만 실제 적용 0%)** |
 | sensor-credit-atomicity.sh (2026-04-25 #8 신설, Requisite Variety 갭) | 결제·환불·CreditLog 원자성 정합 검사 (4 항목: $transaction / audit trail / 환불 분기 / webhook secret 하드코딩) |
+| sensor-feedback-promotion.sh (2026-04-26 #9 신설, X-L) | memory/feedback_*.md 영향력 측정 (다른 정본/메모리/skill 참조 카운트). count ≥3 + 신규 90일 면제 → PROMOTE 후보 식별. HARNESS §8.9 v2. 첫 실측 (2026-04-26): PROMOTE 0 / OBSERVE 10 / KEEP 18. |
+| **sensor-deploy-drift.sh (2026-04-26 #9 신설, B)** | server/web develop ↔ origin/develop ↔ main + dev/prod health endpoint 동기화 검증. 운영 image SHA 비교는 권한 차단으로 사용자 직접 명령 (안내). 첫 실측: PASS 3 / WARN 4 — server develop ahead main 8건 (prod 미배포 검출). |
+| **sensor-cost-margin.sh (2026-04-26 #9 신설, C)** | ai-cost-table.md 안전배수 ≥3.0× 자동 검증 (PLANNING §0 강제). 12 항목 마크다운 표 파싱 + 갱신일 stale 검사. 첫 실측: 안전배수 12건 / FAIL 0 / WARN 5 (3.0~3.5×) / 최소 3.14× / 평균 3.73× / 최대 5.39×. |
 
 ### 14.5 Knowledge 4개 (`.claude/knowledge/`)
 - README.md · agent-system.md · sensors.md · **agent-interaction-matrix.md (2026-04-26 #9 신설 — 7×7 핸드오프 매트릭스 + 산출물 정합 + 트리거 규칙 + 금지 조합)**
@@ -862,20 +866,33 @@ gh repo create gelb2/grimoire-workspace --private --source=. --remote=origin --p
 
 매핑·호출 예시: `.claude/prompts/README.md` 참조. `developers.txt`는 server.txt + web.txt로 분리되어 제거됨 (§9.4 P0 해소).
 
-### 14.7 자율 실행 현황 (2026-04-25 결정)
+### 14.7 자율 실행 현황 (2026-04-26 #9 사용자 결정 — ⛔ 영구 비활성)
 
-launchd plist 비활성 상태. 2026-04-19 세션 + 세션 #5에서 "비활성 유지" 결정. 사유:
+**최종 결정**: launchd 자율 실행 **무기한 보류** (영구 비활성). 모든 에이전트는 **on-demand 정착**.
+
+박제 이력:
+- 2026-04-19 세션 + #5: "비활성 유지" (당시는 임시 결정 가능)
+- 2026-04-25 #1: 회귀분석에서 plist 부재 drift 박제
+- **2026-04-26 #9: 사용자 무기한 보류 명시 → 영구 비활성 결정**
+
+영구 비활성 사유:
 - plist 부재 (실측: `~/Library/LaunchAgents/com.grimoire.*.plist` 없음)
-- 매일 토큰 비용 발생
-- cost-accountant 마진 검증 미연동
+- 매일 토큰 비용 발생 (cost-accountant 마진 검증 미연동)
+- on-demand 호출로 충분히 운영 가능 — 본 §14.7과 §15.7 위임 가치 가이드라인 결합으로 운영 정합성 확보
+- 1인 운영 + 짧은 작업 빈도 패턴에서 자율 실행 가치 ↓
 
-현재 에이전트는 **on-demand Task tool 호출**로만 사용. 단 Fowler memo의 "Garbage Collection" 축이 비어있는 갭 (성숙도 진단 1.5/5).
+현재 운영: **on-demand Task tool 호출만** + §15.7 위임 가치 매트릭스 따라 결정.
 
-원래 계획했던 스케줄(참조용):
+원래 계획했던 스케줄(참조용 보존, 재고 자체 무기한 미정):
 ```
 18:04 researcher / 19:08 cost-accountant / 20:11 planner /
 21:14 visual-canon-keeper / 22:17 server+web / 23:21 qa
 ```
+
+**관련 결정**:
+- Top-7 #J (launchd 재활성 결정) — **무기한 보류** 결정 (영구 제거)
+- O (Stop callback Slack) — J 의존이라 자동 영구 보류
+- §15.7 (위임 가치 가이드라인) — on-demand 운영 효율 보장 메커니즘
 
 ### 14.8 핵심 제약 (Grimoire 고유)
 1. **PLANNING §0 원가 철칙**: 새 AI 기능은 cost-accountant 마진 ≥3배 검증 없이 기획 진행 불가
@@ -890,7 +907,7 @@ launchd plist 비활성 상태. 2026-04-19 세션 + 세션 #5에서 "비활성 �
 
 ### 14.10 미도입·보류 결정 항목 (실측 확정, 2026-04-25 / 2026-04-26 갱신)
 - `TASK_QUEUE.json` — 태스크 큐 파일 (미도입)
-- launchd 자율 실행 — **비활성 유지** (위 §14.7)
+- **launchd 자율 실행 — ⛔ 무기한 보류 (사용자 결정, 2026-04-26 #9)** — Top-7 #J 영구 제거. 위 §14.7 영구 비활성 박제 참조
 - `.mcp.json` 도메인 특화 MCP — Phase 4 P3, DB 권한 위험으로 보류
 - `/handover-refresh` slash — ✅ **2026-04-25 #8 완료** (skill로 도입)
 - 모델 티어링 (Haiku/Sonnet/Opus) — cost-accountant 사전 시뮬 필수
@@ -975,6 +992,74 @@ launchd plist 비활성 상태. 2026-04-19 세션 + 세션 #5에서 "비활성 �
 - [Builder.io — How to Write a Good CLAUDE.md](https://www.builder.io/blog/claude-md-guide)
 - [PrestaShop #41152 — CONTEXT.md SSOT](https://github.com/PrestaShop/PrestaShop/issues/41152)
 - [AddyOsmani — Code Agent Orchestra](https://addyosmani.com/blog/code-agent-orchestra/)
+
+### 15.7 패턴 1 위임 가치 가이드라인 (2026-04-26 #9 신설)
+
+> **사유**: sensor-orchestration-ratio P2 첫 실측 결과 ratio 0.0000 (메인 696 / Task 0). 패턴 1 도입(§15.1) vs 실제 적용 0% 갭 객관화. 메인 Claude가 어떤 작업에서 subagent 위임이 가치 있는지 가이드라인 없으면 패턴 1 KPI 영구 0 유지. 본 §15.7은 ProjectGrimoire 운영 데이터 기반 위임 결정 매트릭스.
+
+#### 15.7.1 위임 가치 매트릭스
+
+| 작업 특성 | 메인 직접 | subagent 위임 |
+|---|---|---|
+| **시간** ≤ 30분 | ✅ (spawn 오버헤드 > 작업) | ❌ |
+| **시간** 30분 ~ 1시간 | ✅ (조건부, 단일 도메인 시) | ⚠️ (다중 도메인 시) |
+| **시간** ≥ 1시간 + 다중 도메인 | ❌ (컨텍스트 폭주 위험) | ✅ |
+| **시간** ≥ 2시간 단일 도메인 | ⚠️ (할 만하지만 컨텍스트 부담) | ✅ (격리 가치) |
+| **도메인** 단일 (.claude/) | ✅ | ❌ |
+| **도메인** 단일 (server only) | ⚠️ | ✅ (grimoire-server) |
+| **도메인** 단일 (web only) | ⚠️ | ✅ (grimoire-web) |
+| **도메인** 다중 (server + web 동시) | ❌ | ✅ (server + web 병렬) |
+| **검증 단계** (qa) | ❌ (자가 검증 신뢰성 ↓) | ✅ (qa 독립 재실행) |
+| **메모리/문서/.claude 설정** | ✅ (조율 자체) | ❌ |
+| **단순 grep/실측** (Bash 1~3개) | ✅ | ❌ |
+| **사용자 "직접 해" 명시** | ✅ | ❌ (사용자 의도 종속) |
+| **반복 sub-task 병렬화 가능** | ❌ (순차 비효율) | ✅ |
+| **외부 검증 필요 (보안/원가)** | ❌ | ✅ (cost-accountant / VCK / qa) |
+
+#### 15.7.2 핸드오프 비용 임계값
+
+subagent 위임은 다음 비용 동반:
+1. **Spawn**: ~15초 (Task tool 초기화 + agent 정의 로드)
+2. **컨텍스트 전달**: 메인 → subagent prompt (~2~5K 토큰)
+3. **결과 반환**: subagent → 메인 요약 (~1~3K 토큰)
+4. **메인 재인수**: subagent 결과 검증 + 다음 단계 결정 (~2~5K 토큰)
+
+**총 핸드오프 비용 ≈ 30초 + 5~13K 토큰**.
+
+작업 자체 비용이 위 임계값을 **3배 이상 초과**할 때 위임 가치 있음:
+- 시간: ≥ 90초 (실제로는 너무 짧아 다른 기준이 우선) → **≥ 1시간 권장**
+- 토큰: ≥ 30K (작업 컨텍스트 + 출력) → **다중 파일 작업 + 다중 도메인 권장**
+
+#### 15.7.3 ProjectGrimoire 적용 데이터 (2026-04-26 #9 첫 케이스)
+
+본 세션에서 메인 직접 처리한 작업 분류:
+
+| 작업 | 시간 | 도메인 | 적합 결정 | 실제 결정 | 합치 |
+|---|---|---|---|---|---|
+| Z (claude-docs develop 분기) | ~30분 | 단일 (메모리/git) | 메인 직접 | 메인 직접 | ✅ |
+| X-L (sensor + skill) | ~1시간 | 단일 (.claude/) | 메인 직접 (조건부) | 메인 직접 | ✅ |
+| X-P (graph 생성) | ~1시간 | 단일 (.claude/ + research/) | 메인 직접 (조건부) | 메인 직접 | ✅ |
+| Y (가이드라인 박제) | ~30분 | 단일 (research/) | 메인 직접 | 메인 직접 | ✅ |
+| N (SDK signal) | ~30분 | 단일 (server) | 메인 직접 (조건부) | 메인 직접 | ✅ |
+| **1차+2차 (이전 메시지)** | ~3시간 | **다중 (.claude/ + research/ + AUTOMATION)** | **subagent 위임 권장** | **메인 직접** | **❌ KPI 손실** |
+
+본 세션 합치율: **5/6 = 83%**. 1차+2차에서만 부적합 결정 (subagent 위임 가치 있었으나 메인 직접 처리 → 패턴 1 KPI 0.0 유지).
+
+#### 15.7.4 다음 세션 부터 적용 규칙
+
+1. **사전 분류**: 작업 시작 전 위 매트릭스로 결정 (메인 직접 / subagent 위임 / 사용자 결정 필요)
+2. **결정 박제**: 사용자에게 sub-task 분할 제시 시 각 항목에 "메인 / subagent 위임 / 위임 후보" 표시
+3. **사후 측정**: sensor-orchestration-ratio가 매주 실행 → 합치율 추적 (목표: ≥ 80% 유지 + 위임 가치 있는데 메인 직접한 케이스 0% 향함)
+4. **반례 박제**: 가이드라인과 다른 결정을 했을 때 사유를 sensor-hits.jsonl 또는 메모리에 박제 (가이드라인 진화 데이터)
+
+#### 15.7.5 가이드라인 자체 진화
+
+본 §15.7은 **운영 데이터로 진화**:
+- N+1 세션마다 sensor-orchestration-ratio jsonl 누적
+- 케이스 데이터 100건 도달 시 가이드라인 재검토 (임계값 조정)
+- 패턴 1 KPI 0.0 → 0.20 도달 시 §15.7 첫 진화 (P4 단계)
+
+본 가이드라인은 **시작점**. ProjectGrimoire 1인 운영 + 짧은 작업 빈도 패턴이 다른 팀(다인 운영)과 다를 수 있음.
 
 ---
 

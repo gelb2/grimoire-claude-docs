@@ -60,6 +60,14 @@ export NVM_DIR="$HOME/.nvm"
 OUTPUT=$(cd "$REPO" && npx tsc --noEmit 2>&1)
 RC=$?
 
+# sensor-log 적재 — 메인 직접 작업의 hit-rate 측정 + orchestration ratio 정확도 향상
+# REPO 명을 EXTRA로 박제 (server vs web 분포 분석용)
+SENSOR_LOG="/Users/sokol/Desktop/Git/ProjectGrimoire/.claude/scripts/sensor-log.sh"
+if [ -x "$SENSOR_LOG" ]; then
+  REPO_NAME=$(basename "$REPO")
+  bash "$SENSOR_LOG" "post-edit-tsc" "$RC" "repo=$REPO_NAME file=$FILE_PATH" 2>/dev/null || true
+fi
+
 if [ "$RC" -ne 0 ]; then
   {
     echo "[post-edit-tsc] $REPO: tsc 실패 (exit $RC). 최근 20줄:"

@@ -255,7 +255,10 @@ bugfix/*  ──↗              ↓
 4. develop → main 머지는 사용자 요청 시에만
 
 ### grimoire-claude-docs 특수사항
-- **기본 브랜치**: `main` (2026-04-25 초기화 시점부터 main 단일로 운영 중이나, 향후 develop 분기 도입 시 위 규칙 그대로 적용)
+- **기본 브랜치**: `main` (정본 박제용) + `develop` (작업 통합용 — 2026-04-26 도입)
+  - 2026-04-25 초기화 시점부터 main 단일 운영 → 2026-04-26 #9 push 흐름 정상화 위해 develop 분기 도입
+  - 위 §8 본문 규칙(feature/* → develop --no-ff → main)을 그대로 적용. server/web과 동일 흐름
+  - 단 본 레포는 런타임 코드 없으므로 develop 머지 시 테스트는 "문서·스크립트 무결성 체크"로 대체 (위 §8 1.5 참조)
 - **빌드/테스트 수단**: 런타임 코드 없음. Hook/Skill 스크립트 수정 시 shell 구문 체크 + skill-injector/bash-guard 스모크 테스트로 대체
 - **Pre-push hook**: 아직 미도입 (server/web 참고하여 추후 도입 권장)
 - **origin**: https://github.com/gelb2/grimoire-claude-docs (PRIVATE)

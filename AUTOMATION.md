@@ -60,7 +60,7 @@
 
 ---
 
-## 1.5. Skills 인벤토리 (10개 — 2026-04-26 기준)
+## 1.5. Skills 인벤토리 (11개 — 2026-04-26 기준)
 
 > Skill은 트리거 키워드 또는 사용자 명시 호출(`/skill-name`)로 발동. agent와 달리 도구 호출 단위.
 
@@ -70,6 +70,7 @@
 | `deploy-precheck` | 명시 호출 | 배포 전 sensor 일괄 + curl health |
 | `dev-login-smoke` | 명시 호출 | dev 환경 로그인 스모크 테스트 |
 | `gc-sweep` (2026-04-26) | 명시 호출 | 미참조·stale harness 자산 청소 (Fowler GC 축) |
+| `feedback-to-skill` (2026-04-26 X-L) | 명시 호출 | feedback_*.md PROMOTE 후보를 draft skill로 변환 (Memory v2) |
 | `handover-refresh` (2026-04-25 #8) | 명시 호출 | HANDOVER.md 자동 수집 갱신 |
 | `macos-tcc-handling` | 키워드 | TCC 권한 다이얼로그 반복 시 osxkeychain 가이드 |
 | `production-bug-triage` | 키워드 | 운영 증상 보고 시 curl→코드→수치 3단계 강제 |
@@ -96,13 +97,14 @@
 
 ---
 
-## 2. 자율 실행 (launchd) — **현재 비활성** (2026-04-25 #1 회귀분석)
+## 2. 자율 실행 (launchd) — ⛔ **영구 비활성** (2026-04-26 #9 사용자 결정)
 
-> ⚠️ **현재 상태**: `~/Library/LaunchAgents/com.grimoire.*.plist` **미설치**. 자율 실행 안 되고 있음.
-> 모든 에이전트는 **on-demand** (사용자 또는 메인 Claude의 Task tool 호출)로만 운영.
-> 향후 재활성 여부는 사용자 결정 (HARNESS §9.4 P1 — Top-7 #J 항목).
+> **2026-04-26 사용자 결정**: launchd 자율 실행은 **무기한 보류** (영구 비활성).
+> 사유: on-demand 호출(Task tool)로 충분히 운영 가능 + 매일 토큰 비용 + cost-accountant 마진 검증 미연동.
+> 모든 에이전트는 **on-demand 영구 정착** — 사용자 또는 메인 Claude의 Task tool 호출로만 작동.
+> 본 §2의 스케줄·plist 관리·실행 인프라 항목은 **참조용 보존** (재고 시 사용 가능, 재고 자체는 무기한 미정).
 
-### 본래 의도된 스케줄 (재활성 시)
+### 본래 의도된 스케줄 (참조용 — 영구 비활성)
 
 ```
 18:04  researcher          → reports/SWEEP_REPORT.md + reports/AI_COST_MONITOR.md
@@ -131,7 +133,7 @@ server + web (PLANNER_REPORT 소비, 병렬)
 qa (DEV_REPORT + COST_AUDIT + VISUAL_CANON 소비)
 ```
 
-### 실행 인프라 (재활성 시)
+### 실행 인프라 (참조용 — 영구 비활성)
 
 | 구성요소 | 위치 |
 |---------|------|
@@ -140,7 +142,7 @@ qa (DEV_REPORT + COST_AUDIT + VISUAL_CANON 소비)
 | 프롬프트 파일 | `.claude/prompts/{에이전트}.txt` (server.txt / web.txt 분리됨, 위 §1.1 참조) |
 | 로그 | `.launchd-logs/{에이전트}.log` / `.launchd-logs/{에이전트}.err` |
 
-### plist 관리 (재활성 시)
+### plist 관리 (참조용 — 영구 비활성)
 
 ```bash
 # 전체 재로드 (server + web 분리 후)
@@ -155,7 +157,7 @@ launchctl list | grep grimoire
 
 ---
 
-## 3. 센서 시스템 (9개 — 2026-04-26 기준)
+## 3. 센서 시스템 (12개 — 2026-04-26 기준)
 
 > "AI가 '다 했습니다'라고 말하는 것은 증거가 아니다. 센서 스크립트의 stdout만이 증거다."
 
@@ -170,6 +172,9 @@ launchctl list | grep grimoire
 | `.claude/scripts/sensor-hit-rate-report.sh` (2026-04-25 #5) | silent sensor 진단 | 30일간 fire 0회 sensor 식별 |
 | `.claude/scripts/sensor-orchestration-ratio.sh` (2026-04-26 P2) | 패턴 1 KPI | jsonl 파싱 → main edits vs subagent task 비율 |
 | `.claude/scripts/sensor-credit-atomicity.sh` (2026-04-25 #8) | 결제·환불 원자성 | $transaction Hexagonal 정합 + CreditLog audit + 환불 분기 + Polar webhook secret env 강제 |
+| `.claude/scripts/sensor-feedback-promotion.sh` (2026-04-26 #9 X-L) | memory/feedback 영향력 | 28 feedback × 154 검사 위치. PROMOTE/OBSERVE/KEEP 분류 + 신규 90일 면제 |
+| `.claude/scripts/sensor-deploy-drift.sh` (2026-04-26 #9 B) | server/web 배포 동기화 | develop ↔ origin ↔ main 정합 + dev/prod health curl. 운영 image SHA 비교는 권한 차단으로 안내만 |
+| `.claude/scripts/sensor-cost-margin.sh` (2026-04-26 #9 C) | §0 원가 안전배수 | ai-cost-table.md 12 항목 안전배수 ≥3.0× 자동 검증 + 갱신일 stale + cost-accountant 호출 권장 |
 
 ### 에이전트 규칙
 
@@ -304,14 +309,14 @@ Grimoire 에이전트 체인을 vibe-coding Phase 모델로 매핑:
 
 ## 8. 트러블슈팅
 
-### ENOTFOUND 에러 (자율 실행 재활성 시)
+### ENOTFOUND 에러 (자율 실행 참조용 — 영구 비활성)
 Mac 절전/Wi-Fi 끊김 시 발생. 래퍼 스크립트(`run-agent.sh`)가 30초 간격 3회 재시도.
 지속 시 `launchctl list | grep grimoire`로 exit code 확인.
 
-### 로그 미생성 (자율 실행 재활성 시)
+### 로그 미생성 (자율 실행 참조용 — 영구 비활성)
 plist 로드 시점이 해당 에이전트 실행 시각 이후면 다음 날 첫 실행까지 로그 없음. 정상.
 
-### plist 수정 후 반영 안 됨 (자율 실행 재활성 시)
+### plist 수정 후 반영 안 됨 (자율 실행 참조용 — 영구 비활성)
 `launchctl bootout` → `launchctl bootstrap` 순서로 재로드 필수.
 
 ### Skill 자동 발동 안 됨
@@ -333,4 +338,7 @@ Skill의 `triggers` 키워드가 사용자 메시지에 포함되어야 발동. 
 | 2026-04-25 #6 | 패턴 1+3 (orchestration 분리 + CLAUDE.md slim) 채택 |
 | 2026-04-25 #7 | commands→skills 마이그레이션 / PostToolBatch hook / InstructionsLoaded hook / sensor-orchestration-ratio P1 placeholder |
 | 2026-04-25 #8 | writing-plans / handover-refresh skill / sensor-credit-atomicity 신설 |
-| **2026-04-26 #9** | **server/web prompt 분리 / agent-interaction-matrix.md 신설 / gc-sweep skill / sensor-orchestration-ratio P2 (jsonl 파싱) / 본 문서 현행화 (Skills 10 / Sensors 9 / Hooks 8 이벤트 11 스크립트 / launchd 비활성 사실 박제)** |
+| 2026-04-26 #9 1차+2차 | server/web prompt 분리 / agent-interaction-matrix.md 신설 / gc-sweep skill / sensor-orchestration-ratio P2 (jsonl 파싱) / 본 문서 현행화 (Skills 10 / Sensors 9 / Hooks 8 이벤트 11 스크립트 / launchd 비활성 사실 박제) |
+| 2026-04-26 #9 N + Z + X + Y | N: Anthropic SDK signal 완전 전파 (HARNESS §10 Phase 4) — server/web develop push. Z: claude-docs develop 분기 도입 + CLAUDE.md §8 갱신. X-L: sensor-feedback-promotion + feedback-to-skill skill (Memory v2). X-P: generate-skill-graph.sh + research/SKILL_GRAPH.md (Skills 11 / Edges 12 / 트리거 미정의 0). Y: research §15.7 위임 가치 가이드라인 박제 (본 세션 5/6 합치 83%). 본 문서 갱신 (Skills 11 / Sensors 10). |
+| 2026-04-26 #9 1차 묶음 (A+D+E+H) | A: launchd 영구 보류 박제 (4 문서). D: post-edit hooks → sensor-log 통합. E: gc-sweep 첫 dry-run (청소 후보 0건). H: orchestration sensor §15.7 합치 분석 추가 (server/web 47.3% + ratio 0.0 → WARN 자동 판정). |
+| **2026-04-26 #9 2차 묶음 (B+C)** | **B: sensor-deploy-drift — develop ↔ main ↔ health 정합 (첫 실측: server develop ahead main 8건 검출). C: sensor-cost-margin — ai-cost-table 안전배수 ≥3.0× 자동 검증 (12 항목 / FAIL 0 / WARN 5 / 평균 3.73×). 본 문서 갱신 (Sensors 10 → 12).** |

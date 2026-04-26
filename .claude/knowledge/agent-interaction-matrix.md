@@ -107,7 +107,10 @@ CLAUDE.md §14.2 규칙 + Pattern 1 (orchestration 분리):
 
 근거: `research/HARNESS_ENGINEERING.md` §15.1 패턴 1, §16 채택 결정.
 
-## 7. 시간대 (launchd 자율 실행 시 — 현재 비활성)
+## 7. 시간대 (launchd 자율 실행 — ⛔ 영구 비활성)
+
+> **2026-04-26 #9 사용자 결정**: launchd 자율 실행 **무기한 보류**. 모든 에이전트는 on-demand (Task tool) 호출 영구 정착.
+> 아래 시간대는 **참조용 보존** (재고 자체 무기한 미정).
 
 | 시각 (KST) | 에이전트 | 작업 |
 |---|---|---|
@@ -118,7 +121,8 @@ CLAUDE.md §14.2 규칙 + Pattern 1 (orchestration 분리):
 | 22:17 | server + web (병렬) | DEV_REPORT 작성 |
 | 23:21 | qa | 전수검사 |
 
-> **2026-04-26 현재**: launchd plist 미설치 → 자율 실행 비활성. on-demand 호출(Task tool)만 운영. AUTOMATION.md §1 + §9.3 drift 항목 참조.
+> **on-demand 정착 운영**: 사용자 요청 시 또는 메인 Claude가 §15.7 위임 가치 매트릭스에 따라 Task tool로 호출.
+> AUTOMATION.md §2 + research/HARNESS_ENGINEERING.md §14.7 참조.
 
 ## 8. 매트릭스 변경 시 갱신 절차
 
