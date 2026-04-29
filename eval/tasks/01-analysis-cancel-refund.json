@@ -6,8 +6,8 @@
   "prompt": "사용자가 AI 분석 진행 중 cancel 클릭 시 크레딧이 자동 환불되고 Anthropic API 호출도 즉시 cancel되는가?",
   "eval_criteria": [
     {"type": "grep", "target": "grimoire-server/src/application/analysis/novel-analysis.usecase.ts", "pattern": "abortableRace", "min": 3, "desc": "abortableRace 호출 ≥3건"},
-    {"type": "grep", "target": "grimoire-server/src/application/analysis/novel-analysis.usecase.ts", "pattern": "novel_analysis_refund", "min": 1, "desc": "환불 분기 존재"},
-    {"type": "grep", "target": "grimoire-server/src/lib/claude.ts", "pattern": "signal:\\s*options\\?\\.signal", "min": 1, "desc": "askClaude SDK signal 전달"},
+    {"type": "grep", "target": "grimoire-server/src/application/analysis/novel-analysis.usecase.ts", "pattern": "NOVEL_ANALYSIS_REFUND", "min": 1, "desc": "환불 분기 존재 (CreditReason.NOVEL_ANALYSIS_REFUND)"},
+    {"type": "grep", "target": "grimoire-server/src/lib/claude.ts", "pattern": "signal: options\\.signal|options\\?\\.signal", "min": 1, "desc": "askClaude SDK signal 전달"},
     {"type": "grep", "target": "grimoire-server/src/lib/rag/novel-analyzer.ts", "pattern": "signal\\?:\\s*AbortSignal", "min": 4, "desc": "AskFn + checkXxx 4함수 모두 signal 시그니처"},
     {"type": "test", "command": "cd grimoire-server && npx jest src/application/analysis/novel-analysis.usecase.spec.ts --silent", "desc": "novel-analysis spec 통과"}
   ],

@@ -41,6 +41,10 @@ reports/VISUAL_CANON_REPORT.md
 # ──────────────── git worktree 격리 (worktree-isolation skill, HARNESS §8.10)
 .worktrees/
 
+# ──────────────── Eval 시스템 — 실행 결과 (재실측 가능, 시계열만 baseline.csv 보존)
+eval/results/*/
+!eval/results/baseline.csv
+
 # ──────────────── 민감 파일 (절대 커밋 금지)
 # ACCOUNTS.md: API 키·계정·웹훅 시크릿 포함
 ACCOUNTS.md

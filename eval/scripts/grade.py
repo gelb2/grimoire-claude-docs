@@ -86,13 +86,14 @@ def grade_grep_count(target_dir, include, exclude, pattern, min_count=0, max_cou
 
 def grade_command(command, project_root=""):
     try:
+        # /bin/sh 차이 회피 — bash 명시 호출
         result = subprocess.run(
-            command, shell=True, capture_output=True,
+            ['bash', '-c', command],
+            capture_output=True,
             timeout=300, cwd=project_root
         )
         if result.returncode == 0:
             return True, "command exit 0"
-        # bytes로 받고 안전 디코딩 (한글 sensor 출력 대응)
         stderr_text = result.stderr.decode('utf-8', errors='replace') if result.stderr else ''
         return False, "command exit " + str(result.returncode) + ": " + stderr_text[:120]
     except subprocess.TimeoutExpired:
