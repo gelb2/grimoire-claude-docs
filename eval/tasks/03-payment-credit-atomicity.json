@@ -1,0 +1,14 @@
+{
+  "id": "regression-003",
+  "name": "결제 + 크레딧 + CreditLog 원자성 ($transaction)",
+  "category": "edge_case",
+  "source_session": "20260425_8",
+  "prompt": "Polar webhook 처리 시 Payment.completed + Author.credits + CreditLog.create가 단일 $transaction으로 원자 처리되는가?",
+  "eval_criteria": [
+    {"type": "command", "command": "bash .claude/scripts/sensor-credit-atomicity.sh --quiet ; [ $? -le 2 ]", "desc": "sensor-credit-atomicity FAIL 아님 (PASS or WARN 허용)"},
+    {"type": "grep", "target": "grimoire-server/src/adapter/outbound/persistence/prisma-payment.repository.ts", "pattern": "\\$transaction", "min": 1, "desc": "payment repository $transaction 존재"},
+    {"type": "grep", "target": "grimoire-server/src/adapter/outbound/persistence/prisma-credit.repository.ts", "pattern": "\\$transaction", "min": 1, "desc": "credit repository $transaction 존재"}
+  ],
+  "threshold": 1.0,
+  "runs": 1
+}

@@ -943,6 +943,30 @@ gh repo create gelb2/grimoire-workspace --private --source=. --remote=origin --p
 
 매핑·호출 예시: `.claude/prompts/README.md` 참조. `developers.txt`는 server.txt + web.txt로 분리되어 제거됨 (§9.4 P0 해소).
 
+### 14.6.2 Eval 시스템 (2026-04-27 #9 P0 도입, "하네스 엔지니어링 완전 정복" Ch 15 차용)
+
+**도입 배경**: P0 갭 — Verify 기둥 2.5/5 → 4/5 강화. 회귀 8 세션 누적 박제 (AI 분석 cancel 환불, §0 분석/베스트, SDK signal, 결제 원자성, 보안 시크릿, docs-sync drift 등).
+
+**구조**:
+- `eval/tasks/` — 20개 회귀 박제 (.json)
+- `eval/scripts/eval-runner.sh` — 메인 실행기
+- `eval/scripts/grade.py` — 4 채점 방식 (grep / grep_count / command / inventory_match)
+- `eval/scripts/eval-precommit.sh` — pre-commit 통합 (regression-tolerance 0.05)
+- `eval/results/baseline.csv` — 시계열 통과율 누적
+
+**카테고리** (책 정합 + ProjectGrimoire 도메인 추가):
+- type_safety / api_contract / edge_case / convention / test_coverage (책 표준)
+- **cost_zero** ★ — §0 원가 안전배수 (PLANNING §0)
+- **visual_canon** ★ — 사슴악마 시각 정본 (CLAUDE.md §1)
+- **author_content** ★ — 작가 콘텐츠 보호 (CLAUDE.md §0)
+- **security** ★ — 시크릿 평문, mutation guard, BFF 프록시
+
+**Mode 차이**:
+- 회귀 Eval (현재 도입): runs=1, threshold=1.0 — 코드 상태 검증
+- EDD Eval (향후 P1): runs=10, threshold=0.7~0.95 — 에이전트 작업 평가
+
+**첫 실측 (2026-04-27 baseline)**: PASS 17 / 20 = **85%**. FAIL 3건 (analysis-cancel-refund 패턴 정밀화 필요 / cost-margin sensor 한글 디코딩 / drift §14.4 매치 정밀화) — task json 정밀화로 후속 해소.
+
 ### 14.7 자율 실행 현황 (2026-04-26 #9 사용자 결정 — ⛔ 영구 비활성)
 
 **최종 결정**: launchd 자율 실행 **무기한 보류** (영구 비활성). 모든 에이전트는 **on-demand 정착**.

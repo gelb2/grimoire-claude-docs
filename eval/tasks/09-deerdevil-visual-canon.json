@@ -1,0 +1,13 @@
+{
+  "id": "regression-009",
+  "name": "사슴악마 시각 정본 (CLAUDE.md §1)",
+  "category": "visual_canon",
+  "source_session": "CLAUDE.md §1 + 20260427 Chrome 검증",
+  "prompt": "사슴악마(/deerdevil/) 작가공간에 antler 디바이더 + 시리즈 탭 + 에피소드 카드 그리드 + PREFACE 섹션이 모두 존재하는가?",
+  "eval_criteria": [
+    {"type": "grep_count", "target_dir": "grimoire-web/src/app/[author]", "include": "*.tsx", "pattern": "antler|시리즈|series", "min": 1, "desc": "antler 또는 시리즈 컴포넌트 참조"},
+    {"type": "command", "command": "find grimoire-web/src -name 'AntlerDivider*' -o -name 'SeriesNav*' -o -name 'EpisodeCard*' | wc -l | awk '{exit ($1 < 2) ? 1 : 0}'", "desc": "사슴악마 정본 컴포넌트 ≥2건 (antler/series/card)"}
+  ],
+  "threshold": 1.0,
+  "runs": 1
+}

@@ -1,0 +1,13 @@
+{
+  "id": "regression-017",
+  "name": "Prisma 마이그레이션 일관성 (CLAUDE.md §11)",
+  "category": "type_safety",
+  "source_session": "CLAUDE.md §11 전수검사",
+  "prompt": "prisma/schema.prisma와 마이그레이션 파일이 정합인가? (prisma validate 통과)",
+  "eval_criteria": [
+    {"type": "command", "command": "cd grimoire-server && npx prisma validate >/dev/null 2>&1 ; [ $? -eq 0 ]", "desc": "prisma validate PASS"},
+    {"type": "command", "command": "ls grimoire-server/prisma/migrations | wc -l | awk '{exit ($1 < 1) ? 1 : 0}'", "desc": "마이그레이션 ≥1건 존재"}
+  ],
+  "threshold": 1.0,
+  "runs": 1
+}

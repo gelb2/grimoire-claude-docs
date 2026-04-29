@@ -1,0 +1,12 @@
+{
+  "id": "regression-007",
+  "name": "BFF 프록시 경유 (NEXT_PUBLIC_API_URL 직접 호출 0건)",
+  "category": "security",
+  "source_session": "CLAUDE.md §3 + §11",
+  "prompt": "web 클라이언트 컴포넌트에서 NEXT_PUBLIC_API_URL 직접 호출하지 않고 /api/proxy/[...path] 경유하는가?",
+  "eval_criteria": [
+    {"type": "grep_count", "target_dir": "grimoire-web/src", "include": "*.ts,*.tsx", "exclude": "*.spec.*,*.test.*", "pattern": "NEXT_PUBLIC_API_URL", "max": 5, "desc": "NEXT_PUBLIC_API_URL 직접 사용 ≤5건 (api.ts 등 BFF 자체 + 서버 컴포넌트만)"}
+  ],
+  "threshold": 1.0,
+  "runs": 1
+}

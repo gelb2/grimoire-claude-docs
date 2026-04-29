@@ -1,0 +1,9 @@
+{
+  "ts": "2026-04-29T17:03:53Z",
+  "total": 20,
+  "pass": 17,
+  "fail": 3,
+  "pass_rate": ,
+  "results_dir": "/Users/sokol/Desktop/Git/ProjectGrimoire/eval/results/2026-04-30-02-01-53",
+  "baseline_csv": "/Users/sokol/Desktop/Git/ProjectGrimoire/eval/results/baseline.csv"
+}

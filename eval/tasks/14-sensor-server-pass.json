@@ -1,0 +1,12 @@
+{
+  "id": "regression-014",
+  "name": "sensor-server 통과 (tsc + Jest + build + prisma)",
+  "category": "type_safety",
+  "source_session": "AUTOMATION.md §3",
+  "prompt": "server 레포 sensor-server.sh가 PASS인가?",
+  "eval_criteria": [
+    {"type": "command", "command": "bash .claude/scripts/sensor-server.sh ; [ $? -eq 0 ]", "desc": "sensor-server PASS"}
+  ],
+  "threshold": 1.0,
+  "runs": 1
+}

@@ -1,0 +1,14 @@
+{
+  "id": "regression-020",
+  "name": "Chrome MCP reCAPTCHA 자동 차단 정책 (PostToolUseFailure F2)",
+  "category": "security",
+  "source_session": "20260427 F2",
+  "prompt": "Chrome MCP 호출 실패 시 reCAPTCHA 의심 키워드 감지 → 자동 차단 + 사용자 직접 통과 안내하는가?",
+  "eval_criteria": [
+    {"type": "grep", "target": ".claude/scripts/posttooluse-failure-handler.sh", "pattern": "recaptcha|captcha|bot detect", "min": 3, "desc": "reCAPTCHA 의심 키워드 ≥3건 감지 패턴"},
+    {"type": "grep", "target": ".claude/settings.json", "pattern": "PostToolUseFailure", "min": 1, "desc": "settings.json에 PostToolUseFailure hook 등록"},
+    {"type": "command", "command": "echo '{\"tool_name\":\"mcp__Claude_in_Chrome__navigate\",\"tool_input\":{\"url\":\"https://x.com\"},\"error\":\"recaptcha required\"}' | bash .claude/scripts/posttooluse-failure-handler.sh | grep -q '\"decision\": \"block\"'", "desc": "reCAPTCHA 입력 시 block 결정 출력"}
+  ],
+  "threshold": 1.0,
+  "runs": 1
+}
