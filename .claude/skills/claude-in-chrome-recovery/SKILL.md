@@ -12,6 +12,7 @@ triggers:
   - "Claude-in-Chrome"
   - "크롬 확인"
   - "브라우저 확인"
+effort: medium
 ---
 
 # Claude-in-Chrome 확장 복구 프로토콜

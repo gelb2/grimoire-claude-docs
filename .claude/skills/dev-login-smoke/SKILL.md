@@ -4,6 +4,7 @@ description: dev 환경 로그인 가능성 스모크 테스트. db-sync --mask-
 argument-hint: "[선택: 검사할 작가 slug, 기본=deerdevil]"
 disable-model-invocation: true
 allowed-tools: Read, Bash, Grep
+effort: low
 ---
 
 > **2026-04-25 세션 #7**: `.claude/commands/dev-login-smoke.md`에서 마이그레이션. `disable-model-invocation: true`로 사용자 명시 호출만 허용 (`/dev-login-smoke`).

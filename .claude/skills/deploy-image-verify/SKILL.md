@@ -4,6 +4,12 @@ description: server/web prod Container App 현재 image SHA vs git main HEAD SHA
 argument-hint: "[선택: server | web | both] (기본 both)"
 disable-model-invocation: true
 allowed-tools: Read, Bash, Grep
+effort: low
+paths:
+  - "grimoire-server/Dockerfile"
+  - "grimoire-server/scripts/deploy-*.sh"
+  - "grimoire-web/Dockerfile"
+  - "**/azure*.yaml"
 ---
 
 # Deploy Image Verify — Container App image SHA 정합 검증

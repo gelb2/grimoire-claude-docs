@@ -60,7 +60,7 @@
 
 ---
 
-## 1.5. Skills 인벤토리 (13개 — 2026-04-27 기준)
+## 1.5. Skills 인벤토리 (14개 — 2026-04-27 기준)
 
 > Skill은 트리거 키워드 또는 사용자 명시 호출(`/skill-name`)로 발동. agent와 달리 도구 호출 단위.
 
@@ -78,6 +78,7 @@
 | `verification-before-completion` | 키워드 | 완료 선언 전 실측 증거 강제 |
 | `worktree-isolation` (2026-04-27 F) | 명시 호출 | Edit 폭주 작업 시 git worktree 격리 (HARNESS §8.10 안전망) |
 | `deploy-image-verify` (2026-04-27 EEE) | 명시 호출 | Container App image SHA vs git main HEAD 정합 검증 (sensor-deploy-drift 보완) |
+| `systematic-debugging` (2026-04-27 신설, superpowers MIT 차용) | 키워드 (10개) | 복잡 회귀 — 가설 분리 + 변수 분리 + root cause 도달 (production-bug-triage 후속) |
 | `writing-plans` (2026-04-25 #8) | 키워드 (≥30분 게이트) | 큰 작업 sub-task 분할 |
 
 ---
@@ -352,4 +353,5 @@ Skill의 `triggers` 키워드가 사용자 메시지에 포함되어야 발동. 
 | 2026-04-27 #9 X-4 묶음 (Statusline + §15.7.3 + consolidate-memory) | §15.7.3.1 위임 3건 박제 (cost-accountant 2 + researcher 1, 누적 합치율 8/9 = 88.9%) + §15.7.3.2 jsonl flush 지연 한계 박제. statusline.sh 신설 (HARNESS §8.5 Ambient Affordance). consolidate-memory skill 적용 (96 파일 카테고리화, stale 후보 11건 + skill 흡수 후보 6건). settings.json statusLine 등록. |
 | 2026-04-27 #9 sensor-feedback-promotion 30일 단축 | NEW_DAYS 90→30. PROMOTE 0→1건 진입 (feedback_chrome_verify). OBSERVE_NEW 5건 11~25일 후 자동 PROMOTE. 메모리 손실 노출 시간 ↓ |
 | 2026-04-27 #9 모델 티어링 보류 + G2 보류 + F2 도입 | 사용자 결정: (1) 모델 티어링 — 모두 Opus 유지 무기한 보류 (품질 우선). (2) G2 Azure read-only MCP — 보류 (settings.local.json az 권한 18건 이미 등록됨). (3) F2 PostToolUseFailure hook 신설. Hooks 8→9 이벤트, Scripts 27→28. |
-| **2026-04-27 #9 §13 인용 검증 + §8.4/§8.7 평가 (researcher 위임 6번째)** | **researcher agent 위임 — HARNESS 12개 인용 링크 모두 PASS (Fowler / Anthropic 공식 / 3 레포 / 4 블로그 / PrestaShop). stars 갱신: superpowers 167k→168k, oh-my-claudecode 31.1k→31.4k. ouroboros v0.30.0 (2026-04-26 어제 출시). PrestaShop #41152 CLOSED 갱신. §8.4 Output Styles P3 보류 (세션당 1개 한계 + 코딩 지시 비활성화 충돌). §8.7 Plugins 선별 차용 유지 + typescript-lsp만 사용자 결정 영역. Skills frontmatter 신규 필드 (model/effort/paths/hooks) 박제 (P2 마이그레이션 가치). 패턴 1 KPI 6번째 위임 사례.** |
+| 2026-04-27 #9 §13 인용 검증 + §8.4/§8.7 평가 (researcher 위임 6번째) | researcher agent 위임 — HARNESS 12개 인용 링크 모두 PASS. stars 갱신: superpowers 167k→168k, oh-my-claudecode 31.1k→31.4k, ouroboros v0.30.0 (2026-04-26 어제). §8.4/§8.7 보류 + typescript-lsp 사용자 결정. Skills frontmatter 신규 필드 박제. |
+| **2026-04-27 #9 Skills frontmatter 1차 마이그레이션 + systematic-debugging 차용** | **14 skills 모두 `effort` 필드 추가 (low/medium/high). `paths` 2건 추가 (deploy-image-verify + refund-logic-audit, 자동 발동 가능). systematic-debugging skill 신설 (obra/superpowers MIT v5.0.7 차용 — 한국어 + Hexagonal/FSD 도메인 적용. production-bug-triage 후속 절차로 분리 운영). Skills 13→14, frontmatter 무결성 14/14 PASS, drift sensor silent.** |

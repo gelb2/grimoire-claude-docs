@@ -13,6 +13,7 @@ triggers:
   - "step by step"
   - "단계별로"
   - "작업 분해"
+effort: high
 ---
 
 # Writing Plans — 큰 작업 분할 메타 절차

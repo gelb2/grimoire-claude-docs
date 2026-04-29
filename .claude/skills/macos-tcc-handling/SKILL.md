@@ -14,6 +14,7 @@ triggers:
   - "acr login"
   - "Docker Desktop"
   - "docker-credential-desktop"
+effort: low
 ---
 
 # macOS TCC 다이얼로그 대응 (Docker credsStore)

@@ -4,6 +4,11 @@ description: 웹 UI에 추가된 환불 관련 문구("자동 환불", "환불�
 argument-hint: "[선택: 검사할 문구 또는 키워드, 미입력 시 표준 환불 패턴 4종 자동 검사]"
 disable-model-invocation: true
 allowed-tools: Read, Grep, Glob, Bash
+effort: medium
+paths:
+  - "grimoire-server/src/application/analysis/**/*.ts"
+  - "grimoire-server/src/application/payment/**/*.ts"
+  - "grimoire-web/src/app/dashboard/analysis/**/*.tsx"
 ---
 
 > **2026-04-25 세션 #7**: `.claude/commands/refund-logic-audit.md`에서 마이그레이션. Anthropic 공식 권장 ("Custom commands have been merged into skills"). `disable-model-invocation: true`로 사용자 명시 호출만 허용 (`/refund-logic-audit`).

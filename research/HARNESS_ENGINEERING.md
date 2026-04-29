@@ -92,7 +92,9 @@ hooks:                               # skill-scoped hooks (settings.json hooks �
 구체적 절차, 체크리스트, 참조 파일 경로 등.
 ```
 
-> **2026-04-27 researcher 검증**: Anthropic 공식 docs에서 `model`/`effort`/`paths`/`hooks` 신규 필드 확인. 현 ProjectGrimoire 13 skills는 대부분 `name`/`description`/`allowed-tools`/`triggers`/`disable-model-invocation`만 사용. **P2 마이그레이션 가치** (특히 `paths`/`hooks` 필드로 sensor-skill 연동 가능).
+> **2026-04-27 researcher 검증**: Anthropic 공식 docs에서 `model`/`effort`/`paths`/`hooks` 신규 필드 확인.
+>
+> **1차 마이그레이션 완료 (2026-04-27 #9)**: 14 skills 모두 `effort` 필드 추가 (low/medium/high), `paths` 2건 추가 (deploy-image-verify + refund-logic-audit). `model` 필드는 사용자 결정으로 보류 (모두 Opus 유지). `hooks` 필드는 P2 (skill-scoped hooks 분리 평가 필요).
 
 ### 6.2 Agent vs Skill 비교
 
@@ -863,7 +865,7 @@ gh repo create gelb2/grimoire-workspace --private --source=. --remote=origin --p
 
 각 에이전트 `.md` 하단에 "Skills 프로토콜 참조" 섹션으로 `.claude/skills/*/SKILL.md` 경로 embed (ouroboros 방식 — 공식 스펙상 서브에이전트는 Skill 자동 발동 불가).
 
-### 14.2 Skills 13종 (`.claude/skills/<name>/SKILL.md`)
+### 14.2 Skills 14종 (`.claude/skills/<name>/SKILL.md`)
 
 | Skill | 트리거 / 호출 | 용도 |
 |---|---|---|
@@ -879,7 +881,8 @@ gh repo create gelb2/grimoire-workspace --private --source=. --remote=origin --p
 | gc-sweep (2026-04-26 #9 신설) | 사용자 명시 호출 `/gc-sweep [dry-run\|stage\|apply]` | Fowler GC 축 1.5/5 → 3+/5 갭 해소. 7 카테고리(skills/sensors/hooks/memory/scripts/agents/prompts) 미참조·stale 자산 식별 |
 | feedback-to-skill (2026-04-26 #9 신설, X-L) | 사용자 명시 호출 `/feedback-to-skill <feedback-name\|dry-run>` | memory/feedback_*.md PROMOTE 후보를 draft skill로 변환 → 사용자 confirm 후 정식 승격 (HARNESS §8.9 v2 Memory Session-to-Skill) |
 | worktree-isolation (2026-04-27 #9 F 신설, obra/superpowers MIT) | 사용자 명시 호출 `/worktree-isolation <start <branch>\|finish\|discard\|list>` | Edit 폭주 작업 (≥50 호출 또는 ≥1시간 다중 도메인) 시 git worktree 격리. 메인 develop 오염 방지 + rollback 안전망 (HARNESS §8.10) |
-| **deploy-image-verify** (2026-04-27 #9 EEE 신설) | 사용자 명시 호출 `/deploy-image-verify [server\|web\|both]` | sensor-deploy-drift가 권한 차단으로 자동 측정 불가한 영역(운영 Container App image SHA vs git main HEAD) 사용자 직접 az 명령 안내 + SHA 비교 |
+| deploy-image-verify (2026-04-27 #9 EEE 신설) | 사용자 명시 호출 `/deploy-image-verify [server\|web\|both]` | sensor-deploy-drift가 권한 차단으로 자동 측정 불가한 영역(운영 Container App image SHA vs git main HEAD) 사용자 직접 az 명령 안내 + SHA 비교 |
+| **systematic-debugging** (2026-04-27 #9 신설, obra/superpowers MIT v5.0.7 차용) | 트리거 매칭 (10 키워드: "원인이 뭐", "왜 안 되", "근본 원인", "root cause" 등) | 복잡한 회귀(다중 원인 후보 / production-bug-triage 1차 실측 후 root cause 미도달) 시 가설 분리(3~5개) + 변수 분리 + 실측 검증 + root cause 도달 + 회귀 차단 5단계. production-bug-triage 후속 절차 |
 
 ### 14.2.1 Statusline (2026-04-27 #9 신설)
 - `.claude/scripts/statusline.sh` — settings.json statusLine 등록 → assistant 메시지 후 자동 호출
