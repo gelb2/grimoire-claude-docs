@@ -5,6 +5,12 @@ argument-hint: "[배포 대상 환경: dev | prod] (기본 dev)"
 disable-model-invocation: true
 allowed-tools: Read, Bash, Grep, Glob
 effort: medium
+paths:
+  - "grimoire-server/Dockerfile"
+  - "grimoire-server/Makefile"
+  - "grimoire-web/Dockerfile"
+  - "grimoire-web/Makefile"
+  - "**/scripts/deploy-*.sh"
 ---
 
 > **2026-04-25 세션 #7**: `.claude/commands/deploy-precheck.md`에서 마이그레이션. `disable-model-invocation: true`로 사용자 명시 호출만 허용 (`/deploy-precheck`).

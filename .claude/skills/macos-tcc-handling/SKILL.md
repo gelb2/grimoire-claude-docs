@@ -13,6 +13,10 @@ triggers:
   - "credsStore"
   - "acr login"
   - "Docker Desktop"
+paths:
+  - "**/Makefile"
+  - "~/.docker/config.json"
+  - "**/scripts/deploy-*.sh"
   - "docker-credential-desktop"
 effort: low
 ---
