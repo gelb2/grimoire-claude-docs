@@ -4,6 +4,7 @@ description: grimoire-server/HANDOVER.md를 git log + 최근 메모리 + sensor 
 argument-hint: "[선택: dry-run | apply] (기본 dry-run — 결과만 표시, 실제 갱신 안 함)"
 disable-model-invocation: true
 allowed-tools: Read, Bash, Grep, Glob, Write, Edit
+effort: medium
 ---
 
 # Handover Refresh — HANDOVER.md 자동 갱신

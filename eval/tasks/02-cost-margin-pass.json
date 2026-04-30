@@ -1,0 +1,14 @@
+{
+  "id": "regression-002",
+  "name": "§0 원가 안전배수 ≥3.0× (PLANNING §0 강제)",
+  "category": "cost_zero",
+  "source_session": "20260419 + 20260426 + 20260427",
+  "prompt": "ai-cost-table.md의 모든 안전배수가 3.0× 이상인가? §0 위반 위험 가격 변동 시뮬에서도 PASS인가?",
+  "eval_criteria": [
+    {"type": "command", "command": "python3 -c \"import re; content=open('grimoire-server/docs/ai-cost-table.md').read(); margins=[float(m) for m in re.findall(r'\\*\\*([0-9.]+)×\\*\\*', content)]; bad=[m for m in margins if m < 3.0]; exit(0 if not bad else 1)\"", "desc": "ai-cost-table 안전배수 모두 ≥3.0× (FAIL 0건)"},
+    {"type": "grep", "target": "grimoire-server/docs/ai-cost-table.md", "pattern": "ANALYSIS_CREDIT_COST = 3", "min": 0, "max": 0, "desc": "분석 3 크레딧 박제 0건 (4로 인상됨)"},
+    {"type": "grep", "target": "grimoire-server/src/domain/model/config.ts", "pattern": "ANALYSIS_CREDIT_COST = 4", "min": 1, "desc": "ANALYSIS_CREDIT_COST = 4 박제"}
+  ],
+  "threshold": 1.0,
+  "runs": 1
+}

@@ -1,0 +1,15 @@
+{
+  "id": "regression-024",
+  "name": "테스트 커버리지 baseline — *.spec.ts/test.ts 파일 수 + jest/vitest config (test_coverage 카테고리 신설)",
+  "category": "test_coverage",
+  "source_session": "20260430 P1 묶음 B EDD task 카테고리 확장",
+  "prompt": "server jest config + web vitest config + .spec.ts 파일이 충분한 수만큼 존재하는가? CLAUDE.md 권장 server 60% / web 55% 박제 검증",
+  "eval_criteria": [
+    {"type": "command", "command": "test -f grimoire-server/jest.config.js -o -f grimoire-server/jest.config.ts -o -f grimoire-server/package.json && grep -q jest grimoire-server/package.json", "desc": "server jest config 존재"},
+    {"type": "command", "command": "test -f grimoire-web/vitest.config.ts && grep -q '@vitest/coverage' grimoire-web/package.json", "desc": "web vitest config + coverage 패키지 존재"},
+    {"type": "command", "command": "find grimoire-server/src -name '*.spec.ts' | wc -l | xargs -I{} test {} -gt 20", "desc": "server .spec.ts 파일 20개 이상"},
+    {"type": "command", "command": "find grimoire-web/src -name '*.test.ts' -o -name '*.test.tsx' -o -name '*.spec.ts' -o -name '*.spec.tsx' | wc -l | xargs -I{} test {} -gt 5", "desc": "web 테스트 파일 5개 이상"}
+  ],
+  "threshold": 1.0,
+  "runs": 1
+}

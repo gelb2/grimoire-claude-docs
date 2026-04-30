@@ -1,0 +1,12 @@
+{
+  "id": "regression-012",
+  "name": "Mutation 엔드포인트 @UseGuards(JwtAuthGuard) (CLAUDE.md §11)",
+  "category": "security",
+  "source_session": "CLAUDE.md §11 + 20260411 (관리자 14탭 보안)",
+  "prompt": "POST/PUT/PATCH/DELETE 엔드포인트에 JwtAuthGuard가 적용되어 있는가?",
+  "eval_criteria": [
+    {"type": "command", "command": "bash .claude/scripts/sensor-security-gate.sh --quiet ; [ $? -le 2 ]", "desc": "sensor-security-gate FAIL 아님"}
+  ],
+  "threshold": 1.0,
+  "runs": 1
+}

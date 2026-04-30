@@ -336,3 +336,12 @@ researcher가 COST_ALERT.md 생성 시 즉시:
 cost-accountant는 원가 계산 전담이라 Skills 직접 활용은 드뭅니다. 단 다음 상황 시 해당 SKILL.md를 Read로 로드하세요.
 
 - `/Users/sokol/Desktop/Git/ProjectGrimoire/.claude/skills/production-bug-triage/SKILL.md` — 마진 급변의 원인을 **운영 증상**(API 응답 지연·환불 발생 등)과 연결할 때 curl/psql 실측 근거 요구
+
+
+## Shared Contracts 참조 (인터페이스 규약 — 모든 agent 공통)
+
+본 agent가 인터페이스 (PLANNER_REPORT 형식 / COST_AUDIT 필드 / DEV_REPORT 섹션 / AskOptions / ANALYSIS_CREDIT_COST 등)를 변경할 때:
+- **반드시 `.claude/shared-contracts.md` 해당 섹션 즉시 갱신** (책 Ch 16 충돌 2번 해결책)
+- 변경 이력 1줄 박제 (date — agent — 변경 요약)
+
+본 파일 미갱신 시 다른 agent가 통합 단계에서 인터페이스 불일치로 깨짐.

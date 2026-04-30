@@ -1,0 +1,12 @@
+{
+  "id": "regression-016",
+  "name": "배포 drift 0건 (server/web develop = origin/develop = main)",
+  "category": "convention",
+  "source_session": "20260426 + 20260427",
+  "prompt": "server/web 모두 develop ↔ origin/develop ↔ main 정합 + 운영 health 정상인가?",
+  "eval_criteria": [
+    {"type": "command", "command": "bash .claude/scripts/sensor-deploy-drift.sh --quiet ; [ $? -le 2 ]", "desc": "sensor-deploy-drift FAIL 아님 (PASS or WARN cold start 허용)"}
+  ],
+  "threshold": 1.0,
+  "runs": 1
+}

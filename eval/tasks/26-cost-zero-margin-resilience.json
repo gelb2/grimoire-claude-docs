@@ -1,0 +1,14 @@
+{
+  "id": "regression-026",
+  "name": "§0 원가 안전배수 회복탄력성 — Claude 가격 +20% 시뮬에서도 ≥2.5× (cost_zero 카테고리 보강)",
+  "category": "cost_zero",
+  "source_session": "20260430 P1 묶음 B EDD task 카테고리 확장",
+  "prompt": "Anthropic 가격 +20% 인상 시뮬에서도 모든 안전배수가 2.5× 이상 유지되는가? §0 위반 방지 안전망",
+  "eval_criteria": [
+    {"type": "command", "command": "python3 -c \"import re; content=open('grimoire-server/docs/ai-cost-table.md').read(); margins=[float(m)*0.83 for m in re.findall(r'\\*\\*([0-9.]+)×\\*\\*', content)]; bad=[m for m in margins if m < 2.5]; print('+20%시뮬 FAIL:', len(bad)); exit(0 if not bad else 1)\"", "desc": "Claude 가격 +20% 시뮬 (margin × 0.83) 모두 ≥2.5×"},
+    {"type": "grep", "target": "grimoire-server/src/domain/model/config.ts", "pattern": "ANALYSIS_CREDIT_COST = 4", "min": 1, "desc": "ANALYSIS_CREDIT_COST = 4 박제 유지"},
+    {"type": "grep", "target": "PLANNING_GRIMOIRE.md", "pattern": "§0|원가 철칙|ZERO|CRITICAL", "min": 1, "desc": "PLANNING §0 원가 철칙 박제 유지"}
+  ],
+  "threshold": 1.0,
+  "runs": 1
+}

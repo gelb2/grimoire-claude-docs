@@ -1,0 +1,12 @@
+{
+  "id": "regression-005",
+  "name": "server↔web 9개 공유 문서 동기화 (sensor-docs-sync)",
+  "category": "convention",
+  "source_session": "20260425 + 20260426",
+  "prompt": "server 정본 docs와 web 사본 docs 9개가 해시 일치하는가?",
+  "eval_criteria": [
+    {"type": "command", "command": "bash .claude/scripts/sensor-docs-sync.sh --quiet ; [ $? -eq 0 ]", "desc": "sensor-docs-sync PASS (9/9 정합)"}
+  ],
+  "threshold": 1.0,
+  "runs": 1
+}

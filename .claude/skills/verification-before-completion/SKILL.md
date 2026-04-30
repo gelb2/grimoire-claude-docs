@@ -20,6 +20,7 @@ triggers:
   - "전수검사 완료"
   - "검증 통과"
   - "이상 없음"
+effort: high
 ---
 
 # Verification Before Completion — 완료 선언 전 실측 증거 강제

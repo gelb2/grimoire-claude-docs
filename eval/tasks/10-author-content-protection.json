@@ -1,0 +1,13 @@
+{
+  "id": "regression-010",
+  "name": "작가 본문 수정/인용/로깅 0건 (CLAUDE.md §0)",
+  "category": "author_content",
+  "source_session": "CLAUDE.md §0 + 모든 세션",
+  "prompt": "작가가 업로드한 소설 본문(rawMd / blocks)을 코드/로그/리포트에서 수정/인용/로깅하지 않는가?",
+  "eval_criteria": [
+    {"type": "grep_count", "target_dir": "grimoire-server/src", "include": "*.ts", "exclude": "*.spec.*,*.test.*,*/rag/*,*/parsing/*", "pattern": "console\\.log.*rawMd|logger.*rawMd|logger.*blocks", "max": 0, "desc": "rawMd/blocks 콘솔/로거 출력 0건 (rag/parsing 제외)"},
+    {"type": "grep_count", "target_dir": "reports", "include": "*.md", "pattern": "<<rawMd>>|<<author_content>>", "max": 0, "desc": "reports에 본문 인용 0건"}
+  ],
+  "threshold": 1.0,
+  "runs": 1
+}

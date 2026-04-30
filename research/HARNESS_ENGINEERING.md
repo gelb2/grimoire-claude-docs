@@ -74,12 +74,27 @@ Claude Code의 **Skill**은 `.claude/skills/<skill-name>/SKILL.md` 규약으로 
 ---
 name: skill-name
 description: 이 skill이 언제 발동되어야 하는지 (Claude가 trigger 판단)
-allowed-tools: Read, Edit, Bash   # 선택
+allowed-tools: Read, Edit, Bash      # 선택
+disable-model-invocation: true       # 명시 호출만 허용 (사용자 결정)
+triggers:                            # UserPromptSubmit 자동 매칭 키워드
+  - "키워드1"
+  - "키워드2"
+# 2026-04-27 researcher 위임 검증으로 발견된 신규 필드 (현 인벤토리 대부분 미반영, P2 마이그레이션 가치):
+model: opus | sonnet | haiku         # skill 내부 모델 지정
+effort: low | medium | high          # 작업 강도 (Claude 자체 평가)
+paths:                               # 적용 파일 glob 패턴
+  - "grimoire-server/**/*.ts"
+hooks:                               # skill-scoped hooks (settings.json hooks 분리)
+  PreToolUse: bash /path/to/hook.sh
 ---
 
 # Skill 본문 (Markdown)
 구체적 절차, 체크리스트, 참조 파일 경로 등.
 ```
+
+> **2026-04-27 researcher 검증**: Anthropic 공식 docs에서 `model`/`effort`/`paths`/`hooks` 신규 필드 확인.
+>
+> **1차 마이그레이션 완료 (2026-04-27 #9)**: 14 skills 모두 `effort` 필드 추가 (low/medium/high), `paths` 2건 추가 (deploy-image-verify + refund-logic-audit). `model` 필드는 사용자 결정으로 보류 (모두 Opus 유지). `hooks` 필드는 P2 (skill-scoped hooks 분리 평가 필요).
 
 ### 6.2 Agent vs Skill 비교
 
@@ -136,7 +151,7 @@ P0~P1 구현 후보:
 
 ## 7. 커뮤니티 3대 레포 심층 분석 (v2 신설)
 
-### 7.1 [obra/superpowers](https://github.com/obra/superpowers) — 167k stars, MIT
+### 7.1 [obra/superpowers](https://github.com/obra/superpowers) — 168k stars, MIT (2026-04-27 갱신, 167k → 168k)
 
 **정체성**: "A complete software development methodology for your coding agents." TDD + systematic debugging + collaboration 프로토콜 번들.
 
@@ -174,7 +189,7 @@ P0~P1 구현 후보:
 
 **라이선스 주의**: MIT지만 패키지 그대로 install 시 167k의 범용 규칙이 ProjectGrimoire 도메인 규칙과 충돌 가능. **선별적 이식 권장**.
 
-### 7.2 [Yeachan-Heo/oh-my-claudecode](https://github.com/Yeachan-Heo/oh-my-claudecode) — 31.1k stars, MIT (한국 개발자)
+### 7.2 [Yeachan-Heo/oh-my-claudecode](https://github.com/Yeachan-Heo/oh-my-claudecode) — 31.4k stars, MIT (한국 개발자, 2026-04-27 갱신: 31.1k → 31.4k, v4.13.4 2026-04-24)
 
 **정체성**: "Teams-first Multi-agent orchestration for Claude Code." "Don't learn Claude Code. Just use OMC."
 
@@ -224,7 +239,7 @@ omc setup
 
 **경고**: 19개 agent를 일괄 install하면 ProjectGrimoire의 7개 도메인 agent와 중복/충돌. **선별 이식 권장**.
 
-### 7.3 [Q00/ouroboros](https://github.com/Q00/ouroboros) — 2.7k stars, MIT
+### 7.3 [Q00/ouroboros](https://github.com/Q00/ouroboros) — 2.7k stars, MIT (2026-04-27 갱신: v0.30.0 2026-04-26 어제 출시 — 활발 유지)
 
 **정체성**: "Specification-first workflow engine for AI coding agents." "Stop prompting. Start specifying."
 
@@ -273,7 +288,7 @@ claude plugin marketplace add Q00/ouroboros
 
 | 축 | superpowers | oh-my-claudecode | ouroboros |
 |---|---|---|---|
-| 규모 | 167k ⭐ | 31.1k ⭐ | 2.7k ⭐ |
+| 규모 | 168k ⭐ | 31.4k ⭐ | 2.7k ⭐ |
 | 철학 | TDD + systematic | Teams-first | Spec-first |
 | 언어 | (설정 파일 중심) | TypeScript | Python |
 | 설치 | Claude plugin | plugin / npm | pip / plugin |
@@ -345,12 +360,41 @@ $ARGUMENTS 변수로 사용자 입력 받기
 - 위험 명령(`rm -rf`, `git reset --hard`)은 `deny`로 차단 가능
 - ProjectGrimoire 추가 후보: `Bash(git status)`, `Bash(git diff*)`, `Bash(npm test*)`, `Bash(npx tsc --noEmit)` 등 반복 명령 auto-approve
 
-### 8.4 Output Styles (`.claude/output-styles/*.md`)
+### 8.4 Output Styles (`.claude/output-styles/*.md`) — ⛔ 2026-04-27 #9 P3 보류 결정
 
-- 응답 스타일 템플릿 (개발자용 / 경영진용 / 리뷰용 등)
-- ProjectGrimoire에서는 **미탐색 영역**. 현재 필요도 낮음
+**공식 명세** (researcher 검증):
+- 위치: `~/.claude/output-styles/` 또는 `.claude/output-styles/*.md`
+- frontmatter: `name`, `description`, `keep-coding-instructions`만
+- settings.local.json `outputStyle` 필드로 활성
+- **시스템 프롬프트의 코딩 부분을 끔** (keep-coding-instructions: false 기본)
 
-### 8.5 Statusline (`.claude/statusline.sh`)
+**ProjectGrimoire 부적합 사유**:
+- 작가별 응답 스타일 시도 → **세션당 1개만 활성** → 작가 슬러그별 전환 불가
+- server/web 도메인별 스타일 → 이미 subagent에 system prompt 분리됨 (중복 투자)
+- cost-accountant 마진 표 양식 → agent OUTPUT_SPEC에 박제됨 (불필요)
+- 핵심 충돌: **세션당 1개 한계 + 코딩 지시 비활성화 기본**이 Grimoire 워크플로우(코드+문서+분석 혼재)와 충돌
+
+**재검토 조건**: Anthropic이 **per-agent override** 도입 시 (현재 미지원).
+
+§14.10 미도입·보류 결정 항목 박제 완료.
+
+### 8.5 Statusline (`.claude/statusline.sh`) — ✅ 2026-04-27 #9 도입
+
+**도입 시점**: 2026-04-27 #9
+**스크립트**: `.claude/scripts/statusline.sh`
+**settings.json 등록**: `statusLine: { type: "command", command: "...", padding: 0 }`
+
+**표시 항목** (Ambient Affordance, §3):
+1. claude-docs 현재 브랜치
+2. server / web develop ahead origin/main (배포 대기 commit 수, ANSI 색상)
+3. sensor-cost-margin 최근 상태 (PASS/WARN/FAIL + 평균 안전배수)
+4. sensor-deploy-drift 최근 상태 (PASS/WARN/FAIL + PASS/WARN 카운트)
+
+**호출 빈도**: assistant 메시지 후 + 권한 모드 변경 + Vim 토글, 300ms debounce
+**색상**: ANSI escape codes (녹/노/빨/회색)
+**비용**: <1초 (git rev-list + tail jsonl)
+
+**효과**: sensor 결과를 매번 호출 없이 항상 가시화 → 본 세션의 server/web develop ahead main 8건 같은 상황 즉시 인지 가능 (능동 → 수동/ambient).
 
 - 터미널 하단에 실시간 정보 표시
 - 후보: 현재 브랜치 / 마지막 테스트 결과 / 배포 상태 / 크레딧 카운터
@@ -367,11 +411,34 @@ ProjectGrimoire 전용 MCP 후보:
 - **Azure Container App status MCP** — `az containerapp` 호출 래퍼
 - **Grimoire DB admin MCP** — dev 방화벽 열고 쿼리 (위험성 높음, 권한 엄격)
 
-### 8.7 Plugins (marketplace)
+### 8.7 Plugins (marketplace) — 2026-04-27 #9 평가 (선별 차용 유지)
 
-Claude Code 2026-04 릴리스에서 plugin marketplace 본격화:
-- `obra/superpowers`, `Yeachan-Heo/oh-my-claudecode`, `Q00/ouroboros` 등 install 가능
-- 한 레포 install 시 agents/skills/commands 일괄 주입
+**공식 marketplace** (researcher 검증):
+- `claude-plugins-official` (자동 활성)
+- 명령: `/plugin install <name>@claude-plugins-official`
+- 카탈로그: [claude.com/plugins](https://claude.com/plugins)
+- 카테고리: code intelligence (LSP 11종) / external integrations (github/gitlab/atlassian/linear/notion/figma/vercel/firebase/supabase/slack/sentry) / dev workflows / output styles
+
+**ProjectGrimoire 평가 (2026-04-27 researcher)**:
+
+| Plugin | 평가 | 결정 |
+|---|---|---|
+| **typescript-lsp** ★ | server/web 양쪽 즉시 도입 가치 (편집 직후 자동 진단 + 타입 정보 + 정의로 점프) | **사용자 결정 영역 P1** (Grimoire 컨벤션 무관) |
+| github plugin | gh CLI 이미 활용 중 → 중복 | 보류 |
+| commit-commands | 한국어 커밋 컨벤션 + Pre-Push Hook과 충돌 | 보류 |
+| superpowers/systematic-debugging | verification-before-completion 이미 보유, 보완 가치 | P2 선별 차용 |
+| 외부 integrations (slack/notion 등) | 현재 운영 패턴에 미사용 | 보류 |
+
+**install vs 선별 차용 트레이드오프**:
+
+| 방식 | 장점 | 단점 |
+|---|---|---|
+| install | 자동 업데이트 + 네임스페이스 충돌 방지 + 의존성 자동 해결 | 외부 변경 영향 직접 수신 |
+| **선별 차용 (현재)** | 라이선스 명시 + 한국어 컨벤션 맞춤 + §0 원가 게이트 통합 | 수동 업데이트 |
+
+**최종 결정**: **선별 차용 유지** (한국어 + §0 원가 게이트 + 사슴악마 정본 종속). 단 **typescript-lsp는 사용자 결정 영역**으로 분리.
+
+**자체 marketplace 후보**: `gelb2/grimoire-plugins` (3 레포 동기화 자동화) — P2 검토.
 
 ### 8.8 Knowledge (`.claude/knowledge/*.md`)
 
@@ -765,9 +832,10 @@ gh repo create gelb2/grimoire-workspace --private --source=. --remote=origin --p
 - [Claude Code Skills 공식 문서](https://code.claude.com/docs/en/skills)
 
 ### 커뮤니티 3대 레포 (v2 심층 분석 포함)
-- [GitHub — obra/superpowers](https://github.com/obra/superpowers) — 167k ⭐, MIT, TDD+systematic methodology
-- [GitHub — Yeachan-Heo/oh-my-claudecode](https://github.com/Yeachan-Heo/oh-my-claudecode) — 31.1k ⭐, MIT, Teams-first multi-agent
-- [GitHub — Q00/ouroboros](https://github.com/Q00/ouroboros) — 2.7k ⭐, MIT, Spec-first workflow engine
+- [GitHub — obra/superpowers](https://github.com/obra/superpowers) — 168k ⭐ (v5.0.7), MIT, TDD+systematic methodology
+- [GitHub — Yeachan-Heo/oh-my-claudecode](https://github.com/Yeachan-Heo/oh-my-claudecode) — 31.4k ⭐ (v4.13.4), MIT, Teams-first multi-agent
+- [GitHub — Q00/ouroboros](https://github.com/Q00/ouroboros) — 2.7k ⭐ (v0.30.0 2026-04-26), MIT, Spec-first workflow engine
+- **stars/버전 갱신: 2026-04-27 researcher 위임 검증**
 
 ### 부가 참고
 - [GitHub — Chachamaru127/claude-code-harness](https://github.com/Chachamaru127/claude-code-harness) — Go guardrail engine
@@ -797,7 +865,7 @@ gh repo create gelb2/grimoire-workspace --private --source=. --remote=origin --p
 
 각 에이전트 `.md` 하단에 "Skills 프로토콜 참조" 섹션으로 `.claude/skills/*/SKILL.md` 경로 embed (ouroboros 방식 — 공식 스펙상 서브에이전트는 Skill 자동 발동 불가).
 
-### 14.2 Skills 12종 (`.claude/skills/<name>/SKILL.md`)
+### 14.2 Skills 14종 (`.claude/skills/<name>/SKILL.md`)
 
 | Skill | 트리거 / 호출 | 용도 |
 |---|---|---|
@@ -812,9 +880,16 @@ gh repo create gelb2/grimoire-workspace --private --source=. --remote=origin --p
 | handover-refresh (2026-04-25 #8 신설) | 사용자 명시 호출 `/handover-refresh [dry-run\|apply]` | grimoire-server/HANDOVER.md 자동 수집 갱신 (git log + memory + sensor + 배포 + TODO) |
 | gc-sweep (2026-04-26 #9 신설) | 사용자 명시 호출 `/gc-sweep [dry-run\|stage\|apply]` | Fowler GC 축 1.5/5 → 3+/5 갭 해소. 7 카테고리(skills/sensors/hooks/memory/scripts/agents/prompts) 미참조·stale 자산 식별 |
 | feedback-to-skill (2026-04-26 #9 신설, X-L) | 사용자 명시 호출 `/feedback-to-skill <feedback-name\|dry-run>` | memory/feedback_*.md PROMOTE 후보를 draft skill로 변환 → 사용자 confirm 후 정식 승격 (HARNESS §8.9 v2 Memory Session-to-Skill) |
-| **worktree-isolation** (2026-04-27 #9 F 신설, obra/superpowers MIT) | 사용자 명시 호출 `/worktree-isolation <start <branch>\|finish\|discard\|list>` | Edit 폭주 작업 (≥50 호출 또는 ≥1시간 다중 도메인) 시 git worktree 격리. 메인 develop 오염 방지 + rollback 안전망 (HARNESS §8.10) |
+| worktree-isolation (2026-04-27 #9 F 신설, obra/superpowers MIT) | 사용자 명시 호출 `/worktree-isolation <start <branch>\|finish\|discard\|list>` | Edit 폭주 작업 (≥50 호출 또는 ≥1시간 다중 도메인) 시 git worktree 격리. 메인 develop 오염 방지 + rollback 안전망 (HARNESS §8.10) |
+| deploy-image-verify (2026-04-27 #9 EEE 신설) | 사용자 명시 호출 `/deploy-image-verify [server\|web\|both]` | sensor-deploy-drift가 권한 차단으로 자동 측정 불가한 영역(운영 Container App image SHA vs git main HEAD) 사용자 직접 az 명령 안내 + SHA 비교 |
+| **systematic-debugging** (2026-04-27 #9 신설, obra/superpowers MIT v5.0.7 차용) | 트리거 매칭 (10 키워드: "원인이 뭐", "왜 안 되", "근본 원인", "root cause" 등) | 복잡한 회귀(다중 원인 후보 / production-bug-triage 1차 실측 후 root cause 미도달) 시 가설 분리(3~5개) + 변수 분리 + 실측 검증 + root cause 도달 + 회귀 차단 5단계. production-bug-triage 후속 절차 |
 
-### 14.3 Hooks 8 이벤트 10 스크립트 (`.claude/settings.json`)
+### 14.2.1 Statusline (2026-04-27 #9 신설)
+- `.claude/scripts/statusline.sh` — settings.json statusLine 등록 → assistant 메시지 후 자동 호출
+- 표시: docs 브랜치 + server/web ahead main + cost-margin 상태 + deploy-drift 상태 (ANSI 색상)
+- 효과: Ambient Affordance — sensor 호출 없이 항상 가시화
+
+### 14.3 Hooks 9 이벤트 12 스크립트 (`.claude/settings.json`) — 2026-04-27 #9 PostToolUseFailure 추가
 
 | Hook | matcher | 스크립트 | 용도 |
 |---|---|---|---|
@@ -828,8 +903,9 @@ gh repo create gelb2/grimoire-workspace --private --source=. --remote=origin --p
 | PostToolUse | Edit\|Write | post-edit-tsc.sh | `.ts/.tsx/.cts/.mts` 편집 후 해당 레포 `tsc --noEmit` 자동 |
 | PostToolUse | Edit\|Write | post-edit-spec-check.sh | spec/test 누락 감지 (usecase/lib/adapter/features 화이트리스트) |
 | **PostToolBatch** (2026-04-25 #7 신설) | - (전체) | post-batch-tsc.sh | parallel batch 완료 후 server+web tsc 일괄 (debounce 60s, 빌드 중복 60% ↓ 목표) |
+| **PostToolUseFailure** (2026-04-27 #9 F2 신설) | - (전체) | posttooluse-failure-handler.sh | 도구 실패 시 적재 + Chrome MCP 한정 정책 처리 (1회 재시도 신호 / reCAPTCHA 즉시 차단 / prod 도메인 자동 재시도 안 함). additionalContext로 Claude에게 재시도 신호만 전달, 실제 재시도는 Claude 판단 |
 
-### 14.4 Sensors 12개 (`.claude/scripts/sensor-*.sh`)
+### 14.4 Sensors 13개 (`.claude/scripts/sensor-*.sh`)
 
 | Sensor | 용도 |
 |---|---|
@@ -866,6 +942,30 @@ gh repo create gelb2/grimoire-workspace --private --source=. --remote=origin --p
 | qa | qa.txt |
 
 매핑·호출 예시: `.claude/prompts/README.md` 참조. `developers.txt`는 server.txt + web.txt로 분리되어 제거됨 (§9.4 P0 해소).
+
+### 14.6.2 Eval 시스템 (2026-04-27 #9 P0 도입, "하네스 엔지니어링 완전 정복" Ch 15 차용)
+
+**도입 배경**: P0 갭 — Verify 기둥 2.5/5 → 4/5 강화. 회귀 8 세션 누적 박제 (AI 분석 cancel 환불, §0 분석/베스트, SDK signal, 결제 원자성, 보안 시크릿, docs-sync drift 등).
+
+**구조**:
+- `eval/tasks/` — 20개 회귀 박제 (.json)
+- `eval/scripts/eval-runner.sh` — 메인 실행기
+- `eval/scripts/grade.py` — 4 채점 방식 (grep / grep_count / command / inventory_match)
+- `eval/scripts/eval-precommit.sh` — pre-commit 통합 (regression-tolerance 0.05)
+- `eval/results/baseline.csv` — 시계열 통과율 누적
+
+**카테고리** (책 정합 + ProjectGrimoire 도메인 추가):
+- type_safety / api_contract / edge_case / convention / test_coverage (책 표준)
+- **cost_zero** ★ — §0 원가 안전배수 (PLANNING §0)
+- **visual_canon** ★ — 사슴악마 시각 정본 (CLAUDE.md §1)
+- **author_content** ★ — 작가 콘텐츠 보호 (CLAUDE.md §0)
+- **security** ★ — 시크릿 평문, mutation guard, BFF 프록시
+
+**Mode 차이**:
+- 회귀 Eval (현재 도입): runs=1, threshold=1.0 — 코드 상태 검증
+- EDD Eval (향후 P1): runs=10, threshold=0.7~0.95 — 에이전트 작업 평가
+
+**첫 실측 (2026-04-27 baseline)**: PASS 17 / 20 = **85%**. FAIL 3건 (analysis-cancel-refund 패턴 정밀화 필요 / cost-margin sensor 한글 디코딩 / drift §14.4 매치 정밀화) — task json 정밀화로 후속 해소.
 
 ### 14.7 자율 실행 현황 (2026-04-26 #9 사용자 결정 — ⛔ 영구 비활성)
 
@@ -912,6 +1012,27 @@ gh repo create gelb2/grimoire-workspace --private --source=. --remote=origin --p
 - `.mcp.json` 도메인 특화 MCP — Phase 4 P3, DB 권한 위험으로 보류
 - `/handover-refresh` slash — ✅ **2026-04-25 #8 완료** (skill로 도입)
 - 모델 티어링 (Haiku/Sonnet/Opus) — cost-accountant 사전 시뮬 필수
+- **모델 티어링 (subagent별 model: 차등)** (2026-04-27 #9 사용자 결정 — ⛔ 무기한 보류)
+  - 사용자 결정: "모두 Opus 유지" — Haiku/Sonnet 다운그레이드 안 함
+  - 사유: cost-accountant / VCK / qa는 정밀 추론 필수 (실수 시 §0 위반 또는 시각 정본 깨짐). server/web도 코드 정밀도 위해 Opus 유지가 안전. 토큰 비용 절감보다 품질 우선
+  - 재검토 조건: 월간 토큰 비용이 crit 임계 도달 시 사용자 결정
+- **§8.4 Output Styles (`.claude/output-styles/*.md`)** (2026-04-27 #9 P3 보류 결정 — researcher 평가)
+  - 사유: 세션당 1개만 활성 → 작가 슬러그별 전환 불가
+  - server/web subagent에 system prompt 이미 분리 → 도메인별 스타일 중복 투자
+  - cost-accountant 마진 표 양식 등은 agent OUTPUT_SPEC에 박제됨 → 불필요
+  - keep-coding-instructions 기본 false (코딩 지시 비활성화) → Grimoire 워크플로우(코드+문서+분석 혼재)와 충돌
+  - 재검토 조건: Anthropic이 **per-agent override** 도입 시
+- **§8.7 Plugins marketplace 일괄 install** (2026-04-27 #9 보류 결정 — researcher 평가)
+  - 결정: **선별 차용 유지** (한국어 컨벤션 + §0 원가 게이트 + 사슴악마 정본 종속 맞춤화)
+  - github plugin: gh CLI 이미 활용 → 중복
+  - commit-commands: 한국어 커밋 컨벤션 + Pre-Push Hook과 충돌 → 보류
+  - **예외 ★ typescript-lsp**: 사용자 결정 영역으로 분리 (Grimoire 자체 컨벤션 무관, IDE 통합 가치, 사용자 승인 시 P1)
+  - 자체 grimoire-plugins marketplace: P2 (3 레포 동기화 자동화 가치)
+- **Azure Container App read-only MCP (G2)** (2026-04-27 #9 보류 결정)
+  - 사유: settings.local.json에 `Bash(az containerapp show:*)` + 관련 az 권한 18건 이미 등록됨 → MCP 도입 없이도 사용자 직접 + 메인 bash 호출(사용자 명시 의도)로 작동
+  - 차단 케이스: sensor 자동 호출 시점 (사용자 명시 의도 부재) — MCP 도입해도 같은 보안 평가 적용
+  - 현재 정합: `deploy-image-verify` skill로 사용자 명시 호출 가이드 (의도 명시 + 안내 → 차단 회피)
+  - 재검토 조건: 자율 실행(launchd) 부활 시 (현재 영구 비활성)
 - **Ouroboros Ambiguity Score 차용** (2026-04-26 #9 보류 결정)
   - 출처: Q00/ouroboros (§5.2, §10 Phase 4)
   - 메커니즘: PRD/요구사항 모호도 0~1 점수 (Goal 40% / Constraint 30% / Success 30%, brownfield 시 Context 15% 추가). 임계값 ≤0.2일 때만 코딩 진입
@@ -1046,6 +1167,26 @@ subagent 위임은 다음 비용 동반:
 
 본 세션 합치율: **5/6 = 83%**. 1차+2차에서만 부적합 결정 (subagent 위임 가치 있었으나 메인 직접 처리 → 패턴 1 KPI 0.0 유지).
 
+##### 15.7.3.1 위임 3건 추가 박제 (2026-04-26 #9 H'+I'+F + W + X 묶음)
+
+| 작업 | 위임 대상 | 매트릭스 매칭 | 효과 | 합치 |
+|---|---|---|---|---|
+| I' (WARN 5건 정밀 분석) | cost-accountant | ✅ "AI 기능 마진 검증 / 가격 변동" 외부 검증 도메인 | 분석/베스트 FAIL 약점 식별 + planner 핸드오프 박제 | ✅ |
+| 분석 4 크레딧 재계산 + 시뮬 | cost-accountant | ✅ "ai-cost-table.md 단독 관리" + 가격 변경 시 마진 검증 | ai-cost-table 직접 갱신 + §0 위반 차단 (베스트 2.79→3.35× FAIL→PASS) | ✅ |
+| BBB (AI_COST_MONITOR 갱신) | researcher | ✅ "시장 조사 / AI 가격 모니터링" | staleAfter 갱신 + Claude Opus 4.7 신규 박제 | ✅ |
+
+**누적 합치율 (본 세션): 8/9 = 88.9%** (1차+2차 5/6 + 위임 3건 3/3).
+
+##### 15.7.3.2 sensor-orchestration-ratio 측정 한계 발견
+
+본 세션 #9에서 위임 3건 모두 §15.7.3.1처럼 박제했으나 sensor-orchestration-ratio가 ratio 0.0000을 보고. 원인:
+
+- **진행 중 세션의 jsonl flush 지연** (Claude Code가 세션 종료 후 또는 일정 시점에 flush)
+- 본 세션 jsonl(`af2dbdaa-...jsonl`) Task 박제 0건 (실제 위임 3건과 불일치)
+- 다음 세션 진입 시 본 세션 위임 3건이 jsonl에 박제되어 측정 가능
+
+**해결**: §15.7.3 합치율은 **메인 자가 박제**(본 절)와 **sensor 자동 측정**(sensor-orchestration-ratio jsonl) 두 채널 병행. 다음 세션부터 ratio 0.0 → 양수 진입 예상.
+
 #### 15.7.4 다음 세션 부터 적용 규칙
 
 1. **사전 분류**: 작업 시작 전 위 매트릭스로 결정 (메인 직접 / subagent 위임 / 사용자 결정 필요)
@@ -1105,4 +1246,56 @@ subagent 위임은 다음 비용 동반:
 - agent teams experimental 도입 (cost 영향)
 - launchd 자율 실행 부활 (GC 축 1.5/5 갭 해소용)
 - 모델 티어링 (subagent 별 model:)
+
+---
+
+## 17. CLAUDE.md 60줄 분할 + 에이전트 인터페이스 정본 (2026-04-30 세션 #10 신설)
+
+> **근거**: 책 「하네스 엔지니어링 완전 정복」 Ch 08 (60줄 황금률) + Ch 16 (멀티 에이전트 shared contracts) + Ch 15 (LLM-as-Judge + EDD).
+> **HumanLayer 발견**: 50개 룰 → 절반 무시, 100개 룰 → 우선순위 상실. CLAUDE.md 22.8KB → instruction-degradation 명백.
+
+### 17.1 분할 구조 (4 파일)
+
+| 파일 | 역할 | 줄수 (실측) |
+|------|------|------------|
+| `CLAUDE.md` (root) | boost: §0 절대규정 + §1 프로젝트 + §2 공통 규칙 + §7 환경 + §9/13 pointer + §15 프롬프트 정본 | 73 |
+| `.claude/AGENTS.md` | 하네스 레이어: §12 메모리 절대규칙 + §14 멀티에이전트 + §15 프롬프트 정본 + 인벤토리 검증 | 114 |
+| `docs/AGENTS.md` | 문서 레이어: §3 동기화 + §4 레포 구조 + §5 피라미드 + §6 워크플로우 + §11 전수검사 | 195 |
+| `.githooks/AGENTS.md` | Git/CI 레이어: §8 브랜치 + §10 Pre-Push (server/web 실제 hook 본문 박제) | 125 |
+
+총 507줄 — 단일 CLAUDE.md(457줄) 대비 +50줄. 분할로 attention degradation 회피 + AGENTS.md 자동 자식 디렉토리 로드(Claude Code 표준).
+
+### 17.2 shared-contracts.md (책 Ch 16)
+
+`.claude/shared-contracts.md` (NEW, 11.4KB): 7개 에이전트가 주고받는 인터페이스 10개 정본 박제.
+- PLANNER_REPORT / COST_AUDIT_REPORT / VISUAL_CANON_REPORT / DEV_REPORT / QA_REPORT (with §3 Eval results)
+- AskOptions (signal: AbortSignal)
+- ANALYSIS_CREDIT_COST = 4
+- Eval task format
+- LLM-as-Judge cost guard
+- PostToolUseFailure hook policy
+
+각 에이전트(.md 7개)는 §0 박제 직후 `.claude/shared-contracts.md` 참조 1줄 주입. 인터페이스 변경 시 shared-contracts.md 먼저 갱신 → 7개 에이전트 동시 동기화.
+
+### 17.3 LLM-as-Judge (책 Ch 15) + EDD 모드 추가
+
+- **`eval/scripts/grade-llm.py`** (NEW): cost-accountant 7번째 위임 결과 박제. Daily ₩2,000 alert / Monthly ₩50,000 cap / per-call ~₩20 estimate (Sonnet 4.6, 2K input + 0.5K output)
+- **EDD 모드** (`eval/scripts/eval-runner.sh --mode=edd`): runs=10 default + category별 threshold (security/cost_zero 0.95+, visual_canon 0.90+, author_content 1.00, ...)
+- **EDD 전용 task**: `eval/tasks-edd/` 분리 (regression mode가 LLM 타입을 모르므로)
+
+### 17.4 검증 결과 (2026-04-30)
+
+| 검증 | 명령 | 결과 |
+|------|------|------|
+| Drift 0건 | `bash .claude/scripts/instructions-drift-check.sh` | exit 0 |
+| Regression 100% | `bash eval/scripts/eval-runner.sh` | 20/20 PASS |
+| EDD 100% | `bash eval/scripts/eval-runner.sh --mode=edd --runs=2` | 21/21 PASS |
+| 분할 줄수 | `wc -l CLAUDE.md .claude/AGENTS.md docs/AGENTS.md .githooks/AGENTS.md` | 73+114+195+125 |
+
+### 17.5 향후 진화
+
+- **P1**: shared-contracts.md drift sensor 신설 — 인터페이스 변경 누락 자동 감지
+- **P2**: LLM-as-Judge 실제 Anthropic SDK 연동 (현재 stub) + 일별 비용 대시보드
+- **P3**: 책 Ch 17 "에이전트 협업 패턴" 검토 (orchestration_ratio 기반 자동 위임)
+
 

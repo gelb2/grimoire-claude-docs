@@ -1,4 +1,9 @@
 {
+  "statusLine": {
+    "type": "command",
+    "command": "/Users/sokol/Desktop/Git/ProjectGrimoire/.claude/scripts/statusline.sh",
+    "padding": 0
+  },
   "hooks": {
     "SessionStart": [
       {
@@ -80,6 +85,17 @@
           {
             "type": "command",
             "command": "bash /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/scripts/post-edit-spec-check.sh",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PostToolUseFailure": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/scripts/posttooluse-failure-handler.sh",
             "timeout": 10
           }
         ]

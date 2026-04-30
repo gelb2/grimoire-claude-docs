@@ -4,6 +4,7 @@ description: ProjectGrimoire harness 자산(skills / agents / sensors / hooks / 
 argument-hint: "[선택: dry-run | stage | apply] (기본 dry-run — 후보만 출력)"
 disable-model-invocation: true
 allowed-tools: Read, Bash, Grep, Glob, Write, Edit
+effort: medium
 ---
 
 # GC Sweep — Harness 자산 정기 청소

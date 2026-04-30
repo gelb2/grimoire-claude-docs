@@ -4,6 +4,7 @@ description: memory/feedback_*.md 중 영향력이 커진(N회 이상 참조) �
 argument-hint: "[필수: feedback 파일명 (예: feedback_polite_korean) | dry-run]"
 disable-model-invocation: true
 allowed-tools: Read, Bash, Grep, Glob, Write, Edit
+effort: medium
 ---
 
 # Feedback to Skill — 메모리 승격 자동화

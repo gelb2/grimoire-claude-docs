@@ -24,11 +24,13 @@
 #   - count ≤ 1: 단발 피드백 (KEEP)
 #
 # 신규 면제:
-#   - 90일 미만 신규 feedback 파일은 임계값 적용 안 함 (사용 패턴 형성 중)
+#   - 30일 미만 신규 feedback 파일은 임계값 적용 안 함 (사용 패턴 형성 중)
+#   - 2026-04-27 #9 X-4: 90일 → 30일 단축 (메모리 손실 노출 시간 ↓ + 핵심 박제 가속)
 #
 # 사용:
 #   sensor-feedback-promotion.sh                # 전체 스캔 + 후보 출력
 #   sensor-feedback-promotion.sh --threshold=5  # 임계값 변경
+#   sensor-feedback-promotion.sh --new-days=N   # 신규 면제 기간 변경
 #   sensor-feedback-promotion.sh --quiet        # 후보만 stdout
 
 set -u
@@ -41,7 +43,7 @@ OUTPUT_FILE="$LOG_DIR/feedback-promotion-candidates.jsonl"
 mkdir -p "$LOG_DIR"
 
 THRESHOLD=3
-NEW_DAYS=90
+NEW_DAYS=30  # 2026-04-27 #9 X-4: 90 → 30일 단축 (HARNESS §8.9 v2 + 메모리 손실 노출 시간 ↓)
 QUIET=0
 for arg in "$@"; do
   case "$arg" in

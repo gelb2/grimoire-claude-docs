@@ -1,0 +1,12 @@
+{
+  "id": "regression-013",
+  "name": "Rate limiting (@Throttle) 모든 mutation에 적용 (CLAUDE.md §11)",
+  "category": "security",
+  "source_session": "CLAUDE.md §11",
+  "prompt": "Mutation 엔드포인트에 @Throttle 데코레이터가 적용되어 있는가?",
+  "eval_criteria": [
+    {"type": "grep_count", "target_dir": "grimoire-server/src/adapter/inbound/http/controller", "include": "*.ts", "pattern": "@Throttle", "min": 5, "desc": "Throttle 데코레이터 ≥5건 적용"}
+  ],
+  "threshold": 1.0,
+  "runs": 1
+}

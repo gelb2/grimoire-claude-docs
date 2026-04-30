@@ -1,0 +1,16 @@
+{
+  "id": "edd-sample-001",
+  "name": "[EDD 샘플] CLAUDE.md 한국어 자연스러움 + 정책 의도 부합 (LLM-as-Judge 시연)",
+  "category": "convention",
+  "source_session": "20260427 P1 → 20260430 분할 이후 갱신",
+  "prompt": "분할된 CLAUDE.md (60줄 boost) + .claude/AGENTS.md + docs/AGENTS.md + .githooks/AGENTS.md가 한국어 자연스럽고 정책 의도(§0 ZERO-TOLERANCE / 시각 정본 / §15 정본 참조)가 명확한가?",
+  "eval_criteria": [
+    {"type": "grep", "target": "CLAUDE.md", "pattern": "ZERO-TOLERANCE", "min": 1, "desc": "§0 ZERO-TOLERANCE 박제 (root)"},
+    {"type": "grep", "target": "CLAUDE.md", "pattern": "사슴악마|deerdevil", "min": 1, "desc": "§1 시각 정본 박제 (root, 분할 후 1회만)"},
+    {"type": "grep", "target": ".claude/AGENTS.md", "pattern": "절대 규칙", "min": 1, "desc": ".claude/AGENTS.md 메모리 절대 규칙 박제"},
+    {"type": "llm", "rubric": "CLAUDE.md §0이 명확하고 강력한 어조이며 4개 분할 파일(.claude/AGENTS.md, docs/AGENTS.md, .githooks/AGENTS.md, shared-contracts.md)을 정확히 가리키는가? PASS/FAIL + 1~5점 + 사유 (한국어)", "source": "file:CLAUDE.md", "desc": "[LLM] §0 어조 명확성 + 분할 정본 pointer 일관성"}
+  ],
+  "threshold": 0.75,
+  "edd_threshold": 0.7,
+  "runs": 5
+}

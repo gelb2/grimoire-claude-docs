@@ -4,6 +4,7 @@ description: 큰 Edit 폭주 작업(예상 ≥50 Edit 호출 또는 ≥1시간 �
 argument-hint: "[필수: start <branch> | finish | discard | list]"
 disable-model-invocation: true
 allowed-tools: Read, Bash, Grep, Glob, Edit, Write
+effort: medium
 ---
 
 # Worktree Isolation — Edit 폭주 작업 안전망

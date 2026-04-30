@@ -1,0 +1,13 @@
+{
+  "id": "regression-018",
+  "name": "패턴 1 KPI 추적 (sensor-orchestration-ratio jsonl 적재)",
+  "category": "convention",
+  "source_session": "20260426 + research §15.7",
+  "prompt": "패턴 1 (오케스트레이션 분리) KPI가 측정 + 박제되는가?",
+  "eval_criteria": [
+    {"type": "command", "command": "bash .claude/scripts/sensor-orchestration-ratio.sh --quiet >/dev/null 2>&1 ; [ -f .claude/state/orchestration-ratio.jsonl ]", "desc": "sensor-orchestration-ratio 실행 + jsonl 적재"},
+    {"type": "command", "command": "[ $(wc -l < .claude/state/orchestration-ratio.jsonl) -ge 1 ]", "desc": "최소 1회 측정 박제"}
+  ],
+  "threshold": 1.0,
+  "runs": 1
+}

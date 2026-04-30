@@ -1,0 +1,14 @@
+{
+  "id": "regression-027",
+  "name": "작가 콘텐츠 파서 read-only — 본문 수정/소거 코드 0건 (author_content 카테고리 보강)",
+  "category": "author_content",
+  "source_session": "20260430 P1 묶음 B EDD task 카테고리 확장",
+  "prompt": "parser 코드가 작가 본문을 절대 수정하지 않는가? .replace/.toUpperCase/.toLowerCase/.trim 등 본문 변환 0건이어야 함 (whitespace trim 제외)",
+  "eval_criteria": [
+    {"type": "grep_count", "target_dir": "grimoire-server/src", "include": "*.ts", "exclude": "*.spec.ts", "pattern": "block\\.text\\s*=|content\\s*=\\s*content\\.toUpperCase|content\\s*=\\s*content\\.toLowerCase", "min": 0, "max": 0, "desc": "본문 직접 수정 코드 0건 (block.text= 또는 toUpperCase/Lower 할당)"},
+    {"type": "grep", "target": "CLAUDE.md", "pattern": "소설 콘텐츠|원문 유지|절대 수정 금지", "min": 1, "desc": "CLAUDE.md 작가 콘텐츠 절대 수정 금지 박제"},
+    {"type": "grep", "target": ".claude/agents/grimoire-server.md", "pattern": "작가 콘텐츠|본문|수정 금지", "min": 1, "desc": "grimoire-server agent 작가 콘텐츠 보호 박제"}
+  ],
+  "threshold": 1.0,
+  "runs": 1
+}

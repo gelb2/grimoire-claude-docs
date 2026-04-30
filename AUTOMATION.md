@@ -60,7 +60,7 @@
 
 ---
 
-## 1.5. Skills 인벤토리 (12개 — 2026-04-27 기준)
+## 1.5. Skills 인벤토리 (14개 — 2026-04-27 기준)
 
 > Skill은 트리거 키워드 또는 사용자 명시 호출(`/skill-name`)로 발동. agent와 달리 도구 호출 단위.
 
@@ -77,11 +77,13 @@
 | `refund-logic-audit` | 명시 호출 | 결제·환불 로직 감사 |
 | `verification-before-completion` | 키워드 | 완료 선언 전 실측 증거 강제 |
 | `worktree-isolation` (2026-04-27 F) | 명시 호출 | Edit 폭주 작업 시 git worktree 격리 (HARNESS §8.10 안전망) |
+| `deploy-image-verify` (2026-04-27 EEE) | 명시 호출 | Container App image SHA vs git main HEAD 정합 검증 (sensor-deploy-drift 보완) |
+| `systematic-debugging` (2026-04-27 신설, superpowers MIT 차용) | 키워드 (10개) | 복잡 회귀 — 가설 분리 + 변수 분리 + root cause 도달 (production-bug-triage 후속) |
 | `writing-plans` (2026-04-25 #8) | 키워드 (≥30분 게이트) | 큰 작업 sub-task 분할 |
 
 ---
 
-## 1.6. Hooks 인벤토리 (8 이벤트 / 11 스크립트 — 2026-04-26 기준)
+## 1.6. Hooks 인벤토리 (9 이벤트 / 11 스크립트 — 2026-04-30 갱신, 실측 기준)
 
 `.claude/settings.json` 의 hooks 필드 정의. 이벤트별 스크립트 트리거.
 
@@ -95,6 +97,7 @@
 | PreToolUse | `pretooluse-bash-guard.sh` | Bash 실행 전 위험 패턴 차단 |
 | PostToolUse | `post-edit-tsc.sh` + `post-edit-spec-check.sh` | Edit/Write 후 tsc + spec 자동 검증 |
 | PostToolBatch | `post-batch-tsc.sh` (debounce 60s) | Edit 폭주 후 일괄 검증 (lock 파일 기반) |
+| **PostToolUseFailure** (2026-04-27 F2) | `posttooluse-failure-handler.sh` | 도구 실패 시 적재 + Chrome MCP 정책 (재시도 신호 / reCAPTCHA 차단 / prod 안전) |
 
 ---
 
@@ -158,7 +161,7 @@ launchctl list | grep grimoire
 
 ---
 
-## 3. 센서 시스템 (12개 — 2026-04-26 기준)
+## 3. 센서 시스템 (13개 — 2026-04-30 갱신)
 
 > "AI가 '다 했습니다'라고 말하는 것은 증거가 아니다. 센서 스크립트의 stdout만이 증거다."
 
@@ -344,4 +347,15 @@ Skill의 `triggers` 키워드가 사용자 메시지에 포함되어야 발동. 
 | 2026-04-26 #9 1차 묶음 (A+D+E+H) | A: launchd 영구 보류 박제 (4 문서). D: post-edit hooks → sensor-log 통합. E: gc-sweep 첫 dry-run (청소 후보 0건). H: orchestration sensor §15.7 합치 분석 추가 (server/web 47.3% + ratio 0.0 → WARN 자동 판정). |
 | 2026-04-26 #9 2차 묶음 (B+C) | B: sensor-deploy-drift — develop ↔ main ↔ health 정합 (첫 실측: server develop ahead main 8건 검출). C: sensor-cost-margin — ai-cost-table 안전배수 ≥3.0× 자동 검증 (12 항목 / FAIL 0 / WARN 5 / 평균 3.73×). 본 문서 갱신 (Sensors 10 → 12). |
 | 2026-04-27 #9 prod 배포 + Chrome 검증 | 3 레포 develop → main 머지 + push (server `f5d6b1e` / web `4c6216b` / claude-docs `16a7f7a`). server/web prod 배포 (image `prod-f5d6b1e6cc...` / `prod-4c6216b18f...`). Chrome MCP prod 시각 정본 검증 (사슴악마 작가공간 모든 요소 정합). |
-| **2026-04-27 #9 H'+I'+F 묶음** | **H': sensor-deploy-drift health 임계값 조정 (max-time 10s→60s, cold start 의심 분류 추가). I': cost-accountant agent 위임 (패턴 1 KPI 첫 위임 사례) — WARN 5건 정밀 분석, 분석/베스트가 모든 시뮬의 FAIL 약점 식별, planner 핸드오프 박제. F: worktree-isolation skill 신설 (HARNESS §8.10 안전망, obra/superpowers MIT). Skills 11→12, .gitignore에 .worktrees/ 추가.** |
+| 2026-04-27 #9 H'+I'+F 묶음 | H': sensor-deploy-drift health 임계값 조정 (max-time 10s→60s, cold start 의심 분류 추가). I': cost-accountant agent 위임 (패턴 1 KPI 첫 위임 사례) — WARN 5건 정밀 분석, 분석/베스트가 모든 시뮬의 FAIL 약점 식별, planner 핸드오프 박제. F: worktree-isolation skill 신설 (HARNESS §8.10 안전망, obra/superpowers MIT). Skills 11→12, .gitignore에 .worktrees/ 추가. |
+| 2026-04-27 #9 분석 4 크레딧 인상 + W 배포 | cost-accountant agent 위임 (패턴 1 2번째) → ai-cost-table.md §3-2 4 크레딧 재계산 + 시뮬 (베스트 2.79→3.35× FAIL 약점 해소). server `domain/model/config.ts` ANALYSIS_CREDIT_COST 3→4 + spec 30/30 PASS + ai-analysis-spec 갱신. server `e8e34ab` + web `bab239b` 3 레포 develop→main + prod 배포. claude-docs `9a4f04a` main 머지. |
+| 2026-04-27 #9 X 묶음 (AAA+BBB+EEE) | AAA: sensor-cost-margin 메시지 강화 (조기 경보 + planner 시점 권장 명시). BBB: researcher agent 위임 (패턴 1 3번째) — AI 가격 변동 0% / 환율 +0.16% / Claude Opus 4.7 신규 박제. EEE: deploy-image-verify skill 신설. Skills 12→13. |
+| 2026-04-27 #9 X-4 묶음 (Statusline + §15.7.3 + consolidate-memory) | §15.7.3.1 위임 3건 박제 (cost-accountant 2 + researcher 1, 누적 합치율 8/9 = 88.9%) + §15.7.3.2 jsonl flush 지연 한계 박제. statusline.sh 신설 (HARNESS §8.5 Ambient Affordance). consolidate-memory skill 적용 (96 파일 카테고리화, stale 후보 11건 + skill 흡수 후보 6건). settings.json statusLine 등록. |
+| 2026-04-27 #9 sensor-feedback-promotion 30일 단축 | NEW_DAYS 90→30. PROMOTE 0→1건 진입 (feedback_chrome_verify). OBSERVE_NEW 5건 11~25일 후 자동 PROMOTE. 메모리 손실 노출 시간 ↓ |
+| 2026-04-27 #9 모델 티어링 보류 + G2 보류 + F2 도입 | 사용자 결정: (1) 모델 티어링 — 모두 Opus 유지 무기한 보류 (품질 우선). (2) G2 Azure read-only MCP — 보류 (settings.local.json az 권한 18건 이미 등록됨). (3) F2 PostToolUseFailure hook 신설. Hooks 8→9 이벤트, Scripts 27→28. |
+| 2026-04-27 #9 §13 인용 검증 + §8.4/§8.7 평가 (researcher 위임 6번째) | researcher agent 위임 — HARNESS 12개 인용 링크 모두 PASS. stars 갱신: superpowers 167k→168k, oh-my-claudecode 31.1k→31.4k, ouroboros v0.30.0 (2026-04-26 어제). §8.4/§8.7 보류 + typescript-lsp 사용자 결정. Skills frontmatter 신규 필드 박제. |
+| 2026-04-27 #9 Skills frontmatter 1차 마이그레이션 + systematic-debugging 차용 | 14 skills 모두 effort 필드 추가. paths 2건 (deploy-image-verify + refund-logic-audit). systematic-debugging skill 신설 (obra/superpowers MIT v5.0.7 차용). Skills 13→14, frontmatter 무결성 14/14 PASS, drift sensor silent. |
+| **2026-04-27 #9 P0 Eval 시스템 (EDD) 도입** | **"하네스 엔지니어링 완전 정복" Ch 15 차용. eval/tasks 20개 회귀 박제 (8 세션 누적). eval-runner.sh + grade.py (4 채점 방식: grep/grep_count/command/inventory_match). eval-precommit.sh (regression-tolerance 0.05). 첫 baseline 17/20 = 85%. Verify 기둥 2.5/5 → 4/5 도약. ProjectGrimoire 고유 카테고리 4종 (cost_zero/visual_canon/author_content/security) 추가.** |
+| **2026-04-30 #10 CLAUDE.md 60줄 분할 + shared-contracts + LLM-as-Judge + EDD mode** | **책 Ch 08 60-line + Ch 16 shared contracts + Ch 15 LLM-as-Judge 일괄. CLAUDE.md 457줄→73줄 + .claude/AGENTS.md (114) + docs/AGENTS.md (195) + .githooks/AGENTS.md (125) 분할. .claude/shared-contracts.md 신설 (10 인터페이스 정본, 7 에이전트 .md 동기 참조). eval-runner.sh --mode=edd + grade-llm.py (cost guard ₩2K daily / ₩50K monthly). eval/tasks-edd/ 분리. 검증: drift 0 / regression 20/20 PASS / EDD 21/21 PASS.** |
+| 2026-04-30 #10 전수검사 + AUTOMATION.md 갱신 | 전수검사 결과 §1.6 Hooks "12 스크립트" 박제 vs 실측 11 스크립트 1건 cosmetic drift 검출. §1.6 헤더 11로 정합 갱신. PASS 항목 15건 / 갭 1건 (해소). 다음 묶음 B (EDD task 카테고리 확장) 예정. |
+| 2026-04-30 #10 sensor-shared-contracts 신설 (P0 묶음 A) | 책 Ch 16 shared contracts 정합 자동 검증. 7 에이전트 .md ↔ shared-contracts.md 동기 참조 + 5 reports + 5 코드 인터페이스 (AskOptions / ANALYSIS_CREDIT_COST=4 / Eval task 형식 / LLM-Judge 가드 / PostToolUseFailure hook). 첫 실측 PASS (FAIL 0 / WARN 0). Sensors 12→13. |

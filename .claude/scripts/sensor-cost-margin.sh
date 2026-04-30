@@ -6,9 +6,15 @@
 #   - AI 가격 변동(Anthropic/OpenAI 가격 인상) 시 안전배수 자동 재계산 필요
 #   - 본 sensor가 ai-cost-table.md 안전배수 컬럼 파싱 → 모두 ≥3.0× 인지 자동 검증
 #
+# 임계값 격상 이력:
+#   - 2026-04-26 신설: WARN 3.0~3.5× / FAIL <3.0×
+#   - 2026-04-27 #9 cost-accountant 권고에 따라: WARN 3.5~4.0× / FAIL <3.5× (조기 경보)
+#     - 사유: 3.0~3.5× 안전배수는 Sonnet +20% 또는 환율 +8.5% 시뮬에서 §0 위반 진입
+#     - WARN 임계 격상으로 §0 위반 도달 전 대응 가능 (planner 사전 의사결정 시점 확보)
+#
 # 검사 항목:
-#   1. ai-cost-table.md 안전배수 컬럼 모두 ≥3.0×
-#   2. 안전배수 ≥3.0× 미만 (FAIL) / 3.0~3.5× (WARN, 안전 마진 ↓)
+#   1. ai-cost-table.md 안전배수 컬럼 모두 ≥3.5× (이전 3.0×)
+#   2. 안전배수 <3.5× (FAIL) / 3.5~4.0× (WARN, 안전 마진 ↓)
 #   3. 환율 가정 (USD ₩1,474) stale 검사 (30일 이상)
 #   4. 가격 출처 갱신일 stale (30일 이상)
 #   5. 마진율 50% 이상 유지 (사용자 수익 확보)
@@ -88,14 +94,21 @@ print("MARGIN_COUNT|" + str(len(margins)))
 fail_count = 0
 warn_count = 0
 all_margins = []
+# 임계값 (2026-04-27 #9 cost-accountant 권고):
+#   - FAIL: <3.0× (§0 위반, 즉시 차단) — 변동 없음
+#   - WARN: 3.0~3.5× → **3.5× 격상** (조기 경보, planner 사전 의사결정 시점 확보)
+# 사유: 3.0~3.5× 안전배수는 Sonnet +20% 또는 환율 +8.5% 시뮬에서 §0 위반 진입.
+# WARN 임계 격상으로 §0 위반 도달 전 사전 경보 가능.
+THRESHOLD_FAIL = 3.0
+THRESHOLD_WARN = 3.5
 for m_str in margins:
     try:
         m = float(m_str)
         all_margins.append(m)
-        if m < 3.0:
+        if m < THRESHOLD_FAIL:
             fail_count += 1
             print("FAIL_MARGIN|" + m_str)
-        elif m < 3.5:
+        elif m < THRESHOLD_WARN:
             warn_count += 1
             print("WARN_MARGIN|" + m_str)
     except ValueError:
@@ -169,19 +182,20 @@ if [ "$QUIET" -eq 0 ]; then
   echo ""
   echo "최종 갱신: ${LAST_UPDATE:-알 수 없음} (${DAYS_SINCE:-?}일 전, stale=$STALE)"
 
-  # FAIL 항목 출력
+  # FAIL 항목 출력 (§0 위반)
   if [ "$FAIL_COUNT" -gt 0 ]; then
     echo ""
-    echo "🚨 FAIL 안전배수 (즉시 검토):"
+    echo "🚨 FAIL 안전배수 (§0 위반 — 즉시 차단 + cost-accountant 호출):"
     echo "$RESULT" | grep "^FAIL_MARGIN|" | while IFS='|' read -r _ m; do
-      echo "  - $m× < 3.0×"
+      echo "  - $m× < 3.0× (PLANNING §0 마진 ≥3배 위반)"
     done
   fi
+  # WARN 항목 출력 (조기 경보, 2026-04-27 cost-accountant 권고로 강조)
   if [ "$WARN_COUNT" -gt 0 ]; then
     echo ""
-    echo "⚠️ WARN 안전배수 (모니터링):"
+    echo "⚠️ WARN 안전배수 — 조기 경보 (Sonnet +20% 또는 환율 +8.5% 시뮬에서 §0 위반 진입 가능):"
     echo "$RESULT" | grep "^WARN_MARGIN|" | while IFS='|' read -r _ m; do
-      echo "  - $m× (3.0~3.5×)"
+      echo "  - $m× (3.0~3.5×, planner 의사결정 시점 권장)"
     done
   fi
   echo ""
@@ -219,7 +233,7 @@ printf '{"ts":"%s","margin_count":%s,"min":%s,"avg":%s,"max":%s,"fail":%s,"warn"
 # sensor-log 적재
 SENSOR_LOG="/Users/sokol/Desktop/Git/ProjectGrimoire/.claude/scripts/sensor-log.sh"
 if [ -x "$SENSOR_LOG" ]; then
-  bash "$SENSOR_LOG" "sensor-cost-margin" "$EXIT_CODE" "FAIL=$TOTAL_FAIL WARN=$TOTAL_WARN min=$MIN_MARGIN×" 2>/dev/null || true
+  bash "$SENSOR_LOG" "sensor-cost-margin" "$EXIT_CODE" "FAIL=${TOTAL_FAIL:-0} WARN=${TOTAL_WARN:-0} min=${MIN_MARGIN:-0}×" 2>/dev/null || true
 fi
 
 exit $EXIT_CODE

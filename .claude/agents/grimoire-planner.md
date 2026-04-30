@@ -265,3 +265,12 @@ model: opus
 - `/Users/sokol/Desktop/Git/ProjectGrimoire/.claude/skills/production-bug-triage/SKILL.md` — 운영 버그·성능 이슈를 기획 근거로 언급할 때 (추정 금지, 실측 근거 요구)
 - `/Users/sokol/Desktop/Git/ProjectGrimoire/.claude/skills/macos-tcc-handling/SKILL.md` — 배포 인프라 관련 TCC/Docker 증상이 기획 맥락에 포함될 때
 - `/Users/sokol/Desktop/Git/ProjectGrimoire/.claude/skills/claude-in-chrome-recovery/SKILL.md` — 시각 검증 작업 흐름에 Chrome MCP 활용이 포함될 때
+
+
+## Shared Contracts 참조 (인터페이스 규약 — 모든 agent 공통)
+
+본 agent가 인터페이스 (PLANNER_REPORT 형식 / COST_AUDIT 필드 / DEV_REPORT 섹션 / AskOptions / ANALYSIS_CREDIT_COST 등)를 변경할 때:
+- **반드시 `.claude/shared-contracts.md` 해당 섹션 즉시 갱신** (책 Ch 16 충돌 2번 해결책)
+- 변경 이력 1줄 박제 (date — agent — 변경 요약)
+
+본 파일 미갱신 시 다른 agent가 통합 단계에서 인터페이스 불일치로 깨짐.

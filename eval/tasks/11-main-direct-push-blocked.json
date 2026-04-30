@@ -1,0 +1,13 @@
+{
+  "id": "regression-011",
+  "name": "main 직접 push 차단 (CLAUDE.md §8)",
+  "category": "convention",
+  "source_session": "CLAUDE.md §8 + 20260425_2",
+  "prompt": "PreToolUse hook이 'git push origin main' 명령을 차단하는가?",
+  "eval_criteria": [
+    {"type": "grep", "target": ".claude/scripts/pretooluse-bash-guard.sh", "pattern": "git push.*origin.*main|git push.*main", "min": 1, "desc": "main 직접 push 차단 패턴 박제"},
+    {"type": "grep", "target": ".claude/settings.json", "pattern": "pretooluse-bash-guard", "min": 1, "desc": "settings.json에 PreToolUse hook 등록"}
+  ],
+  "threshold": 1.0,
+  "runs": 1
+}

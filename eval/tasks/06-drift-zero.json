@@ -1,0 +1,14 @@
+{
+  "id": "regression-006",
+  "name": "research §14 인벤토리 vs 실측 정합 (drift 0건)",
+  "category": "convention",
+  "source_session": "20260425_7 + 20260427",
+  "prompt": "research/HARNESS_ENGINEERING.md §14 표기가 .claude/ 디렉토리 실측과 일치하는가?",
+  "eval_criteria": [
+    {"type": "inventory_match", "doc": "research/HARNESS_ENGINEERING.md", "pattern": "### 14\\.2 Skills (\\d+)종", "actual": "ls .claude/skills/*/SKILL.md | wc -l", "desc": "Skills §14.2 카운트 정합"},
+    {"type": "inventory_match", "doc": "research/HARNESS_ENGINEERING.md", "pattern": "### 14\\.4 Sensors (\\d+)개", "actual": "ls .claude/scripts/sensor-*.sh | wc -l", "desc": "Sensors §14.4 카운트 정합"},
+    {"type": "inventory_match", "doc": "research/HARNESS_ENGINEERING.md", "pattern": "### 14\\.5 Knowledge (\\d+)개", "actual": "ls .claude/knowledge/*.md | wc -l", "desc": "Knowledge §14.5 카운트 정합"}
+  ],
+  "threshold": 1.0,
+  "runs": 1
+}

@@ -1,0 +1,12 @@
+{
+  "id": "regression-015",
+  "name": "sensor-web 통과 (tsc + Vitest + build)",
+  "category": "type_safety",
+  "source_session": "AUTOMATION.md §3",
+  "prompt": "web 레포 sensor-web.sh가 PASS인가?",
+  "eval_criteria": [
+    {"type": "command", "command": "bash .claude/scripts/sensor-web.sh ; [ $? -eq 0 ]", "desc": "sensor-web PASS"}
+  ],
+  "threshold": 1.0,
+  "runs": 1
+}
