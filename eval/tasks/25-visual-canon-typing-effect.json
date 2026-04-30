@@ -1,0 +1,14 @@
+{
+  "id": "regression-025",
+  "name": "사슴악마 시각 정본 — 타이핑 이펙트 (visual_canon 카테고리 보강)",
+  "category": "visual_canon",
+  "source_session": "20260430 P1 묶음 B EDD task 카테고리 확장",
+  "prompt": "사슴악마 정본의 핵심 시각 요소(타이핑 애니메이션 + antler 디바이더 + PREFACE 섹션)가 코드에 박제되었는가?",
+  "eval_criteria": [
+    {"type": "grep_count", "target_dir": "grimoire-web/src", "include": "*.tsx,*.ts", "exclude": "*.test.ts,*.spec.ts", "pattern": "useTypingPlaceholder|TypingEffect|typing-effect|typingEffect", "min": 1, "desc": "Typing 컴포넌트/유틸 존재 (useTypingPlaceholder 등)"},
+    {"type": "grep_count", "target_dir": "grimoire-web/src", "include": "*.tsx", "exclude": "", "pattern": "antler|Antler", "min": 1, "desc": "antler 디바이더 박제"},
+    {"type": "grep", "target": "CLAUDE.md", "pattern": "사슴악마|deerdevil", "min": 1, "desc": "CLAUDE.md 시각 정본 박제"}
+  ],
+  "threshold": 1.0,
+  "runs": 1
+}

@@ -83,7 +83,7 @@
 
 ---
 
-## 1.6. Hooks 인벤토리 (9 이벤트 / 12 스크립트 — 2026-04-27 기준)
+## 1.6. Hooks 인벤토리 (9 이벤트 / 11 스크립트 — 2026-04-30 갱신, 실측 기준)
 
 `.claude/settings.json` 의 hooks 필드 정의. 이벤트별 스크립트 트리거.
 
@@ -161,7 +161,7 @@ launchctl list | grep grimoire
 
 ---
 
-## 3. 센서 시스템 (12개 — 2026-04-26 기준)
+## 3. 센서 시스템 (13개 — 2026-04-30 갱신)
 
 > "AI가 '다 했습니다'라고 말하는 것은 증거가 아니다. 센서 스크립트의 stdout만이 증거다."
 
@@ -357,3 +357,5 @@ Skill의 `triggers` 키워드가 사용자 메시지에 포함되어야 발동. 
 | 2026-04-27 #9 Skills frontmatter 1차 마이그레이션 + systematic-debugging 차용 | 14 skills 모두 effort 필드 추가. paths 2건 (deploy-image-verify + refund-logic-audit). systematic-debugging skill 신설 (obra/superpowers MIT v5.0.7 차용). Skills 13→14, frontmatter 무결성 14/14 PASS, drift sensor silent. |
 | **2026-04-27 #9 P0 Eval 시스템 (EDD) 도입** | **"하네스 엔지니어링 완전 정복" Ch 15 차용. eval/tasks 20개 회귀 박제 (8 세션 누적). eval-runner.sh + grade.py (4 채점 방식: grep/grep_count/command/inventory_match). eval-precommit.sh (regression-tolerance 0.05). 첫 baseline 17/20 = 85%. Verify 기둥 2.5/5 → 4/5 도약. ProjectGrimoire 고유 카테고리 4종 (cost_zero/visual_canon/author_content/security) 추가.** |
 | **2026-04-30 #10 CLAUDE.md 60줄 분할 + shared-contracts + LLM-as-Judge + EDD mode** | **책 Ch 08 60-line + Ch 16 shared contracts + Ch 15 LLM-as-Judge 일괄. CLAUDE.md 457줄→73줄 + .claude/AGENTS.md (114) + docs/AGENTS.md (195) + .githooks/AGENTS.md (125) 분할. .claude/shared-contracts.md 신설 (10 인터페이스 정본, 7 에이전트 .md 동기 참조). eval-runner.sh --mode=edd + grade-llm.py (cost guard ₩2K daily / ₩50K monthly). eval/tasks-edd/ 분리. 검증: drift 0 / regression 20/20 PASS / EDD 21/21 PASS.** |
+| 2026-04-30 #10 전수검사 + AUTOMATION.md 갱신 | 전수검사 결과 §1.6 Hooks "12 스크립트" 박제 vs 실측 11 스크립트 1건 cosmetic drift 검출. §1.6 헤더 11로 정합 갱신. PASS 항목 15건 / 갭 1건 (해소). 다음 묶음 B (EDD task 카테고리 확장) 예정. |
+| 2026-04-30 #10 sensor-shared-contracts 신설 (P0 묶음 A) | 책 Ch 16 shared contracts 정합 자동 검증. 7 에이전트 .md ↔ shared-contracts.md 동기 참조 + 5 reports + 5 코드 인터페이스 (AskOptions / ANALYSIS_CREDIT_COST=4 / Eval task 형식 / LLM-Judge 가드 / PostToolUseFailure hook). 첫 실측 PASS (FAIL 0 / WARN 0). Sensors 12→13. |

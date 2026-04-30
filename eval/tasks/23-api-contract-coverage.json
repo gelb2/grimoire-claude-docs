@@ -1,0 +1,14 @@
+{
+  "id": "regression-023",
+  "name": "API contract 커버리지 — controller 카운트 vs docs/api-contract.md (api_contract 카테고리 신설)",
+  "category": "api_contract",
+  "source_session": "20260430 P1 묶음 B EDD task 카테고리 확장",
+  "prompt": "server controller 파일이 docs/api-contract.md에 모두 박제되었는가? 0건 누락이어야 함",
+  "eval_criteria": [
+    {"type": "command", "command": "test $(ls grimoire-server/src/adapter/inbound/http/controller/*.controller.ts 2>/dev/null | wc -l) -gt 5", "desc": "server *.controller.ts 5개 이상 (실측)"},
+    {"type": "grep", "target": "grimoire-server/docs/api-contract.md", "pattern": "POST|GET|PATCH|DELETE", "min": 10, "desc": "api-contract.md HTTP 메서드 10개 이상 박제"},
+    {"type": "command", "command": "test -f grimoire-server/docs/api-contract.md -a -f grimoire-web/docs/api-contract.md", "desc": "server/web docs/api-contract.md 양쪽 존재"}
+  ],
+  "threshold": 1.0,
+  "runs": 1
+}
