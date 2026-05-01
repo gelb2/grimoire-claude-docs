@@ -179,10 +179,13 @@ fi
 [ "$QUIET" -eq 0 ] && echo "PASS: $PASS_TASKS / TOTAL: $TOTAL_TASKS / FAIL: $FAIL_TASKS"
 [ "$QUIET" -eq 0 ] && echo "통과율: $PASS_RATE"
 
-# baseline.csv 적재 (모드별 분리)
+# baseline.csv 적재 (모드별 분리, SINGLE_TASK는 skip — NEW-6: 노이즈 회피)
 TS=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 mkdir -p "$EVAL_DIR/results"
-if [ "$MODE" = "edd" ]; then
+if [ -n "$SINGLE_TASK" ]; then
+  # 단일 task 디버깅 — baseline 적재 skip (sensor-eval-trend min_total 필터 대신 source 차단)
+  [ "$QUIET" -eq 0 ] && echo "[skip] single-task 모드 — baseline.csv 적재 안 함"
+elif [ "$MODE" = "edd" ]; then
   [ ! -f "$EDD_BASELINE_FILE" ] && echo "ts,mode,runs,llm,total,pass,fail,pass_rate" > "$EDD_BASELINE_FILE"
   echo "$TS,$MODE,$RUNS,$LLM_JUDGE,$TOTAL_TASKS,$PASS_TASKS,$FAIL_TASKS,$PASS_RATE" >> "$EDD_BASELINE_FILE"
 else

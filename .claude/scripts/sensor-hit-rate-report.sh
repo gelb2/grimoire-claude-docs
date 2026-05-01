@@ -22,6 +22,11 @@ echo "=== Sensor Hit-Rate Report ==="
 echo "데이터 범위: 최근 7일 (sensor-log.sh prune)"
 echo "총 이벤트: $TOTAL"
 echo ""
+echo "ℹ️ 호출 빈도 해석 (NEW-7 박제 — 2026-05-02):"
+echo "   eval task에 wrap된 sensor (auto-sensor-*.json)는 eval-runner 실행마다 1회 호출됨."
+echo "   따라서 cost-margin / deploy-drift / docs-sync 등 auto-wrap sensor의 TOTAL=N은"
+echo "   '폭증'이 아니라 'eval 실행 N회'를 의미. WARN 비율은 그대로 의미 있음."
+echo ""
 
 if [ "$TOTAL" -eq 0 ]; then
   echo "이벤트 0건. sensor 호출 부재 — 모든 sensor가 silent 상태."
