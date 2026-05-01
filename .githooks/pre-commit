@@ -1,11 +1,12 @@
 #!/bin/sh
-# claude-docs pre-commit hook — eval 회귀 + drift sensor 자동 검증
+# claude-docs pre-commit hook — HARNESS 인벤토리 + drift + eval 회귀 자동 검증
 # 책 Ch 15 "EDD CI/CD 통합" 권장 (regression-tolerance 0.05)
+# 책 Ch 16 "shared contracts" — 인벤토리 변경 시 즉시 갱신 강제
 #
 # 활성화: git config core.hooksPath .githooks (사용자 1회 실행)
 # 우회: git commit --no-verify (긴급 시만)
 #
-# claude-docs는 런타임 코드 없으므로 매 commit 부담 작음 (~30s eval + 1s drift).
+# claude-docs는 런타임 코드 없으므로 매 commit 부담 작음 (~1s + ~1s + ~30s).
 # server/web 레포는 별도 .githooks/pre-push 패턴 (이미 박제 — .githooks/AGENTS.md 참조)
 
 set -e
@@ -15,11 +16,28 @@ PROJECT_ROOT="/Users/sokol/Desktop/Git/ProjectGrimoire"
 echo "=== claude-docs pre-commit 검증 ==="
 
 echo ""
-echo "[1/2] instructions-drift-check.sh ..."
+echo "[1/3] update-harness-inventory --apply (NEW-5 — drift 사전 갱신) ..."
+bash "$PROJECT_ROOT/.claude/scripts/update-harness-inventory.sh" --apply || {
+  rc=$?
+  if [ $rc -eq 1 ]; then
+    # drift 발견 → apply가 자동 갱신 → 사용자가 git add 후 재커밋 필요
+    echo ""
+    echo "⚠️ HARNESS §14.X 카운트 자동 갱신됨. 변경사항 확인 후 git add + 재커밋 필요:"
+    echo "   git diff research/HARNESS_ENGINEERING.md"
+    echo "   git add research/HARNESS_ENGINEERING.md && git commit ..."
+    exit 1
+  elif [ $rc -ne 0 ]; then
+    echo "❌ update-harness-inventory FAIL (exit=$rc)"
+    exit $rc
+  fi
+}
+
+echo ""
+echo "[2/3] instructions-drift-check.sh ..."
 bash "$PROJECT_ROOT/.claude/scripts/instructions-drift-check.sh"
 
 echo ""
-echo "[2/2] eval-precommit.sh (regression-tolerance 0.05) ..."
+echo "[3/3] eval-precommit.sh (regression-tolerance 0.05) ..."
 bash "$PROJECT_ROOT/eval/scripts/eval-precommit.sh"
 
 echo ""

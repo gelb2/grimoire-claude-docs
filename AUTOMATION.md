@@ -226,6 +226,17 @@ bash .claude/scripts/generate-report-template.sh --report=PLANNER_REPORT --apply
 
 생성 파일에는 `<!-- AUTO-GENERATED from .claude/shared-contracts.md -->` 헤더 + `YYYY-MM-DD → 오늘` 치환 적용.
 
+### 4.1.1 sensor 호출 빈도 해석 (2026-05-02 묶음 K' NEW-7 박제)
+
+`sensor-hit-rate-report`에서 cost-margin / deploy-drift / docs-sync 등이 50배 이상 자주 호출되는 것은 **폭증이 아니라 의도된 구조**:
+
+- 이 sensor들은 `eval/tasks/auto-sensor-*.json`에 wrap되어 eval-runner 실행마다 1회 호출됨
+- TOTAL=N은 "eval 실행 N회"를 의미 (실제 다른 곳에서 추가 호출되지 않음)
+- WARN/FAIL 비율은 그대로 의미 있음 (호출 빈도와 무관)
+- statusline.sh는 jsonl 캐시만 읽으므로 호출 빈도에 영향 없음
+
+신규 sensor (sensor-eval-trend / sensor-instruction-degradation 등)도 auto-task wrap되면 동일 빈도 패턴으로 수렴 예상.
+
 ### 4.2 HARNESS 인벤토리 자동 갱신 (2026-05-02 묶음 I NEW-4 신설)
 
 `.claude/scripts/update-harness-inventory.sh` — 실측 자산 카운트 → `research/HARNESS_ENGINEERING.md` §14.X 자동 갱신. 새 sensor/skill 추가 후 HARNESS 카운트 갱신을 잊어 regression-006이 사후 FAIL을 잡는 패턴을 사전 차단.
