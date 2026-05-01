@@ -84,7 +84,7 @@
 
 ---
 
-## 1.6. Hooks 인벤토리 (10 이벤트 / 13 스크립트 — 2026-05-02 묶음 S BN-#5 갱신, loop-detection-tracker 추가)
+## 1.6. Hooks 인벤토리 (10 이벤트 / 14 스크립트 — 2026-05-02 #10_6 검증 발견 정합 갱신, PostToolUse Task|Agent matcher 1건 누락 박제 해소)
 
 `.claude/settings.json` 의 hooks 필드 정의. 이벤트별 스크립트 트리거.
 
