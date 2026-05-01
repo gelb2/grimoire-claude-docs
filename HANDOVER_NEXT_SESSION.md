@@ -97,19 +97,22 @@
 
 ---
 
-## 4. Git 상태 (2026-05-01 야간 리모트, 본 세션 commit 전)
+## 4. Git 상태 (2026-05-01 야간 리모트, 본 세션 commit/push 완료)
 
 ```bash
-develop: 78914cd (push 완료) — 묶음 Q
-main:    묶음 P 머지 시점 (이전 핸드오버 #10_4)
+develop: 3893c5b (push 완료, 본 세션) — 책 V1.1 전체 학습 박제
+main:    78914cd (이전 머지 시점, 묶음 Q)
 
-미commit 변경:
-  M .claude/knowledge/book-harness-engineering-completion.md (전면 갱신)
-  ?? memory/project_session_20260501_3.md (본 세션 박제)
-  ?? V1.1 하네스 엔지니어링 완전정복.pdf (책 PDF — gitignore 검토 필요)
+develop이 main보다 1 commit 앞섬 — 사용자 결정 시 main 머지 가능
+  3893c5b docs(book): 책 V1.1 전체 학습 + NEW P0 10건 도출 (외부 API 0)
+
+본 세션 미commit 박제 (gitignored 또는 사용자 결정 영역):
+  ?? V1.1 하네스 엔지니어링 완전정복.pdf (1.7MB, 사용자 직접 추가 — gitignore 결정 필요)
+  ?? .claude/scheduled_tasks.lock (임시 파일, gitignore 검토)
+  /Users/sokol/.claude/projects/.../memory/ (메모리 박제 — git 추적 외)
 ```
 
-본 세션 commit 예정 후 develop push → 사용자 결정 후 main 머지.
+**main 머지 가능 여부**: 1 commit + 100% 비파괴적 (문서 박제만, 코드/설정 0 변경). 사용자 명시 후 안전 머지 가능.
 
 ---
 
