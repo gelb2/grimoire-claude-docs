@@ -16,6 +16,44 @@
 
 ---
 
+## 0. reports/SWEEP_REPORT.md (researcher → planner / cost-accountant)
+
+**생산자**: grimoire-researcher
+**소비자**: grimoire-planner (시장 컨텍스트), grimoire-cost-accountant (AI 가격 변동 감지)
+**참조**: agent-interaction-matrix.md §3
+
+### 필수 섹션
+
+```markdown
+# SWEEP_REPORT — YYYY-MM-DD
+
+## 0. 메타
+- 작업일: YYYY-MM-DD
+- 스윕 범위: 경쟁사 (네이버 시리즈 / 카카오페이지 / 문피아 / Wattpad / AO3 / 한줄) + AI 모델 가격 (Anthropic / OpenAI / Google) + 환율
+- 변동 감지: ✅ 있음 / ❌ 없음
+
+## 1. 경쟁사 변동
+- {플랫폼명}: 변동 사항 (가격, 정책, 신기능)
+
+## 2. AI 모델 가격 (researcher 매일 갱신)
+- Claude Sonnet 4.6 — input/output 가격
+- Claude Haiku 4.5 — 가격
+- GPT-5 — 가격
+- 환율 KRW/USD
+
+## 3. 가격 변동 감지 시 트리거
+- 변동 ≥5% → reports/COST_ALERT.md 생성 → cost-accountant 즉시 호출
+
+## 4. HANDOFF
+- planner: 시장 컨텍스트 (PLANNER_REPORT 작성 시 참조)
+- cost-accountant: 가격 변동 영향 받는 기능 재계산
+```
+
+### 변경 이력
+- 2026-05-02 묶음 N NEW-14: shared-contracts에 추가 박제 (이전엔 reports/ 6개 중 SWEEP만 미명시)
+
+---
+
 ## 1. reports/PLANNER_REPORT.md (planner → server/web)
 
 **생산자**: grimoire-planner
