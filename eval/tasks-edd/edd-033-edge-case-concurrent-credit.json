@@ -1,0 +1,13 @@
+{
+  "id": "regression-033",
+  "name": "edge_case — 동시성 (크레딧 차감 race / 중복 결제 webhook)",
+  "category": "edge_case",
+  "source_session": "20260502 묶음 M NEW-9 — category 균형 보강",
+  "prompt": "동시성 에지 케이스: (a) credit 차감에 $transaction 또는 lock 사용 (b) Polar webhook 중복 처리 (idempotency 박제). 본 task는 sensor-credit-atomicity의 결과를 우회 검증 + idempotency key 박제 검증.",
+  "eval_criteria": [
+    {"type": "command", "command": "grep -r '\\$transaction\\|prisma\\.\\$transaction' /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/src/adapter/outbound/persistence 2>/dev/null | wc -l | xargs -I{} test {} -ge 1", "desc": "credit/payment repository에 $transaction 사용 ≥1건"},
+    {"type": "command", "command": "grep -r 'idempotency\\|Idempotency\\|webhook.*processed\\|alreadyProcessed' /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/src 2>/dev/null | wc -l | xargs -I{} test {} -ge 1", "desc": "Polar webhook idempotency 박제 ≥1건"}
+  ],
+  "threshold": 1.0,
+  "runs": 1
+}

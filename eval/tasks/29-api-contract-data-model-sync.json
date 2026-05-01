@@ -1,0 +1,12 @@
+{
+  "id": "regression-029",
+  "name": "data-model.md server↔web 동기화 (Prisma 스키마 정본)",
+  "category": "api_contract",
+  "source_session": "20260502 묶음 M NEW-9 — category 균형 보강",
+  "prompt": "grimoire-server/docs/data-model.md와 grimoire-web/docs/data-model.md가 동기화되어 있는가? Prisma 스키마 변경 시 web에도 즉시 동기화 필수 (CLAUDE.md §3 동기화 규칙).",
+  "eval_criteria": [
+    {"type": "command", "command": "diff -q /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/docs/data-model.md /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-web/docs/data-model.md > /dev/null 2>&1", "desc": "data-model.md server == web (바이트 단위 동일)"}
+  ],
+  "threshold": 1.0,
+  "runs": 1
+}

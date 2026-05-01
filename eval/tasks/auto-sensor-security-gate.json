@@ -1,0 +1,13 @@
+{
+  "id": "auto-sensor-security-gate",
+  "name": "[자동 생성] sensor-security-gate PASS/WARN 회귀 보호 (FAIL만 차단)",
+  "category": "security",
+  "source_session": "20260502 묶음 M NEW-8 — 보안 8항목 자동 회귀 차단 갭 해소",
+  "prompt": "sensor-security-gate.sh 가 FAIL이 아닌가? exit 0 (PASS, WARN 포함) 또는 비-FAIL만 허용. exit 1 (FAIL — 보안 게이트 차단)만 차단. 기존 수동 task 12-security-mutation-jwtguard 등은 개별 항목 검증, 본 auto task는 전체 게이트 회귀 차단.",
+  "eval_criteria": [
+    {"type": "command", "command": "bash .claude/scripts/sensor-security-gate.sh > /dev/null 2>&1; ec=$?; [ $ec -eq 0 ]", "desc": "sensor-security-gate.sh exit 0 (PASS, WARN 포함)"}
+  ],
+  "threshold": 1.0,
+  "runs": 1,
+  "auto_generated": true
+}

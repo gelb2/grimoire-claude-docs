@@ -119,10 +119,10 @@ for u in "${UPDATES[@]}"; do
 done
 
 echo ""
-if [ "$APPLIED" -eq "$DRIFT" ]; then
-  echo "✅ $APPLIED건 갱신 완료. drift sensor + regression-006 검증 권장."
+if [ "${APPLIED:-0}" -eq "${DRIFT:-0}" ]; then
+  echo "✅ ${APPLIED:-0}건 갱신 완료. drift sensor + regression-006 검증 권장."
   exit 0
 else
-  echo "❌ $APPLIED/$DRIFT 갱신만 성공"
+  echo "❌ ${APPLIED:-0}/${DRIFT:-0} 갱신만 성공"
   exit 2
 fi

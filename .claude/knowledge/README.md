@@ -18,6 +18,9 @@
 | `agent-system.md` | CLAUDE.md §14 상세 | 에이전트 7개 인벤토리 + 오케스트레이션 + 정본 매핑 (역할 개요) | planner, qa |
 | `agent-interaction-matrix.md` (2026-04-26 신설) | research §8.8 명시 TODO | 7×7 핸드오프 매트릭스 + 산출물 정합 + 트리거 규칙 + 금지 조합 | 전 에이전트 (특히 planner/qa) |
 | `sensors.md` | 신규 | 센서 스크립트 사용법 + dev/qa 대조 규칙 | server, web, qa |
+| `book-harness-engineering-completion.md` (2026-04-30 #10 D1 신설) | 책 「하네스 엔지니어링 완전 정복」 Ch 08+15+16 학습 박제 | 분할 정본 + EDD + shared-contracts 적용 패턴 정본 + 운영 데이터 누적 (L2) | 전 에이전트 (자가 검증 시) |
+| `visual-canon-inventory.md` (2026-04-30 Phase B 분할) | grimoire-visual-canon-keeper.md §2~§3 분리 | 사슴악마 정본 4 영역 인벤토리 + 6 카테고리 불일치 (Critical/High/Medium/Low) | visual-canon-keeper, web |
+| `researcher-scope.md` (2026-04-30 Phase B 분할) | grimoire-researcher.md 일부 분리 | researcher 자료 계층 (Canonical / Live / Ephemeral) + 매일 sweep 대상 | researcher |
 
 ## 사용 규칙
 

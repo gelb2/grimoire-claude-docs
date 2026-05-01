@@ -274,3 +274,6 @@ model: opus
 - 변경 이력 1줄 박제 (date — agent — 변경 요약)
 
 본 파일 미갱신 시 다른 agent가 통합 단계에서 인터페이스 불일치로 깨짐.
+
+## 자동 검증 도구 (M NEW-11)
+공통 5종: `.claude/scripts/sensor-{shared-contracts,instruction-degradation,agent-priority-labels,agent-interaction}.sh` + `eval/scripts/eval-runner.sh` — 작업 완료 직전 일괄.
