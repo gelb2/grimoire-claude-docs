@@ -60,7 +60,7 @@
 
 ---
 
-## 1.5. Skills 인벤토리 (19개 — 2026-04-30 #10 묶음 C+H 갱신)
+## 1.5. Skills 인벤토리 (20개 — 2026-05-01 #10_2 묶음 F H2 갱신)
 
 > Skill은 트리거 키워드 또는 사용자 명시 호출(`/skill-name`)로 발동. agent와 달리 도구 호출 단위.
 
@@ -80,6 +80,7 @@
 | `deploy-image-verify` (2026-04-27 EEE) | 명시 호출 | Container App image SHA vs git main HEAD 정합 검증 (sensor-deploy-drift 보완) |
 | `systematic-debugging` (2026-04-27 신설, superpowers MIT 차용) | 키워드 (10개) | 복잡 회귀 — 가설 분리 + 변수 분리 + root cause 도달 (production-bug-triage 후속) |
 | `writing-plans` (2026-04-25 #8) | 키워드 (≥30분 게이트) | 큰 작업 sub-task 분할 |
+| **`orchestration-decision` (2026-05-01 #10_2 H2 신설)** | **키워드 (10개)** | **메인 직접 vs subagent 위임 자동 분류 (§15.7 위임 가치 매트릭스, 책 Ch 16 패턴 1 KPI)** |
 
 ---
 
@@ -210,6 +211,19 @@ launchctl list | grep grimoire
 | `reports/INCIDENT_*.md` | 시스템/qa | server, web | 장애 발생 시 동적 생성 |
 
 모든 보고서는 워크스페이스 루트 하위 `reports/` 디렉토리에 위치. git 추적하지 않음.
+
+### 4.1 보고서 골격 자동 생성 (2026-05-01 #10_2 H7 신설)
+
+`.claude/scripts/generate-report-template.sh` — `.claude/shared-contracts.md` §1~§5의 markdown 코드블록을 파싱하여 `reports/{NAME}_REPORT.md` 골격 자동 생성. 책 Ch 16 — 에이전트가 빈 파일에서 시작하지 않도록 정본 골격 사전 박제.
+
+```bash
+bash .claude/scripts/generate-report-template.sh                    # dry-run
+bash .claude/scripts/generate-report-template.sh --apply             # 누락 파일만 생성 (기존 보존)
+bash .claude/scripts/generate-report-template.sh --apply --force     # 기존 파일 덮어쓰기 (주의)
+bash .claude/scripts/generate-report-template.sh --report=PLANNER_REPORT --apply
+```
+
+생성 파일에는 `<!-- AUTO-GENERATED from .claude/shared-contracts.md -->` 헤더 + `YYYY-MM-DD → 오늘` 치환 적용.
 
 ---
 

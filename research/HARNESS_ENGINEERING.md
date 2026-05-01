@@ -865,7 +865,7 @@ gh repo create gelb2/grimoire-workspace --private --source=. --remote=origin --p
 
 각 에이전트 `.md` 하단에 "Skills 프로토콜 참조" 섹션으로 `.claude/skills/*/SKILL.md` 경로 embed (ouroboros 방식 — 공식 스펙상 서브에이전트는 Skill 자동 발동 불가).
 
-### 14.2 Skills 19종 (`.claude/skills/<name>/SKILL.md`)
+### 14.2 Skills 20종 (`.claude/skills/<name>/SKILL.md`)
 
 | Skill | 트리거 / 호출 | 용도 |
 |---|---|---|
@@ -883,6 +883,7 @@ gh repo create gelb2/grimoire-workspace --private --source=. --remote=origin --p
 | worktree-isolation (2026-04-27 #9 F 신설, obra/superpowers MIT) | 사용자 명시 호출 `/worktree-isolation <start <branch>\|finish\|discard\|list>` | Edit 폭주 작업 (≥50 호출 또는 ≥1시간 다중 도메인) 시 git worktree 격리. 메인 develop 오염 방지 + rollback 안전망 (HARNESS §8.10) |
 | deploy-image-verify (2026-04-27 #9 EEE 신설) | 사용자 명시 호출 `/deploy-image-verify [server\|web\|both]` | sensor-deploy-drift가 권한 차단으로 자동 측정 불가한 영역(운영 Container App image SHA vs git main HEAD) 사용자 직접 az 명령 안내 + SHA 비교 |
 | **systematic-debugging** (2026-04-27 #9 신설, obra/superpowers MIT v5.0.7 차용) | 트리거 매칭 (10 키워드: "원인이 뭐", "왜 안 되", "근본 원인", "root cause" 등) | 복잡한 회귀(다중 원인 후보 / production-bug-triage 1차 실측 후 root cause 미도달) 시 가설 분리(3~5개) + 변수 분리 + 실측 검증 + root cause 도달 + 회귀 차단 5단계. production-bug-triage 후속 절차 |
+| **orchestration-decision** (2026-05-01 #10_2 묶음 F H2 신설) | 트리거 매칭 (10 키워드: "이 작업", "다음 단계", "직접 할까", "위임할까", "subagent" 등) | §15.7 위임 가치 매트릭스 자동 분류 (메인 직접 vs subagent 위임). 책 Ch 16 패턴 1 KPI 사전 가이드 — sensor-orchestration-ratio 사후 측정의 짝 |
 
 ### 14.2.1 Statusline (2026-04-27 #9 신설)
 - `.claude/scripts/statusline.sh` — settings.json statusLine 등록 → assistant 메시지 후 자동 호출
