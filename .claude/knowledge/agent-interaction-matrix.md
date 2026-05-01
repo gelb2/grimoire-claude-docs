@@ -14,6 +14,8 @@ related:
 
 > agent-system.md가 **역할 분담 개요**라면, 본 문서는 **상호 호출 규칙·산출물·금지 조합**을 정밀 명시한다.
 > Fowler "Requisite Variety" + sshh.io "explicit handoff" 원칙 적용.
+>
+> **2026-04-30 #10 갱신**: 산출물 형식(reports/*.md)은 모두 `.claude/shared-contracts.md` 정본을 따른다 (책 Ch 16). 본 문서는 **호출 규칙**만 명시하고, **형식**은 shared-contracts에서 관리.
 
 ## 1. 표기 규약
 
