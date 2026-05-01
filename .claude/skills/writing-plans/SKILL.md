@@ -13,6 +13,7 @@ triggers:
   - "step by step"
   - "단계별로"
   - "작업 분해"
+# trigger-mode: keyword (triggers field) — paths 미적용, 작업 분해 키워드 기반
 effort: high
 ---
 

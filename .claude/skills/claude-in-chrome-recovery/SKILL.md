@@ -17,6 +17,8 @@ effort: medium
 
 # Claude-in-Chrome 확장 복구 프로토콜
 
+> **trigger-mode**: keyword (triggers field 9건). paths 미적용 — Chrome MCP 호출 결과에 따라 발동 (파일 매칭 무관).
+
 ## 언제 발동하는가
 
 다음 증상 중 1개 이상:

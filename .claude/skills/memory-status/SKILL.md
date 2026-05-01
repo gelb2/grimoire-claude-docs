@@ -8,6 +8,8 @@ effort: low
 
 # Memory Status — 메모리 현황 점검
 
+> **trigger-mode**: user-invocation (disable-model-invocation:true). paths 미적용 — 사용자 `/memory-status` 명시 호출만.
+
 ## 사용 패턴
 
 ```bash

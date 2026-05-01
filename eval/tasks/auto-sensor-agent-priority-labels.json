@@ -1,0 +1,13 @@
+{
+  "id": "auto-sensor-agent-priority-labels",
+  "name": "[자동 생성] sensor-agent-priority-labels PASS/WARN 회귀 보호 (FAIL만 차단)",
+  "category": "convention",
+  "source_session": "20260430 #10 F1 — generate-sensor-tasks.sh 자동 wrap",
+  "prompt": "sensor-agent-priority-labels.sh 가 FAIL이 아닌가? exit 0 (PASS) 또는 exit 1/2 (WARN)는 허용. exit ≥3 (FAIL)만 차단. 자동 생성 task — 새 sensor 추가 시 generator 재실행으로 task 자동 보충.",
+  "eval_criteria": [
+    {"type": "command", "command": "bash .claude/scripts/sensor-agent-priority-labels.sh; ec=$?; [ $ec -le 2 ]", "desc": "sensor-agent-priority-labels.sh exit ≤2 (PASS/WARN 허용)"}
+  ],
+  "threshold": 1.0,
+  "runs": 1,
+  "auto_generated": true
+}

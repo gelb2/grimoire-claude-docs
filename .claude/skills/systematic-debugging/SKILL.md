@@ -19,6 +19,8 @@ triggers:
 
 # Systematic Debugging — 다중 가설 + 변수 분리 + Root Cause 도달
 
+> **trigger-mode**: keyword + user-invocation (disable-model-invocation:true). paths 미적용 — 디버깅 키워드 + 사용자 명시 호출.
+
 ## 동기 (HARNESS §10 Phase 4 P2 신설)
 
 **production-bug-triage**는 사용자 증상 보고 시 **1차 실측 절차** (curl→코드→수치 3단계). 단 이건 단일 가설 흐름.

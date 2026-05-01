@@ -9,6 +9,8 @@ effort: medium
 
 # Worktree Isolation — Edit 폭주 작업 안전망
 
+> **trigger-mode**: user-invocation (disable-model-invocation:true). paths 미적용 — 사용자 `/worktree-isolation` 명시 호출만.
+
 ## 동기 (HARNESS §8.10 안전망)
 
 ProjectGrimoire 본 세션 #9 데이터:
