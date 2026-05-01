@@ -66,6 +66,18 @@
 
 근거: `research/HARNESS_ENGINEERING.md` §15.1 (패턴 1 — 오케스트레이션 분리) + §15.5 (패턴 1+3 시너지) + §16 (ProjectGrimoire 채택 결정).
 
+### 2.2.1 작업 시작 시 자가 분류 의무 (2026-05-02 묶음 J K1 신설)
+
+새 작업/묶음 시작 전 메인 Claude는 다음 1단계를 강제 수행:
+
+1. **`.claude/skills/orchestration-decision/SKILL.md`의 매트릭스에 따라 자가 분류**
+2. **결정 박제** (사용자 보고 또는 메모리): `메인 직접 vs subagent 위임 → grimoire-{name}` + 매트릭스 행 근거
+3. **반례 박제**: 매트릭스 권장과 다른 결정을 한 경우 사유 함께 박제
+
+박제 누적은 sensor-orchestration-ratio jsonl + 메모리 양 채널. 패턴 1 KPI 0.0 → 양수 진입을 위한 필수 인프라.
+
+본 의무는 §15.7.4 "다음 세션부터 적용 규칙" 첫 항목의 자율 운영판.
+
 ### 2.3 서브에이전트 간 인터페이스 정본 (2026-04-30 신설)
 
 다른 에이전트의 출력 포맷(PLANNER_REPORT/COST_AUDIT_REPORT/QA_REPORT 등)을 변경하기 전에 반드시 `.claude/shared-contracts.md`를 읽고 호환 영향을 검토한다.
