@@ -240,6 +240,17 @@ bash .claude/scripts/generate-report-template.sh --report=PLANNER_REPORT --apply
 
 신규 sensor (sensor-eval-trend / sensor-instruction-degradation 등)도 auto-task wrap되면 동일 빈도 패턴으로 수렴 예상.
 
+### 4.4 baseline csv → SQLite 분석 도구 (2026-05-02 묶음 Q NEW-23 신설)
+
+`eval/scripts/baseline-to-sqlite.py` — eval baseline.csv + edd-baseline.csv → SQLite 변환 (read-only 분석용). csv는 정본 유지, SQLite는 매 변환 시 재생성 (idempotent).
+
+```bash
+python3 eval/scripts/baseline-to-sqlite.py                                    # 변환 + 최근 10회 통계
+python3 eval/scripts/baseline-to-sqlite.py --quiet --query "SELECT ..."        # 즉시 SQL 실행
+```
+
+스키마: `regression(ts, total, pass, fail, pass_rate)` + `edd(ts, mode, runs, llm, total, pass, fail, pass_rate)`. 분석 도구 (Grafana / DuckDB / pandas) 확장 여지.
+
 ### 4.3 작업 시작 자가 분류 박제 (2026-05-02 묶음 O NEW-17 신설)
 
 `.claude/scripts/orchestration-classify.sh` — 작업 시작 시 메인 Claude 자가 분류 결과를 `.claude/state/orchestration-classifications.jsonl`에 박제. §15.7 위임 가치 매트릭스 합치율 자동 적재.
