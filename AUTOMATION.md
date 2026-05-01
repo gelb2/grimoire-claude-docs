@@ -162,7 +162,7 @@ launchctl list | grep grimoire
 
 ---
 
-## 3. 센서 시스템 (16개 — 2026-04-30 #10 묶음 D H12 갱신)
+## 3. 센서 시스템 (17개 — 2026-05-01 #10_2 묶음 G H4 갱신)
 
 > "AI가 '다 했습니다'라고 말하는 것은 증거가 아니다. 센서 스크립트의 stdout만이 증거다."
 
@@ -180,6 +180,7 @@ launchctl list | grep grimoire
 | `.claude/scripts/sensor-feedback-promotion.sh` (2026-04-26 #9 X-L) | memory/feedback 영향력 | 28 feedback × 154 검사 위치. PROMOTE/OBSERVE/KEEP 분류 + 신규 90일 면제 |
 | `.claude/scripts/sensor-deploy-drift.sh` (2026-04-26 #9 B) | server/web 배포 동기화 | develop ↔ origin ↔ main 정합 + dev/prod health curl. 운영 image SHA 비교는 권한 차단으로 안내만 |
 | `.claude/scripts/sensor-cost-margin.sh` (2026-04-26 #9 C) | §0 원가 안전배수 | ai-cost-table.md 12 항목 안전배수 ≥3.0× 자동 검증 + 갱신일 stale + cost-accountant 호출 권장 |
+| **`.claude/scripts/sensor-eval-trend.sh` (2026-05-01 #10_2 H4 신설)** | **eval 시계열 추세** | **regression + EDD 30일 평균 / 7일 mean slope / 최근 10회 FAIL 빈도. ≥0.95 PASS / 0.85~0.95 또는 회귀 추세 또는 FAIL ≥3 WARN / <0.85 또는 stale 7일 FAIL** |
 
 ### 에이전트 규칙
 
