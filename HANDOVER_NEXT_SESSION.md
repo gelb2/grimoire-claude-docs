@@ -32,10 +32,17 @@
 
 ### 1-1. Git 상태 (claude-docs)
 ```
-develop: 4b77788 (push 완료) — 묶음 D 메타 검증 강화 4건
+develop: ff1bafb (push 완료) — 본 핸드오버 자체 박제 commit
 main:    c3ee4fc (push 완료) — 묶음 A+B 머지 시점
 
-develop이 main보다 4 commit 앞섬 — 사용자 요청 시 main 머지 가능 (자율 진행 금지)
+develop이 main보다 7 commit 앞섬 — 사용자 요청 시 main 머지 가능 (자율 진행 금지)
+  ff1bafb docs(handover) — 본 파일
+  4b77788 묶음 D
+  3af4b51 Phase B
+  831a3f7 Phase A
+  83ffd62 묶음 C
+  8bfb797 sensor-web .next fallback
+  8c95945 H1+F1
 ```
 
 ### 1-2. 검증 baseline

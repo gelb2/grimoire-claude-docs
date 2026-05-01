@@ -527,11 +527,15 @@ flowchart TB
   <div class="pyramid-arrow">↓</div>
 
   <div class="pyramid-layer tier-l2">
-    <div class="layer-tag t-gold">Layer 2 · 규칙 <small>3 CLAUDE + AUTOMATION + SYNC_STATUS</small></div>
+    <div class="layer-tag t-gold">Layer 2 · 규칙 <small>3 CLAUDE + 3 AGENTS 분할 + shared-contracts + AUTOMATION + SYNC_STATUS (2026-04-30 책 Ch 08+16 분할)</small></div>
     <div class="pyramid-cards">
-      <div class="p-card rule">CLAUDE.md (root)</div>
+      <div class="p-card rule">CLAUDE.md (root, 73줄)</div>
       <div class="p-card rule-server">CLAUDE.md (server)</div>
       <div class="p-card rule-web">CLAUDE.md (web)</div>
+      <div class="p-card rule">.claude/AGENTS.md</div>
+      <div class="p-card rule">docs/AGENTS.md</div>
+      <div class="p-card rule">.githooks/AGENTS.md</div>
+      <div class="p-card rule">.claude/shared-contracts.md</div>
       <div class="p-card rule">AUTOMATION.md</div>
       <div class="p-card rule">SYNC_STATUS.md</div>
     </div>
@@ -610,7 +614,7 @@ flowchart TB
     </div>
     <div style="margin-top: 10px;">
       <div class="canon-col" style="border-left: 3px solid var(--teal);">
-        <div class="col-label" style="color: var(--teal);">🤖 reports/ · 에이전트 일일 산출물 (launchd 18:04~23:21 KST)</div>
+        <div class="col-label" style="color: var(--teal);">🤖 reports/ · 에이전트 on-demand 산출물 (launchd 영구 비활성, 2026-04-26 결정 — Task tool 호출 시 갱신)</div>
         <div class="col-cards">
           <div class="p-card live">SWEEP_REPORT.md</div>
           <div class="p-card live">AI_COST_MONITOR.md</div>
@@ -814,10 +818,11 @@ flowchart TB
 
 <pre class="tree">
 <span class="dir">ProjectGrimoire/</span>
-├── <span class="root-md">CLAUDE.md</span>                         <span class="comment"># L2 — 워크스페이스 헌법 (§0 ZERO-TOLERANCE · §14 에이전트 · §15 프롬프트 정본)</span>
+├── <span class="root-md">CLAUDE.md</span>                         <span class="comment"># L2 — 워크스페이스 헌법 (73줄, 2026-04-30 책 Ch 08 60-line 분할 · §0 ZERO-TOLERANCE · 정본 pointer)</span>
 ├── <span class="root-md">PLANNING_GRIMOIRE.md</span>              <span class="comment"># L1 — 최상위 정본 (전략·전술 통합 · §0 크레딧-원가 철칙)</span>
-├── <span class="root-md">AUTOMATION.md</span>                     <span class="comment"># L2 — launchd 에이전트 자동화 설정 &amp; 스케줄</span>
+├── <span class="root-md">AUTOMATION.md</span>                     <span class="comment"># L2 — 에이전트·Skills·Sensors·Hooks 인벤토리 (launchd 영구 비활성, on-demand 운영)</span>
 ├── <span class="root-md">SYNC_STATUS.md</span>                    <span class="comment"># 서버-웹 연결 실측 매트릭스</span>
+├── <span class="root-md">HANDOVER_NEXT_SESSION.md</span>          <span class="comment"># 세션 인계 정본 (필요 시 갱신)</span>
 ├── <span class="root-md">ACCOUNTS.md</span>                       <span class="comment"># 시크릿 (git 미추적 · 에이전트 참조 금지)</span>
 ├── <span class="root-md">DOC_MAP.html</span>                      <span class="comment"># 이 파일 · 시각 보조</span>
 │
@@ -833,15 +838,15 @@ flowchart TB
 │   ├── <span class="canon">RESEARCH_PLATFORM_CASES.md</span>        <span class="comment"># 🟣 글로벌 플랫폼 사례</span>
 │   └── <span class="canon">RESEARCH_COMPETITIVE_LANDSCAPE.md</span> <span class="comment"># 🟠 Live 캐시 (researcher 자율 갱신)</span>
 │
-├── <span class="dir">reports/</span>                          <span class="comment"># 🤖 에이전트 산출물 7~8종 · launchd 매일 갱신 (덮어쓰기)</span>
-│   ├── SWEEP_REPORT.md                  <span class="comment"># researcher (18:04)</span>
-│   ├── AI_COST_MONITOR.md               <span class="comment"># researcher (18:04)</span>
+├── <span class="dir">reports/</span>                          <span class="comment"># 🤖 에이전트 on-demand 산출물 (launchd 영구 비활성, Task tool 호출 시 갱신, shared-contracts.md 정본)</span>
+│   ├── SWEEP_REPORT.md                  <span class="comment"># researcher</span>
+│   ├── AI_COST_MONITOR.md               <span class="comment"># researcher</span>
 │   ├── COST_ALERT.md                    <span class="comment"># researcher 조건부 (5%+ 변동 시)</span>
-│   ├── COST_AUDIT_REPORT.md             <span class="comment"># cost-accountant (19:08)</span>
-│   ├── PLANNER_REPORT.md                <span class="comment"># planner (20:11)</span>
-│   ├── VISUAL_CANON_REPORT.md           <span class="comment"># visual-canon-keeper (21:14)</span>
-│   ├── DEV_REPORT.md                    <span class="comment"># server + web (22:17)</span>
-│   └── QA_REPORT.md                     <span class="comment"># qa (23:21) → 배포 게이트</span>
+│   ├── COST_AUDIT_REPORT.md             <span class="comment"># cost-accountant</span>
+│   ├── PLANNER_REPORT.md                <span class="comment"># planner</span>
+│   ├── VISUAL_CANON_REPORT.md           <span class="comment"># visual-canon-keeper</span>
+│   ├── DEV_REPORT.md                    <span class="comment"># server + web</span>
+│   └── QA_REPORT.md                     <span class="comment"># qa → 배포 게이트</span>
 │
 ├── <span class="dir">prompt-engineering/</span>               <span class="comment"># L0 — 방법론 3정본 (CLAUDE §15)</span>
 │   ├── <span class="method-md">GMP-v2.2.md</span>
@@ -849,7 +854,9 @@ flowchart TB
 │   └── <span class="method-md">vibe-coding-unified-guide.md</span>
 │
 ├── <span class="dir">.claude/</span>
-│   ├── <span class="dir">agents/</span>                       <span class="comment"># 에이전트 정의 7개</span>
+│   ├── <span class="root-md">AGENTS.md</span>                     <span class="comment"># L2 분할 — 하네스 레이어 (메모리/멀티에이전트/Skills/Hooks 정본)</span>
+│   ├── <span class="root-md">shared-contracts.md</span>           <span class="comment"># L2 분할 — 7 에이전트 인터페이스 10건 정본 (책 Ch 16, 2026-04-30)</span>
+│   ├── <span class="dir">agents/</span>                       <span class="comment"># 에이전트 정의 7개 (모두 ≤ 300줄, 책 Ch 08 정합)</span>
 │   │   ├── grimoire-planner.md
 │   │   ├── grimoire-researcher.md
 │   │   ├── <span class="deer">grimoire-cost-accountant.md</span>      <span class="comment"># 🎨 Grimoire 고유</span>
@@ -857,11 +864,23 @@ flowchart TB
 │   │   ├── grimoire-qa.md
 │   │   ├── grimoire-server.md
 │   │   └── grimoire-web.md
-│   ├── <span class="dir">prompts/</span>                      <span class="comment"># launchd 호출용 에이전트 프롬프트 (.txt)</span>
-│   ├── <span class="dir">knowledge/</span>                    <span class="comment"># 공유 지식 (agent-system.md · sensors.md)</span>
-│   └── <span class="dir">scripts/</span>                      <span class="comment"># 센서 스크립트 (sensor-server/web/docs-sync/security-gate)</span>
+│   ├── <span class="dir">prompts/</span>                      <span class="comment"># on-demand 호출용 에이전트 프롬프트 (.txt 7개)</span>
+│   ├── <span class="dir">knowledge/</span>                    <span class="comment"># 공유 지식 7개 (agent-system · sensors · agent-interaction-matrix · visual-canon-inventory · researcher-scope · book-harness-engineering-completion · README)</span>
+│   ├── <span class="dir">skills/</span>                       <span class="comment"># Skills 19개 (deploy-precheck · production-bug-triage · verification-before-completion · 등)</span>
+│   ├── <span class="dir">scripts/</span>                      <span class="comment"># Sensors 16 + Hooks 11 + statusline (sensor-server/web/docs-sync/security-gate/cost-margin/agent-priority-labels 등)</span>
+│   ├── <span class="dir">commands/</span>                     <span class="comment"># Slash 5종 (/eval-run /drift-check /shared-contracts-check /memory-status /sensors-overview)</span>
+│   └── <span class="dir">state/</span>                        <span class="comment"># 센서 적재 (sensor-hits.jsonl · llm-judge-cost.jsonl 등)</span>
 │
-├── <span class="dir">.launchd-logs/</span>                    <span class="comment"># launchd 시스템 로그 (git 미추적)</span>
+├── <span class="dir">.githooks/</span>
+│   ├── <span class="root-md">AGENTS.md</span>                     <span class="comment"># L2 분할 — Git 브랜치 + Pre-Push (server/web 실제 hook 본문 박제)</span>
+│   └── pre-commit                       <span class="comment"># claude-docs 자체 (eval 회귀 + drift)</span>
+│
+├── <span class="dir">docs/</span>
+│   └── <span class="root-md">AGENTS.md</span>                     <span class="comment"># L2 분할 — 문서 동기화 + 피라미드 + 전수검사</span>
+│
+├── <span class="dir">eval/</span>                             <span class="comment"># P0 Eval 시스템 (책 Ch 15) — tasks 32 / tasks-edd / scripts (eval-runner/grade-llm) / results (baseline.csv + edd-baseline.csv)</span>
+│
+├── <span class="dir">.launchd-logs/</span>                    <span class="comment"># launchd 시스템 로그 (git 미추적, 영구 비활성)</span>
 │
 ├── <span class="srv">grimoire-server/</span>                  <span class="comment"># NestJS + Prisma + PostgreSQL (Hexagonal)</span>
 └── <span class="web">grimoire-web/</span>                     <span class="comment"># Next.js App Router + Tailwind CSS 4 (FSD) · 🎨 /deerdevil/ 시각 정본</span>
@@ -884,7 +903,7 @@ flowchart TB
     <div class="name">🤖 reports/ 에이전트 산출물 — 7~8 파일</div>
     <div class="desc">
       SWEEP_REPORT · AI_COST_MONITOR · (조건부)COST_ALERT · COST_AUDIT_REPORT · PLANNER_REPORT · VISUAL_CANON_REPORT · DEV_REPORT · QA_REPORT<br><br>
-      매일 launchd 에 의해 갱신 (덮어쓰기). <strong>사용자 수정 금지</strong> — 다음 실행 시 덮어써짐.
+      <strong>on-demand</strong> — Task tool 호출 시 갱신 (launchd 영구 비활성, 2026-04-26 결정). 형식 정본: <code>.claude/shared-contracts.md</code>.
     </div>
     <span class="repo repo-live">root/reports/</span>
   </div>
@@ -1039,15 +1058,16 @@ curl -s https://api.grimoire-book.com/api/themes/deerdevil | head -c 300
   <div class="section-title">변경 이력</div>
   <table>
     <tr><th>버전</th><th>날짜</th><th>변경</th></tr>
-    <tr><td><strong>v2.0</strong></td><td>2026-04-18</td><td>RoadRage DOC_MAP v1.2 스타일 전면 도입 · 전체 .md 파일 위계 피라미드 카드 시각화 · Mermaid 3 다이어그램 (Layer 피라미드 · 에이전트 flow · 참조 flow) · ASCII 폴더 트리에 reports/ + research/ 계층 반영 · §10 Grimoire 고유 제약 (§0 원가 + 사슴악마 시각 정본) 독립 섹션 · 다크 테마 + 사슴악마 세피아 accent</td></tr>
+    <tr><td><strong>v2.1</strong></td><td>2026-05-01</td><td>책 Ch 08 60-line 분할 + Ch 16 shared-contracts 박제 (#10/#10_2 세션) · Layer 2에 .claude/AGENTS.md + docs/AGENTS.md + .githooks/AGENTS.md + .claude/shared-contracts.md 4종 추가 · 폴더 트리 .claude/ 확장 (skills 19 / sensors 16 / commands 5 / state) · .githooks/ + docs/ + eval/ 명시 · launchd 표현 "on-demand" 갱신 (영구 비활성 박제)</td></tr>
+    <tr><td>v2.0</td><td>2026-04-18</td><td>RoadRage DOC_MAP v1.2 스타일 전면 도입 · 전체 .md 파일 위계 피라미드 카드 시각화 · Mermaid 3 다이어그램 (Layer 피라미드 · 에이전트 flow · 참조 flow) · ASCII 폴더 트리에 reports/ + research/ 계층 반영 · §10 Grimoire 고유 제약 (§0 원가 + 사슴악마 시각 정본) 독립 섹션 · 다크 테마 + 사슴악마 세피아 accent</td></tr>
     <tr><td>v1.1</td><td>2026-04-16</td><td>CLAUDE.md §14 에이전트 체인 + 시각 정본 연결 반영</td></tr>
     <tr><td>v1.0</td><td>2026-03-29</td><td>최초 작성 · 레포 동기화 매트릭스 · 폴더 구조 라이트 테마</td></tr>
   </table>
 </div>
 
 <footer>
-  ProjectGrimoire 문서 관계도 · DOC_MAP v2.0 · 2026-04-18<br>
-  <code>CLAUDE.md §5 + §14 + §15</code> 정본 · 변경 시 이 파일 직접 수정
+  ProjectGrimoire 문서 관계도 · DOC_MAP v2.1 · 2026-05-01<br>
+  <code>CLAUDE.md</code> + <code>.claude/AGENTS.md</code> + <code>docs/AGENTS.md</code> + <code>.githooks/AGENTS.md</code> + <code>.claude/shared-contracts.md</code> 정본 · 변경 시 이 파일 직접 수정
 </footer>
 
 <script>
