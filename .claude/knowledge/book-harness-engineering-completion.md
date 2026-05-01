@@ -1,172 +1,310 @@
-# 「하네스 엔지니어링 완전 정복」(shuntailor 2026-03) 학습 박제
+# 「하네스 엔지니어링 완전 정복」(shuntailor V1.1, 2026-03) 학습 박제
 
-> ProjectGrimoire 도입 챕터 핵심 정리. 다음 세션에서 빠르게 참조용.
-> 박제 일자: 2026-04-30 #10. 현 적용 상태: Ch 08 ✅ / Ch 15 ✅ / Ch 16 ✅.
+> ProjectGrimoire 적용 정본. 책 전체 학습 완료 (Ch 1~23 + 부록 A/B/C, 206 페이지).
+> 박제 일자: 2026-04-30 #10 (Ch 08/15/16) → 2026-05-01 #10_5 전면 갱신 (책 전체).
+> **POINT**: "모델은 범용품(commodity)이다. 하네스가 해자(moat)다." (책 결론)
 
 ---
 
-## Ch 08 — 60-line 황금률 (HumanLayer 발견)
+## 책 구조 — 6 Part / 23 Ch / 부록 3
 
-### 핵심 발견
-- 50개 룰 → 절반 무시
-- 100개 룰 → 우선순위 상실
-- 단일 instruction 파일이 60줄 초과 시 instruction degradation 시작
+| Part | 챕터 | 주제 |
+|------|------|------|
+| Part 1 (Ch 1~3) | 개념 정립 | 하네스 정의 + 4 기둥 (CIVC) + 사례 |
+| Part 2 (Ch 4~7) | AGENTS.md | 표준 + 60줄 황금률 + 모범 패턴 |
+| Part 3 (Ch 8~10) | 컨텍스트 | 60-line + Context Rot + JIT 검색 + Lazy Discovery |
+| Part 4 (Ch 11~14) | 4 플랫폼 | Claude Code / OpenAI Codex / Cursor / Devin |
+| Part 5 (Ch 15~18) | EDD + 멀티에이전트 + 보안 + 비용 | 정량 운영 |
+| Part 6 (Ch 19~23) | 실전 + 안티패턴 | 워크숍 + 7 실패 징후 |
+| 부록 A/B/C | 템플릿 + 치트시트 + 130+ 소스 | 즉시 활용 자료 |
 
-### 적용 패턴
-- root `CLAUDE.md`: ~60줄, 절대 규정 + pointer만
-- 자식 디렉토리에 `AGENTS.md` 분할 (자동 로드)
-- 분할 기준: 도메인 응집성 (memory/agent / docs / git/CI)
+---
+
+## 4 기둥 — CIVC (Constrain · Inform · Verify · Correct)
+
+> Anthropic 정리. Fowler 4축 (Reasoning Loop · Tools · Memory · Context Mgmt)과 별개.
+
+| 기둥 | 정의 | 우리 구현 |
+|------|------|---------|
+| **Constrain** | 에이전트가 "할 수 없는 것" 강제 | Hooks 9이벤트 12스크립트 + .githooks/AGENTS.md 금지 |
+| **Inform** | 에이전트가 "해야 하는 것" 알림 | CLAUDE.md+분할정본 + Skills 14 + (MCP 미연동) |
+| **Verify** | 결과 품질 측정/검증 | Eval 41 task + EDD + sensor-* 12개 + verification skill |
+| **Correct** | 잘못된 경로 진입 시 복구 | PreCompact + (loop-detection 미구현) + posttooluse-failure |
+
+**KEY INSIGHT**: 4 기둥은 누적 (모두 갖춰야 함). Constrain만 비대 → 안티패턴 ① 과도한 제약.
+
+---
+
+## Ch 08 — 60-line 황금률 (HumanLayer Kyle 발견)
+
+### 핵심
+- 50개 룰 → 절반 무시 / 100개 룰 → 우선순위 상실 / 60줄 초과 → instruction degradation
+- Anthropic 권장 = 60줄 / 프론티어 LLM 안정 추종 한도 = 150~200 지시
+- Claude Code 시스템 프롬프트 = 약 50 지시 → AGENTS.md에 100~150 여유
 
 ### ProjectGrimoire 적용 (2026-04-30 #10)
 | 파일 | 줄수 | 영역 |
 |------|------|------|
-| `CLAUDE.md` | 73 | boost (§0 절대규정 + pointer) |
-| `.claude/AGENTS.md` | 114 | 하네스 (메모리 + 멀티에이전트) |
-| `docs/AGENTS.md` | 195 | 문서 (동기화 + 피라미드 + 전수검사) |
-| `.githooks/AGENTS.md` | 125 | Git/CI (브랜치 + Pre-Push) |
+| CLAUDE.md | 73 | 절대규정 §0 + pointer |
+| .claude/AGENTS.md | 126 | 하네스 (메모리 + 멀티에이전트) |
+| docs/AGENTS.md | 195 | 문서 (동기화 + 피라미드 + 전수검사) |
+| .githooks/AGENTS.md | 142 | Git/CI |
 
-### 주의
-- 분할 자체가 목적 X — 응집성 있는 도메인 단위로 분할해야 의미 있음
-- 분할 후 cross-reference 정합성 필수 (각 AGENTS.md → root CLAUDE.md → 다른 AGENTS.md)
-- 자동 검증: `sensor-instruction-degradation.sh` (2026-04-30 #10 묶음 C 신설)
+운영 데이터: instruction-degradation 회귀 0건 (4-30 신설 이후 지속 PASS).
 
 ---
 
 ## Ch 15 — Eval-Driven Development (EDD)
 
-### TDD vs EDD
-| 차원 | TDD | EDD |
-|------|-----|-----|
-| 목적 | 결정적 동작 검증 | 확률적 동작 평가 |
-| 실행 | 1회 | N회 (보통 10) |
-| 임계값 | 1.0 (전 통과) | 카테고리별 (0.65~1.0) |
-| 적용 | 함수/메서드 | LLM 응답 / AI 에이전트 |
+### EDD 6 단계
+1. **실패 수집** (20~50 task, Anthropic 권장)
+2. **평가 기준 정의** (확률적 임계값 분류)
+3. **자동 실행 환경** (eval-runner.sh)
+4. **채점** (코드 결정론 / LLM 정성적 / 혼합)
+5. **기준선 측정** (20×10=200회 = 카테고리별 통과율)
+6. **반복 개선** (가장 통과율 낮은 카테고리부터, CLAUDE.md 3줄로 60→80% 사례)
 
-### EDD 6 단계 (책 권장)
-1. **Define**: eval 기준을 코드 짜기 전에 먼저 정의
-2. **Baseline**: 현재 시스템의 통과율 측정 (기준선)
-3. **Iterate**: 코드 변경 → eval 재실행 → 통과율 비교
-4. **Threshold**: 카테고리별 통과율 기준 (security 0.95+, edge_case 0.75 등)
-5. **Regression**: 새 변경이 기존 통과율 떨어뜨리지 않는지 자동 차단
-6. **LLM-as-Judge** (옵션): 주관 평가 영역에 LLM 위임 (외부 API 비용 동반)
+### 우리 적용
+- regression 38 task / 30일 평균 97%+ / 100% PASS 유지
+- EDD 41 task / 39 PASS / 95.12% (tasks-edd/ 의도된 갭 분리)
+- LLM-as-Judge 가드 ₩2K/일 ₩50K/월 박제 (실제 SDK 보류)
+- sensor-eval-trend (30일 mean / 7일 slope / 회귀 빈도)
 
-### ProjectGrimoire 적용 (2026-04-27 #9 + 2026-04-30 #10)
-- `eval/scripts/eval-runner.sh --mode=edd` (runs=10 default + category thresholds)
-- `eval/scripts/grade.py` — 코드 기반 채점 (grep / grep_count / command / inventory_match)
-- `eval/scripts/grade-llm.py` — LLM 채점 (현재 stub, 사용자 명시 보류)
-- `eval/tasks/` 27 task + `eval/tasks-edd/` 1 sample
-- `eval/scripts/generate-sensor-tasks.sh` — sensor → task 자동 wrap (2026-04-30 #10 F1)
-
-### 카테고리별 임계값 (cost-accountant 권장)
-| 카테고리 | 임계값 | 이유 |
-|----------|--------|------|
-| author_content | 1.00 | 작가 본문 보호 — 무관용 |
-| security / cost_zero | 0.95+ | 실패 1건 비용 극도 / §0 위반 |
-| visual_canon / type_safety | 0.90+ | 사슴악마 정본 / 코드 결정적 |
-| convention / api_contract | 0.85 | 코드 스타일 |
-| edge_case | 0.75 | 경로 다수 |
-| test_coverage | 0.65 | 부분 성공 가치 |
-
-### LLM-as-Judge 비용 가드 (필수)
-- per-call ~₩20 (Sonnet 4.6, 2K input + 0.5K output)
-- Daily alert ₩2,000 (100회/일)
-- Monthly cap ₩50,000 (~$35/월, 자동 차단)
-- LLM 태스크 비율 ≤ 35% (20개 중 7개 이하 권장)
+### 책 권장 점수 가중치 (TaskFlow 5차원)
+**기능 정확성 40 + 코드 품질 20 + 성능 15 + 보안 15 + UX 10** = 100
+> 우리 PASS/FAIL 이분법 → 점수 분포 추적으로 진화 가치 (P0 후보)
 
 ---
 
-## Ch 16 — Multi-Agent Shared Contracts
+## Ch 16 — 멀티 에이전트 + Shared Contracts
 
-### 문제
-- 7개 에이전트가 각자 자기 .md에 인터페이스 박제 → drift 누적
-- 한 에이전트가 인터페이스 변경 → 다른 6개 에이전트 .md 수동 동기화 필요 → 누락 발생
+### 5 오케스트레이션 패턴 (책 정본)
+| 패턴 | 에이전트 수 | 비용 | 적합 |
+|------|-----------|-----|------|
+| 싱글 (기준선) | 1 | 낮음 | 단일 기능, 버그 수정 |
+| 서브에이전트 (계층) | 2~5 | 중간 | 탐색+구현 — 부모 Opus + 자식 Sonnet |
+| 멀티 (병렬) | 2~N | 높음 | 대규모 마이그레이션 — Git 워크트리 필수 |
+| Plan-and-Execute | 2~3 | 중간 | 장기 실행 — Sprint 계약 |
+| **Ralph Loop** | 1+훅 | 가변 | 무한 반복 (장기 실행, 종료 가로채 재주입) |
 
-### 해결: 정본 1곳 + 모든 에이전트가 동기 참조
-- `.claude/shared-contracts.md` (root only) 단일 정본
-- 7개 에이전트 .md는 §0 직후 1줄 참조: `> 인터페이스 정본은 .claude/shared-contracts.md 참조`
-- 인터페이스 변경 시 shared-contracts.md 먼저 갱신 → 7개 .md는 자동 정합
+> "단순한 패턴에서 시작 → 측정 후에만 복잡도 증가" (책 강조)
 
-### shared-contracts.md 10 인터페이스 (2026-04-30 #10 박제)
-1. PLANNER_REPORT (planner → server/web)
-2. COST_AUDIT_REPORT (cost-accountant → planner/server/web/qa)
-3. VISUAL_CANON_REPORT (visual-canon-keeper → web/qa)
-4. DEV_REPORT (server + web → qa)
-5. QA_REPORT (qa → 사용자, with §3 Eval results)
-6. AskOptions (server 도메인 — Anthropic SDK signal 시그니처)
-7. ANALYSIS_CREDIT_COST = 4 (server 도메인)
-8. Eval task 형식 (eval 시스템)
-9. LLM-as-Judge 비용 가드 (eval 시스템)
-10. PostToolUseFailure hook 정책 (Chrome MCP F2)
+### 충돌 3 유형 → 해결 (책 정본)
+| 충돌 | 원인 | 해결 | 핵심 |
+|------|-----|------|------|
+| 동시 파일 편집 | 같은 파일 다중 수정 | Git 워크트리 + 순차 머지 | 물리적 격리 |
+| 의사결정 전파 누락 | 인터페이스 불일치 | **shared-contracts.md** | 명시적 계약 |
+| 비용 폭주 | 무한 루프 / 비효율 | 에이전트별 예산 + 에스컬레이션 | 역할별 한도 |
 
-### 자동 검증 sensor (2026-04-30 #10 묶음 A 신설)
-- `sensor-shared-contracts.sh` — 7 에이전트 .md ↔ shared-contracts.md 동기 참조 + 10 인터페이스 코드 박제 자동 검증
-- 변경 누락 시 InstructionsLoaded hook 단계에서 차단
+> 책에서 **`shared-contracts.md` 파일명 그대로 명시** — 우리 4-30 박제와 정확히 동일!
 
----
+### Anthropic 3-에이전트 시스템 (Prithvi Rajasekaran)
+**Initializer → Generator → Evaluator** (Sprint 계약)
+- Initializer: 1회 (뼈대 + progress.md)
+- Generator: 반복 (progress.md 읽고 미완 기능 구현 후 갱신)
+- Evaluator: Playwright E2E 검증 + Sprint 계약 채점
 
-## 미적용 / 보류 챕터
+### 에이전트별 예산 할당 (책 정본 패턴)
+```python
+AGENT_BUDGETS = {
+    "frontend": {"max_tokens": 500K, "max_tool_calls": 100, "max_wall_time": 1800, "max_retries": 3},
+    "backend":  {"max_tokens": 800K, "max_tool_calls": 150, "max_wall_time": 2700, "max_retries": 3},
+    "evaluator":{"max_tokens": 300K, "max_tool_calls": 50,  "max_wall_time": 900,  "max_retries": 1},
+}
+```
+> 우리 7 에이전트 미적용 — **NEW P0 후보**
 
-### Ch 17 — 에이전트 협업 패턴
-- 실험적 agent teams (`CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`)
-- 외부 모델 호출 가능성 → 사용자 명시 보류 (2026-04-30)
-
-### LLM-as-Judge 실제 SDK 연동
-- `grade-llm.py`는 현재 stub (인프라 + 가드만)
-- 실제 anthropic SDK 호출은 사용자 명시 보류 (Claude Code 구독료와 별개 종량제)
-
----
-
-## 적용 패턴 정합 검증
-
-| 패턴 | 검증 방법 | sensor |
-|------|----------|--------|
-| 60-line 황금률 | 분할 4파일 줄수 ≤ 임계값 | sensor-instruction-degradation (2026-04-30 #10 신설) |
-| EDD 회귀 | regression 100% / EDD ≥ category threshold | eval-runner.sh |
-| shared-contracts 정합 | 7 agents 동기 참조 + 10 인터페이스 박제 | sensor-shared-contracts |
+### shared-contracts.md 10 인터페이스 (2026-04-30 #10)
+1. PLANNER_REPORT / 2. COST_AUDIT_REPORT / 3. VISUAL_CANON_REPORT / 4. DEV_REPORT / 5. QA_REPORT / 6. AskOptions / 7. ANALYSIS_CREDIT_COST=4 / 8. Eval task 형식 / 9. LLM-Judge 가드 / 10. PostToolUseFailure 정책
 
 ---
 
-## 운영 데이터 누적 (2026-05-02 묶음 K L2 신설)
+## Ch 17 — 보안 (OpenDev 5계층 방어)
 
-> 책 챕터 학습 박제 후 실제 운영 데이터 — 다음 챕터 학습 결정의 근거 자료.
+| Layer | 방법 | 우리 구현 |
+|-------|------|---------|
+| 1. Prompt | 시스템 프롬프트 금지 | CLAUDE.md §0 ZERO-TOLERANCE |
+| 2. Schema | 도구 스키마 제한 | Plan/Execute 이중 모드 (부분 적용) |
+| 3. Runtime | 퍼미션 (Manual→Semi→Auto) | settings.json (Semi-Auto) |
+| 4. Tool | 명령어 블랙리스트 + 경로 제한 | posttooluse-failure-handler (force push 차단) |
+| 5. Hooks | 라이프사이클 정책 | 9 이벤트 12 스크립트 |
 
-### Ch 08 — 60-line 황금률 운영 데이터
-- **분할 정본 4파일** (2026-04-30 도입): CLAUDE.md 73 / .claude/AGENTS.md 126 / docs/AGENTS.md 195 / .githooks/AGENTS.md 142 — 모두 임계값 이하 PASS 유지
-- **에이전트 .md 7개** (2026-04-30 Phase B 분할): cost-accountant 296 / planner ~270 / qa ~260 / researcher 296 / server ~280 / visual-canon-keeper 293 / web ~270 — 모두 ≤ 300줄 PASS
-- **운영 효과**: instruction-degradation 회귀 0건 (4-30 신설 이후 지속 PASS). HumanLayer 발견 (50개 룰 → 절반 무시) 사례 ProjectGrimoire에서 재현 안 됨.
-- **자동 갱신**: update-harness-inventory.sh (2026-05-02 NEW-4) — pre-commit hook 통합으로 새 자산 추가 시 §14.X 카운트 자동 갱신 (drift sensor 사후 FAIL 패턴 사전 차단)
+### 보안 체크리스트 8 — 우리 충족 7/8
+| # | 항목 | 우리 |
+|---|------|------|
+| 1 | 퍼미션 시스템 활성화 | ✅ settings.json |
+| 2 | 네트워크 도메인 제한 | ⚠️ 부분 |
+| 3 | 시크릿 출력 차단 | ✅ sensor-secret-leak |
+| 4 | **AI 코드 정적 분석 (Snyk/Semgrep)** | ❌ **NEW P0** |
+| 5 | 파일 경로 제한 | ✅ Hooks |
+| 6 | 위험 명령어 블랙리스트 | ✅ posttooluse |
+| 7 | 도구 호출 로깅 | ✅ sensor-log |
+| 8 | Diff/토큰/비용 감사 로깅 | ⚠️ 부분 (cost-tracker 미구현) |
 
-### Ch 15 — EDD 운영 데이터
-- **Regression**: 38 task / 30일 평균 97%+ / 묶음 M 후 100% 유지 (sensor-eval-trend PASS)
-- **EDD (runs=5, 2026-05-02 NEW-18 첫 측정)**: 41 task (38 regression + 3 EDD-only) / 39 PASS / 95.12%
-  - tasks-edd/edd-031 (web features test 페어 30%) + tasks-edd/edd-033 (Polar idempotency) → **의도된 갭 EDD 분리** (regression baseline 노이즈 차단, 코드 우선 박제 후 promote 가치)
-  - 38 regression task는 EDD 5회에서도 100% PASS (안정성 입증)
-- **LLM-as-Judge 가드**: ₩2K/일 ₩50K/월 박제 (실제 SDK 연동은 사용자 명시 보류)
-- **시계열 sensor**: sensor-eval-trend (2026-05-01 H4 신설) — 30일 mean / 7일 slope / 최근 10회 FAIL 빈도 추적
-
-### Ch 16 — shared-contracts 운영 데이터
-- **인터페이스 정본 10개**: 4-30 신설 이후 변경 0건 (안정). PLANNER/COST_AUDIT/VCK/DEV/QA + AskOptions/ANALYSIS_CREDIT_COST=4/Eval task/LLM-Judge 가드/PostToolUseFailure
-- **7 에이전트 동기 참조**: 매 commit에서 sensor-shared-contracts가 검증. Phase B 분할 시 cost-accountant §7 추가 참조로 task 22 max 제거 (4-30 #10_2 부수)
-- **reports/ 골격 자동 생성**: generate-report-template.sh (2026-05-01 H7) + PostToolUse Task hook (2026-05-02 K2) — 빈 보고서 시작 정책 자동화
-- **AUTO-GENERATED 골격 정합**: sensor-shared-contracts K3 검증 (2026-05-02) — 향후 새 보고서는 자동 정합 강제
-
-### Ch 16 패턴 1 (orchestration 분리) 운영 데이터
-- **위임 매트릭스 합치율** (본 세션 #10_2~#10_4): 10/10 = 100% (모두 단일 도메인 + ≤1시간 → 메인 직접 정합)
-- **자가 분류 의무** (.claude/AGENTS.md §2.2.1, 2026-05-02 K1) — 다음 세션부터 sensor-orchestration-ratio jsonl + 메모리 양 채널 측정 시작
+### 샌드박스 3단계
+마이크로VM (Firecracker / 최강) > gVisor (강) > 강화 컨테이너 (중간 — 우리 로컬 환경 적합)
 
 ---
 
-## 미박제 / 사용자 결정 (J 시리즈)
+## Ch 18 — 비용 관리
 
-| 챕터 | 이유 | 사용자 결정 필요 |
-|------|------|---------------|
-| Ch 09 (Sensor 진화 추정) | 책 실제 내용 추측 가능, 박제는 추정에 그침 | J9: Ch 09 학습 박제 진행 여부 |
-| Ch 13 (Knowledge Graph 추정) | 동일 | J10: Ch 13 학습 박제 진행 여부 |
+### 토큰 경제학
+| 모델 | 입력 (MTok) | 출력 (MTok) | 캐시 읽기 | 비고 |
+|------|------------|------------|----------|------|
+| Opus 4.6 | $15 | $75 | $1.50 | 1x (계획) |
+| Sonnet 4.6 | $3 | $15 | $0.30 | 0.2x (구현) |
+| Haiku 4.5 | $0.80 | $4 | $0.08 | 0.05x (단순) |
 
-위 두 챕터는 사용자가 책 PDF 또는 발췌를 제공하면 박제 진행. 추측 박제는 정본 정합성 위험.
+### 3단계 모델 라우팅 (책 권장: 40~60% 절감)
+- **Opus (30%)**: 아키텍처, 복잡 디버깅
+- **Sonnet (50%)**: 기능 구현, 테스트
+- **Haiku (20%)**: 포맷팅, 단순 변환
+
+> 우리 미적용 (J5 보류 결정) — **재검토 가치 NEW**
+
+### Reasoning Sandwich (LangChain TerminalBench 2.0 패턴)
+계획 = 高추론 / 구현 = 표준 / 검증 = 高추론
+
+### 비용 절감 5기법
+1. 컨텍스트 효율 도구 설계 (응답 25K 토큰 이하)
+2. **Lazy Discovery** (MCP 도구 스키마 필요시만)
+3. 짧은 피드백 루프 (긴 프롬프트 1회 < 짧은 N회)
+4. **태스크별 토큰 예산** (버그 50K / 기능 200K / 리팩토링 500K)
+5. **이터레이션 캡** (둠 루프 방지)
+
+### Anthropic 비용 데이터
+- $9 (실패) < $124.70 (균형) < $200 (완성). $9짜리 실패 = 가치 0
+
+### cost_tracker.py 패턴 (책 정본)
+호출별 JSONL: `{ts, task_id, model, input_tokens, output_tokens, cache_tokens, cost_usd}`
+> 우리 sensor-cost-table.sh 있지만 호출별 추적 미구현 — **NEW P0**
+
+---
+
+## Ch 21 — 4 기둥 통합 (TaskFlow 최종 완성)
+
+| 기둥 | 책 권장 구현 | 우리 구현 | 갭 |
+|------|------------|---------|------|
+| **Inform** | AGENTS.md + Skills + **MCP** | CLAUDE.md+분할 + Skills 14 | **MCP 미연동** |
+| **Constrain** | Hooks + 퍼미션 Semi-Auto | Hooks 9이벤트 + settings.json | 퍼미션 정책 미정의 |
+| **Verify** | Eval + Self-check + 서브에이전트 | Eval 41 + verification skill | 서브에이전트 탐색 패턴 미적용 |
+| **Correct** | 루프 탐지 + 컨텍스트 컴팩션 | (없음) + PreCompact | **MAX_EDITS_PER_FILE=5 임계 미박제** |
+
+POINT (책 정본): **"Foundation Model = CPU, 하네스 = OS" (Philipp Schmid)**
+
+---
+
+## Ch 23 — 실패 7가지 징후 + 하네스 자가진단 (가장 중요)
+
+### 설계 안티패턴 4
+1. **과도한 제약**: Constrain만 비대 → 작업 시간 절반이 승인 대기
+2. **규칙 폭발**: 500줄 AGENTS.md → 규칙 간 충돌
+3. **Eval 부재**: 감으로 수정 → 6개월 뒤 추적 불가
+4. **모델 의존 착각**: "다음 모델 나오면 해결" → 실제로는 하네스 차이가 28계단
+
+### 운영 안티패턴 3
+5. **하네스 부패**: 문서 ↔ 코드 괴리 → "쓰레기 수거(garbage collection)" 필요
+6. **비용 블랙홀**: 어디서 새는지 모름 → 최적화 불가
+7. **거버넌스 부재**: CLAUDE.md 누가 수정해도 OK → 무책임
+
+### 자가진단 7질문 (3 이상 "아니오"면 쇠퇴 경로)
+| # | 질문 | 우리 sensor | 상태 |
+|---|------|-----------|------|
+| 1 | 작업 시간 70%+ 실제 구현? | sensor-orchestration-ratio | ✅ |
+| 2 | CLAUDE.md ≤100줄? | sensor-claude-md-size | ✅ (73줄) |
+| 3 | 하네스 수정 효과 수치 증명? | sensor-eval-trend | ✅ |
+| 4 | 모델 개선 여지 측정? | — | ❌ **NEW** |
+| 5 | CLAUDE.md ↔ 코드 일치? | sensor-doc-drift | ✅ |
+| 6 | 태스크 유형별 비용 인지? | — | ❌ **NEW** (cost-tracker) |
+| 7 | 하네스 변경 리뷰 프로세스? | sensor-shared-contracts | ⚠️ |
+
+**최우선 해결**: ③ Eval → ⑤ 부패 → 나머지
+
+> POINT: "하네스는 코드보다 빠르게 썩는다. CI/CD가 필요한 것처럼 하네스에도 지속 검증이 필요하다."
+> "하네스는 정원과 같다. 심는 것보다 가꾸는 데 더 많은 시간이 든다."
+
+---
+
+## Ch 11~14 — 4 플랫폼 비교 (우리 = Claude Code)
+
+| 플랫폼 | 격리 | Inform | Constrain | 차별점 |
+|--------|-----|--------|-----------|--------|
+| **Claude Code** | 강화 컨테이너 | CLAUDE.md + Skills + MCP | Hooks 라이프사이클 | 가장 유연 (우리 선택) |
+| OpenAI Codex | **Firecracker μVM** | AGENTS.md | App Server JSON-RPC | 최강 보안 |
+| Cursor | 워크스페이스 | **MDC Rules (.cursor/rules/ 경로별)** + 모델별 튜닝 | BugBot (Verify+Correct 통합) | UI 가장 친숙 |
+| Devin | **Brain (stateless) + Workspace** 분리 | 계획-실행 명시 분리 | Devin 2.0 ACU 83% 효율 | 엔터프라이즈 (Infosys Topaz) |
+
+> "보안 우선 → Codex/Devin / 유연성 우선 → Claude Code/Cursor / **AGENTS.md는 모두 필수**"
+
+---
+
+## 부록 핵심 — 즉시 적용 자료
+
+### 부록 A — 8 시스템 프롬프트 패턴
+역할 정의 / 단계 추론 / 금지 목록 / 출력 형식 / 컨텍스트 주입 / **에러 복구 (3회 이상 같은 에러 → 사용자 에스컬레이션)** / 품질 게이트 / 보안 가드레일
+
+### 부록 B — 신개념 용어
+- **Build-to-Delete**: 모델 발전에 따라 불필요해질 스캐폴딩을 의도적으로 경량 설계 (예: Ch 18 비용 절감 연동)
+- **컨텍스트 방화벽**: 서브에이전트가 부모 컨텍스트 오염 차단
+- **둠 루프**: 같은 파일 5회 이상 편집 (LoopDetectionMiddleware 임계)
+- **Ralph Loop**: Hook으로 종료 가로채 새 컨텍스트 재주입 (장기 실행 작업)
+- **컨텍스트 컴팩션 5단계**: 요약 → 절삭 → 버킷팅 → 압축 → 퇴출
+
+### 부록 C — 130+ 소스 (정본)
+- F01 Mitchell Hashimoto "My AI Adoption Journey" (Feb 5, 2026 — 용어 명명자)
+- F02 OpenAI "Harness Engineering: Codex" (Feb 2026)
+- F03 Birgitta Bockeler / **Martin Fowler** "Harness Engineering" (Feb 17, 2026 — 4축 정의)
+- F04~F10 Anthropic Building Effective Agents / Context Engineering / MCP 등
+- L01~L06 LangChain (Deep Agents / Anatomy / TerminalBench 2.0)
+- I01 **Philipp Schmid "The Importance of Agent Harness in 2026"** (Foundation = CPU, Harness = OS)
+
+---
+
+## 솔로 개발자 영감 — Cuneiform Chat (Bikash Das, 책 인용)
+
+> 4개월 동안 혼자서 6마이크로서비스 + 2프론트엔드 + 7채널 (Telegram/WhatsApp/Discord/Slack/웹 위젯)
+> Claude Code + `.claude/` 30 참조 문서 + CLAUDE.md = "인덱스 및 결정 라우터"
+
+**우리 패턴과 정확히 동일**. 차별 강조 규칙 예시 (책 인용):
+> "모든 데이터베이스 쿼리는 반드시 org_id 필터 포함" — 멀티테넌트 SaaS 치명적 버그를 CLAUDE.md 한 줄로 차단
+
+→ 우리 ProjectGrimoire의 author_content 절대 수정 금지 / 작가 본문 보호 패턴과 같은 철학
+
+**솔로 개발자 3 원칙 (책 정본)**:
+1. CLAUDE.md = "팀의 기억" 대체
+2. .claude/ = 사내 위키 대체 (구조화 데이터)
+3. **1일차부터 옵저버빌리티** (체감 vs 실제 39% 괴리 — METR 연구)
+
+---
+
+## 우리 시스템 검증 — 95% 정합 / 5% 갭
+
+### ✅ 정합 (책 권장 그대로 적용)
+1. shared-contracts.md (책 정본 파일명 동일!)
+2. 60-line 황금률 4 분할
+3. EDD 38 task + sensor-eval-trend
+4. Hooks 9이벤트 12스크립트
+5. Skills 14 (Progressive Disclosure)
+6. PreCompact memory guard
+7. Sprint 계약 (Plan/QA agent로 부분 적용)
+8. .claude/ 디렉토리 = 사내 위키 패턴 (Cuneiform Chat 동일)
+9. CLAUDE.md = 인덱스 및 결정 라우터
+
+### ❌ 미적용 (NEW P0 후보)
+1. **MCP 연동** (Inform 3층 中 미완) — Figma MCP / GitHub MCP / Playwright MCP 등
+2. **에이전트별 모델 티어링** (J5 보류 결정 — 책 강력 권장 40~60% 절감)
+3. **에이전트별 예산 할당** (max_tokens/max_tool_calls/max_wall_time)
+4. **cost-tracker.jsonl** (호출별 task_id/model/tokens/cost — 비용 블랙홀 방어)
+5. **sensor-loop-detection** (MAX_EDITS_PER_FILE=5 둠 루프 방지)
+6. **sensor-harness-self-diagnose** (자가진단 7질문 자동화 — 매주 ALERT)
+7. **Hooks에 Semgrep/Snyk 통합** (AI 코드 정적 분석)
+8. **Eval 점수 가중치 도입** (이분법 PASS/FAIL → 0~100 점수 분포)
+9. **컨텍스트 토큰 예산 sensor** (시스템 프롬프트 + CLAUDE.md + 누적 대화)
+10. **5 오케스트레이션 박제** (현재 .claude/AGENTS.md §2.2.1 위임 매트릭스 → 5 패턴 표 추가)
 
 ---
 
 ## 변경 이력
-- 2026-04-30: 본 파일 신설 — 책 Ch 08/15/16 핵심 학습 박제 (묶음 C D1 작업).
-- 2026-05-02 묶음 K L2: 운영 데이터 누적 섹션 신설 + Ch 09/13 박제 보류 박제 (사용자 결정 J9/J10 이관).
+- 2026-04-30 #10: 본 파일 신설 — 책 Ch 08/15/16 핵심 박제
+- 2026-05-02 묶음 K L2: 운영 데이터 + 보류 챕터 박제
+- **2026-05-01 #10_5: 책 전체 학습 완료 후 전면 갱신 (Ch 1~23 + 부록 A/B/C, 206 페이지)**. CIVC 4 기둥 + 5 오케스트레이션 + 7 안티패턴 + 4 플랫폼 비교 + 비용 관리 + 보안 5계층 + Cuneiform Chat 정합 + 95% 정합/5% 갭 NEW P0 10건 도출.
