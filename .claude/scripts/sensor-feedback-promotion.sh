@@ -195,4 +195,7 @@ else:
 PYEOF
 
 [ "$QUIET" -eq 0 ] && echo "=== 끝 ==="
+
+# sensor-log 박제 (2026-05-02 H8) — 항상 PASS (별도 candidates jsonl 적재가 본 sensor의 결과)
+bash "$(dirname "$0")/sensor-log.sh" "sensor-feedback-promotion" PASS "candidates 별도 jsonl" 2>/dev/null || true
 exit 0

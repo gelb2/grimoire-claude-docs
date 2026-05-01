@@ -51,13 +51,31 @@ done
 
 echo ""
 echo "─── PASS-only sensor 식별 (FAIL/WARN 0건 — 검사 항목 미달성 가능성) ───"
+echo "(메타·테스트 sensor 제외 + 의도적 PASS-only 면제 박제 — 2026-05-02 H9)"
+META_PATTERN='^(--quiet|unknown|post-edit-.*|sensor-test-.*)$'
+INTENTIONAL_PASS_ONLY='^(sensor-secret-leak|sensor-shared-contracts|sensor-agent-priority-labels|sensor-instruction-degradation|sensor-feedback-promotion|sensor-docs-sync|sensor-agent-interaction)$'
 for s in $SENSORS; do
+  if echo "$s" | grep -qE "$META_PATTERN"; then continue; fi
   W=$(grep -c "\"sensor\":\"$s\".*\"result\":\"WARN\"" "$LOG_FILE" 2>/dev/null) || W=0
   F=$(grep -c "\"sensor\":\"$s\".*\"result\":\"FAIL\"" "$LOG_FILE" 2>/dev/null) || F=0
   if [ "$W" -eq 0 ] && [ "$F" -eq 0 ]; then
-    echo "  💡 PASS-only: $s (정밀화 가치 검토 — 임계값이 너무 느슨할 가능성)"
+    if echo "$s" | grep -qE "$INTENTIONAL_PASS_ONLY"; then
+      echo "  ✅ exempt:    $s (의도적 PASS-only — 검출 = 즉시 회수, 정합 = PASS가 정답)"
+    else
+      echo "  💡 PASS-only: $s (정밀화 가치 검토 — 임계값이 너무 느슨할 가능성)"
+    fi
   fi
 done
+
+echo ""
+echo "  [면제 사유 박제]"
+echo "  - sensor-secret-leak           : 시크릿 검출 = 즉시 회수. PASS-only가 보안 정상 신호."
+echo "  - sensor-shared-contracts      : 책 Ch 16 인터페이스 정합. drift 시 즉시 FAIL."
+echo "  - sensor-agent-priority-labels : GMP v2.2 라벨 정합. 분할/추가 시 즉시 WARN."
+echo "  - sensor-instruction-degradation: 책 Ch 08 60-line. 분할 정본 PASS가 정상."
+echo "  - sensor-feedback-promotion    : candidates는 별도 jsonl 적재 (본 sensor는 항상 PASS)."
+echo "  - sensor-docs-sync             : server↔web 9개 동기. drift 즉시 FAIL."
+echo "  - sensor-agent-interaction     : matrix 정합. 변경 시 즉시 WARN/FAIL."
 
 echo ""
 echo "─── silent sensor 식별 (마지막 호출 시간 + 30일 stale) ───"

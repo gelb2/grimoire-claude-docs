@@ -151,8 +151,13 @@ echo ""
 echo "── 종합 ──"
 if [ "$FAIL" -eq 0 ]; then
   echo "✅ shared-contracts 정합 PASS (FAIL 0건 / WARN $WARN건)"
-  exit 0
+  if [ "$WARN" -gt 0 ]; then RESULT_TAG="WARN"; else RESULT_TAG="PASS"; fi
+  RC=0
 else
   echo "❌ shared-contracts 정합 FAIL ($FAIL건 / WARN $WARN건)"
-  exit 1
+  RESULT_TAG="FAIL"; RC=1
 fi
+
+# sensor-log 박제 (2026-05-02 H8)
+bash "$(dirname "$0")/sensor-log.sh" "sensor-shared-contracts" "$RESULT_TAG" "FAIL=$FAIL WARN=$WARN" 2>/dev/null || true
+exit $RC

@@ -62,8 +62,12 @@ echo "실행 시간: ${DURATION}s"
 
 if [ $FAIL_COUNT -eq 0 ]; then
   echo "=== 센서 전체 PASS ==="
-  exit 0
+  RESULT_TAG="PASS"; RC=0
 else
   echo "=== 센서 FAIL — 실패한 단계: ${FAIL_STEPS[*]} ==="
-  exit 1
+  RESULT_TAG="FAIL"; RC=1
 fi
+
+# sensor-log 박제 (2026-05-02 H8)
+bash "$(dirname "$0")/sensor-log.sh" "sensor-web" "$RESULT_TAG" "PASS=$PASS_COUNT FAIL=$FAIL_COUNT duration=${DURATION}s" 2>/dev/null || true
+exit $RC
