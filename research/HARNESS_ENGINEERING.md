@@ -27,8 +27,9 @@
 | 15 | **현장 운영 4 패턴** → **분리됨** | 1074 | `research/HARNESS_FIELD_PATTERNS_4.md` (§15.7 위임 가치 매트릭스 포함, 2026-05-02 묶음 L M1) |
 | 16 | ProjectGrimoire 4 패턴 위치 | 1080 | 채택 결정 + KPI |
 | 17 | CLAUDE.md 60줄 분할 + EDD → **분리됨** | 1102 | `research/HARNESS_SPLIT_AND_EDD.md` (2026-05-02 묶음 L M3) |
+| 18 | **적대적 검증 (우로보로스+악마의 변호인+레드팀)** → **분리됨** | — | `research/HARNESS_ADVERSARIAL_VERIFICATION.md` (2026-05-02 #10_6 사용자 지시 신설) |
 
-> **자주 참조되는 섹션**: §14.4 (Sensors 인벤토리, 본 파일 유지) / §15.7 (위임 가치 매트릭스, → `HARNESS_FIELD_PATTERNS_4.md`) / §17 (분할 정본 + EDD, → `HARNESS_SPLIT_AND_EDD.md`)
+> **자주 참조되는 섹션**: §14.4 (Sensors 인벤토리, 본 파일 유지) / §15.7 (위임 가치 매트릭스, → `HARNESS_FIELD_PATTERNS_4.md`) / §17 (분할 정본 + EDD, → `HARNESS_SPLIT_AND_EDD.md`) / §18 (적대적 검증, → `HARNESS_ADVERSARIAL_VERIFICATION.md`)
 >
 > **2026-05-02 묶음 L 분할 결과**: 본 파일 1328 → 1105줄 (223줄 감소). §13 / §15 / §17은 별도 정본으로 분리 + 1줄 pointer만 남김. 8개 파일 §15 참조는 새 경로로 갱신 완료 (M1).
 
