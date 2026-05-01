@@ -1269,6 +1269,7 @@ YECHANGPE 프로젝트에서 검증된 Claude API + OpenAI Embedding + RAG + Vec
 - [x] 독자 트래픽 DB 병목 대응 → **테마 Baking 파이프라인** Phase 2 적용 (§11)
 - [ ] RAG/Vector 이식 범위 + Vector DB 선택 + 비용 구조 확정 (§14)
 - [ ] 작가 대시보드 핵심 지표 확정 — 타 플랫폼 리서치 후 결정 (§13)
+- [ ] **외부 Anthropic API 신규 의존 (2026-04-30 사용자 명시 보류)** — Claude Code 구독 외 종량제 호출 영역 (LLM-as-Judge 실제 SDK / 모델 티어링 / agent teams / 책 Ch 17)은 사용자 재허용 시까지 진행 금지
 
 ---
 
@@ -1292,3 +1293,40 @@ YECHANGPE 프로젝트에서 검증된 Claude API + OpenAI Embedding + RAG + Vec
 | 루트 `PAYMENT_RESEARCH.md` | `grimoire-server/research/` | 결제 솔루션 비교 (§8 크레딧) |
 | 루트 `CHAT_FEATURE_RESEARCH.md` | `grimoire-server/research/` | AI 챗 기능 연구 (§14 RAG) |
 | 루트 `DESIGN_REFERENCE_READYMAG.md` | `grimoire-web/research/` | 레디맥 디자인 리서치 (테마 Phase 1/2) |
+
+---
+
+## 16. 변경 이력 (2026-04-19 ~ 2026-05-02 — J5 박제)
+
+> 본 §16은 PLANNING_GRIMOIRE.md 자체의 변경 + 운영 결정사항 누적. 코드/하네스 변경은 각 레포 CHANGELOG.md / `research/HARNESS_ENGINEERING.md` 참조.
+
+| 일자 | 결정사항 | 정본 위치 |
+|------|---------|----------|
+| 2026-04-19 F1 | 크레딧 가격 인상 (기본 5개/₩2,000 → ₩400/개) — Polar 고정수수료 $0.30 보전 | §8 |
+| 2026-04-19 F2 | AI 분석 크레딧 3 확정 | §14 F2 |
+| 2026-04-19 | inhouse 환경 제거 (3환경 → 2환경: dev/prod) | §6, §7 |
+| 2026-04-24 F4 | Q1=(a) 에피소드 ID 모드 확정 | §14 F4 |
+| 2026-04-25 #5 | JWT 회전 + sensor-secret-leak 신설 (P0 시크릿 회수) | server CHANGELOG |
+| 2026-04-26 #6 | launchd 자율 실행 영구 비활성 (on-demand Task 호출만) | AUTOMATION.md §2 |
+| 2026-04-27 #9 | 분석 크레딧 3 → 4 인상 (cost-accountant 시뮬: 베스트 2.79× → 3.35×) | §14 + ai-cost-table.md |
+| 2026-04-30 #10 | CLAUDE.md 60줄 분할 (책 Ch 08+15+16) — root 73줄 + .claude/AGENTS.md + docs/AGENTS.md + .githooks/AGENTS.md + shared-contracts.md | `.claude/shared-contracts.md` + `research/HARNESS_SPLIT_AND_EDD.md` |
+| 2026-04-30 #10 | **외부 Anthropic API 신규 의존 보류** (사용자 명시) — LLM-as-Judge SDK / 모델 티어링 / agent teams 보류 | §10 미결 사항 |
+| 2026-04-30 #10 | EDD 모드 도입 (책 Ch 15) — eval-runner --mode=edd, runs=10, category별 threshold | `research/HARNESS_SPLIT_AND_EDD.md` §17.3 |
+| 2026-05-01 #10_2 | 핸드오버 박제 (사용자 외출 → 리모트 채팅방 인계) | `HANDOVER_NEXT_SESSION.md` |
+| 2026-05-01 #10_3 | 묶음 E~H 자율 진행 (sensor-agent-priority-labels WARN 0 / DOC_MAP v2.1 / orchestration-decision Skill / sensor-eval-trend) | `memory/project_session_20260501_2.md` |
+| 2026-05-02 #10_4 묶음 I | sensor-log 9개 통합 + update-harness-inventory generator + PASS-only 면제 박제 | AUTOMATION.md §3 + §4.2 |
+| 2026-05-02 #10_4 묶음 K' | pre-commit hook에 update-harness-inventory --apply 통합 + baseline 노이즈 차단 | `.githooks/pre-commit` |
+| 2026-05-02 #10_4 묶음 J | orchestration-decision Skill 자가 분류 의무 + PostToolUse Task hook + reports 골격 정합 (책 Ch 16) | `.claude/AGENTS.md §2.2.1` |
+| 2026-05-02 #10_4 묶음 K | drift-check §17 검증 + book 운영 데이터 + feedback 14일 단축 | `.claude/knowledge/book-harness-engineering-completion.md` |
+| 2026-05-02 #10_4 묶음 L | HARNESS §13/§15/§17 분리 (1328 → 1105줄) — `HARNESS_FIELD_PATTERNS_4.md` + `HARNESS_BIBLIOGRAPHY.md` + `HARNESS_SPLIT_AND_EDD.md` | `research/HARNESS_*.md` 4개 |
+
+### 운영 정책 강화 누적 (2026-04-25 ~ 2026-05-02, 외부 API 0)
+
+- **하네스 분할 정본 확립**: CLAUDE.md (73) + .claude/AGENTS.md (126) + docs/AGENTS.md (195) + .githooks/AGENTS.md (142) + shared-contracts.md — instruction degradation 위험 해소
+- **에이전트 7개 모두 분할 완료**: 각 ≤ 300줄 (sensor-instruction-degradation 11/11 PASS)
+- **인벤토리 자동 갱신**: pre-commit hook + update-harness-inventory.sh — 새 sensor/skill 추가 시 HARNESS §14 자동 갱신
+- **위임 매트릭스 자가 분류**: 작업 시작 전 orchestration-decision Skill 강제 (책 Ch 16 패턴 1 KPI 추적)
+- **회귀/EDD 시계열 추적**: sensor-eval-trend (30일 mean / 7일 slope / 회귀 빈도 임계)
+- **인벤토리 (2026-05-02)**: Skills 20 / Sensors 17 / Knowledge 6 / Hooks 9 이벤트 11 스크립트 / Generators 2 / Eval task 33
+
+본 §16은 다음 PLANNING 갱신 시 (J5 후속) 추가로 누적.
