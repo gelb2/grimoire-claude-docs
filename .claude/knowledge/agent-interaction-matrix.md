@@ -107,7 +107,7 @@ CLAUDE.md §14.2 규칙 + Pattern 1 (orchestration 분리):
 - 사용자가 "직접 해" 명시 지시
 - 작업 크기가 ~15초 미만이라 spawn 비용이 작업보다 큰 경우
 
-근거: `research/HARNESS_ENGINEERING.md` §15.1 패턴 1, §16 채택 결정.
+근거: `research/HARNESS_FIELD_PATTERNS_4.md` §15.1 패턴 1, `research/HARNESS_ENGINEERING.md` §16 채택 결정.
 
 ## 7. 시간대 (launchd 자율 실행 — ⛔ 영구 비활성)
 

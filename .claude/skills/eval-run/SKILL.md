@@ -38,4 +38,4 @@ bash eval/scripts/eval-runner.sh --mode=edd --runs=2
 - 1건 이상 FAIL → 분석 + 수정 → 재실행
 - baseline.csv / edd-baseline.csv 자동 적재
 
-상세: `eval/README.md`, `research/HARNESS_ENGINEERING.md` §15 (EDD)
+상세: `eval/README.md`, `research/HARNESS_ENGINEERING.md` §17 (책 Ch 15 EDD 박제)

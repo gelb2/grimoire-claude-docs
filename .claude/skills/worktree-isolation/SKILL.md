@@ -138,7 +138,7 @@ esac
 
 ## 관련 정본
 - `research/HARNESS_ENGINEERING.md` §8.10 — Worktree 안전망
-- `research/HARNESS_ENGINEERING.md` §15.7 — 위임 가치 매트릭스 (worktree 적용 기준)
+- `research/HARNESS_FIELD_PATTERNS_4.md` §15.7 — 위임 가치 매트릭스 (worktree 적용 기준, 2026-05-02 분리)
 - obra/superpowers worktree skill (MIT 차용 원본)
 - `gc-sweep` Skill — 누적 worktree 청소 후보 식별
 

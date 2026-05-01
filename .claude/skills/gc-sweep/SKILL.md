@@ -167,7 +167,7 @@ stage / apply 후:
 - **apply**: 반기 1회 (보수적 운영)
 
 ## 관련 정본
-- `research/HARNESS_ENGINEERING.md` §15.5 — Requisite Variety 갭 진단 (현재 1.5/5)
+- `research/HARNESS_FIELD_PATTERNS_4.md` §15.5 — Requisite Variety 갭 진단 (현재 1.5/5, 2026-05-02 분리)
 - `.claude/scripts/sensor-hit-rate-report.sh` — silent sensor 식별 입력
 - `.claude/scripts/instructions-drift-check.sh` — drift 자체 검증 (stage/apply 후 silent 확인)
 - `verification-before-completion` Skill — Gate 1·2·3 (stage/apply 검증 단계)
