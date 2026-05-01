@@ -1,7 +1,7 @@
-# HANDOVER — 2026-05-01 #10_5 → 다음 세션 (로컬 채팅방 복귀)
+# HANDOVER — 2026-05-02 #10_6 → 다음 세션
 
-> **작성자**: 2026-05-01 야간 리모트 세션 (Claude Opus 4.7 1M, #10_5 — 책 V1.1 전체 학습 + P0 재추출)
-> **수신자**: 사용자 외출 복귀 후 다음 로컬 채팅방
+> **작성자**: 2026-05-02 로컬 세션 (Claude Opus 4.7 1M, #10_6 — 묶음 R+S+T+V' 4건 자율 진행)
+> **수신자**: 다음 세션 (로컬/리모트)
 > **검증 명령**: `cd /Users/sokol/Desktop/Git/ProjectGrimoire && git log --oneline -10 && bash eval/scripts/eval-runner.sh`
 
 ---
@@ -27,7 +27,34 @@
 
 ---
 
-## 1. 본 세션 #10_5 핵심 결과 — 책 V1.1 전체 학습 완료
+## 1. 본 세션 #10_6 핵심 결과 — 묶음 R+S+T+V' 자율 진행 (외부 API 0)
+
+사용자 위임 (피곤 상태): "최대한 많은 묶음을 컨텍스트 rot 없이 두 번 작업할 일 없이 작업순서를 정하고 진행" → 4 묶음 자율 commit.
+
+### 묶음 R (`88996c4`) — 책 Ch 23 자가진단 갭 해소
+- BN-#4: cost-tracker.sh 신설 (호출별 JSONL 박제 + log/report/estimate 명령)
+- BN-#6: sensor-harness-self-diagnose.sh 신설 (Ch 23 7질문 자동화)
+- 효과: Q6 ❌→✅ + 안티패턴 #6 비용 블랙홀 영구 방어
+
+### 묶음 S (`cc57c8a`) — 책 Ch 21 Correct + Ch 16 패턴
+- BN-#5: loop-detection-tracker (PostToolUse Edit|Write 자동 박제) + sensor-loop-detection (MAX_EDITS_PER_FILE=5)
+- BN-#10: .claude/AGENTS.md §2.2.2 5 오케스트레이션 패턴 박제 (Ralph Loop 신규)
+
+### 묶음 T (`c4e1653`) — 책 Ch 16 + Ch 18
+- BN-#3: .claude/AGENTS.md §2.4 7 에이전트 AGENT_BUDGETS 박제 (옵션 C — 7 에이전트 .md 0 변경)
+- BN-#9: sensor-context-budget.sh (베이스라인 + 전체 분할 + 7 에이전트 토큰 추정)
+
+### 묶음 V' (`0cc5d44`) — 자가진단 Q7 ⚠️→✅
+- NEW-B: sensor-shared-contracts §4 변경 리뷰 프로세스 강화 (90일 stale + 7 에이전트 mtime 동기)
+- NEW-C: sensor-harness-cross-ref (#10_4 묶음 L 분리 4정본 cross-ref 검증)
+
+### 자가진단 진화
+- 묶음 시작 전: PASS 3 / FAIL 2 (Q6/Q7) / SKIP 1 (Q4)
+- 묶음 종료 후: **PASS 5 / FAIL 1 (Q1 별도 P1) / SKIP 1 (Q4)** — 책 Ch 23 건강 영역 강화
+
+---
+
+## 1.5 [구 #10_5] 책 V1.1 전체 학습 완료 (참조 보존)
 
 ### 1-1. 책 학습 완료
 - **「하네스 엔지니어링 완전 정복」V1.1 (shuntailor, 2026-03)** — 206 페이지 전부 학습
@@ -97,36 +124,43 @@
 
 ---
 
-## 4. Git 상태 (2026-05-01 야간 리모트, 본 세션 commit/push 완료)
+## 4. Git 상태 (2026-05-02 #10_6, 본 세션 4 묶음 commit/push 완료)
 
 ```bash
-develop: 3893c5b (push 완료, 본 세션) — 책 V1.1 전체 학습 박제
+develop: 0cc5d44 (push 완료) — 묶음 V' NEW-B + NEW-C
 main:    78914cd (이전 머지 시점, 묶음 Q)
 
-develop이 main보다 1 commit 앞섬 — 사용자 결정 시 main 머지 가능
-  3893c5b docs(book): 책 V1.1 전체 학습 + NEW P0 10건 도출 (외부 API 0)
+develop이 main + 7 commit 앞섬 (#10_6 4 묶음 + 우선처리 + 책 학습 + #10_5 정합):
+  0cc5d44 묶음 V' — NEW-B sensor-shared-contracts §4 + NEW-C harness-cross-ref
+  c4e1653 묶음 T — BN-#3 에이전트 예산 + BN-#9 context-budget
+  cc57c8a 묶음 S — BN-#5 loop-detection + BN-#10 5 오케스트레이션
+  88996c4 묶음 R — BN-#4 cost-tracker + BN-#6 self-diagnose
+  80e2645 우선처리 — gitignore lock + HANDOVER 38→41 정합
+  dc0a09e #10_5 git 상태 정확 반영
+  3893c5b 책 V1.1 전체 학습
 
-본 세션 미commit 박제 (gitignored 또는 사용자 결정 영역):
-  ?? V1.1 하네스 엔지니어링 완전정복.pdf (1.7MB, 사용자 직접 추가 — gitignore 결정 필요)
-  ?? .claude/scheduled_tasks.lock (임시 파일, gitignore 검토)
-  /Users/sokol/.claude/projects/.../memory/ (메모리 박제 — git 추적 외)
+본 세션 미commit (사용자 결정 영역):
+  ?? V1.1 하네스 엔지니어링 완전정복.pdf (1.7MB)
 ```
 
-**main 머지 가능 여부**: 1 commit + 100% 비파괴적 (문서 박제만, 코드/설정 0 변경). 사용자 명시 후 안전 머지 가능.
+**main 머지 가능 여부**: 7 commit, 100% 비파괴적 (sensor/script/문서 박제만, server·web·db 0 변경). 사용자 명시 후 안전 머지 가능.
 
 ---
 
-## 5. 검증 baseline (본 세션 시작 전)
+## 5. 검증 baseline (본 세션 #10_6 종료 시점)
 
 | 검증 | 결과 |
 |------|------|
-| Regression | **41/41 PASS = 100%** (2026-05-02 09:00 실측, +3 task 묶음 N/O/P 누적) |
-| EDD (runs=2) | **42/44 PASS = 95.45%** (FAIL 2 = `edd-031` web test_coverage / `edd-033` edge_case 동시성 — 의도된 갭) |
+| Regression | **47/47 PASS = 100%** (#10_6 4 묶음 +6 task 누적: cost-tracker, self-diagnose, knowledge-drift wrap, skill-paths-coverage wrap, loop-detection, context-budget, harness-cross-ref) |
+| EDD (runs=2) | 의도된 갭 유지 (edd-031/edd-033) |
 | Drift sensor | exit 0 |
-| sensor-instruction-degradation | 11/11 PASS, WARN 0 |
+| sensor-instruction-degradation | 11/11 PASS, WARN 0 (`.claude/AGENTS.md` 167줄 ≤ 200) |
 | sensor-agent-priority-labels | PASS 7/7 |
-
-본 세션 코드/설정 변경 0건 (책 학습 + 박제만) → 검증 결과 동일.
+| **sensor-harness-self-diagnose** (Ch 23) | **PASS 5 / FAIL 1 (Q1 ratio P1) / SKIP 1 (Q4 사용자 보류)** |
+| sensor-context-budget | PASS 베이스라인 3587 / WARN 전체 10511 (10K 약간 초과 — 누적 정상) |
+| sensor-loop-detection | PASS (Edit 박제 0건 — 첫 가동) |
+| sensor-harness-cross-ref | PASS (분리 4정본 정합) |
+| Skills 20 / Sensors 23 / Hooks 10이벤트 13스크립트 / Knowledge 7 / Agents 7 | 정합 |
 
 ---
 
@@ -153,18 +187,20 @@ cat .claude/knowledge/book-harness-engineering-completion.md | head -50
 
 ## 7. 다음 세션 시작 시 추천 작업 (사용자 명시 후)
 
-**Option A — 책 학습 결과 즉시 적용** (외부 API 0, 추천):
-1. **묶음 R**: NEW P0 #4 (cost-tracker.jsonl) + #6 (sensor-harness-self-diagnose) — 2.5h
-2. **묶음 S**: NEW P0 #5 (sensor-loop-detection) + #10 (5 오케스트레이션 박제) — 1.5h
+**Option A — 자가진단 Q1 정밀화 + Eval 점수 가중치** (외부 API 0):
+1. **묶음 W**: sensor-orchestration-ratio 정밀도 강화 (Q1 FAIL 해소) — 1h
+2. **묶음 X**: BN-#8 Eval 점수 가중치 (이분법 → 0~100 5차원, 책 Ch 20 TaskFlow) — 2h
+   - 큰 baseline 호환성 영향 → 사용자 사전 확인 권장
 
-**Option B — 사용자 결정 후 진행**:
-- NEW P0 #1 MCP 연동 (사용자 결정)
-- NEW P0 #2 모델 티어링 (사용자 보류 해제 시)
-- 책 PDF gitignore 처리 (1.7MB, claude-docs PRIVATE이지만 size 고려)
+**Option B — 보안 보강 (BN-#7 Hooks Semgrep/Snyk)**:
+- **외부 도구 설치 동반** (npm i -g @semgrep/cli 등) — 사용자 결정 필요
 
-**Option C — 사용자 직접 결정 영역**:
-- consolidate-memory stale 11건 archive (J6, 미해소)
-- PLANNING_GRIMOIRE.md §16 인벤토리 갱신
+**Option C — 사용자 직접 결정 영역 (자율 진행 금지)**:
+- **NEW P0 #1 MCP 연동** (Figma/GitHub/Playwright)
+- **NEW P0 #2 모델 티어링** (Opus/Sonnet/Haiku, 책 40~60% 절감 강력 권장 vs 0-1 보류)
+- **NEW-A**: EDD 의도된 갭 2건 해소 (server·web 코드 변경 동반)
+- **J8**: claude-docs develop → main 머지 (현재 + 7 commit, 100% 비파괴적)
+- **PDF**: V1.1 하네스 엔지니어링 PDF (1.7MB) gitignore vs 박제 결정
 
 ---
 
