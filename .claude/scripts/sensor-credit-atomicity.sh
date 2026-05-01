@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # sensor-credit-atomicity.sh — 결제·환불·CreditLog 원자성 정합성 sensor
 #
-# 동기 (Fowler "Requisite Variety" 갭, HARNESS §15.5 + §16):
+# 동기 (Fowler "Requisite Variety" 갭, research/HARNESS_FIELD_PATTERNS_4.md §15.5 + research/HARNESS_ENGINEERING.md §16):
 #   - ProjectGrimoire 도메인의 결제·환불·크레딧은 가장 위험한 데이터 흐름
 #   - 기존 sensor 8종 중 결제 영역 sensor 부재 (성숙도 진단 3.0/5)
 #   - 본 sensor는 코드 정합성만 검사 (실 DB 쿼리는 P2)

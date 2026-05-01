@@ -20,7 +20,7 @@ effort: low
 
 # Orchestration Decision — 메인 직접 vs subagent 위임 자동 분류
 
-> **근거**: `research/HARNESS_ENGINEERING.md` §15.7 위임 가치 가이드라인 (2026-04-26 #9 신설). sensor-orchestration-ratio jsonl 사후 측정의 **사전 가이드** 역할. 패턴 1 KPI 추적용.
+> **근거**: `research/HARNESS_FIELD_PATTERNS_4.md` §15.7 위임 가치 가이드라인 (2026-04-26 #9 신설). sensor-orchestration-ratio jsonl 사후 측정의 **사전 가이드** 역할. 패턴 1 KPI 추적용.
 
 ## 언제 발동하는가
 
@@ -145,7 +145,7 @@ Agent(
 - 위치: 세션 메모리 또는 sensor-hits.jsonl
 
 ## 관련 정본
-- `research/HARNESS_ENGINEERING.md` §15.7 — 위임 가치 가이드라인 정본
+- `research/HARNESS_FIELD_PATTERNS_4.md` §15.7 — 위임 가치 가이드라인 정본
 - `.claude/AGENTS.md` §2.2 — 메인 Claude 오케스트레이션 규칙
 - `.claude/knowledge/agent-interaction-matrix.md` — 7×7 핸드오프 매트릭스
 - `.claude/scripts/sensor-orchestration-ratio.sh` — 사후 측정

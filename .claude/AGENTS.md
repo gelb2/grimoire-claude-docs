@@ -64,7 +64,7 @@
 - 사용자가 "직접 해" 명시 지시
 - subagent 호출 비용이 작업 크기 대비 비효율적 (15초 미만 작업)
 
-근거: `research/HARNESS_ENGINEERING.md` §15.1 (패턴 1 — 오케스트레이션 분리) + §15.5 (패턴 1+3 시너지) + §16 (ProjectGrimoire 채택 결정).
+근거: `research/HARNESS_FIELD_PATTERNS_4.md` §15.1 (패턴 1 — 오케스트레이션 분리) + §15.5 (패턴 1+3 시너지) + `research/HARNESS_ENGINEERING.md` §16 (ProjectGrimoire 채택 결정).
 
 ### 2.2.1 작업 시작 시 자가 분류 의무 (2026-05-02 묶음 J K1 신설)
 
