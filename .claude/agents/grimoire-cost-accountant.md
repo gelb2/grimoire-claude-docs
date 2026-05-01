@@ -298,3 +298,6 @@ cost-accountant는 원가 계산 전담이라 Skills 직접 활용은 드뭅니�
 - 변경 이력 1줄 박제 (date — agent — 변경 요약)
 
 본 파일 미갱신 시 다른 agent가 통합 단계에서 인터페이스 불일치로 깨짐.
+
+## 자동 검증 도구 (M NEW-11)
+cost-margin / shared-contracts / eval-runner — 작업 완료 직전 일괄 (`.claude/scripts/sensor-{cost-margin,shared-contracts}.sh` + `eval/scripts/eval-runner.sh`).

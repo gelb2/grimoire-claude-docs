@@ -162,7 +162,7 @@ launchctl list | grep grimoire
 
 ---
 
-## 3. 센서 시스템 (17개 — 2026-05-01 #10_2 묶음 G H4 갱신)
+## 3. 센서 시스템 (18개 — 2026-05-02 묶음 M NEW-10 갱신)
 
 > "AI가 '다 했습니다'라고 말하는 것은 증거가 아니다. 센서 스크립트의 stdout만이 증거다."
 
@@ -181,6 +181,7 @@ launchctl list | grep grimoire
 | `.claude/scripts/sensor-deploy-drift.sh` (2026-04-26 #9 B) | server/web 배포 동기화 | develop ↔ origin ↔ main 정합 + dev/prod health curl. 운영 image SHA 비교는 권한 차단으로 안내만 |
 | `.claude/scripts/sensor-cost-margin.sh` (2026-04-26 #9 C) | §0 원가 안전배수 | ai-cost-table.md 12 항목 안전배수 ≥3.0× 자동 검증 + 갱신일 stale + cost-accountant 호출 권장 |
 | **`.claude/scripts/sensor-eval-trend.sh` (2026-05-01 #10_2 H4 신설)** | **eval 시계열 추세** | **regression + EDD 30일 평균 / 7일 mean slope / 최근 10회 FAIL 빈도. ≥0.95 PASS / 0.85~0.95 또는 회귀 추세 또는 FAIL ≥3 WARN / <0.85 또는 stale 7일 FAIL** |
+| **`.claude/scripts/sensor-knowledge-drift.sh` (2026-05-02 묶음 M NEW-10 신설)** | **knowledge 디렉토리 정합** | README 인덱스 + AUTOMATION §5 카운트 + orphan 식별. 첫 실측에서 drift 4건 발견·해소 |
 
 ### 에이전트 규칙
 
@@ -250,16 +251,19 @@ bash .claude/scripts/update-harness-inventory.sh --apply    # §14.2 Skills + §
 
 ---
 
-## 5. knowledge 디렉토리 (4개 — 2026-04-26 기준)
+## 5. knowledge 디렉토리 (6개 — 2026-05-02 묶음 M NEW-10 갱신)
 
-`.claude/knowledge/` — Progressive Disclosure 지식 베이스. 에이전트가 필요 시 Read로 명시 호출.
+`.claude/knowledge/` — Progressive Disclosure 지식 베이스. 에이전트가 필요 시 Read로 명시 호출. 자동 검증: `sensor-knowledge-drift.sh` (README 인덱스 정합 + AUTOMATION 카운트 + orphan 식별).
 
 | 파일 | 용도 |
 |------|------|
 | `README.md` | 디렉토리 설명 + 사용 규칙 |
 | `agent-system.md` | 에이전트 인벤토리 + 오케스트레이션 상세 (역할 개요) |
-| **`agent-interaction-matrix.md` (2026-04-26 신설)** | **7×7 핸드오프 매트릭스 + 산출물 정합 + 트리거 규칙 + 금지 조합** |
+| `agent-interaction-matrix.md` (2026-04-26 신설) | 7×7 핸드오프 매트릭스 + 산출물 정합 + 트리거 규칙 + 금지 조합 |
 | `sensors.md` | 센서 스크립트 사용법 + 결과 해석 |
+| **`book-harness-engineering-completion.md` (2026-04-30 #10 D1 신설)** | 책 Ch 08/15/16 학습 박제 + 운영 데이터 누적 (L2) |
+| **`visual-canon-inventory.md` (2026-04-30 Phase B 분할)** | 사슴악마 정본 4 영역 + 6 카테고리 불일치 |
+| **`researcher-scope.md` (2026-04-30 Phase B 분할)** | researcher 자료 계층 + 매일 sweep 대상 |
 
 ---
 

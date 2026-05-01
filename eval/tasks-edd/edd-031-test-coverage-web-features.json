@@ -1,0 +1,12 @@
+{
+  "id": "regression-031",
+  "name": "web features별 .test.ts 또는 .test.tsx 페어 (커버리지 55% 정합)",
+  "category": "test_coverage",
+  "source_session": "20260502 묶음 M NEW-9 — category 균형 보강",
+  "prompt": "CLAUDE.md §6 테스트 전략: web 커버리지 55%. 본 task는 grimoire-web/src/features/**/*.{ts,tsx}마다 spec/test 페어 확인 (최소 30% 페어 — features는 React 컴포넌트라 모든 파일에 spec 필요는 아님).",
+  "eval_criteria": [
+    {"type": "command", "command": "T=$(find /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-web/src/features -name '*.ts' -o -name '*.tsx' 2>/dev/null | grep -v -E '\\.test\\.|\\.spec\\.' | wc -l | tr -d ' '); S=$(find /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-web/src/features -name '*.test.*' -o -name '*.spec.*' 2>/dev/null | wc -l | tr -d ' '); [ $T -eq 0 ] || [ $(awk -v s=$S -v t=$T 'BEGIN{print (s/t >= 0.3) ? 1 : 0}') -eq 1 ]", "desc": "features 파일 대비 test 페어 ≥ 30%"}
+  ],
+  "threshold": 1.0,
+  "runs": 1
+}
