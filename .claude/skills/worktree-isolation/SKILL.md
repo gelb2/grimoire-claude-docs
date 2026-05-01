@@ -5,6 +5,7 @@ argument-hint: "[필수: start <branch> | finish | discard | list]"
 disable-model-invocation: true
 allowed-tools: Read, Bash, Grep, Glob, Edit, Write
 effort: medium
+trigger-mode: keyword (triggers field) — paths 미적용 명시 (NEW-16 J4 패턴)
 ---
 
 # Worktree Isolation — Edit 폭주 작업 안전망

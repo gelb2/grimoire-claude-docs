@@ -4,6 +4,7 @@ description: memory/MEMORY.md 인덱스 + project_remaining_tasks.md + 최근 �
 disable-model-invocation: true
 allowed-tools: Bash, Read
 effort: low
+trigger-mode: keyword (triggers field) — paths 미적용 명시 (NEW-16 J4 패턴)
 ---
 
 # Memory Status — 메모리 현황 점검

@@ -163,7 +163,7 @@ launchctl list | grep grimoire
 
 ---
 
-## 3. 센서 시스템 (18개 — 2026-05-02 묶음 M NEW-10 갱신)
+## 3. 센서 시스템 (19개 — 2026-05-02 묶음 O NEW-16 갱신)
 
 > "AI가 '다 했습니다'라고 말하는 것은 증거가 아니다. 센서 스크립트의 stdout만이 증거다."
 
@@ -183,6 +183,7 @@ launchctl list | grep grimoire
 | `.claude/scripts/sensor-cost-margin.sh` (2026-04-26 #9 C) | §0 원가 안전배수 | ai-cost-table.md 12 항목 안전배수 ≥3.0× 자동 검증 + 갱신일 stale + cost-accountant 호출 권장 |
 | **`.claude/scripts/sensor-eval-trend.sh` (2026-05-01 #10_2 H4 신설)** | **eval 시계열 추세** | **regression + EDD 30일 평균 / 7일 mean slope / 최근 10회 FAIL 빈도. ≥0.95 PASS / 0.85~0.95 또는 회귀 추세 또는 FAIL ≥3 WARN / <0.85 또는 stale 7일 FAIL** |
 | **`.claude/scripts/sensor-knowledge-drift.sh` (2026-05-02 묶음 M NEW-10 신설)** | **knowledge 디렉토리 정합** | README 인덱스 + AUTOMATION §5 카운트 + orphan 식별. 첫 실측에서 drift 4건 발견·해소 |
+| **`.claude/scripts/sensor-skill-paths-coverage.sh` (2026-05-02 묶음 O NEW-16 신설)** | **Skills frontmatter 일관성** | triggers/disable + paths/trigger-mode + effort 정합 검증. 첫 실측 WARN 6 → 0 (J4 패턴 박제) |
 
 ### 에이전트 규칙
 
@@ -238,6 +239,18 @@ bash .claude/scripts/generate-report-template.sh --report=PLANNER_REPORT --apply
 - statusline.sh는 jsonl 캐시만 읽으므로 호출 빈도에 영향 없음
 
 신규 sensor (sensor-eval-trend / sensor-instruction-degradation 등)도 auto-task wrap되면 동일 빈도 패턴으로 수렴 예상.
+
+### 4.3 작업 시작 자가 분류 박제 (2026-05-02 묶음 O NEW-17 신설)
+
+`.claude/scripts/orchestration-classify.sh` — 작업 시작 시 메인 Claude 자가 분류 결과를 `.claude/state/orchestration-classifications.jsonl`에 박제. §15.7 위임 가치 매트릭스 합치율 자동 적재.
+
+```bash
+bash .claude/scripts/orchestration-classify.sh \
+  --task "묶음 X" --time "2h" --domain "single .claude/" \
+  --decision "main" --reason "..."
+```
+
+매트릭스 휴리스틱 자가 평가 → 합치 ✅ / 부적합 ⚠️ 자동 판정. sensor-orchestration-ratio jsonl과 양 채널 합치율 측정.
 
 ### 4.2 HARNESS 인벤토리 자동 갱신 (2026-05-02 묶음 I NEW-4 신설)
 
