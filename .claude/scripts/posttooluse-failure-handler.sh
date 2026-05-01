@@ -145,6 +145,41 @@ if is_next_font_failure:
     print(json.dumps({'additionalContext': msg}))
     sys.exit(0)
 
+# Polar webhook signature 실패 (2026-05-02 묶음 P NEW-20 추가)
+is_polar_webhook_failure = is_bash and (
+    'webhook' in command.lower() and
+    ('signature' in error.lower() or 'invalid signature' in error.lower() or 'POLAR_WEBHOOK_SECRET' in error)
+)
+if is_polar_webhook_failure:
+    msg = ('Polar webhook signature 검증 실패. 환경변수 POLAR_WEBHOOK_SECRET 확인 + '
+           'docs/api-contract.md "Polar webhook" 섹션의 signature 헤더 박제 검증. '
+           'sensor-credit-atomicity.sh 강제 실행 권장. error: ' + error[:120])
+    print(json.dumps({'additionalContext': msg}))
+    sys.exit(0)
+
+# git push --force 차단 (2026-05-02 묶음 P NEW-20 추가)
+is_force_push = is_bash and (
+    'git push' in command and ('--force' in command or '-f ' in command)
+)
+if is_force_push:
+    msg = ('git push --force 감지 — main 브랜치 force push 절대 금지 (.githooks/AGENTS.md §1). '
+           '대신 revert commit 또는 develop 브랜치에서 새 commit 작성 권장. '
+           'CLAUDE.md §0 ZERO-TOLERANCE 준수 — 사용자 명시 승인 없이 진행 불가.')
+    print(json.dumps({'decision': 'block', 'reason': msg, 'additionalContext': msg}))
+    sys.exit(0)
+
+# Azure 인증 실패 (2026-05-02 묶음 P NEW-20 추가)
+is_az_auth_failure = is_bash and (
+    ('az login' in command or 'az ' in command) and
+    ('authentication' in error.lower() or 'unauthorized' in error.lower() or 'AADSTS' in error)
+)
+if is_az_auth_failure:
+    msg = ('Azure 인증 실패 감지. `az login` 재실행 + 구독 확인 (`az account show`). '
+           'docker login mcr.microsoft.com 별도 필요. macos-tcc-handling skill 참조 (Docker credsStore=osxkeychain). '
+           'error: ' + error[:120])
+    print(json.dumps({'additionalContext': msg}))
+    sys.exit(0)
+
 # Chrome 외 도구 실패: 적재만, 추가 액션 없음
 sys.exit(0)
 PYEOF

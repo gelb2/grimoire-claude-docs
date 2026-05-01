@@ -137,8 +137,10 @@
 - **자동 갱신**: update-harness-inventory.sh (2026-05-02 NEW-4) — pre-commit hook 통합으로 새 자산 추가 시 §14.X 카운트 자동 갱신 (drift sensor 사후 FAIL 패턴 사전 차단)
 
 ### Ch 15 — EDD 운영 데이터
-- **Regression**: 33 task / 30일 평균 96.78% / 4-30 이후 100% 유지 다회 달성 (sensor-eval-trend WARN의 회귀 빈도는 단일 task 노이즈 제외 후 자연 감소)
-- **EDD (runs=2)**: 33/33 PASS 유지 (4-30 이후 단일 회귀 0건)
+- **Regression**: 38 task / 30일 평균 97%+ / 묶음 M 후 100% 유지 (sensor-eval-trend PASS)
+- **EDD (runs=5, 2026-05-02 NEW-18 첫 측정)**: 41 task (38 regression + 3 EDD-only) / 39 PASS / 95.12%
+  - tasks-edd/edd-031 (web features test 페어 30%) + tasks-edd/edd-033 (Polar idempotency) → **의도된 갭 EDD 분리** (regression baseline 노이즈 차단, 코드 우선 박제 후 promote 가치)
+  - 38 regression task는 EDD 5회에서도 100% PASS (안정성 입증)
 - **LLM-as-Judge 가드**: ₩2K/일 ₩50K/월 박제 (실제 SDK 연동은 사용자 명시 보류)
 - **시계열 sensor**: sensor-eval-trend (2026-05-01 H4 신설) — 30일 mean / 7일 slope / 최근 10회 FAIL 빈도 추적
 
