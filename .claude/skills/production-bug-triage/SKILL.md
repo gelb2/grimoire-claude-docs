@@ -20,6 +20,7 @@ triggers:
   - "안 되요"
   - "느리다"
 effort: high
+trigger-mode: keyword (triggers field) — paths 미적용 명시 (NEW-16 J4 패턴)
 ---
 
 # 운영 버그 트리아지 — 추정 금지 프로토콜

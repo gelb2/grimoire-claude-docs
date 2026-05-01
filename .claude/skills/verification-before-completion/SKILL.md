@@ -21,6 +21,7 @@ triggers:
   - "검증 통과"
   - "이상 없음"
 effort: high
+trigger-mode: keyword (triggers field) — paths 미적용 명시 (NEW-16 J4 패턴)
 ---
 
 # Verification Before Completion — 완료 선언 전 실측 증거 강제

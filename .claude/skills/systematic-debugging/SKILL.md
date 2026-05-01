@@ -4,6 +4,7 @@ description: 복잡한 회귀(다중 원인 후보 / 재현 어려움 / producti
 allowed-tools: Read, Bash, Grep, Glob, Edit, Write
 disable-model-invocation: true
 effort: high
+trigger-mode: keyword (triggers field) — paths 미적용 명시 (NEW-16 J4 패턴)
 triggers:
   - "원인이 뭐"
   - "왜 안 되"
