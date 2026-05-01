@@ -94,17 +94,24 @@ if [ "$FAIL" -gt 0 ]; then
   for f in "${FAIL_FILES[@]}"; do
     echo "  - $f"
   done
-  exit 2
+  RESULT_TAG="FAIL"
+  RC=2
 elif [ "$WARN" -gt 0 ]; then
   echo ""
   echo "⚠️ WARN 파일 (분할 권장 — instruction degradation 위험):"
   for f in "${WARN_FILES[@]}"; do
     echo "  - $f"
   done
-  exit 1
+  RESULT_TAG="WARN"
+  RC=1
 else
   echo "✅ 모든 instruction 파일이 임계값 이하 (책 Ch 08 정합)"
   echo ""
   echo "(면제 카테고리: research/ · reports/ · eval/results/ · PLANNING_GRIMOIRE.md · DOC_MAP.html · HANDOVER_*.md — 본 sensor 검사 대상 아님)"
-  exit 0
+  RESULT_TAG="PASS"
+  RC=0
 fi
+
+# sensor-log 박제 (2026-05-02 H8)
+bash "$(dirname "$0")/sensor-log.sh" "sensor-instruction-degradation" "$RESULT_TAG" "PASS=$PASS WARN=$WARN FAIL=$FAIL" 2>/dev/null || true
+exit $RC

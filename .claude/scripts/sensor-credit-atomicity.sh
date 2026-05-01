@@ -123,17 +123,22 @@ fi
 [ "$QUIET" -eq 0 ] && echo ""
 [ "$QUIET" -eq 0 ] && echo "PASS: $PASS_COUNT / FAIL: $FAIL_COUNT / WARN: $WARN_COUNT"
 
+CA_LOG="$(dirname "$0")/sensor-log.sh"
 if [ "$FAIL_COUNT" -gt 0 ]; then
   if [ "$STRICT" -eq 1 ]; then
     [ "$QUIET" -eq 0 ] && echo "[RESULT] FAIL (strict mode) — 결제·환불 원자성 위반"
+    bash "$CA_LOG" "sensor-credit-atomicity" FAIL "FAIL=$FAIL_COUNT WARN=$WARN_COUNT strict" 2>/dev/null || true
     exit 1
   fi
   [ "$QUIET" -eq 0 ] && echo "[RESULT] FAIL — 즉시 검토 권장 (strict 미사용으로 exit 0)"
+  bash "$CA_LOG" "sensor-credit-atomicity" FAIL "FAIL=$FAIL_COUNT WARN=$WARN_COUNT non-strict" 2>/dev/null || true
   exit 0
 elif [ "$WARN_COUNT" -gt 0 ]; then
   [ "$QUIET" -eq 0 ] && echo "[RESULT] WARN — $WARN_COUNT 건 검토"
+  bash "$CA_LOG" "sensor-credit-atomicity" WARN "WARN=$WARN_COUNT" 2>/dev/null || true
   exit 2
 fi
 
 [ "$QUIET" -eq 0 ] && echo "[RESULT] PASS — 결제·환불·크레딧 원자성 정합 OK"
+bash "$CA_LOG" "sensor-credit-atomicity" PASS "PASS=$PASS_COUNT" 2>/dev/null || true
 exit 0

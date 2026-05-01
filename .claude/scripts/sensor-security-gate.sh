@@ -378,14 +378,18 @@ echo "실행 시간: ${DURATION}s"
 if [ $FAIL_COUNT -eq 0 ]; then
   if [ $WARN_COUNT -eq 0 ]; then
     echo "=== 보안 게이트 PASS (배포 허용) ==="
-    exit 0
+    RESULT_TAG="PASS"; RC=0
   else
     echo "=== 보안 게이트 PASS WITH WARNINGS ==="
     echo "WARN 항목: ${WARN_STEPS[*]}"
-    exit 0
+    RESULT_TAG="WARN"; RC=0
   fi
 else
   echo "=== 보안 게이트 FAIL (배포 차단) ==="
   echo "FAIL 항목: ${FAIL_STEPS[*]}"
-  exit 1
+  RESULT_TAG="FAIL"; RC=1
 fi
+
+# sensor-log 박제 (2026-05-02 H8)
+bash "$(dirname "$0")/sensor-log.sh" "sensor-security-gate" "$RESULT_TAG" "FAIL=$FAIL_COUNT WARN=$WARN_COUNT" 2>/dev/null || true
+exit $RC

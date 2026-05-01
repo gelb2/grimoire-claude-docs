@@ -226,6 +226,17 @@ bash .claude/scripts/generate-report-template.sh --report=PLANNER_REPORT --apply
 
 생성 파일에는 `<!-- AUTO-GENERATED from .claude/shared-contracts.md -->` 헤더 + `YYYY-MM-DD → 오늘` 치환 적용.
 
+### 4.2 HARNESS 인벤토리 자동 갱신 (2026-05-02 묶음 I NEW-4 신설)
+
+`.claude/scripts/update-harness-inventory.sh` — 실측 자산 카운트 → `research/HARNESS_ENGINEERING.md` §14.X 자동 갱신. 새 sensor/skill 추가 후 HARNESS 카운트 갱신을 잊어 regression-006이 사후 FAIL을 잡는 패턴을 사전 차단.
+
+```bash
+bash .claude/scripts/update-harness-inventory.sh           # dry-run (drift 표시)
+bash .claude/scripts/update-harness-inventory.sh --apply    # §14.2 Skills + §14.4 Sensors 자동 갱신
+```
+
+근거: 2026-05-01 sensor-eval-trend 첫 실측에서 최근 10회 FAIL 4건 모두 동일 패턴 — 새 sensor/skill 추가 후 HARNESS §14.X 카운트 미갱신 → drift sensor가 사후 FAIL을 잡음. 본 generator는 commit 전 1회 실행으로 사전 해소.
+
 ---
 
 ## 5. knowledge 디렉토리 (4개 — 2026-04-26 기준)

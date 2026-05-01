@@ -243,4 +243,9 @@ printf '{"ts":"%s","files":%s,"main_edits":%s,"main_writes":%s,"main_total":%s,"
 [ "$QUIET" -eq 0 ] && echo "[기록] $RATIO_FILE"
 [ "$QUIET" -eq 0 ] && echo "=== 끝 ==="
 
+# sensor-log 박제 (2026-05-02 H8) — RESULT_STATUS는 PASS/WARN/FAIL/SKIP 중
+LOG_TAG="$RESULT_STATUS"
+[ "$LOG_TAG" = "SKIP" ] && LOG_TAG="PASS"  # SKIP은 PASS로 간주 (실측 불가, 데이터 없음)
+bash "$(dirname "$0")/sensor-log.sh" "sensor-orchestration-ratio" "$LOG_TAG" "ratio=$RATIO main=$MAIN_TOTAL task=$TASK_CALLS days=$DAYS" 2>/dev/null || true
+
 exit $EXIT_CODE

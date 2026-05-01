@@ -62,15 +62,22 @@ echo "PASS: $((7 - WARN - FAIL)) / WARN: $WARN / FAIL: $FAIL (총 7 에이전트
 if [ "$FAIL" -gt 0 ]; then
   echo ""
   echo "❌ FAIL 에이전트 (즉시 수정 필요)"
-  exit 2
+  RESULT_TAG="FAIL"
+  RC=2
 elif [ "$WARN" -gt 0 ]; then
   echo ""
   echo "⚠️ WARN 에이전트 (SHOULD 라벨 보강 권장 — GMP v2.2 정합):"
   for a in "${WARN_AGENTS[@]}"; do
     echo "  - $a"
   done
-  exit 1
+  RESULT_TAG="WARN"
+  RC=1
 else
   echo "✅ 모든 에이전트 GMP v2.2 라벨 정합"
-  exit 0
+  RESULT_TAG="PASS"
+  RC=0
 fi
+
+# sensor-log 박제 (2026-05-02 H8 — 명시 result 모드, exit code 컨벤션 충돌 회피)
+bash "$(dirname "$0")/sensor-log.sh" "sensor-agent-priority-labels" "$RESULT_TAG" "PASS=$((7-WARN-FAIL)) WARN=$WARN FAIL=$FAIL" 2>/dev/null || true
+exit $RC

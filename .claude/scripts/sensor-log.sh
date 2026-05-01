@@ -1,10 +1,16 @@
 #!/usr/bin/env bash
 # sensor-log.sh — sensor 실행 결과를 jsonl로 적재 (hit-rate 측정 인프라)
 #
-# 사용:
-#   bash sensor-log.sh <sensor-name> <exit-code> [<extra-info>]
+# 사용 (2가지 모드):
+#   bash sensor-log.sh <sensor-name> <exit-code> [<extra>]    # exit code 모드 (0=PASS / 1=FAIL / 2=WARN)
+#   bash sensor-log.sh <sensor-name> <PASS|WARN|FAIL> [<extra>]  # 명시 result 모드 (2026-05-02 H8 추가)
+#
+# 사유 (H8): 일부 sensor는 exit code 컨벤션이 다름 (1=WARN, 2=FAIL — agent-priority-labels / eval-trend 등).
+# 명시 result 모드를 사용하면 exit code 매핑 충돌을 회피. 기존 호출자 (sensor-cost-margin / sensor-deploy-drift)는 호환.
+#
 # 예:
-#   bash sensor-log.sh sensor-secret-leak 0 "FAIL=0 WARN=0"
+#   bash sensor-log.sh sensor-secret-leak 0 "FAIL=0 WARN=0"      # exit 0 → PASS
+#   bash sensor-log.sh sensor-eval-trend WARN "회귀 30%"          # 명시 WARN
 #
 # 적재 위치:
 #   .claude/state/sensor-hits.jsonl (한 줄 1 이벤트)
@@ -38,11 +44,23 @@ fi
 # 새 이벤트 append
 TS=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 case "$EXIT_CODE" in
-  0) RESULT="PASS" ;;
-  1) RESULT="FAIL" ;;
-  2) RESULT="WARN" ;;
-  *) RESULT="UNKNOWN" ;;
+  PASS|WARN|FAIL|UNKNOWN)  # 명시 result 모드 (H8)
+    RESULT="$EXIT_CODE"
+    EXIT_CODE_NUM="null"  # JSON null (exit code 미상)
+    ;;
+  0) RESULT="PASS"; EXIT_CODE_NUM="$EXIT_CODE" ;;
+  1) RESULT="FAIL"; EXIT_CODE_NUM="$EXIT_CODE" ;;
+  2) RESULT="WARN"; EXIT_CODE_NUM="$EXIT_CODE" ;;
+  *)
+    # 숫자가 아니면 null + UNKNOWN
+    if [ "$EXIT_CODE" = "?" ] || ! [ "$EXIT_CODE" -eq "$EXIT_CODE" ] 2>/dev/null; then
+      RESULT="UNKNOWN"; EXIT_CODE_NUM="null"
+    else
+      RESULT="UNKNOWN"; EXIT_CODE_NUM="$EXIT_CODE"
+    fi
+    ;;
 esac
+EXIT_CODE="$EXIT_CODE_NUM"
 
 # extra의 큰따옴표는 백슬래시 이스케이프
 EXTRA_ESCAPED=$(printf '%s' "$EXTRA" | sed 's/\\/\\\\/g; s/"/\\"/g')

@@ -128,7 +128,11 @@ echo "── 종합 ──"
 # 가장 나쁜 상태로 종합 판정
 WORST=$(( REG_RC > EDD_RC ? REG_RC : EDD_RC ))
 case "$WORST" in
-  0) echo "✅ PASS — 회귀/EDD 모두 안정"; exit 0 ;;
-  1) echo "⚠️ WARN — 추세 주의 (조기 회귀 신호 가능)"; exit 1 ;;
-  2) echo "❌ FAIL — 회귀/stale 발생"; exit 2 ;;
+  0) echo "✅ PASS — 회귀/EDD 모두 안정"; RESULT_TAG="PASS"; RC=0 ;;
+  1) echo "⚠️ WARN — 추세 주의 (조기 회귀 신호 가능)"; RESULT_TAG="WARN"; RC=1 ;;
+  2) echo "❌ FAIL — 회귀/stale 발생"; RESULT_TAG="FAIL"; RC=2 ;;
 esac
+
+# sensor-log 박제 (2026-05-02 H8)
+bash "$(dirname "$0")/sensor-log.sh" "sensor-eval-trend" "$RESULT_TAG" "reg_rc=$REG_RC edd_rc=$EDD_RC worst=$WORST" 2>/dev/null || true
+exit $RC

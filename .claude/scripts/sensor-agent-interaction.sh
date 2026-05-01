@@ -80,11 +80,15 @@ echo ""
 echo "── 종합 ──"
 if [ "$FAIL" -gt 0 ]; then
   echo "FAIL agent-interaction-matrix 정합 ($FAIL건 / WARN $WARN건)"
-  exit 2
+  RESULT_TAG="FAIL"; RC=2
 elif [ "$WARN" -gt 0 ]; then
   echo "WARN agent-interaction-matrix 정합 ($WARN건)"
-  exit 1
+  RESULT_TAG="WARN"; RC=1
 else
   echo "PASS agent-interaction-matrix 정합"
-  exit 0
+  RESULT_TAG="PASS"; RC=0
 fi
+
+# sensor-log 박제 (2026-05-02 H8)
+bash "$(dirname "$0")/sensor-log.sh" "sensor-agent-interaction" "$RESULT_TAG" "WARN=$WARN FAIL=$FAIL" 2>/dev/null || true
+exit $RC
