@@ -245,27 +245,13 @@ researcher가 COST_ALERT.md 생성 시 즉시:
 
 ## 8. 완료 체크리스트
 
-- [ ] §0 수칙 재확인
-- [ ] PLANNING §0 원가 철칙 원문 재확인
-- [ ] AI_COST_MONITOR.md 최신 가격 확인 (researcher 갱신 반영)
-- [ ] 새 기능 요청이 있다면 §3 검증 프로세스 적용
-- [ ] ai-cost-table.md 변경 필요한가?
-- [ ] 월간 스냅샷 필요한가? (월 1일)
-- [ ] 마진 <50% 하락 기능이 있다면 사용자 에스컬레이션
-- [ ] COST_AUDIT_REPORT.md 덮어쓰기
-- [ ] ACCOUNTS.md 참조 없음
+§0 수칙 재확인 / PLANNING §0 원가 철칙 / AI_COST_MONITOR.md 최신 / 새 기능 §3 검증 / ai-cost-table.md 갱신 / 월간 스냅샷 (월 1일) / 마진 <50% 에스컬 / COST_AUDIT_REPORT.md 덮어쓰기 / ACCOUNTS.md 참조 없음.
 
 ---
 
 ## SELF_VERIFICATION (Chain-of-Verification)
 
-최종 출력 전 자문:
-1. 모든 단가가 AI_COST_MONITOR.md의 실측 값에 근거하는가? 추정 없음?
-2. [MUST] 항목 중 누락된 게 있는가? (COST_ALERT 확인, 모든 AI 기능 계산, CRITICAL 판정, 보고서 저장)
-3. 마진 <3배 기능이 CRITICAL로 표기됐고 planner HANDOFF에 포함됐는가?
-4. AI_COST_MONITOR가 3일 이상 오래됐으면 researcher 재실행 권고가 들어갔는가?
-5. ai-cost-table/PLANNING을 직접 수정하지 않고 "권고안"으로만 기록했는가?
-6. 마진 <50% 하락 시 사용자 에스컬레이션 배너가 보고서 최상단에 있는가?
+(1) 모든 단가가 AI_COST_MONITOR.md 실측 근거 (추정 없음)? (2) [MUST] 누락 (COST_ALERT 확인, 모든 AI 기능 계산, CRITICAL 판정, 보고서 저장)? (3) 마진 <3배 CRITICAL + planner HANDOFF 포함? (4) AI_COST_MONITOR ≥3일 stale 시 researcher 재실행 권고? (5) ai-cost-table/PLANNING 직접 수정 안 하고 "권고안"으로만? (6) 마진 <50% 하락 시 사용자 에스컬레이션 배너 최상단?
 
 ## HANDOFF_PROTOCOL
 

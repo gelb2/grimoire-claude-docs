@@ -217,6 +217,30 @@ P0~P1 구현 후보:
 
 **라이선스 주의**: MIT지만 패키지 그대로 install 시 167k의 범용 규칙이 ProjectGrimoire 도메인 규칙과 충돌 가능. **선별적 이식 권장**.
 
+#### 7.1.1 차용 현황 + 미차용 검토 (2026-05-02 묶음 Q NEW-21)
+
+**이미 차용 완료** (4건):
+| Skill | 차용 시점 | ProjectGrimoire 위치 |
+|---|---|---|
+| `verification-before-completion` | 4-25 #5 | `.claude/skills/verification-before-completion/` |
+| `writing-plans` | 4-25 #8 | `.claude/skills/writing-plans/` |
+| `systematic-debugging` (v5.0.7) | 4-27 #9 | `.claude/skills/systematic-debugging/` |
+| `using-git-worktrees` → `worktree-isolation` | 4-27 #9 F | `.claude/skills/worktree-isolation/` |
+
+**미차용 평가** (8건):
+| Skill | 가치 | 결정 |
+|---|---|---|
+| `dispatching-parallel-agents` | **P0** — multi-domain 작업 시 patterns. orchestration-decision Skill 보완 가치. 본 세션 메인 직접 100%지만 향후 server+web 동시 작업 대비 | 사용자 결정 J15 |
+| `executing-plans` | **P0** — batch 실행 + 사용자 체크포인트. eval/sensor 게이트로 부분 적용했으나 사용자 협업 명시 가치 | 사용자 결정 J16 |
+| `subagent-driven-development` | **P0** — 2-stage review (spec → quality). qa 에이전트 체인과 결합 가치. shared-contracts §4 DEV_REPORT 패턴과 정합 | 사용자 결정 J17 |
+| `test-driven-development` | P1 — RED-GREEN-REFACTOR. server 60%/web 55% 커버리지 정책 + .spec.ts 강제로 부분 적용 (Skill 박제는 over-engineering 가능) | 보류 |
+| `brainstorming` | P1 — Socratic refinement. planner 에이전트가 일부 수행 | 보류 |
+| `finishing-a-development-branch` | P1 — `.githooks/AGENTS.md §1` 머지 흐름과 중복 | 보류 |
+| `requesting-code-review` / `receiving-code-review` | P2 — 1인 운영, ultrareview로 보완 | 보류 |
+| `writing-skills` | P2 — 우리가 이미 `.claude/skills/` 20개 운영, 메타 가이드는 자체 박제 충분 | 보류 |
+
+**P0 3건 (J15/J16/J17)**: 사용자 결정 시 묶음 R로 차용 진행 가능 (외부 API 0, ~3시간).
+
 ### 7.2 [Yeachan-Heo/oh-my-claudecode](https://github.com/Yeachan-Heo/oh-my-claudecode) — 31.4k stars, MIT (한국 개발자, 2026-04-27 갱신: 31.1k → 31.4k, v4.13.4 2026-04-24)
 
 **정체성**: "Teams-first Multi-agent orchestration for Claude Code." "Don't learn Claude Code. Just use OMC."

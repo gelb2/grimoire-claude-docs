@@ -61,3 +61,7 @@ credentials.json
 *.log
 *.tmp
 .cache/
+
+# eval baseline SQLite (자동 재생성, csv가 정본)
+eval/results/baseline.db
+eval/results/baseline.db-journal
