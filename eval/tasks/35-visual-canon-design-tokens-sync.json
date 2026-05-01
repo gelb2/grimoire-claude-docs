@@ -1,0 +1,14 @@
+{
+  "id": "regression-035",
+  "name": "design-tokens.md ↔ theme-spec.md ↔ visual-canon-keeper 정본 sync",
+  "category": "visual_canon",
+  "source_session": "20260502 묶음 P NEW-19 — visual_canon 카테고리 균형 보강",
+  "prompt": "사슴악마 시각 정본의 토큰 영역 정합: (a) design-tokens.md server↔web 바이트 동일 (b) theme-spec.md server↔web 바이트 동일 (c) visual-canon-keeper 에이전트 .md가 이 두 정본 명시 참조.",
+  "eval_criteria": [
+    {"type": "command", "command": "diff -q /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/docs/design-tokens.md /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-web/docs/design-tokens.md > /dev/null 2>&1", "desc": "design-tokens.md server == web"},
+    {"type": "command", "command": "diff -q /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/docs/theme-spec.md /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-web/docs/theme-spec.md > /dev/null 2>&1", "desc": "theme-spec.md server == web"},
+    {"type": "grep", "target": ".claude/agents/grimoire-visual-canon-keeper.md", "pattern": "design-tokens.md|theme-spec.md", "min": 2, "desc": "VCK agent가 두 정본 명시 참조 ≥2건"}
+  ],
+  "threshold": 1.0,
+  "runs": 1
+}

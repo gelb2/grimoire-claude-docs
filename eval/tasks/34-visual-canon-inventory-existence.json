@@ -1,0 +1,15 @@
+{
+  "id": "regression-034",
+  "name": "visual-canon-inventory.md ↔ deerdevil 정본 인벤토리 일치",
+  "category": "visual_canon",
+  "source_session": "20260502 묶음 P NEW-19 — visual_canon 카테고리 균형 보강",
+  "prompt": "사슴악마 정본 인벤토리 (.claude/knowledge/visual-canon-inventory.md)가 4 영역 (작가공간 / 에피소드 뷰어 / 에피소드 목록 / 핵심 CSS Variables) 모두 박제됐는지 확인. 기존 기획 정본 누락 시 visual-canon-keeper 에이전트 검수 게이트 무효화.",
+  "eval_criteria": [
+    {"type": "grep", "target": ".claude/knowledge/visual-canon-inventory.md", "pattern": "작가공간|/deerdevil/", "min": 1, "desc": "작가공간 영역 박제"},
+    {"type": "grep", "target": ".claude/knowledge/visual-canon-inventory.md", "pattern": "에피소드 뷰어", "min": 1, "desc": "에피소드 뷰어 영역 박제"},
+    {"type": "grep", "target": ".claude/knowledge/visual-canon-inventory.md", "pattern": "타이핑|타이프", "min": 1, "desc": "타이핑 애니메이션 박제"},
+    {"type": "grep", "target": ".claude/knowledge/visual-canon-inventory.md", "pattern": "antler|Antler", "min": 1, "desc": "antler divider 박제"}
+  ],
+  "threshold": 1.0,
+  "runs": 1
+}
