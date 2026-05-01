@@ -69,6 +69,7 @@ echo ""
 echo "── [2/3] reports/*.md 5개 인터페이스 + 골격 정합 (K3, AUTO-GENERATED만 강제) ──"
 
 declare -a REPORT_REQS=(
+  "SWEEP_REPORT|## 0. 메타|## 1. 경쟁사 변동|## 2. AI 모델 가격|## 4. HANDOFF"
   "PLANNER_REPORT|## 0. 메타|## 1. 오늘 위임|## 2. HANDOFF"
   "COST_AUDIT_REPORT|## 0. 종합 판정|## 1. 안전배수 표|## 3. HANDOFF"
   "VISUAL_CANON_REPORT|## 0. 종합 판정|## 1. 사슴악마 정본 대조 결과|## 3. HANDOFF"

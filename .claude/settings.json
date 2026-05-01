@@ -110,6 +110,17 @@
           }
         ]
       }
+    ],
+    "SubagentStop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/scripts/subagent-stop-handler.sh",
+            "timeout": 15
+          }
+        ]
+      }
     ]
   }
 }

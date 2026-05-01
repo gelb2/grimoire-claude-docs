@@ -84,7 +84,7 @@
 
 ---
 
-## 1.6. Hooks 인벤토리 (9 이벤트 / 11 스크립트 — 2026-04-30 갱신, 실측 기준)
+## 1.6. Hooks 인벤토리 (10 이벤트 / 12 스크립트 — 2026-05-02 묶음 N NEW-13 갱신)
 
 `.claude/settings.json` 의 hooks 필드 정의. 이벤트별 스크립트 트리거.
 
@@ -99,6 +99,7 @@
 | PostToolUse | `post-edit-tsc.sh` + `post-edit-spec-check.sh` | Edit/Write 후 tsc + spec 자동 검증 |
 | PostToolBatch | `post-batch-tsc.sh` (debounce 60s) | Edit 폭주 후 일괄 검증 (lock 파일 기반) |
 | **PostToolUseFailure** (2026-04-27 F2) | `posttooluse-failure-handler.sh` | 도구 실패 시 적재 + Chrome MCP 정책 (재시도 신호 / reCAPTCHA 차단 / prod 안전) |
+| **SubagentStop** (2026-05-02 묶음 N NEW-13) | `subagent-stop-handler.sh` | Task tool 종료 직후 sensor-orchestration-ratio 즉시 갱신 + sensor-log 박제 (jsonl flush 지연 해소) |
 
 ---
 
