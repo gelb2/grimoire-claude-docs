@@ -1327,6 +1327,6 @@ YECHANGPE 프로젝트에서 검증된 Claude API + OpenAI Embedding + RAG + Vec
 - **인벤토리 자동 갱신**: pre-commit hook + update-harness-inventory.sh — 새 sensor/skill 추가 시 HARNESS §14 자동 갱신
 - **위임 매트릭스 자가 분류**: 작업 시작 전 orchestration-decision Skill 강제 (책 Ch 16 패턴 1 KPI 추적)
 - **회귀/EDD 시계열 추적**: sensor-eval-trend (30일 mean / 7일 slope / 회귀 빈도 임계)
-- **인벤토리 (2026-05-02)**: Skills 20 / Sensors 17 / Knowledge 6 / Hooks 9 이벤트 11 스크립트 / Generators 2 / Eval task 33
+- **인벤토리 (2026-05-02 묶음 M 후)**: Skills 20 / Sensors 18 / Knowledge 6 / Hooks 9 이벤트 11 스크립트 / Generators 2 / Eval task 38 (regression) + 2 (EDD only)
 
 본 §16은 다음 PLANNING 갱신 시 (J5 후속) 추가로 누적.
