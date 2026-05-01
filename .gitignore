@@ -65,3 +65,6 @@ credentials.json
 # eval baseline SQLite (자동 재생성, csv가 정본)
 eval/results/baseline.db
 eval/results/baseline.db-journal
+
+# scheduled-tasks MCP 임시 lock (자동 생성, git 추적 외)
+.claude/scheduled_tasks.lock

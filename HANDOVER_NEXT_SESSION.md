@@ -120,8 +120,8 @@ develop이 main보다 1 commit 앞섬 — 사용자 결정 시 main 머지 가�
 
 | 검증 | 결과 |
 |------|------|
-| Regression | **38/38 PASS = 100%** |
-| EDD (runs=5) | **41/41 PASS = 100%** (#10_4 묶음 Q 측정) |
+| Regression | **41/41 PASS = 100%** (2026-05-02 09:00 실측, +3 task 묶음 N/O/P 누적) |
+| EDD (runs=2) | **42/44 PASS = 95.45%** (FAIL 2 = `edd-031` web test_coverage / `edd-033` edge_case 동시성 — 의도된 갭) |
 | Drift sensor | exit 0 |
 | sensor-instruction-degradation | 11/11 PASS, WARN 0 |
 | sensor-agent-priority-labels | PASS 7/7 |
@@ -139,7 +139,7 @@ cd /Users/sokol/Desktop/Git/ProjectGrimoire
 git log --oneline -10
 git status
 
-# 2. 회귀 검증 (38/38 PASS여야)
+# 2. 회귀 검증 (41/41 PASS여야 — 의도된 EDD-only 갭은 tasks-edd/만 영향)
 bash eval/scripts/eval-runner.sh
 
 # 3. drift 검증 (exit 0)
