@@ -17,6 +17,17 @@
 # 임계값 초과 시 WARN (분할 권장).
 # 임계값 1.5× 초과 시 FAIL (즉시 분할 필요 — 책 Ch 08 violations).
 #
+# ── 면제 카테고리 (2026-05-01 #10_2 NEW-3 명시 박제) ──
+# 60-line 황금률은 instruction(명령) 문서에만 적용. 다음은 명시 면제:
+#   - research/         : 학습 박제·리서치 노트 (long-form, Claude는 필요 시 부분 Read)
+#   - reports/          : 에이전트 산출물 (auto-generated, 형식 정본은 shared-contracts.md)
+#   - eval/results/     : eval 실행 결과 누적 (csv + jsonl, 시계열 데이터)
+#   - PLANNING_GRIMOIRE.md : 최상위 정본·기획 문서 (사용자 승인 필요, 길이 제한 부적합)
+#   - DOC_MAP.html      : 시각 보조 (HTML, 줄수 의미 없음)
+#   - HANDOVER_NEXT_SESSION.md : 세션 인계 — 일회성 박제용
+# 위 면제 카테고리는 본 sensor의 검사 대상에 포함하지 않으며, 향후 누가 "왜 research/는
+# 1300줄인데 PASS인가?"라고 질의해도 본 코멘트가 정본 답변이다.
+#
 # Exit 0: 모든 파일 PASS, Exit 1: WARN 1건 이상, Exit 2: FAIL 1건 이상.
 
 set +u
@@ -93,5 +104,7 @@ elif [ "$WARN" -gt 0 ]; then
   exit 1
 else
   echo "✅ 모든 instruction 파일이 임계값 이하 (책 Ch 08 정합)"
+  echo ""
+  echo "(면제 카테고리: research/ · reports/ · eval/results/ · PLANNING_GRIMOIRE.md · DOC_MAP.html · HANDOVER_*.md — 본 sensor 검사 대상 아님)"
   exit 0
 fi

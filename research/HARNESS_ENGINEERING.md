@@ -1,8 +1,34 @@
 # Harness Engineering — 리서치 노트
 
-> **작성일**: 2026-04-19 (v1), 2026-04-25 (v2 대폭 확장)
+> **작성일**: 2026-04-19 (v1), 2026-04-25 (v2 대폭 확장), 2026-05-01 (v3 ToC 추가, NEW-2)
 > **발단**: 사용자가 Martin Fowler 원문 + Reddit /r/ClaudeAI 스레드 공유 → ProjectGrimoire harness 수준 점검 지시. v2에서 Skills 개념 + 커뮤니티 3대 레포 분석 + Agent 전수검사 + dev 적용 로드맵 + 루트 workspace git 관리 방법 추가.
 > **상태**: 리서치 정리 완료. TODO.md "Claude Code harness 강화" 섹션과 1:1 연동.
+> **분량**: 1300+ 줄 (research/ long-form 면제, sensor-instruction-degradation 카테고리 외).
+> **NEW-2 결정 (2026-05-01)**: 분할 보류 — 8개 파일이 §15 참조하며 갱신 영향 큼. 대신 본 ToC 보강으로 navigation 부담 해소. 분할이 강제될 만큼 attention degradation 발생 시점에 사용자 결정 영역(J7)으로 이관.
+
+## 📑 Table of Contents
+
+| § | 섹션 | 줄 | 핵심 |
+|---|---|---|---|
+| 1 | Harness Engineering 정의 (Fowler) | 9 | "Everything except the model" |
+| 2 | 핵심 구성요소 (4축) | 15 | Guides / Sensors / Computational / Inferential |
+| 3 | 핵심 원리 | 24 | Shift Left / Steering Loop / Requisite Variety |
+| 4 | 경계해야 할 실패 모드 | 34 | Feedback-only / Silent sensors / Harness drift |
+| 5 | Guides vs Sensors 도식 | 44 | Fowler diagram |
+| 6 | Skills 개념 | 67 | Agent vs Skill 비교 |
+| 7 | 커뮤니티 3대 레포 분석 | 152 | superpowers / agent-os / claude-flow |
+| 8 | Agent/Skill 외 Harness 요소 | 301 | hooks / sensors / knowledge |
+| 9 | ProjectGrimoire Agent 전수검사 | 471 | 7 에이전트 매트릭스 |
+| 10 | Dev 환경 적용 로드맵 | 514 | Phase 0~5 |
+| 11 | 루트 workspace Git 관리 | 600 | claude-docs 분리 |
+| 12 | ProjectGrimoire 종합 대조 | 779 | Fowler 4축 매핑 |
+| 13 | 출처 (citations) | 825 | 외부 자료 |
+| 14 | **인벤토리** (sensors/skills/hooks/agents) | 850 | 14.2 Skills 20 / 14.3 Hooks 9 / 14.4 Sensors 17 |
+| 15 | **현장 운영 4 패턴** | 1047 | 1: orchestration / 2: deterministic / 3: SSOT / 4: GC. **§15.7 위임 가치 매트릭스** |
+| 16 | ProjectGrimoire 4 패턴 위치 | 1208 | 채택 결정 + KPI |
+| 17 | CLAUDE.md 60줄 분할 + EDD | 1252 | 책 Ch 08+15+16 (4-30 신설) |
+
+> **자주 참조되는 섹션**: §14.4 (Sensors 인벤토리, drift sensor 검증) / §15.7 (위임 가치 매트릭스, Skills에서 참조) / §17 (분할 정본 + EDD)
 
 ---
 
