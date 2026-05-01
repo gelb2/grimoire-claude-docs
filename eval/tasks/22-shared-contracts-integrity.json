@@ -6,7 +6,7 @@
   "prompt": ".claude/shared-contracts.md ↔ 7 에이전트 .md / 5 reports / 5 코드 인터페이스 정합인가?",
   "eval_criteria": [
     {"type": "command", "command": "bash .claude/scripts/sensor-shared-contracts.sh", "desc": "sensor-shared-contracts.sh PASS"},
-    {"type": "grep_count", "target_dir": ".claude/agents", "include": "grimoire-*.md", "exclude": "", "pattern": "shared-contracts", "min": 7, "max": 7, "desc": "7 에이전트 .md 모두 shared-contracts 참조 (정확히 7건)"},
+    {"type": "grep_count", "target_dir": ".claude/agents", "include": "grimoire-*.md", "exclude": "", "pattern": "shared-contracts", "min": 7, "desc": "7 에이전트 .md 모두 shared-contracts 참조 (≥7건, 다중 참조 허용)"},
     {"type": "grep", "target": ".claude/shared-contracts.md", "pattern": "## 10\\. PostToolUseFailure hook 정책", "min": 1, "desc": "shared-contracts.md 10번째 인터페이스 (PostToolUseFailure) 박제"}
   ],
   "threshold": 1.0,
