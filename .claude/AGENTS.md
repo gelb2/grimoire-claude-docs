@@ -105,6 +105,28 @@
 - 정본 위치: `.claude/shared-contracts.md`
 - 새 인터페이스 추가/기존 변경 시 → shared-contracts.md 먼저 업데이트 → 7개 에이전트 .md에 반영
 
+### 2.4 에이전트별 예산 할당 (2026-05-02 BN-#3 신설, 책 Ch 16 AGENT_BUDGETS)
+
+호출 비용 폭주 / 둠 루프 / 무한 반복 방어용 에이전트별 한도. 본 정본을 기준으로 메인 Claude가 위임 시 예산 초과 의심 시 ALERT (sensor-loop-detection / cost-tracker 결합).
+
+| 에이전트 | max_tokens | max_tool_calls | max_wall_time | max_retries |
+|---------|------------|---------------|---------------|------------|
+| **researcher** | 500K | 80 (WebSearch 다회) | 1800s (30분) | 2 |
+| **cost-accountant** | 200K | 30 | 600s (10분) | 1 |
+| **planner** | 400K | 50 | 1500s (25분) | 2 |
+| **visual-canon-keeper** | 250K | 40 (find/grep 위주) | 900s (15분) | 1 |
+| **server** (개발) | 800K | 150 | 2700s (45분) | 3 |
+| **web** (개발) | 800K | 150 | 2700s (45분) | 3 |
+| **qa** (검증 전담) | 400K | 80 | 1800s (30분) | 1 |
+
+운영 규칙:
+- **[MUST]** 위 한도는 책 Ch 16 정본. 변경 시 반드시 사용자 승인 (cost-accountant도 호출됨)
+- **[MUST]** 한도 80% 초과 시 sensor-cost-margin이 ALERT 발생 (cost-tracker.jsonl 기반)
+- **[SHOULD]** 사용자가 큰 작업 위임 시 메인 Claude가 사전 예산 추정 보고
+- **[NICE]** 향후 Claude Code SDK가 max_tokens 강제 지원 시 frontmatter 자동 적용
+
+근거: 책 Ch 16 "비용 폭주 → 에이전트별 예산 + 에스컬레이션 = 역할별 한도" / Ch 18 "Anthropic 비용 데이터 — $9 실패 = 가치 0".
+
 ---
 
 ## 3. Skills · Sensors · Hooks · Eval 인벤토리 — 검증 기준
