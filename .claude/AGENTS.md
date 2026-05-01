@@ -78,6 +78,25 @@
 
 본 의무는 §15.7.4 "다음 세션부터 적용 규칙" 첫 항목의 자율 운영판.
 
+### 2.2.2 5 오케스트레이션 패턴 박제 (2026-05-02 BN-#10 신설, 책 Ch 16 + 부록 B)
+
+새 작업이 단일 패턴으로 안 풀릴 때 5 패턴 중 선택. **단순한 패턴부터 — 측정 후에만 복잡도 증가** (책 Ch 16 강조):
+
+| 패턴 | 에이전트 수 | 비용 | 적합 |
+|------|-----------|-----|------|
+| 1. **싱글** (기준선) | 1 | 낮음 | 단일 기능, 버그 수정 |
+| 2. **서브에이전트** (계층) | 2~5 | 중간 | 탐색+구현 — 부모 Opus + 자식 Sonnet (우리 7 에이전트 = 이 패턴) |
+| 3. **멀티** (병렬) | 2~N | 높음 | 대규모 마이그레이션 — Git 워크트리 필수 (worktree-isolation skill 보유) |
+| 4. **Plan-and-Execute** | 2~3 | 중간 | 장기 실행 — Sprint 계약 (Initializer/Generator/Evaluator) |
+| 5. **Ralph Loop** (책 부록 B 신규) | 1+훅 | 가변 | 무한 반복 (장기 실행, 종료 가로채 재주입) — 우리 PostToolBatch hook이 부분 적용 |
+
+선택 기준 (orchestration-decision skill 매트릭스와 동기):
+- **싱글**: ≤15분 작업, 단일 도메인
+- **서브에이전트**: cost-accountant·VCK·qa 외부 검증 필요 시 (우리 §15.7 위임 가치)
+- **멀티**: 다중 독립 도메인 (server + web 동시 + 5+ Edit 폭주) — worktree 권장
+- **Plan-and-Execute**: ≥1시간 다단계 작업 (writing-plans skill 시너지)
+- **Ralph Loop**: 종료 조건 미정의 + 반복 검증 (sensor 회귀 자동 catch-up 등)
+
 ### 2.3 서브에이전트 간 인터페이스 정본 (2026-04-30 신설)
 
 다른 에이전트의 출력 포맷(PLANNER_REPORT/COST_AUDIT_REPORT/QA_REPORT 등)을 변경하기 전에 반드시 `.claude/shared-contracts.md`를 읽고 호환 영향을 검토한다.
