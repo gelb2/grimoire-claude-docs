@@ -24,8 +24,9 @@
 #   - count ≤ 1: 단발 피드백 (KEEP)
 #
 # 신규 면제:
-#   - 30일 미만 신규 feedback 파일은 임계값 적용 안 함 (사용 패턴 형성 중)
+#   - 14일 미만 신규 feedback 파일은 임계값 적용 안 함 (사용 패턴 형성 중)
 #   - 2026-04-27 #9 X-4: 90일 → 30일 단축 (메모리 손실 노출 시간 ↓ + 핵심 박제 가속)
+#   - 2026-05-02 묶음 K L3: 30일 → 14일 추가 단축 (28 feedback × 154 검사 위치 — 보수성 줄임)
 #
 # 사용:
 #   sensor-feedback-promotion.sh                # 전체 스캔 + 후보 출력
@@ -43,7 +44,7 @@ OUTPUT_FILE="$LOG_DIR/feedback-promotion-candidates.jsonl"
 mkdir -p "$LOG_DIR"
 
 THRESHOLD=3
-NEW_DAYS=30  # 2026-04-27 #9 X-4: 90 → 30일 단축 (HARNESS §8.9 v2 + 메모리 손실 노출 시간 ↓)
+NEW_DAYS=14  # 2026-05-02 묶음 K L3: 30 → 14일 단축 (HARNESS §8.9 v2 + 28 feedback × 154 검사 — 너무 보수적이라 PROMOTE 후보 식별 지연)
 QUIET=0
 for arg in "$@"; do
   case "$arg" in

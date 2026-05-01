@@ -14,6 +14,12 @@
 #   - Sensors N개 vs ls .claude/scripts/sensor-*.sh 개수
 #   - Hooks N 이벤트 vs settings.json hook keys 개수
 #
+# 검증 항목 (§17 분할 정본 4파일 — 2026-05-02 묶음 K L1):
+#   - CLAUDE.md (root) 존재 + ≤ 80줄
+#   - .claude/AGENTS.md 존재 + ≤ 200줄
+#   - docs/AGENTS.md 존재 + ≤ 300줄
+#   - .githooks/AGENTS.md 존재 + ≤ 200줄
+#
 # Fowler "Harness drift" 실패 모드 자동 탐지 (HARNESS §4)
 
 set +e
@@ -101,11 +107,30 @@ if knowledge_doc is not None and knowledge_doc != knowledge_actual:
 if slash_doc is not None and slash_doc != commands_actual:
     drifts.append(f"Slash commands: 문서 {slash_doc}개 vs 실측 {commands_actual}개")
 
+# §17 분할 정본 4파일 검증 (2026-05-02 묶음 K L1)
+SPLIT_FILES = [
+    (PROJECT + "/CLAUDE.md", 80, "CLAUDE.md (root)"),
+    (PROJECT + "/.claude/AGENTS.md", 200, ".claude/AGENTS.md"),
+    (PROJECT + "/docs/AGENTS.md", 300, "docs/AGENTS.md"),
+    (PROJECT + "/.githooks/AGENTS.md", 200, ".githooks/AGENTS.md"),
+]
+for path, threshold, label in SPLIT_FILES:
+    if not Path(path).exists():
+        drifts.append(f"§17 분할 정본 누락: {label}")
+    else:
+        try:
+            with open(path) as f:
+                lines = sum(1 for _ in f)
+            if lines > threshold:
+                drifts.append(f"§17 {label}: {lines}줄 > {threshold} 임계 (책 Ch 08 60-line 위반 위험)")
+        except Exception:
+            pass
+
 if drifts:
-    print(f"[instructions-drift-check] CLAUDE.md 로드 ({load_reason}) — research/HARNESS_ENGINEERING.md §14 drift 발견:", file=sys.stderr)
+    print(f"[instructions-drift-check] CLAUDE.md 로드 ({load_reason}) — research/HARNESS_ENGINEERING.md §14 또는 §17 drift 발견:", file=sys.stderr)
     for d in drifts:
         print(f"  ⚠️ {d}", file=sys.stderr)
-    print(f"  → research §14 갱신 권장 (Fowler Harness drift 실패 모드 직접 사례)", file=sys.stderr)
+    print(f"  → research §14 갱신 (update-harness-inventory --apply) 또는 §17 분할 정본 검토 권장", file=sys.stderr)
 
 sys.exit(0)
 PYEOF

@@ -3,10 +3,10 @@
   "name": "Memory v2 — feedback 영향력 자동 추적",
   "category": "convention",
   "source_session": "20260426 X-L + 20260427",
-  "prompt": "memory/feedback_*.md의 영향력이 자동 측정되고 30일 면제 후 PROMOTE 후보 식별되는가?",
+  "prompt": "memory/feedback_*.md의 영향력이 자동 측정되고 14일 면제 후 PROMOTE 후보 식별되는가? (2026-05-02 묶음 K L3: 30→14일 추가 단축)",
   "eval_criteria": [
     {"type": "command", "command": "bash .claude/scripts/sensor-feedback-promotion.sh --quiet >/dev/null 2>&1 ; [ $? -le 2 ]", "desc": "sensor-feedback-promotion 정상 종료"},
-    {"type": "grep", "target": ".claude/scripts/sensor-feedback-promotion.sh", "pattern": "NEW_DAYS=30", "min": 1, "desc": "신규 면제 30일 단축 박제 (90→30)"}
+    {"type": "grep", "target": ".claude/scripts/sensor-feedback-promotion.sh", "pattern": "NEW_DAYS=14", "min": 1, "desc": "신규 면제 14일 단축 박제 (30→14, 묶음 K L3)"}
   ],
   "threshold": 1.0,
   "runs": 1
