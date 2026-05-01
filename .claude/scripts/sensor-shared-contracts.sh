@@ -59,16 +59,47 @@ if [ "$AGENT_REFS" -eq 7 ]; then
   echo "✅ 7/7 에이전트 동기 참조 정합"
 fi
 
-# ───────────────── [2] reports/ 5개 인터페이스 ─────────────────
+# ───────────────── [2] reports/ 5개 인터페이스 + 골격 정합 (K3 추가) ─────────────────
+# K3 정책 (2026-05-02 묶음 J):
+#   - AUTO-GENERATED 헤더 있는 보고서: shared-contracts.md 골격과 정확히 일치 강제 (FAIL)
+#   - 헤더 없는 기존 수동 보고서: 존재만 검증 (legacy 면제 — 마이그레이션은 별개 작업)
+#   - generate-report-template.sh --apply로 새로 생성하면 자동 골격 박제됨
+
 echo ""
-echo "── [2/3] reports/*.md 5개 인터페이스 ──"
-for r in PLANNER_REPORT COST_AUDIT_REPORT VISUAL_CANON_REPORT DEV_REPORT QA_REPORT; do
-  f="$ROOT/reports/${r}.md"
-  if [ -f "$f" ]; then
-    echo "✅ reports/${r}.md 존재"
-  else
-    echo "⚠️ WARN: reports/${r}.md 미생성 (자율 에이전트 1회 이상 실행 필요 — gitignore 대상이라 정상)"
+echo "── [2/3] reports/*.md 5개 인터페이스 + 골격 정합 (K3, AUTO-GENERATED만 강제) ──"
+
+declare -a REPORT_REQS=(
+  "PLANNER_REPORT|## 0. 메타|## 1. 오늘 위임|## 2. HANDOFF"
+  "COST_AUDIT_REPORT|## 0. 종합 판정|## 1. 안전배수 표|## 3. HANDOFF"
+  "VISUAL_CANON_REPORT|## 0. 종합 판정|## 1. 사슴악마 정본 대조 결과|## 3. HANDOFF"
+  "DEV_REPORT|## Server 섹션|## Web 섹션"
+  "QA_REPORT|## 0. 배포 게이트 판정|## 1. dev/qa 센서 대조|## 5. HANDOFF to 사용자"
+)
+
+for entry in "${REPORT_REQS[@]}"; do
+  IFS='|' read -ra parts <<< "$entry"
+  rname="${parts[0]}"
+  f="$ROOT/reports/${rname}.md"
+  if [ ! -f "$f" ]; then
+    echo "⚠️ WARN: reports/${rname}.md 미생성 (gitignore — generate-report-template.sh --apply 권장)"
     WARN=$((WARN+1))
+    continue
+  fi
+  # AUTO-GENERATED 헤더 유무 분기
+  if grep -q "AUTO-GENERATED from .claude/shared-contracts.md" "$f"; then
+    # 강제 골격 검증
+    missing=0
+    for ((i=1; i<${#parts[@]}; i++)); do
+      if ! grep -qF "${parts[$i]}" "$f"; then missing=$((missing+1)); fi
+    done
+    if [ "$missing" -eq 0 ]; then
+      echo "✅ reports/${rname}.md AUTO-GENERATED 골격 정합 ($((${#parts[@]}-1))/$((${#parts[@]}-1)) 섹션)"
+    else
+      echo "❌ FAIL: reports/${rname}.md AUTO-GENERATED인데 $missing 섹션 누락 — generate-report-template 재실행 필요"
+      FAIL=1
+    fi
+  else
+    echo "✅ reports/${rname}.md 존재 (legacy 수동 작성 — 골격 검증 면제)"
   fi
 done
 

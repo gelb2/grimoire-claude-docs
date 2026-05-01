@@ -88,6 +88,16 @@
             "timeout": 10
           }
         ]
+      },
+      {
+        "matcher": "Task|Agent",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/scripts/generate-report-template.sh --apply",
+            "timeout": 15
+          }
+        ]
       }
     ],
     "PostToolUseFailure": [
