@@ -126,5 +126,45 @@
 
 ---
 
+## 운영 데이터 누적 (2026-05-02 묶음 K L2 신설)
+
+> 책 챕터 학습 박제 후 실제 운영 데이터 — 다음 챕터 학습 결정의 근거 자료.
+
+### Ch 08 — 60-line 황금률 운영 데이터
+- **분할 정본 4파일** (2026-04-30 도입): CLAUDE.md 73 / .claude/AGENTS.md 126 / docs/AGENTS.md 195 / .githooks/AGENTS.md 142 — 모두 임계값 이하 PASS 유지
+- **에이전트 .md 7개** (2026-04-30 Phase B 분할): cost-accountant 296 / planner ~270 / qa ~260 / researcher 296 / server ~280 / visual-canon-keeper 293 / web ~270 — 모두 ≤ 300줄 PASS
+- **운영 효과**: instruction-degradation 회귀 0건 (4-30 신설 이후 지속 PASS). HumanLayer 발견 (50개 룰 → 절반 무시) 사례 ProjectGrimoire에서 재현 안 됨.
+- **자동 갱신**: update-harness-inventory.sh (2026-05-02 NEW-4) — pre-commit hook 통합으로 새 자산 추가 시 §14.X 카운트 자동 갱신 (drift sensor 사후 FAIL 패턴 사전 차단)
+
+### Ch 15 — EDD 운영 데이터
+- **Regression**: 33 task / 30일 평균 96.78% / 4-30 이후 100% 유지 다회 달성 (sensor-eval-trend WARN의 회귀 빈도는 단일 task 노이즈 제외 후 자연 감소)
+- **EDD (runs=2)**: 33/33 PASS 유지 (4-30 이후 단일 회귀 0건)
+- **LLM-as-Judge 가드**: ₩2K/일 ₩50K/월 박제 (실제 SDK 연동은 사용자 명시 보류)
+- **시계열 sensor**: sensor-eval-trend (2026-05-01 H4 신설) — 30일 mean / 7일 slope / 최근 10회 FAIL 빈도 추적
+
+### Ch 16 — shared-contracts 운영 데이터
+- **인터페이스 정본 10개**: 4-30 신설 이후 변경 0건 (안정). PLANNER/COST_AUDIT/VCK/DEV/QA + AskOptions/ANALYSIS_CREDIT_COST=4/Eval task/LLM-Judge 가드/PostToolUseFailure
+- **7 에이전트 동기 참조**: 매 commit에서 sensor-shared-contracts가 검증. Phase B 분할 시 cost-accountant §7 추가 참조로 task 22 max 제거 (4-30 #10_2 부수)
+- **reports/ 골격 자동 생성**: generate-report-template.sh (2026-05-01 H7) + PostToolUse Task hook (2026-05-02 K2) — 빈 보고서 시작 정책 자동화
+- **AUTO-GENERATED 골격 정합**: sensor-shared-contracts K3 검증 (2026-05-02) — 향후 새 보고서는 자동 정합 강제
+
+### Ch 16 패턴 1 (orchestration 분리) 운영 데이터
+- **위임 매트릭스 합치율** (본 세션 #10_2~#10_4): 10/10 = 100% (모두 단일 도메인 + ≤1시간 → 메인 직접 정합)
+- **자가 분류 의무** (.claude/AGENTS.md §2.2.1, 2026-05-02 K1) — 다음 세션부터 sensor-orchestration-ratio jsonl + 메모리 양 채널 측정 시작
+
+---
+
+## 미박제 / 사용자 결정 (J 시리즈)
+
+| 챕터 | 이유 | 사용자 결정 필요 |
+|------|------|---------------|
+| Ch 09 (Sensor 진화 추정) | 책 실제 내용 추측 가능, 박제는 추정에 그침 | J9: Ch 09 학습 박제 진행 여부 |
+| Ch 13 (Knowledge Graph 추정) | 동일 | J10: Ch 13 학습 박제 진행 여부 |
+
+위 두 챕터는 사용자가 책 PDF 또는 발췌를 제공하면 박제 진행. 추측 박제는 정본 정합성 위험.
+
+---
+
 ## 변경 이력
 - 2026-04-30: 본 파일 신설 — 책 Ch 08/15/16 핵심 학습 박제 (묶음 C D1 작업).
+- 2026-05-02 묶음 K L2: 운영 데이터 누적 섹션 신설 + Ch 09/13 박제 보류 박제 (사용자 결정 J9/J10 이관).
