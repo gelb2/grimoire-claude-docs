@@ -3,6 +3,8 @@
 > 서버 API 구현 대비 웹 연결 상태 정본.
 > 서버 기능 추가 또는 웹 연결 시 이 문서를 업데이트한다.
 > 각 레포 TECH_STATUS.md는 레포 내부 구현 상태만 기록한다.
+>
+> **마지막 갱신: 2026-04-30 #10 (J2 작업)**. 분석 4 크레딧 인상 + AI 채팅 크레딧 차감 미연동 사실 명시.
 
 ---
 
@@ -52,7 +54,7 @@
 | **구독 플랜 조회** | ✅ | ✅ | `/dashboard/theme` 배너 | ✅ |
 | **테마 슬롯 관리** | ✅ | ✅ | `/dashboard/theme` 활성/보관 | ✅ |
 | **AI 테마 생성** | ✅ | ✅ | `/dashboard/theme` AI 생성 버튼 | ✅ |
-| Analysis (RAG 일관성 체크) | ✅ | ✅ | `/dashboard/analysis` | ✅ |
+| Analysis (RAG 일관성 체크) — **분석 4 크레딧/회 (2026-04-27 인상)** | ✅ | ✅ | `/dashboard/analysis` | ✅ |
 | **테마 활성화 (defaultThemeId 설정)** | ✅ | ✅ | `/dashboard/theme`, `/dashboard` | ✅ |
 | **작품별 테마 배정** | ✅ | ✅ | api.ts 메서드 | ⚠️ UI 미구현 |
 
@@ -67,6 +69,7 @@
 | 3 | ~~읽기 기능 UI 연결~~ | ✅ 좋아요/북마크/댓글 전부 연결 완료 |
 | 4 | ~~RAG 일관성 체크 UI~~ | ✅ `/dashboard/analysis` 연결 완료 |
 | 5 | 작품별 테마 배정 UI | api.ts 메서드 있음, 대시보드 UI 미구현 |
+| 6 | AI 채팅 1턴 크레딧 차감 연동 | 현재 무료 사용 — Polar payout 후 P1 (cost-accountant 검증 필요) |
 
 ---
 

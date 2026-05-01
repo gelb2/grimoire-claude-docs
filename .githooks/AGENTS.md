@@ -109,6 +109,23 @@ chmod +x .githooks/pre-push
 
 > `--no-verify`는 긴급 상황에서만 사용. 남용 금지.
 
+### claude-docs pre-commit (워크스페이스 루트, 2026-04-30 #10 H6 신설)
+
+```sh
+# .githooks/pre-commit (claude-docs 자체)
+#!/bin/sh
+set -e
+echo "=== claude-docs pre-commit 검증 ==="
+echo "[1/2] instructions-drift-check.sh ..."
+bash /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/scripts/instructions-drift-check.sh
+echo "[2/2] eval-precommit.sh (regression-tolerance 0.05) ..."
+bash /Users/sokol/Desktop/Git/ProjectGrimoire/eval/scripts/eval-precommit.sh
+echo "=== pre-commit 검증 통과 ==="
+```
+
+활성화: `git config core.hooksPath .githooks` (워크스페이스 루트에서 1회).
+근거: 책 Ch 15 "EDD CI/CD 통합" — claude-docs는 코드 없으므로 매 commit 부담 작음 (~30s + 1s).
+
 ---
 
 ## 3. Pre-Push 변경 시 절차

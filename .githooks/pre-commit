@@ -1,0 +1,26 @@
+#!/bin/sh
+# claude-docs pre-commit hook — eval 회귀 + drift sensor 자동 검증
+# 책 Ch 15 "EDD CI/CD 통합" 권장 (regression-tolerance 0.05)
+#
+# 활성화: git config core.hooksPath .githooks (사용자 1회 실행)
+# 우회: git commit --no-verify (긴급 시만)
+#
+# claude-docs는 런타임 코드 없으므로 매 commit 부담 작음 (~30s eval + 1s drift).
+# server/web 레포는 별도 .githooks/pre-push 패턴 (이미 박제 — .githooks/AGENTS.md 참조)
+
+set -e
+
+PROJECT_ROOT="/Users/sokol/Desktop/Git/ProjectGrimoire"
+
+echo "=== claude-docs pre-commit 검증 ==="
+
+echo ""
+echo "[1/2] instructions-drift-check.sh ..."
+bash "$PROJECT_ROOT/.claude/scripts/instructions-drift-check.sh"
+
+echo ""
+echo "[2/2] eval-precommit.sh (regression-tolerance 0.05) ..."
+bash "$PROJECT_ROOT/eval/scripts/eval-precommit.sh"
+
+echo ""
+echo "=== pre-commit 검증 통과 ==="

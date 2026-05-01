@@ -865,7 +865,7 @@ gh repo create gelb2/grimoire-workspace --private --source=. --remote=origin --p
 
 각 에이전트 `.md` 하단에 "Skills 프로토콜 참조" 섹션으로 `.claude/skills/*/SKILL.md` 경로 embed (ouroboros 방식 — 공식 스펙상 서브에이전트는 Skill 자동 발동 불가).
 
-### 14.2 Skills 14종 (`.claude/skills/<name>/SKILL.md`)
+### 14.2 Skills 19종 (`.claude/skills/<name>/SKILL.md`)
 
 | Skill | 트리거 / 호출 | 용도 |
 |---|---|---|
@@ -905,7 +905,7 @@ gh repo create gelb2/grimoire-workspace --private --source=. --remote=origin --p
 | **PostToolBatch** (2026-04-25 #7 신설) | - (전체) | post-batch-tsc.sh | parallel batch 완료 후 server+web tsc 일괄 (debounce 60s, 빌드 중복 60% ↓ 목표) |
 | **PostToolUseFailure** (2026-04-27 #9 F2 신설) | - (전체) | posttooluse-failure-handler.sh | 도구 실패 시 적재 + Chrome MCP 한정 정책 처리 (1회 재시도 신호 / reCAPTCHA 즉시 차단 / prod 도메인 자동 재시도 안 함). additionalContext로 Claude에게 재시도 신호만 전달, 실제 재시도는 Claude 판단 |
 
-### 14.4 Sensors 14개 (`.claude/scripts/sensor-*.sh`)
+### 14.4 Sensors 15개 (`.claude/scripts/sensor-*.sh`)
 
 | Sensor | 용도 |
 |---|---|

@@ -60,7 +60,7 @@
 
 ---
 
-## 1.5. Skills 인벤토리 (14개 — 2026-04-27 기준)
+## 1.5. Skills 인벤토리 (19개 — 2026-04-30 #10 묶음 C+H 갱신)
 
 > Skill은 트리거 키워드 또는 사용자 명시 호출(`/skill-name`)로 발동. agent와 달리 도구 호출 단위.
 
@@ -161,7 +161,7 @@ launchctl list | grep grimoire
 
 ---
 
-## 3. 센서 시스템 (14개 — 2026-04-30 #10 묶음 C 갱신)
+## 3. 센서 시스템 (15개 — 2026-04-30 #10 H8 갱신)
 
 > "AI가 '다 했습니다'라고 말하는 것은 증거가 아니다. 센서 스크립트의 stdout만이 증거다."
 
@@ -361,3 +361,4 @@ Skill의 `triggers` 키워드가 사용자 메시지에 포함되어야 발동. 
 | 2026-04-30 #10 sensor-shared-contracts 신설 (P0 묶음 A) | 책 Ch 16 shared contracts 정합 자동 검증. 7 에이전트 .md ↔ shared-contracts.md 동기 참조 + 5 reports + 5 코드 인터페이스 (AskOptions / ANALYSIS_CREDIT_COST=4 / Eval task 형식 / LLM-Judge 가드 / PostToolUseFailure hook). 첫 실측 PASS (FAIL 0 / WARN 0). Sensors 12→13. |
 | 2026-04-30 #10 H1 + F1 + sensor-web .next 회복탄력성 | H1: Skills paths 8/14 적용 (deploy-precheck/dev-login-smoke/feedback-to-skill/gc-sweep/handover-refresh/macos-tcc-handling 6건 신규 + 6건 메타 skip). F1: generate-sensor-tasks.sh 자동 generator + auto-sensor-cost-margin/hit-rate-report/log 3건 자동 wrap (10/13 → 13/13). 부수: sensor-cost-margin line 198 ${m}× brace 처리 + sensor-web `.next` stale 자동 fallback 추가 (next/font hash mismatch 회복탄력성, Fowler Resilience). 검증 29/29 + EDD 30/30. |
 | 2026-04-30 #10 묶음 C (D1+D2+A1) | D1: knowledge/book-harness-engineering-completion.md 신설 (책 Ch 08/15/16 학습 박제, Knowledge 4→5). D2: agent-system.md + agent-interaction-matrix.md 갱신 (shared-contracts 도입 반영). A1: sensor-instruction-degradation.sh 신설 (책 Ch 08 60-line 황금률 자동 검증, Sensors 13→14). 첫 실측 PASS 8 / WARN 3 (cost-accountant 347 / researcher 316 / visual-canon-keeper 351 — 분할 권장 P1). HARNESS §14.4 Sensors 13→14, §14.5 Knowledge 4→5 정합. |
+| 2026-04-30 #10 Phase A (H8+H11+H6+J1+J2) | H8: sensor-agent-interaction.sh 신설 (matrix 형식 정합, Sensors 14→15, PASS 4/4). H11: Slash 5건 신설 (eval-run/drift-check/shared-contracts-check/memory-status/sensors-overview, Skills 14→19). H6: .githooks/pre-commit 신설 (eval 회귀 + drift, regression-tolerance 0.05). J1: auto-sensor-* 명명 유지 결정 (수동 task와 의미 구분, generator도 정합). J2: SYNC_STATUS.md 4-30 갱신 (분석 4 크레딧 + AI 채팅 크레딧 차감 미연동 박제). |
