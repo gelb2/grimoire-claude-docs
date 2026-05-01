@@ -111,6 +111,40 @@ if is_chrome_mcp:
     }))
     sys.exit(0)
 
+# TypeScript 컴파일 실패 (2026-04-30 #10 H9 추가)
+is_bash = (tool_name == 'Bash')
+command = ''
+if is_bash and isinstance(tool_input, dict):
+    command = str(tool_input.get('command', ''))
+
+is_tsc_failure = is_bash and (
+    'tsc --noEmit' in command or
+    'TS2' in error or
+    'TS7' in error or
+    "Type '" in error
+)
+if is_tsc_failure:
+    msg = ('TypeScript 컴파일 실패 감지. 영향 받은 spec.ts 자동 실행 권장 — '
+           'npm test -- --testPathPattern={domain} 또는 grimoire-web에서 vitest run {file}.test. '
+           'post-edit-spec-check.sh 트리거 활용 가능. error: ' + error[:120])
+    print(json.dumps({'additionalContext': msg}))
+    sys.exit(0)
+
+# next/font 빌드 캐시 stale 자동 회복 신호 (2026-04-30 #10 H9 추가, sensor-web fallback 패턴 정합)
+is_next_font_failure = is_bash and (
+    'npm run build' in command and
+    ('module-not-found' in error.lower() or
+     'noto_serif' in error.lower() or
+     'eb_garamond' in error.lower() or
+     '.module.css' in error)
+)
+if is_next_font_failure:
+    msg = ('Next.js 빌드 실패 (next/font hash mismatch 의심). '
+           '`rm -rf grimoire-web/.next && cd grimoire-web && npm run build` 권장 — '
+           'sensor-web .next stale 자동 fallback 패턴. error: ' + error[:120])
+    print(json.dumps({'additionalContext': msg}))
+    sys.exit(0)
+
 # Chrome 외 도구 실패: 적재만, 추가 액션 없음
 sys.exit(0)
 PYEOF

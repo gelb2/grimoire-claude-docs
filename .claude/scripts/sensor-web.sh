@@ -30,7 +30,26 @@ echo "Node: $(node --version), npm: $(npm --version)"
 
 run_step "[1/3] TypeScript 컴파일" npx tsc --noEmit
 run_step "[2/3] Vitest 테스트" npm test
-run_step "[3/3] 프로덕션 빌드" npm run build
+
+# [3/3] 프로덕션 빌드 — Turbopack .next 캐시 stale 회복탄력성 (2026-04-30 #10)
+# 첫 시도 실패 시 .next 정리 후 1회 재시도. 원인: next/font/google이 hash 기반 CSS 모듈을 생성(예: noto_serif_kr_fbd4d516.module.css), .next 캐시가 stale이면 module-not-found.
+echo ""
+echo "=== [3/3] 프로덕션 빌드 ==="
+if npm run build; then
+  echo "[RESULT] PASS"
+  PASS_COUNT=$((PASS_COUNT + 1))
+else
+  echo "[WARN] 1차 빌드 실패 — .next 캐시 stale 가능성. 정리 후 재시도..."
+  rm -rf .next
+  if npm run build; then
+    echo "[RESULT] PASS (.next 정리 후 재시도 성공)"
+    PASS_COUNT=$((PASS_COUNT + 1))
+  else
+    echo "[RESULT] FAIL (재시도에도 실패)"
+    FAIL_COUNT=$((FAIL_COUNT + 1))
+    FAIL_STEPS+=("[3/3] 프로덕션 빌드")
+  fi
+fi
 
 END_TIME=$(date +%s)
 DURATION=$((END_TIME - START_TIME))

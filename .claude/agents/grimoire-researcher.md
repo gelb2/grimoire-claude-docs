@@ -127,33 +127,13 @@ ProjectGrimoire는 **매일** Daily Discovery + Freshness Sweep 둘 다 수행.
 
 ## 4. 리서치 범위
 
-### 4-A. 경쟁사·시장
+> **상세 정본**: `.claude/knowledge/researcher-scope.md` 참조 (3 영역 — 경쟁사·시장 / AI 모델 가격 / 학술·기술)
+> 본 에이전트 호출 시 daily sweep 시작 전 위 파일을 반드시 Read.
 
-| 카테고리 | 대표 서비스 | 관찰 포인트 |
-|---|---|---|
-| **국내 소설 플랫폼** | 네이버 시리즈, 카카오페이지, 문피아, 노벨피아, 조아라 | 작가 커스텀 가능 범위, 수익 분배, 구독 모델 |
-| **해외 소설 플랫폼** | Wattpad, Royal Road, AO3, Webtoon Canvas | CSS 스킨, 읽기 공간 커스텀 |
-| **AI 창작** | 한줄(hanline.ai), Sudowrite, Jasper, Novelcrafter | AI 창작 vs AI 디자인 차별화 |
-| **블로그/매거진** | 브런치, Substack, Medium, Ghost | 편집 도구, 테마 시스템 |
-| **웹빌더/테마** | Framer, Webflow, Readymag | AI 테마 생성, 동적 CSS |
-
-### 4-B. AI 모델 가격 (Grimoire 특화)
-
-| 제공자 | 모델 | 입력 가격 | 출력 가격 | 모니터링 빈도 |
-|---|---|---|---|---|
-| Anthropic | Claude Sonnet 4, Haiku, Opus | 매일 확인 | 매일 확인 | 매일 |
-| OpenAI | GPT-4o, GPT-4o-mini, GPT-5 | 매일 확인 | 매일 확인 | 매일 |
-| Google | Gemini Pro/Flash | 매일 확인 | 매일 확인 | 매일 |
-| Voyage/Cohere | 임베딩 모델 | 매일 확인 | N/A | 매일 |
-
-### 4-C. 학술/기술
-
-| 영역 | 키워드 | Grimoire 접점 |
-|---|---|---|
-| RAG | Retrieval-Augmented Generation, 시맨틱 검색 | §14 AI 분석 기능 |
-| 임베딩 | text-embedding, sentence-transformers | 시맨틱 캐싱 |
-| 벡터 DB | pgvector, HNSW, IVFFlat | 기존 인프라 |
-| 프롬프트 캐싱 | Anthropic prompt caching, OpenAI caching | 원가 절감 |
+핵심 3 영역 (요약):
+- **A. 경쟁사·시장**: 국내(네이버 시리즈/카카오페이지/문피아/노벨피아/조아라) / 해외(Wattpad/AO3) / AI 창작(한줄/Sudowrite) / 블로그(브런치/Substack) / 웹빌더(Framer/Webflow/Readymag)
+- **B. AI 모델 가격 (Grimoire 특화)**: Anthropic / OpenAI / Google / Voyage·Cohere — **매일 모니터링 + 변동 감지 시 cost-accountant 즉시 알림**
+- **C. 학술/기술**: RAG / 임베딩 / 벡터 DB / 프롬프트 캐싱
 
 ---
 

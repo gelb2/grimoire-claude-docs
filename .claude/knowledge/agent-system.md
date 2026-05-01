@@ -6,6 +6,11 @@ type: project
 
 **구조:** 메인 Claude가 6개 에이전트를 계층적으로 호출. researcher → cost-accountant/planner → visual-canon-keeper → server/web → qa. 2026-04-15에 Zenith 패턴 차용해 최초 도입. 2026-04-17 GMP v2.2 구조로 프롬프트 전면 전환 (XML 태그 + 이중 앵커링 + SELF_VERIFICATION).
 
+**인터페이스 정본 (2026-04-30 #10 신설, 책 Ch 16):**
+- `.claude/shared-contracts.md` — 7 에이전트 공유 인터페이스 10개 정본 (PLANNER_REPORT / COST_AUDIT_REPORT / VISUAL_CANON_REPORT / DEV_REPORT / QA_REPORT / AskOptions / ANALYSIS_CREDIT_COST=4 / Eval task 형식 / LLM-Judge 가드 / PostToolUseFailure hook)
+- 7 에이전트 .md 모두 §0 직후 1줄 동기 참조 박제 — 인터페이스 변경 시 shared-contracts.md 먼저 갱신 → 7 .md 자동 정합
+- 자동 검증: `sensor-shared-contracts.sh` (FAIL/WARN 0건 박제 강제)
+
 **프롬프트 정본 3개 (역할별 차등 Read):**
 - `prompt-engineering/GMP-v2.2.md` — 프롬프트 설계 원칙 (XML, 이중 앵커, CoV, 우선순위 라벨)
 - `prompt-engineering/prd-generation-prompt-gmp2.md` — PRD 자동 생성 (planner 전용)

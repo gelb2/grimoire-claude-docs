@@ -60,7 +60,7 @@
 
 ---
 
-## 1.5. Skills 인벤토리 (14개 — 2026-04-27 기준)
+## 1.5. Skills 인벤토리 (20개 — 2026-05-01 #10_2 묶음 F H2 갱신)
 
 > Skill은 트리거 키워드 또는 사용자 명시 호출(`/skill-name`)로 발동. agent와 달리 도구 호출 단위.
 
@@ -80,6 +80,7 @@
 | `deploy-image-verify` (2026-04-27 EEE) | 명시 호출 | Container App image SHA vs git main HEAD 정합 검증 (sensor-deploy-drift 보완) |
 | `systematic-debugging` (2026-04-27 신설, superpowers MIT 차용) | 키워드 (10개) | 복잡 회귀 — 가설 분리 + 변수 분리 + root cause 도달 (production-bug-triage 후속) |
 | `writing-plans` (2026-04-25 #8) | 키워드 (≥30분 게이트) | 큰 작업 sub-task 분할 |
+| **`orchestration-decision` (2026-05-01 #10_2 H2 신설)** | **키워드 (10개)** | **메인 직접 vs subagent 위임 자동 분류 (§15.7 위임 가치 매트릭스, 책 Ch 16 패턴 1 KPI)** |
 
 ---
 
@@ -161,7 +162,7 @@ launchctl list | grep grimoire
 
 ---
 
-## 3. 센서 시스템 (13개 — 2026-04-30 갱신)
+## 3. 센서 시스템 (17개 — 2026-05-01 #10_2 묶음 G H4 갱신)
 
 > "AI가 '다 했습니다'라고 말하는 것은 증거가 아니다. 센서 스크립트의 stdout만이 증거다."
 
@@ -179,6 +180,7 @@ launchctl list | grep grimoire
 | `.claude/scripts/sensor-feedback-promotion.sh` (2026-04-26 #9 X-L) | memory/feedback 영향력 | 28 feedback × 154 검사 위치. PROMOTE/OBSERVE/KEEP 분류 + 신규 90일 면제 |
 | `.claude/scripts/sensor-deploy-drift.sh` (2026-04-26 #9 B) | server/web 배포 동기화 | develop ↔ origin ↔ main 정합 + dev/prod health curl. 운영 image SHA 비교는 권한 차단으로 안내만 |
 | `.claude/scripts/sensor-cost-margin.sh` (2026-04-26 #9 C) | §0 원가 안전배수 | ai-cost-table.md 12 항목 안전배수 ≥3.0× 자동 검증 + 갱신일 stale + cost-accountant 호출 권장 |
+| **`.claude/scripts/sensor-eval-trend.sh` (2026-05-01 #10_2 H4 신설)** | **eval 시계열 추세** | **regression + EDD 30일 평균 / 7일 mean slope / 최근 10회 FAIL 빈도. ≥0.95 PASS / 0.85~0.95 또는 회귀 추세 또는 FAIL ≥3 WARN / <0.85 또는 stale 7일 FAIL** |
 
 ### 에이전트 규칙
 
@@ -210,6 +212,19 @@ launchctl list | grep grimoire
 | `reports/INCIDENT_*.md` | 시스템/qa | server, web | 장애 발생 시 동적 생성 |
 
 모든 보고서는 워크스페이스 루트 하위 `reports/` 디렉토리에 위치. git 추적하지 않음.
+
+### 4.1 보고서 골격 자동 생성 (2026-05-01 #10_2 H7 신설)
+
+`.claude/scripts/generate-report-template.sh` — `.claude/shared-contracts.md` §1~§5의 markdown 코드블록을 파싱하여 `reports/{NAME}_REPORT.md` 골격 자동 생성. 책 Ch 16 — 에이전트가 빈 파일에서 시작하지 않도록 정본 골격 사전 박제.
+
+```bash
+bash .claude/scripts/generate-report-template.sh                    # dry-run
+bash .claude/scripts/generate-report-template.sh --apply             # 누락 파일만 생성 (기존 보존)
+bash .claude/scripts/generate-report-template.sh --apply --force     # 기존 파일 덮어쓰기 (주의)
+bash .claude/scripts/generate-report-template.sh --report=PLANNER_REPORT --apply
+```
+
+생성 파일에는 `<!-- AUTO-GENERATED from .claude/shared-contracts.md -->` 헤더 + `YYYY-MM-DD → 오늘` 치환 적용.
 
 ---
 
@@ -359,3 +374,8 @@ Skill의 `triggers` 키워드가 사용자 메시지에 포함되어야 발동. 
 | **2026-04-30 #10 CLAUDE.md 60줄 분할 + shared-contracts + LLM-as-Judge + EDD mode** | **책 Ch 08 60-line + Ch 16 shared contracts + Ch 15 LLM-as-Judge 일괄. CLAUDE.md 457줄→73줄 + .claude/AGENTS.md (114) + docs/AGENTS.md (195) + .githooks/AGENTS.md (125) 분할. .claude/shared-contracts.md 신설 (10 인터페이스 정본, 7 에이전트 .md 동기 참조). eval-runner.sh --mode=edd + grade-llm.py (cost guard ₩2K daily / ₩50K monthly). eval/tasks-edd/ 분리. 검증: drift 0 / regression 20/20 PASS / EDD 21/21 PASS.** |
 | 2026-04-30 #10 전수검사 + AUTOMATION.md 갱신 | 전수검사 결과 §1.6 Hooks "12 스크립트" 박제 vs 실측 11 스크립트 1건 cosmetic drift 검출. §1.6 헤더 11로 정합 갱신. PASS 항목 15건 / 갭 1건 (해소). 다음 묶음 B (EDD task 카테고리 확장) 예정. |
 | 2026-04-30 #10 sensor-shared-contracts 신설 (P0 묶음 A) | 책 Ch 16 shared contracts 정합 자동 검증. 7 에이전트 .md ↔ shared-contracts.md 동기 참조 + 5 reports + 5 코드 인터페이스 (AskOptions / ANALYSIS_CREDIT_COST=4 / Eval task 형식 / LLM-Judge 가드 / PostToolUseFailure hook). 첫 실측 PASS (FAIL 0 / WARN 0). Sensors 12→13. |
+| 2026-04-30 #10 H1 + F1 + sensor-web .next 회복탄력성 | H1: Skills paths 8/14 적용 (deploy-precheck/dev-login-smoke/feedback-to-skill/gc-sweep/handover-refresh/macos-tcc-handling 6건 신규 + 6건 메타 skip). F1: generate-sensor-tasks.sh 자동 generator + auto-sensor-cost-margin/hit-rate-report/log 3건 자동 wrap (10/13 → 13/13). 부수: sensor-cost-margin line 198 ${m}× brace 처리 + sensor-web `.next` stale 자동 fallback 추가 (next/font hash mismatch 회복탄력성, Fowler Resilience). 검증 29/29 + EDD 30/30. |
+| 2026-04-30 #10 묶음 C (D1+D2+A1) | D1: knowledge/book-harness-engineering-completion.md 신설 (책 Ch 08/15/16 학습 박제, Knowledge 4→5). D2: agent-system.md + agent-interaction-matrix.md 갱신 (shared-contracts 도입 반영). A1: sensor-instruction-degradation.sh 신설 (책 Ch 08 60-line 황금률 자동 검증, Sensors 13→14). 첫 실측 PASS 8 / WARN 3 (cost-accountant 347 / researcher 316 / visual-canon-keeper 351 — 분할 권장 P1). HARNESS §14.4 Sensors 13→14, §14.5 Knowledge 4→5 정합. |
+| 2026-04-30 #10 Phase A (H8+H11+H6+J1+J2) | H8: sensor-agent-interaction.sh 신설 (matrix 형식 정합, Sensors 14→15, PASS 4/4). H11: Slash 5건 신설 (eval-run/drift-check/shared-contracts-check/memory-status/sensors-overview, Skills 14→19). H6: .githooks/pre-commit 신설 (eval 회귀 + drift, regression-tolerance 0.05). J1: auto-sensor-* 명명 유지 결정 (수동 task와 의미 구분, generator도 정합). J2: SYNC_STATUS.md 4-30 갱신 (분석 4 크레딧 + AI 채팅 크레딧 차감 미연동 박제). |
+| 2026-04-30 #10 Phase B (3 에이전트 .md 분할) | cost-accountant 347→296 / researcher 316→296 / visual-canon-keeper 351→293. Knowledge 5→7 (visual-canon-inventory.md + researcher-scope.md). sensor-instruction-degradation 11/11 PASS WARN 0 (이전 WARN 3 해소). Regression 31/31 PASS. |
+| 2026-04-30 #10 Phase D (메타 검증 강화 4건) | H12: sensor-agent-priority-labels 신설 (GMP v2.2 [MUST]/[SHOULD]/[NICE] 일관성, Sensors 15→16, 첫 실측 WARN 2 — cost-accountant/visual-canon-keeper SHOULD 0). J4: 7 paths-skip skill trigger-mode 메타 박제 (의도적 skip 명시성 ↑). H9: PostToolUseFailure 추가 정책 (tsc 실패 → spec 자동 권장 / next/font hash mismatch → .next 정리 권장 — sensor-web fallback 정합). H10: stop-memory-guard 강화 (claude-docs commit 검증 + MEMORY.md 인덱스 박제 검증 + project_remaining_tasks 7일 stale WARN, grimoire-ios drift 제거). |

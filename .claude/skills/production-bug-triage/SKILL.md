@@ -24,6 +24,8 @@ effort: high
 
 # 운영 버그 트리아지 — 추정 금지 프로토콜
 
+> **trigger-mode**: keyword (triggers field 운영 증상). paths 미적용 — 사용자 증상 보고에 따라 발동 (파일 매칭 무관).
+
 ## 언제 발동하는가
 
 사용자가 다음 유형의 보고를 할 때:

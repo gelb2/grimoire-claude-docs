@@ -25,6 +25,8 @@ effort: high
 
 # Verification Before Completion — 완료 선언 전 실측 증거 강제
 
+> **trigger-mode**: keyword (triggers field 완료 선언 키워드). paths 미적용 — 메타 검증, 모든 도메인 적용.
+
 ## 언제 발동하는가
 
 Claude가 다음 표현으로 작업 완료를 선언하려는 순간:

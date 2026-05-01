@@ -1,8 +1,34 @@
 # Harness Engineering — 리서치 노트
 
-> **작성일**: 2026-04-19 (v1), 2026-04-25 (v2 대폭 확장)
+> **작성일**: 2026-04-19 (v1), 2026-04-25 (v2 대폭 확장), 2026-05-01 (v3 ToC 추가, NEW-2)
 > **발단**: 사용자가 Martin Fowler 원문 + Reddit /r/ClaudeAI 스레드 공유 → ProjectGrimoire harness 수준 점검 지시. v2에서 Skills 개념 + 커뮤니티 3대 레포 분석 + Agent 전수검사 + dev 적용 로드맵 + 루트 workspace git 관리 방법 추가.
 > **상태**: 리서치 정리 완료. TODO.md "Claude Code harness 강화" 섹션과 1:1 연동.
+> **분량**: 1300+ 줄 (research/ long-form 면제, sensor-instruction-degradation 카테고리 외).
+> **NEW-2 결정 (2026-05-01)**: 분할 보류 — 8개 파일이 §15 참조하며 갱신 영향 큼. 대신 본 ToC 보강으로 navigation 부담 해소. 분할이 강제될 만큼 attention degradation 발생 시점에 사용자 결정 영역(J7)으로 이관.
+
+## 📑 Table of Contents
+
+| § | 섹션 | 줄 | 핵심 |
+|---|---|---|---|
+| 1 | Harness Engineering 정의 (Fowler) | 9 | "Everything except the model" |
+| 2 | 핵심 구성요소 (4축) | 15 | Guides / Sensors / Computational / Inferential |
+| 3 | 핵심 원리 | 24 | Shift Left / Steering Loop / Requisite Variety |
+| 4 | 경계해야 할 실패 모드 | 34 | Feedback-only / Silent sensors / Harness drift |
+| 5 | Guides vs Sensors 도식 | 44 | Fowler diagram |
+| 6 | Skills 개념 | 67 | Agent vs Skill 비교 |
+| 7 | 커뮤니티 3대 레포 분석 | 152 | superpowers / agent-os / claude-flow |
+| 8 | Agent/Skill 외 Harness 요소 | 301 | hooks / sensors / knowledge |
+| 9 | ProjectGrimoire Agent 전수검사 | 471 | 7 에이전트 매트릭스 |
+| 10 | Dev 환경 적용 로드맵 | 514 | Phase 0~5 |
+| 11 | 루트 workspace Git 관리 | 600 | claude-docs 분리 |
+| 12 | ProjectGrimoire 종합 대조 | 779 | Fowler 4축 매핑 |
+| 13 | 출처 (citations) | 825 | 외부 자료 |
+| 14 | **인벤토리** (sensors/skills/hooks/agents) | 850 | 14.2 Skills 20 / 14.3 Hooks 9 / 14.4 Sensors 17 |
+| 15 | **현장 운영 4 패턴** | 1047 | 1: orchestration / 2: deterministic / 3: SSOT / 4: GC. **§15.7 위임 가치 매트릭스** |
+| 16 | ProjectGrimoire 4 패턴 위치 | 1208 | 채택 결정 + KPI |
+| 17 | CLAUDE.md 60줄 분할 + EDD | 1252 | 책 Ch 08+15+16 (4-30 신설) |
+
+> **자주 참조되는 섹션**: §14.4 (Sensors 인벤토리, drift sensor 검증) / §15.7 (위임 가치 매트릭스, Skills에서 참조) / §17 (분할 정본 + EDD)
 
 ---
 
@@ -865,7 +891,7 @@ gh repo create gelb2/grimoire-workspace --private --source=. --remote=origin --p
 
 각 에이전트 `.md` 하단에 "Skills 프로토콜 참조" 섹션으로 `.claude/skills/*/SKILL.md` 경로 embed (ouroboros 방식 — 공식 스펙상 서브에이전트는 Skill 자동 발동 불가).
 
-### 14.2 Skills 14종 (`.claude/skills/<name>/SKILL.md`)
+### 14.2 Skills 20종 (`.claude/skills/<name>/SKILL.md`)
 
 | Skill | 트리거 / 호출 | 용도 |
 |---|---|---|
@@ -883,6 +909,7 @@ gh repo create gelb2/grimoire-workspace --private --source=. --remote=origin --p
 | worktree-isolation (2026-04-27 #9 F 신설, obra/superpowers MIT) | 사용자 명시 호출 `/worktree-isolation <start <branch>\|finish\|discard\|list>` | Edit 폭주 작업 (≥50 호출 또는 ≥1시간 다중 도메인) 시 git worktree 격리. 메인 develop 오염 방지 + rollback 안전망 (HARNESS §8.10) |
 | deploy-image-verify (2026-04-27 #9 EEE 신설) | 사용자 명시 호출 `/deploy-image-verify [server\|web\|both]` | sensor-deploy-drift가 권한 차단으로 자동 측정 불가한 영역(운영 Container App image SHA vs git main HEAD) 사용자 직접 az 명령 안내 + SHA 비교 |
 | **systematic-debugging** (2026-04-27 #9 신설, obra/superpowers MIT v5.0.7 차용) | 트리거 매칭 (10 키워드: "원인이 뭐", "왜 안 되", "근본 원인", "root cause" 등) | 복잡한 회귀(다중 원인 후보 / production-bug-triage 1차 실측 후 root cause 미도달) 시 가설 분리(3~5개) + 변수 분리 + 실측 검증 + root cause 도달 + 회귀 차단 5단계. production-bug-triage 후속 절차 |
+| **orchestration-decision** (2026-05-01 #10_2 묶음 F H2 신설) | 트리거 매칭 (10 키워드: "이 작업", "다음 단계", "직접 할까", "위임할까", "subagent" 등) | §15.7 위임 가치 매트릭스 자동 분류 (메인 직접 vs subagent 위임). 책 Ch 16 패턴 1 KPI 사전 가이드 — sensor-orchestration-ratio 사후 측정의 짝 |
 
 ### 14.2.1 Statusline (2026-04-27 #9 신설)
 - `.claude/scripts/statusline.sh` — settings.json statusLine 등록 → assistant 메시지 후 자동 호출
@@ -905,7 +932,7 @@ gh repo create gelb2/grimoire-workspace --private --source=. --remote=origin --p
 | **PostToolBatch** (2026-04-25 #7 신설) | - (전체) | post-batch-tsc.sh | parallel batch 완료 후 server+web tsc 일괄 (debounce 60s, 빌드 중복 60% ↓ 목표) |
 | **PostToolUseFailure** (2026-04-27 #9 F2 신설) | - (전체) | posttooluse-failure-handler.sh | 도구 실패 시 적재 + Chrome MCP 한정 정책 처리 (1회 재시도 신호 / reCAPTCHA 즉시 차단 / prod 도메인 자동 재시도 안 함). additionalContext로 Claude에게 재시도 신호만 전달, 실제 재시도는 Claude 판단 |
 
-### 14.4 Sensors 13개 (`.claude/scripts/sensor-*.sh`)
+### 14.4 Sensors 17개 (`.claude/scripts/sensor-*.sh`)
 
 | Sensor | 용도 |
 |---|---|
@@ -922,7 +949,7 @@ gh repo create gelb2/grimoire-workspace --private --source=. --remote=origin --p
 | **sensor-deploy-drift.sh (2026-04-26 #9 신설, B)** | server/web develop ↔ origin/develop ↔ main + dev/prod health endpoint 동기화 검증. 운영 image SHA 비교는 권한 차단으로 사용자 직접 명령 (안내). 첫 실측: PASS 3 / WARN 4 — server develop ahead main 8건 (prod 미배포 검출). |
 | **sensor-cost-margin.sh (2026-04-26 #9 신설, C)** | ai-cost-table.md 안전배수 ≥3.0× 자동 검증 (PLANNING §0 강제). 12 항목 마크다운 표 파싱 + 갱신일 stale 검사. 첫 실측: 안전배수 12건 / FAIL 0 / WARN 5 (3.0~3.5×) / 최소 3.14× / 평균 3.73× / 최대 5.39×. |
 
-### 14.5 Knowledge 4개 (`.claude/knowledge/`)
+### 14.5 Knowledge 7개 (`.claude/knowledge/`)
 - README.md · agent-system.md · sensors.md · **agent-interaction-matrix.md (2026-04-26 #9 신설 — 7×7 핸드오프 매트릭스 + 산출물 정합 + 트리거 규칙 + 금지 조합)**
 
 ### 14.6 Slash commands 0개 (`.claude/commands/*.md` 폐기)

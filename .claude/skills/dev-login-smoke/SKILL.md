@@ -5,6 +5,12 @@ argument-hint: "[선택: 검사할 작가 slug, 기본=deerdevil]"
 disable-model-invocation: true
 allowed-tools: Read, Bash, Grep
 effort: low
+paths:
+  - "grimoire-server/src/application/auth/**/*.ts"
+  - "grimoire-server/src/adapter/inbound/http/controller/auth.controller.ts"
+  - "grimoire-web/src/app/login/**/*.tsx"
+  - "grimoire-web/src/features/auth/**/*.ts"
+  - "**/scripts/db-sync*.sh"
 ---
 
 > **2026-04-25 세션 #7**: `.claude/commands/dev-login-smoke.md`에서 마이그레이션. `disable-model-invocation: true`로 사용자 명시 호출만 허용 (`/dev-login-smoke`).

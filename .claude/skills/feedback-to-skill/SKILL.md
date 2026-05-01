@@ -5,6 +5,10 @@ argument-hint: "[필수: feedback 파일명 (예: feedback_polite_korean) | dry-
 disable-model-invocation: true
 allowed-tools: Read, Bash, Grep, Glob, Write, Edit
 effort: medium
+paths:
+  - "**/memory/feedback_*.md"
+  - ".claude/skills/**/SKILL.md"
+  - ".claude/scripts/sensor-feedback-promotion.sh"
 ---
 
 # Feedback to Skill — 메모리 승격 자동화

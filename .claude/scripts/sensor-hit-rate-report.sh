@@ -50,16 +50,37 @@ for s in $SENSORS; do
 done
 
 echo ""
-echo "─── silent sensor 식별 ───"
-echo "(.claude/scripts/sensor-*.sh 중 위 목록에 없는 것 = 7일 내 호출 없음)"
+echo "─── PASS-only sensor 식별 (FAIL/WARN 0건 — 검사 항목 미달성 가능성) ───"
+for s in $SENSORS; do
+  W=$(grep -c "\"sensor\":\"$s\".*\"result\":\"WARN\"" "$LOG_FILE" 2>/dev/null) || W=0
+  F=$(grep -c "\"sensor\":\"$s\".*\"result\":\"FAIL\"" "$LOG_FILE" 2>/dev/null) || F=0
+  if [ "$W" -eq 0 ] && [ "$F" -eq 0 ]; then
+    echo "  💡 PASS-only: $s (정밀화 가치 검토 — 임계값이 너무 느슨할 가능성)"
+  fi
+done
+
+echo ""
+echo "─── silent sensor 식별 (마지막 호출 시간 + 30일 stale) ───"
+echo "(.claude/scripts/sensor-*.sh 중 호출 없거나 stale)"
 ALL_SENSORS=$(ls /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/scripts/sensor-*.sh 2>/dev/null | xargs -I{} basename {} .sh | sort -u)
+NOW_EPOCH=$(date "+%s")
 for s in $ALL_SENSORS; do
   # sensor-log, sensor-hit-rate-report는 메타라 제외
   case "$s" in
     sensor-log|sensor-hit-rate-report) continue ;;
   esac
-  if ! echo "$SENSORS" | grep -q "^$s\$"; then
-    echo "  ⚠️ silent: $s (7일 내 호출 0건)"
+  # sensor 호출 마지막 ts 추출 (없으면 빈 문자열)
+  LAST_TS=$(grep "\"sensor\":\"$s\"" "$LOG_FILE" 2>/dev/null | tail -1 | sed -n 's/.*"ts":"\([^"]*\)".*/\1/p')
+  if [ -z "$LAST_TS" ]; then
+    echo "  🚫 never: $s (sensor-hits.jsonl 박제 0건 — sensor-log.sh 미연동 또는 7일 prune된 후 미실행)"
+    continue
+  fi
+  LAST_EPOCH=$(date -j -u -f "%Y-%m-%dT%H:%M:%SZ" "$LAST_TS" "+%s" 2>/dev/null || echo "0")
+  STALE_DAYS=$(( (NOW_EPOCH - LAST_EPOCH) / 86400 ))
+  if [ "$STALE_DAYS" -gt 30 ]; then
+    echo "  ⚠️ stale ${STALE_DAYS}일: $s (last=$LAST_TS — 30일 임계 초과)"
+  elif [ "$STALE_DAYS" -gt 7 ]; then
+    echo "  ⏱  silent ${STALE_DAYS}일: $s (last=$LAST_TS — 7일 임계 초과)"
   fi
 done
 

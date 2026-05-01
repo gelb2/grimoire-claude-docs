@@ -5,6 +5,11 @@ argument-hint: "[선택: dry-run | apply] (기본 dry-run — 결과만 표시, 
 disable-model-invocation: true
 allowed-tools: Read, Bash, Grep, Glob, Write, Edit
 effort: medium
+paths:
+  - "grimoire-server/HANDOVER.md"
+  - "grimoire-web/HANDOVER.md"
+  - "**/memory/MEMORY.md"
+  - "**/memory/project_session_*.md"
 ---
 
 # Handover Refresh — HANDOVER.md 자동 갱신

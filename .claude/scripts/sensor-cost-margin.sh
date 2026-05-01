@@ -195,7 +195,7 @@ if [ "$QUIET" -eq 0 ]; then
     echo ""
     echo "⚠️ WARN 안전배수 — 조기 경보 (Sonnet +20% 또는 환율 +8.5% 시뮬에서 §0 위반 진입 가능):"
     echo "$RESULT" | grep "^WARN_MARGIN|" | while IFS='|' read -r _ m; do
-      echo "  - $m× (3.0~3.5×, planner 의사결정 시점 권장)"
+      echo "  - ${m}× (3.0~3.5×, planner 의사결정 시점 권장)"
     done
   fi
   echo ""
