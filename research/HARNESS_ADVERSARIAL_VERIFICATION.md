@@ -257,6 +257,75 @@ pre-commit hook = 자동 발동 + 자동 차단. 사용자 개입 = 1차 실패 
 
 ---
 
+## 5.5. 자율학습/자기-업그레이드 패턴 평가 (2026-05-02 #10_6 사용자 추가 질문)
+
+### 사용자 제안
+"모든 작업 시작 직전에 constitution + sensor가 인터넷 검증 데이터로 자기-업그레이드 → 작업 완료 시 자기 역할 수행"
+
+### 평가: **80% 정합 / 20% 위험 (조건부 적용 시 정확)**
+
+#### 80% 정합 (책 V1.1 + 산업 정본)
+- Fowler Steering Loop (HARNESS §3) — 반복 문제 → harness 자체 진화
+- Ouroboros Evolve 단계 (Q00/ouroboros) — evaluation → next generation
+- 책 Ch 23 결론 "하네스는 정원 — 가꿔야 함" 자동화 정공법
+- 책 Ch 21 Inform + Correct 기둥 자동 강화
+- Mitchell Hashimoto Ghostty (Cuneiform Chat 정합) — "실수마다 규칙 1줄"
+- Constitutional AI RLAIF — AI feedback 자기-개선
+
+#### 20% 위험 (책 Ch 23 안티패턴 직격)
+- **안티패턴 #4 모델 의존 착각** — "자기-학습이 알아서 해결" 함정
+- **안티패턴 #7 거버넌스 부재** — 누가 자기-수정 승인하는가? §0 위반
+- **책 Ch 17 보안 Layer 1 Prompt 위협** — 인터넷 데이터 prompt injection
+- 무한 자기-수정 (Devin/AlphaZero 한계) — bounded environment 필수
+- §0 ZERO-TOLERANCE — 정책 변경은 사용자 명시 결정 영역
+
+### 산업 패턴 검증 (100% 자율 자기-수정 시스템 부재)
+
+| 시스템 | 자기-진화 | 사용자 승인 게이트 |
+|--------|---------|------------------|
+| Q00/ouroboros | Evolve 단계 | Ambiguity ≤ 0.2 임계 + skill SKILL.md 정적 박제 |
+| Constitutional AI | RLAIF self-critique | constitution은 Anthropic 인간 승인 (84 page 2026) |
+| AlphaZero | 자기-대국 | bounded game (Go 규칙 불변) |
+| Devin | 자율 작업 | 사용자 review 게이트 |
+| Mitchell Ghostty | 실수→규칙 | Mitchell 본인이 박제 (자율 X) |
+
+→ **공통 패턴: bounded + governance gate**. 100% 자율 자기-수정 산업 사례 없음.
+
+### 정확한 적용 — 3 Phase 분리 (거버넌스 게이트 필수)
+
+```
+[Phase α-자율 — 자료 수집]
+WebFetch (whitelist 출처) → .claude/state/red-team-data-pending.jsonl
+- 출처: docs.anthropic.com / obra/superpowers MIT / OWASP LLM Top 10 / arxiv / Mozilla MDN
+- WebFetch = Claude Code 기본 도구 (구독료 안, 종량제 외부 API 0)
+
+[Phase α-반자율 — Propose]
+메인 Claude 자가 검증 + propose → .claude/proposals/red-team-update-{YYYYMMDD}.md
+⚠️ 게이트: 사용자 승인 (자율 적용 X)
+근거: §0 정책 강제 종속 + 책 Ch 23 거버넌스 부재 방어
+
+[Phase α-자율 — 검증]
+pre-commit hook 발동 (이미 박제된 constitution + sensor 사용)
+자율 100%, 사용자 개입 0
+```
+
+### 추가 안전 장치 (사용자 제안에 보강 권장)
+
+| 안전 장치 | 사유 | 구현 |
+|---------|------|------|
+| **출처 whitelist** | 검증되지 않은 출처 prompt injection 차단 | sensor-red-team-source-whitelist.sh |
+| **Diff 박제** | 자기-수정 결과 추적 가능 | git branch `auto-evolve/red-team-{date}` |
+| **회귀 검증** | 갱신 후 자동 회귀 (FAIL 시 propose 폐기) | pre-commit hook 통합 |
+| **빈도 캡** | 매 작업마다는 위험 (책 Ch 18 비용 + 안티패턴 #4) | 일주일 1회 또는 사용자 트리거 시만 |
+| **사용자 승인 게이트** | §0 정책 보호 | proposals/ 디렉토리 + 사용자 명시 후 적용 |
+
+### 결론
+사용자 제안의 핵심 의도(자율학습 + 자기-업그레이드)는 **하네스 엔지니어링 정공법**이지만, "사용자 확인 거의 없이"는 **거버넌스 부재 안티패턴 #7 직격**이라 위험.
+
+**권장 보강**: 자율(수집 + propose) + 사용자 게이트(승인) + 자율(검증) 3단 분리 = 책 V1.1 정합 + §0 보호 + 사용자 의도 80% 충족.
+
+---
+
 ## 6. 사용자 결정 영역
 
 다음은 자율 진행 금지 — 사용자 명시 후 진행:
