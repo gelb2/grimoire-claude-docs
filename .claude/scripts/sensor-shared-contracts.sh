@@ -178,6 +178,38 @@ else
   FAIL=1
 fi
 
+# ───────────────── [4] 변경 리뷰 프로세스 (NEW-B 강화, 자가진단 Q7 ⚠️→✅) ─────────────────
+echo ""
+echo "── [4/4] 변경 리뷰 프로세스 — shared-contracts ↔ 7 에이전트 mtime 정합 ──"
+SC_MTIME=$(stat -f "%m" "$SC" 2>/dev/null || echo 0)
+SC_AGE_DAYS=$(( ( $(date +%s) - SC_MTIME ) / 86400 ))
+
+if [ "$SC_AGE_DAYS" -gt 90 ]; then
+  echo "⚠️ WARN: shared-contracts.md ${SC_AGE_DAYS}일 stale (90일 초과 — 변경 리뷰 정기 검토 권장)"
+  WARN=$((WARN+1))
+else
+  echo "✅ shared-contracts.md mtime ${SC_AGE_DAYS}일 (90일 임계 이내)"
+fi
+
+# 7 에이전트 .md 모두 SC mtime 이후 갱신됐거나 무관 (변경 동기 시도 흔적)
+STALE_AGENTS=0
+for agent in cost-accountant planner qa researcher server visual-canon-keeper web; do
+  AG_FILE="$ROOT/.claude/agents/grimoire-${agent}.md"
+  AG_MTIME=$(stat -f "%m" "$AG_FILE" 2>/dev/null || echo 0)
+  if [ "$AG_MTIME" -lt "$SC_MTIME" ]; then
+    AGE=$(( ( SC_MTIME - AG_MTIME ) / 86400 ))
+    if [ "$AGE" -gt 7 ]; then
+      STALE_AGENTS=$((STALE_AGENTS+1))
+    fi
+  fi
+done
+if [ "$STALE_AGENTS" -ge 5 ]; then
+  echo "⚠️ WARN: $STALE_AGENTS/7 에이전트가 shared-contracts 변경 후 7일+ 미갱신 (변경 리뷰 누락 의심)"
+  WARN=$((WARN+1))
+else
+  echo "✅ 에이전트 변경 동기 정합 ($STALE_AGENTS/7 미갱신, 5건 미만 = 정상)"
+fi
+
 # ───────────────── 종합 ─────────────────
 echo ""
 echo "── 종합 ──"

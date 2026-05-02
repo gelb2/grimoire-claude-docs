@@ -27,8 +27,9 @@
 | 15 | **현장 운영 4 패턴** → **분리됨** | 1074 | `research/HARNESS_FIELD_PATTERNS_4.md` (§15.7 위임 가치 매트릭스 포함, 2026-05-02 묶음 L M1) |
 | 16 | ProjectGrimoire 4 패턴 위치 | 1080 | 채택 결정 + KPI |
 | 17 | CLAUDE.md 60줄 분할 + EDD → **분리됨** | 1102 | `research/HARNESS_SPLIT_AND_EDD.md` (2026-05-02 묶음 L M3) |
+| 18 | **적대적 검증 (우로보로스+악마의 변호인+레드팀)** → **분리됨** | — | `research/HARNESS_ADVERSARIAL_VERIFICATION.md` (2026-05-02 #10_6 사용자 지시 신설) |
 
-> **자주 참조되는 섹션**: §14.4 (Sensors 인벤토리, 본 파일 유지) / §15.7 (위임 가치 매트릭스, → `HARNESS_FIELD_PATTERNS_4.md`) / §17 (분할 정본 + EDD, → `HARNESS_SPLIT_AND_EDD.md`)
+> **자주 참조되는 섹션**: §14.4 (Sensors 인벤토리, 본 파일 유지) / §15.7 (위임 가치 매트릭스, → `HARNESS_FIELD_PATTERNS_4.md`) / §17 (분할 정본 + EDD, → `HARNESS_SPLIT_AND_EDD.md`) / §18 (적대적 검증, → `HARNESS_ADVERSARIAL_VERIFICATION.md`)
 >
 > **2026-05-02 묶음 L 분할 결과**: 본 파일 1328 → 1105줄 (223줄 감소). §13 / §15 / §17은 별도 정본으로 분리 + 1줄 pointer만 남김. 8개 파일 §15 참조는 새 경로로 갱신 완료 (M1).
 
@@ -721,7 +722,7 @@ v2 추가 제안:
 
 각 에이전트 `.md` 하단에 "Skills 프로토콜 참조" 섹션으로 `.claude/skills/*/SKILL.md` 경로 embed (ouroboros 방식 — 공식 스펙상 서브에이전트는 Skill 자동 발동 불가).
 
-### 14.2 Skills 20종 (`.claude/skills/<name>/SKILL.md`)
+### 14.2 Skills 22종 (`.claude/skills/<name>/SKILL.md`)
 
 | Skill | 트리거 / 호출 | 용도 |
 |---|---|---|
@@ -762,7 +763,7 @@ v2 추가 제안:
 | **PostToolBatch** (2026-04-25 #7 신설) | - (전체) | post-batch-tsc.sh | parallel batch 완료 후 server+web tsc 일괄 (debounce 60s, 빌드 중복 60% ↓ 목표) |
 | **PostToolUseFailure** (2026-04-27 #9 F2 신설) | - (전체) | posttooluse-failure-handler.sh | 도구 실패 시 적재 + Chrome MCP 한정 정책 처리 (1회 재시도 신호 / reCAPTCHA 즉시 차단 / prod 도메인 자동 재시도 안 함). additionalContext로 Claude에게 재시도 신호만 전달, 실제 재시도는 Claude 판단 |
 
-### 14.4 Sensors 19개 (`.claude/scripts/sensor-*.sh`)
+### 14.4 Sensors 25개 (`.claude/scripts/sensor-*.sh`)
 
 | Sensor | 용도 |
 |---|---|
@@ -779,8 +780,8 @@ v2 추가 제안:
 | **sensor-deploy-drift.sh (2026-04-26 #9 신설, B)** | server/web develop ↔ origin/develop ↔ main + dev/prod health endpoint 동기화 검증. 운영 image SHA 비교는 권한 차단으로 사용자 직접 명령 (안내). 첫 실측: PASS 3 / WARN 4 — server develop ahead main 8건 (prod 미배포 검출). |
 | **sensor-cost-margin.sh (2026-04-26 #9 신설, C)** | ai-cost-table.md 안전배수 ≥3.0× 자동 검증 (PLANNING §0 강제). 12 항목 마크다운 표 파싱 + 갱신일 stale 검사. 첫 실측: 안전배수 12건 / FAIL 0 / WARN 5 (3.0~3.5×) / 최소 3.14× / 평균 3.73× / 최대 5.39×. |
 
-### 14.5 Knowledge 7개 (`.claude/knowledge/`)
-- README.md · agent-system.md · sensors.md · **agent-interaction-matrix.md (2026-04-26 #9 신설 — 7×7 핸드오프 매트릭스 + 산출물 정합 + 트리거 규칙 + 금지 조합)**
+### 14.5 Knowledge 8개 (`.claude/knowledge/`)
+- README.md · agent-system.md · sensors.md · **agent-interaction-matrix.md (2026-04-26 #9 신설 — 7×7 핸드오프 매트릭스 + 산출물 정합 + 트리거 규칙 + 금지 조합)** · book-harness-engineering-completion.md (2026-04-30 #10) · researcher-scope.md (2026-04-30 #10) · visual-canon-inventory.md (2026-04-30 #10) · **red-team-constitution.md (2026-05-02 #10_6 묶음 W — Constitutional AI 16 principles + ProjectGrimoire 정책)**
 
 ### 14.6 Slash commands 0개 (`.claude/commands/*.md` 폐기)
 

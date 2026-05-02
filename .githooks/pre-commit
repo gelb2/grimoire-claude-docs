@@ -37,8 +37,27 @@ echo "[2/3] instructions-drift-check.sh ..."
 bash "$PROJECT_ROOT/.claude/scripts/instructions-drift-check.sh"
 
 echo ""
-echo "[3/3] eval-precommit.sh (regression-tolerance 0.05) ..."
+echo "[3/4] eval-precommit.sh (regression-tolerance 0.05) ..."
 bash "$PROJECT_ROOT/eval/scripts/eval-precommit.sh"
+
+echo ""
+echo "[4/4] sensor-adversarial-pre-commit.sh (Red Team Constitution 16 Principles, #10_6 묶음 W) ..."
+bash "$PROJECT_ROOT/.claude/scripts/sensor-adversarial-pre-commit.sh"
+ADV_RC=$?
+if [ $ADV_RC -ge 2 ]; then
+  echo ""
+  echo "❌ Constitution 위반 — Commit 차단 (FAIL principles 발견)"
+  echo ""
+  echo "💡 자동 회복 시도 (Bounded Retry max 2 iterations, #10_6 묶음 Y):"
+  echo "   bash $PROJECT_ROOT/.claude/scripts/adversarial-retry-handler.sh"
+  echo ""
+  echo "💡 자가-비판 발동 (Constitutional AI 패턴):"
+  echo "   /socratic-self-critique  (또는 verification-before-completion skill)"
+  exit 1
+elif [ $ADV_RC -eq 1 ]; then
+  echo ""
+  echo "⚠️ WARN principles 검토 권장 (commit 허용)"
+fi
 
 echo ""
 echo "=== pre-commit 검증 통과 ==="
