@@ -1,8 +1,10 @@
-# HANDOVER — 2026-05-02 #10_6 → 다음 세션
+# HANDOVER — 2026-05-02 #10_6 (묶음 W+X+Y+Z 추가) → 다음 세션
 
-> **작성자**: 2026-05-02 로컬 세션 (Claude Opus 4.7 1M, #10_6 — 묶음 R+S+T+V' 4건 자율 진행)
+> **작성자**: 2026-05-02 로컬 세션 (Claude Opus 4.7 1M, #10_6 — 4 + 4 = 8 묶음 자율 진행)
 > **수신자**: 다음 세션 (로컬/리모트)
 > **검증 명령**: `cd /Users/sokol/Desktop/Git/ProjectGrimoire && git log --oneline -10 && bash eval/scripts/eval-runner.sh`
+>
+> **핵심**: 적대적 검증 시스템 도입 완료 — Red Team Constitution 16 Principles + Socratic Self-Critique + Bounded Retry + 자율학습 3단 분리 (모두 외부 API 0).
 
 ---
 
@@ -27,7 +29,18 @@
 
 ---
 
-## 1. 본 세션 #10_6 핵심 결과 — 묶음 R+S+T+V' 자율 진행 (외부 API 0)
+## 1. 본 세션 #10_6 핵심 결과 (총 8 묶음 자율 진행)
+
+### 묶음 W+X+Y+Z (적대적 검증 시스템 — 사용자 지시 후속)
+- **묶음 W (`fd63509`)**: red-team-constitution.md 16 principles + sensor-adversarial-pre-commit.sh + .githooks/pre-commit [4/4] 강화
+- **묶음 X (`d43ed90`)**: socratic-self-critique skill (Q00/ouroboros Two-diamond + Constitutional AI 차용)
+- **묶음 Y (`fc18049`)**: adversarial-retry-handler.sh (max 2 iterations, ng/adversarial-review 정합)
+- **묶음 Z (`250cb5a`)**: 자율학습 3단 분리 — red-team-data-collector.sh + sensor-red-team-source-whitelist.sh + red-team-update-propose skill + proposals/ 게이트
+
+### 1.5 책 V1.1 학습 박제 (research)
+- **HARNESS_ADVERSARIAL_VERIFICATION.md** (`9788afd` + `e14dc51`): 우로보로스 + 악마의 변호인 + 레드팀 적용 리서치 (374줄, 출처 17개) + §5.5 자율학습 평가
+
+### 묶음 R+S+T+V' (이전 사용자 위임 자율 진행)
 
 사용자 위임 (피곤 상태): "최대한 많은 묶음을 컨텍스트 rot 없이 두 번 작업할 일 없이 작업순서를 정하고 진행" → 4 묶음 자율 commit.
 
@@ -124,13 +137,24 @@
 
 ---
 
-## 4. Git 상태 (2026-05-02 #10_6, 본 세션 4 묶음 commit/push 완료)
+## 4. Git 상태 (2026-05-02 #10_6 종료, 8 묶음 + research/ 박제 commit/push 완료)
 
 ```bash
-develop: 0cc5d44 (push 완료) — 묶음 V' NEW-B + NEW-C
+develop: 250cb5a (push 완료) — 묶음 Z 자율학습 3단 분리
 main:    78914cd (이전 머지 시점, 묶음 Q)
 
-develop이 main + 7 commit 앞섬 (#10_6 4 묶음 + 우선처리 + 책 학습 + #10_5 정합):
+develop이 main + 16 commit 앞섬 (#10_5 + #10_6 누적):
+  250cb5a 묶음 Z (Phase ε) — 자율학습 3단 분리 (사용자 추가 요구)
+  fc18049 묶음 Y (Phase γ) — Bounded Retry Loop (max 2)
+  d43ed90 묶음 X (Phase β) — Socratic Self-Critique Skill
+  fd63509 묶음 W (Phase α) — Red Team Constitution 16 Principles + adversarial sensor
+  6f44866 sensor-server Jest flaky 회복탄력성
+  e14dc51 HARNESS_ADVERSARIAL_VERIFICATION §5.5 자율학습 평가
+  9788afd HARNESS_ADVERSARIAL_VERIFICATION.md 신설 (우로보로스 + 악마의 변호인 + 레드팀)
+  caa7361 Hook 스크립트 13→14 정합
+  fd2c75f #10_6 R+S+T+V' 박제
+  ... (R/S/T/V' 4건)
+  ... (이전 #10_5 정합)
   0cc5d44 묶음 V' — NEW-B sensor-shared-contracts §4 + NEW-C harness-cross-ref
   c4e1653 묶음 T — BN-#3 에이전트 예산 + BN-#9 context-budget
   cc57c8a 묶음 S — BN-#5 loop-detection + BN-#10 5 오케스트레이션
@@ -147,20 +171,21 @@ develop이 main + 7 commit 앞섬 (#10_6 4 묶음 + 우선처리 + 책 학습 + 
 
 ---
 
-## 5. 검증 baseline (본 세션 #10_6 종료 시점)
+## 5. 검증 baseline (본 세션 #10_6 종료 시점, 8 묶음 누적)
 
 | 검증 | 결과 |
 |------|------|
-| Regression | **47/47 PASS = 100%** (#10_6 4 묶음 +6 task 누적: cost-tracker, self-diagnose, knowledge-drift wrap, skill-paths-coverage wrap, loop-detection, context-budget, harness-cross-ref) |
-| EDD (runs=2) | 의도된 갭 유지 (edd-031/edd-033) |
+| Regression | **48/48 PASS = 100%** (#10_6 8 묶음 누적: +8 sensor wrap) |
+| EDD | 의도된 갭 유지 (edd-031/edd-033) |
 | Drift sensor | exit 0 |
-| sensor-instruction-degradation | 11/11 PASS, WARN 0 (`.claude/AGENTS.md` 167줄 ≤ 200) |
+| sensor-instruction-degradation | 11/11 PASS, WARN 0 |
 | sensor-agent-priority-labels | PASS 7/7 |
-| **sensor-harness-self-diagnose** (Ch 23) | **PASS 5 / FAIL 1 (Q1 ratio P1) / SKIP 1 (Q4 사용자 보류)** |
-| sensor-context-budget | PASS 베이스라인 3587 / WARN 전체 10511 (10K 약간 초과 — 누적 정상) |
-| sensor-loop-detection | PASS (Edit 박제 0건 — 첫 가동) |
-| sensor-harness-cross-ref | PASS (분리 4정본 정합) |
-| Skills 20 / Sensors 23 / Hooks 10이벤트 13스크립트 / Knowledge 7 / Agents 7 | 정합 |
+| sensor-harness-self-diagnose (Ch 23) | PASS 5 / FAIL 1 (Q1 ratio P1) / SKIP 1 (Q4 사용자 보류) |
+| sensor-shared-contracts §4 강화 | PASS (90일 stale + mtime 동기) |
+| sensor-harness-cross-ref | PASS (분리 5정본 정합 — ADVERSARIAL_VERIFICATION 추가) |
+| **sensor-adversarial-pre-commit (16 Principles)** | **PASS 13 / WARN 3 / FAIL 0** (P1 commit 패턴 / P4 cost-margin 조기 / P16 CreditLog audit) |
+| **sensor-red-team-source-whitelist** | PASS (whitelist 정합 / 차단 정합) |
+| Skills 22 / Sensors 25 / Hooks 10이벤트 14스크립트 / Knowledge 8 / Agents 7 | 정합 |
 
 ---
 
@@ -187,20 +212,27 @@ cat .claude/knowledge/book-harness-engineering-completion.md | head -50
 
 ## 7. 다음 세션 시작 시 추천 작업 (사용자 명시 후)
 
-**Option A — 자가진단 Q1 정밀화 + Eval 점수 가중치** (외부 API 0):
-1. **묶음 W**: sensor-orchestration-ratio 정밀도 강화 (Q1 FAIL 해소) — 1h
-2. **묶음 X**: BN-#8 Eval 점수 가중치 (이분법 → 0~100 5차원, 책 Ch 20 TaskFlow) — 2h
-   - 큰 baseline 호환성 영향 → 사용자 사전 확인 권장
+**Option A — 적대적 시스템 안정화 + 자율학습 시범 운영** (외부 API 0):
+1. **묶음 AA**: sensor-adversarial-pre-commit WARN 3건 해소 — 1h
+   - P1 commit 패턴 false positive 정밀화
+   - P4 cost-margin 조기 경보 추적
+   - P16 CreditLog audit 보강 (server 도메인 — 사용자 결정)
+2. **묶음 BB**: 자율학습 시범 운영 — 1주 후 첫 propose 생성
+   - red-team-data-collector add (5건 whitelist 출처 박제)
+   - red-team-update-propose 첫 호출 → proposals/ 박제
+   - 사용자 검토 후 적용 결정
 
-**Option B — 보안 보강 (BN-#7 Hooks Semgrep/Snyk)**:
-- **외부 도구 설치 동반** (npm i -g @semgrep/cli 등) — 사용자 결정 필요
+**Option B — 자가진단 Q1 정밀화 + Eval 점수 가중치** (외부 API 0):
+- sensor-orchestration-ratio 정밀도 강화 (Q1 FAIL 해소) — 1h
+- BN-#8 Eval 점수 가중치 (이분법 → 0~100 5차원, 책 Ch 20 TaskFlow) — 2h
 
 **Option C — 사용자 직접 결정 영역 (자율 진행 금지)**:
 - **NEW P0 #1 MCP 연동** (Figma/GitHub/Playwright)
 - **NEW P0 #2 모델 티어링** (Opus/Sonnet/Haiku, 책 40~60% 절감 강력 권장 vs 0-1 보류)
 - **NEW-A**: EDD 의도된 갭 2건 해소 (server·web 코드 변경 동반)
-- **J8**: claude-docs develop → main 머지 (현재 + 7 commit, 100% 비파괴적)
+- **J8**: claude-docs develop → main 머지 (현재 + 16 commit, 100% 비파괴적)
 - **PDF**: V1.1 하네스 엔지니어링 PDF (1.7MB) gitignore vs 박제 결정
+- **proposals/{date}.md** 적용 (자율학습 결과 — 각 proposal 사용자 명시 후만)
 
 ---
 
