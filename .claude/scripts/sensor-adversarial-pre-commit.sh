@@ -190,6 +190,36 @@ else
   check 15 "HttpOnly Cookie 강제" "FAIL" "$LOCALSTORAGE_TOKEN 건 localStorage 토큰 저장 (HttpOnly Cookie 강제)"
 fi
 
+# Principle 17 — LLM Prompt Injection 방어 (OWASP LLM01, 2026-05-03 묶음 CC)
+# server controller에 prompt injection 의심 패턴 grep (sensor만 — controller 보강은 grimoire-server 사용자 결정)
+INJECTION_PATTERNS=$(grep -rE "ignore previous instructions|system prompt|you are now|</prompt>" \
+  "$ROOT/grimoire-server/src" --include="*.ts" --exclude="*.spec.ts" 2>/dev/null | grep -v "// SAFE:" | wc -l | tr -d ' ')
+if [ "$INJECTION_PATTERNS" -eq 0 ]; then
+  check 17 "LLM Prompt Injection 방어 (OWASP LLM01)" "PASS" "controller에 의심 패턴 0건"
+else
+  check 17 "LLM Prompt Injection 방어 (OWASP LLM01)" "WARN" "$INJECTION_PATTERNS 건 의심 패턴 검출 (// SAFE: 마크 또는 controller 보강 권장)"
+fi
+
+# Principle 18 — LLM Output Encoding (OWASP LLM02, 2026-05-03 묶음 CC)
+# grimoire-web에서 LLM 응답을 dangerouslySetInnerHTML로 렌더링하는지 (이미 정합 — 회귀 차단용)
+DSI_LLM=$(grep -rE "dangerouslySetInnerHTML.*\b(ai|llm|claude|response)\b" \
+  "$ROOT/grimoire-web/src" --include="*.tsx" --include="*.ts" --exclude="*.spec.*" --exclude="*.test.*" 2>/dev/null | wc -l | tr -d ' ')
+if [ "$DSI_LLM" -eq 0 ]; then
+  check 18 "LLM Output Encoding (OWASP LLM02)" "PASS" "dangerouslySetInnerHTML + LLM 응답 패턴 0건"
+else
+  check 18 "LLM Output Encoding (OWASP LLM02)" "FAIL" "$DSI_LLM 건 검출 — XSS 위험"
+fi
+
+# Principle 19 — Sensitive Info Disclosure 강화 (OWASP LLM06, 2026-05-03 묶음 CC)
+# 환경변수 직접 응답 / Prisma raw findMany / PII 평문 응답 검출
+ENV_LEAK=$(grep -rE "res\.json.*process\.env|return.*process\.env" \
+  "$ROOT/grimoire-server/src/adapter/inbound" --include="*.ts" --exclude="*.spec.ts" 2>/dev/null | wc -l | tr -d ' ')
+if [ "$ENV_LEAK" -eq 0 ]; then
+  check 19 "Sensitive Info Disclosure (OWASP LLM06)" "PASS" "controller에 process.env 직접 응답 0건"
+else
+  check 19 "Sensitive Info Disclosure (OWASP LLM06)" "FAIL" "$ENV_LEAK 건 환경변수 직접 응답 — 시크릿 노출 위험"
+fi
+
 # Principle 16 — 결제 원자성 (lenient — sensor-credit-atomicity가 WARN exit 2 컨벤션 사용)
 bash "$ROOT/.claude/scripts/sensor-credit-atomicity.sh" >/dev/null 2>&1
 EC=$?
@@ -203,8 +233,8 @@ fi
 
 # 종합
 echo ""
-echo "── 종합 (16 Principles) ──"
-echo "PASS: $PASS / WARN: $WARN / FAIL: $FAIL (총 16)"
+echo "── 종합 (19 Principles, OWASP LLM Top 10 통합) ──"
+echo "PASS: $PASS / WARN: $WARN / FAIL: $FAIL (총 19)"
 
 if [ "$FAIL" -gt 0 ]; then
   echo ""

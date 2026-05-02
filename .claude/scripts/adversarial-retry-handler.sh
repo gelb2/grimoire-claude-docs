@@ -14,6 +14,13 @@
 #   3. baseline.csv 단순 갱신 (regression 자동 실행 결과)
 #   4. .claude/state/*.jsonl 누적 (sensor-log 자동 박제)
 #
+# Cost Gate Scoring 명시 (2026-05-03 묶음 CC, ng/adversarial-review 차용):
+#   - Score ≤ 0: Report만 생성 (LLM 스킵) — 본 retry-handler는 항상 Score ≤ 0 모드 (외부 API 0)
+#   - Score 1~4 (Sonnet 2 agents): LLM 호출 동반 → 사용자 0-1 결정 위반 (보류)
+#   - Score ≥ 5 (Sonnet+Opus 4 agents): LLM 호출 동반 → 사용자 0-1 결정 위반 (보류)
+#
+# 우리 운영: 항상 Score ≤ 0 (외부 API 0) — 결정적 자동 fix만, LLM Optimizer/Skeptic은 Phase δ 미해소
+#
 # 자동 fix 금지 영역 (의미 있는 코드 변경 — 사용자 승인 필요):
 #   - 7 에이전트 .md 수정
 #   - shared-contracts.md 수정
