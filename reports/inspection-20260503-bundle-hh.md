@@ -18,6 +18,8 @@
 |------|------|
 | **regression eval** | 49/49 PASS (1.0) |
 | **EDD eval (2 runs × 52 tasks)** | 50/52 PASS (0.9615) — `2026-05-02T22:18:42Z` |
+| **EDD eval (10 runs × 52 tasks, 안정성 재검증)** | 50/52 PASS (0.9615) — `2026-05-02T22:32:55Z` |
+| **EDD 2 fail 분석** | `edd-sample-001` LLM-as-Judge 시연 (외부 Anthropic API 보류 → 의도 차단, 회귀 아님) |
 | **grimoire-server jest** | 480/480 PASS |
 | **grimoire-server build** | PASS (NestJS) |
 | **grimoire-server prisma** | 스키마 valid |
