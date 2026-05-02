@@ -75,7 +75,7 @@ EC=$?
 if [ "$EC" -eq 0 ]; then
   check 4 "§0 원가 철칙 (마진 ≥3.5×)" "PASS" "sensor-cost-margin PASS"
 elif [ "$EC" -le 2 ]; then
-  check 4 "§0 원가 철칙 (마진 ≥3.5×)" "WARN" "sensor-cost-margin WARN (조기 경보)"
+  check 4 "§0 원가 철칙 (마진 ≥3.5×)" "WARN" "sensor-cost-margin WARN [ACCEPTABLE — 조기 경보 정상 신호, 책 Ch 18 cost-accountant 권장 임계 3.0~3.5× WARN]"
 else
   check 4 "§0 원가 철칙 (마진 ≥3.5×)" "FAIL" "sensor-cost-margin FAIL (exit=$EC)"
 fi
@@ -196,7 +196,7 @@ EC=$?
 if [ "$EC" -eq 0 ]; then
   check 16 "결제 원자성 (transaction)" "PASS" "sensor-credit-atomicity PASS"
 elif [ "$EC" -le 2 ]; then
-  check 16 "결제 원자성 (transaction)" "WARN" "sensor-credit-atomicity WARN (CreditLog audit 부재 등)"
+  check 16 "결제 원자성 (transaction)" "WARN" "sensor-credit-atomicity WARN [ACCEPTABLE — CreditLog audit는 server 도메인 사용자 결정 영역, J8/Phase δ 미해소]"
 else
   check 16 "결제 원자성 (transaction)" "FAIL" "sensor-credit-atomicity FAIL (exit=$EC)"
 fi
