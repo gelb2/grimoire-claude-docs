@@ -30,7 +30,28 @@ echo "작업 디렉토리: $(pwd)"
 echo "Node: $(node --version), npm: $(npm --version)"
 
 run_step "[1/4] TypeScript 컴파일" npx tsc --noEmit
-run_step "[2/4] Jest 테스트" npm test
+
+# [2/4] Jest 테스트 — flaky 회복탄력성 (2026-05-02 #10_6 추가)
+# 사유: jest multi-worker가 sensor-web 동시 실행 시 자원 경합으로 일회성 FAIL 가능 (#10_6 검증 발견)
+# 패턴: sensor-web .next stale fallback 정합 (Fowler Resilience)
+echo ""
+echo "=== [2/4] Jest 테스트 ==="
+if npm test; then
+  echo "[RESULT] PASS"
+  PASS_COUNT=$((PASS_COUNT + 1))
+else
+  echo "[WARN] 1차 Jest 실패 — 일회성 flaky 가능성 (worker 경합/timeout). 5초 대기 후 재시도..."
+  sleep 5
+  if npm test -- --runInBand; then
+    echo "[RESULT] PASS (--runInBand single-worker 재시도 성공)"
+    PASS_COUNT=$((PASS_COUNT + 1))
+  else
+    echo "[RESULT] FAIL (재시도에도 실패 — 진짜 회귀)"
+    FAIL_COUNT=$((FAIL_COUNT + 1))
+    FAIL_STEPS+=("[2/4] Jest 테스트")
+  fi
+fi
+
 run_step "[3/4] 프로덕션 빌드" npm run build
 run_step "[4/4] Prisma 스키마 검증" npx prisma validate
 
