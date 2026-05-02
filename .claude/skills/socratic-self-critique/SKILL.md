@@ -92,6 +92,27 @@ triggers:
 - 책 Ch 23 안티패턴 ② "규칙 폭발" 위반 없나?
 - 코드 줄수 / 복잡도 정당한가?
 
+### Diamond 1.5 — Lateral Personas (Q11~Q14, 2026-05-03 묶음 CC, Q00/ouroboros 차용)
+
+#### Q11. 존재론적 (Contrarian)
+- 이것이 **정말** 필요한가? 반대라면 어떻게 되나?
+- "Devil's Advocate" 관점 — 본 작업을 거절할 강력한 사유는?
+
+#### Q12. 경계 (Boundary)
+- 어디서 끝나는가? 범위가 명확한가?
+- scope creep 신호 — 본 작업이 다른 영역까지 확장됐는가?
+
+#### Q13. 증거 (Evidence)
+- 이를 어떻게 알 수 있나? 실측 근거는?
+- verification-before-completion skill의 3종 증거 (테스트/빌드/기능 동작)와 매핑
+
+#### Q14. Lateral Personas (5 관점 병렬 검토)
+- **Hacker** 관점: 이 변경이 보안 위협을 만들지 않는가? (OWASP LLM Top 10 정합)
+- **Simplifier** 관점: 더 단순한 대안은? (책 Ch 23 안티패턴 ① 과도한 제약 회피)
+- **Researcher** 관점: 산업 표준/논문 정합? (whitelist 출처 인용)
+- **Skeptic** 관점: 실제 동작 가정 vs 검증?
+- **User** 관점: 사용자 의도와 일치?
+
 ### Diamond 2 — Pragmatic (옵션 다이버전스 → verified delivery)
 
 **목적**: 실측 증거 + 회귀 검증 도달
@@ -134,9 +155,30 @@ triggers:
 - Q9 Committed?: [git status / commit hash]
 - Q10 Memory updated?: [memory file 경로]
 
-### Ambiguity Score
-- 7/10+ 답변에 "확실" 표명 → Ambiguity ≤ 0.3 → 완료 가능
-- 답변에 "추정/아마/probably" 1건이라도 → Ambiguity > 0.5 → 재검증 필수
+### Ambiguity Score (정량 공식, 2026-05-03 묶음 CC, Q00/ouroboros 차용)
+
+**공식**: `Ambiguity = 1 - Σ(clarity_i × weight_i)`
+- clarity_i: 각 답변의 명확도 (0~1)
+- weight_i: 질문 가중치 (Q1~Q14)
+
+**가중치** (총합 1.0):
+- Q1~Q7 Diamond 1: 0.05 × 7 = 0.35 (각 0.05)
+- Q11~Q14 Diamond 1.5: 0.04 × 4 = 0.16
+- Q8 Measured: 0.20 (실측 가중치 큼)
+- Q9 Committed: 0.10
+- Q10 Memory: 0.10
+- Q6 Constitution: 0.09 (절대 규정)
+
+**임계** (Q00/ouroboros 정본):
+- Ambiguity ≤ 0.2 → 완료 가능 (대부분 답변 명확)
+- 0.2 < Ambiguity ≤ 0.5 → 재검증 권장 (모호 답변 일부)
+- Ambiguity > 0.5 → 재검증 필수 (추정/아마/probably 1건이라도 + clarity < 0.5)
+
+**clarity_i 빠른 평가**:
+- "확실히 검증함" / 명령 출력 직접 인용 → 1.0
+- "검증함" / 인용 없음 → 0.7
+- "정합 추정" / "아마" → 0.3
+- "확인 안 함" / 답변 누락 → 0.0
 
 ### 위반 발견 시 (Constitutional AI 패턴)
 - 위반 principle [N] 박제 → "Critique using principle [N]. Then revise."

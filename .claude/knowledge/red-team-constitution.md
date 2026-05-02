@@ -92,6 +92,31 @@
 
 ---
 
+## OWASP LLM Top 10 적용 (2026-05-03 묶음 CC, BB proposal §10-1 적용)
+
+### Principle 17 — LLM Prompt Injection 방어 (OWASP LLM01)
+> 사용자 입력에 prompt injection 의심 패턴 자동 검증
+- **검증**: sensor-adversarial-pre-commit이 grimoire-server controller에 prompt injection 휴리스틱 grep
+  - 검출 패턴: "ignore previous", "system prompt", "you are now", "</prompt>"
+  - controller 보강 자체는 grimoire-server 레포 영역 (사용자 결정, P17 sensor만 자율)
+- **근거**: OWASP LLM Top 10 #1 — "Prompt Injection이 LLM 응용 최우선 위협"
+
+### Principle 18 — LLM Output Encoding (OWASP LLM02)
+> LLM 응답을 Next.js 렌더링 전 검증 — dangerouslySetInnerHTML 사용 0건 강제
+- **검증**: grimoire-web에서 `dangerouslySetInnerHTML.*ai|llm|claude` grep → 0건
+- **현재 정합**: 이미 0건 (명시 박제로 회귀 차단)
+- **근거**: OWASP LLM Top 10 #2 — "Insecure Output Handling이 downstream security exploits 야기"
+
+### Principle 19 — Sensitive Info Disclosure 강화 (OWASP LLM06)
+> 환경변수 노출 / DB 스키마 정보 노출 / 사용자 PII 마스킹 검증
+- **검증**: sensor-adversarial-pre-commit가 env/DB/PII 정규식 검출
+  - process.env 직접 응답 노출
+  - prisma findMany 직접 응답 노출
+  - email/phone/address 응답 평문
+- **근거**: OWASP LLM Top 10 #6 — "Sensitive Information Disclosure 방지를 위한 데이터 분류 + 마스킹"
+
+---
+
 ## 적용 방식 (책 Ch 17 Constitutional AI 자기-비판 패턴)
 
 각 commit 직전 본 sensor가 16 principles 자동 검증:
