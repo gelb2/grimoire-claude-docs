@@ -175,6 +175,76 @@
 
 ---
 
+## 10. 적용 방향 깊은 분석 (2026-05-03 사용자 추가 요구)
+
+본 proposal 5 영역 각각의 위험/가치/자율 적용 가능성 정밀 분석:
+
+### 10-1. 자율 적용 가능 (외부 API 0, 위험 작음, 회귀 영향 작음)
+
+| 항목 | 영역 | 위험 | 회귀 영향 | 자율 적용 |
+|------|------|------|----------|----------|
+| **P18 명시 박제** | Constitution + sensor | 0 (이미 정합) | 0 | ✅ 즉시 가능 |
+| **P19 강화** | Constitution + sensor-secret-leak 확장 | 작음 (정적 분석 강화) | 작음 | ✅ 즉시 가능 |
+| **§2 sensor LLM02 패턴** | sensor 추가 (dangerouslySetInnerHTML grep) | 0 (이미 정합) | 0 | ✅ 즉시 가능 |
+| **§2 sensor LLM06 패턴** | sensor 추가 (env/DB/PII grep) | 작음 | 작음 | ✅ 즉시 가능 |
+| **§3 socratic +4 질문** | skill SKILL.md 갱신 | 0 (메타 프롬프트) | 0 | ✅ 즉시 가능 |
+| **§3 Ambiguity 정량 공식** | skill 본문 추가 | 0 | 0 | ✅ 즉시 가능 |
+| **§4 cost gate 명시 박제** | retry-handler 주석 강화 (외부 API 0 영역만) | 0 | 0 | ✅ 즉시 가능 |
+
+→ **묶음 CC 적용 가능** (~2시간)
+
+### 10-2. 사용자 결정 영역 (server 코드 변경 동반)
+
+| 항목 | 영역 | 사유 |
+|------|------|------|
+| **P17 controller 보강** | server 도메인 (NestJS controller 입력 검증) | server 코드 변경 = 사용자 명시 영역 (J8/Phase δ 정합) |
+| **§2 sensor LLM01 패턴 (sensor만)** | sensor 추가 | 자율 가능하지만 P17 controller 보강과 함께 적용이 정합 |
+
+→ 사용자 명시 후 진행 (Phase δ 또는 별도 묶음)
+
+### 10-3. 중첩 우려 — 사용자 검토 필요
+
+| 항목 | 우리 보유 | 차별점 분석 | 추천 |
+|------|---------|-----------|------|
+| **§5 dispatching-parallel-agents** | orchestration-decision skill | orch-decision = 단일 위임 결정 / dispatching = 다중 동시 dispatching → **차별점 있음** | ⚠️ 사용자 검토 후 결정 (적용 가치 vs 인벤토리 비대 |
+| **§5 requesting-code-review** | verification-before-completion + sensor-adversarial-pre-commit | verification = 실측 강제 / adversarial = 16 principles / requesting = 사용자/외부 review 트리거 → **약간 차별** | ⚠️ 사용자 검토 (중첩 vs 사용자 트리거 가치) |
+
+→ 사용자 검토 후 결정 (단순 적용 시 책 Ch 23 안티패턴 ② "규칙 폭발" 위험)
+
+---
+
+## 11. 추천 적용 순서
+
+### 옵션 A — **즉시 적용 가능한 것만 자율** (묶음 CC, ~2시간) — **추천**
+- §10-1 7 항목 일괄 적용
+- 별도 commit + 회귀 검증
+- main 머지는 사용자 결정 (J8)
+
+### 옵션 B — 사용자 검토 후 적용 (J8 후)
+- §10-2 P17 server controller 보강 (사용자 명시 시)
+- §10-3 §5 신규 skills (사용자 검토 후 결정)
+
+### 옵션 C — 전체 적용 (사용자 직접 결정 + 일부 자율)
+- §10-1 자율 + §10-2/§10-3 사용자 명시
+- 묶음 CC + 묶음 DD (server 영역) + 묶음 EE (skill 영역)
+
+---
+
+## 12. 사용자 결정 후보 (정리)
+
+다음 중 명시 후 자율 진행:
+- [ ] **옵션 A 진행** (묶음 CC — §10-1 7 항목 자율 적용, ~2시간)
+- [ ] **옵션 B 진행** (§10-2 P17 server controller 보강 — 사용자 명시 시 진행)
+- [ ] **옵션 C 진행** (§10-1 자율 + §10-2/§10-3 사용자 추가 결정)
+- [ ] **§5 신규 2 skills 검토 결과**:
+   - dispatching-parallel-agents [ ] 적용 / [ ] 거절
+   - requesting-code-review [ ] 적용 / [ ] 거절
+- [ ] **거절** (proposal 전체 폐기)
+- [ ] **보류** (다음 주 재검토)
+
+---
+
 ## 변경 이력
 - 2026-05-03 #10_6 묶음 BB 시범 운영: 본 proposal 신설 (자율학습 첫 결과 박제)
+- 2026-05-03 #10_6 적용 방향 분석 (사용자 추가 요구): §10/§11/§12 추가 — 자율/결정/중첩 분류
 - 사용자 승인 게이트 — 적용 X
