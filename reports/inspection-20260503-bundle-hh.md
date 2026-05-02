@@ -17,7 +17,7 @@
 | 항목 | 결과 |
 |------|------|
 | **regression eval** | 49/49 PASS (1.0) |
-| **EDD eval (2 runs × 50 tasks)** | (실행 중 — 완료 시 본 항목 갱신) |
+| **EDD eval (2 runs × 52 tasks)** | 50/52 PASS (0.9615) — `2026-05-02T22:18:42Z` |
 | **grimoire-server jest** | 480/480 PASS |
 | **grimoire-server build** | PASS (NestJS) |
 | **grimoire-server prisma** | 스키마 valid |
