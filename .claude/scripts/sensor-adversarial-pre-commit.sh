@@ -192,12 +192,11 @@ fi
 
 # Principle 17 — LLM Prompt Injection 방어 (OWASP LLM01, 2026-05-03 묶음 CC)
 # server controller에 prompt injection 의심 패턴 grep (sensor만 — controller 보강은 grimoire-server 사용자 결정)
-# 정밀화: 주석 (// 또는 /* */) 라인 제외, // SAFE: 마크 제외 → false positive 0건
+# 정밀화 (#10_6 묶음 FF): grep 결과 file:content 형식 prefix 고려 — JSDoc 연속 라인 ` * ` 제외
 INJECTION_PATTERNS=$(grep -rE "ignore previous instructions|system prompt|you are now|</prompt>" \
-  "$ROOT/grimoire-server/src" --include="*.ts" --exclude="*.spec.ts" 2>/dev/null \
-  | grep -v "^\s*//\|^\s*\*\|^\s*/\*" \
-  | grep -v "// SAFE:" \
-  | grep -v "^[^:]*:\s*//" \
+  "$ROOT/grimoire-server/src" --include="*.ts" --exclude="*.spec.ts" \
+  --exclude="prompt-injection-guard.ts" 2>/dev/null \
+  | grep -vE "^[^:]+:\s*//|^[^:]+:\s*\*|^[^:]+:\s*/\*|// SAFE:" \
   | wc -l | tr -d ' ')
 if [ "$INJECTION_PATTERNS" -eq 0 ]; then
   check 17 "LLM Prompt Injection 방어 (OWASP LLM01)" "PASS" "controller에 의심 패턴 0건 (주석 false positive 제외)"

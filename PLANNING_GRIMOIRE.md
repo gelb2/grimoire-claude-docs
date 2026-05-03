@@ -1296,7 +1296,7 @@ YECHANGPE 프로젝트에서 검증된 Claude API + OpenAI Embedding + RAG + Vec
 
 ---
 
-## 16. 변경 이력 (2026-04-19 ~ 2026-05-02 — J5 박제)
+## 16. 변경 이력 (2026-04-19 ~ 2026-05-03 — 묶음 DD 갱신)
 
 > 본 §16은 PLANNING_GRIMOIRE.md 자체의 변경 + 운영 결정사항 누적. 코드/하네스 변경은 각 레포 CHANGELOG.md / `research/HARNESS_ENGINEERING.md` 참조.
 
@@ -1319,14 +1319,34 @@ YECHANGPE 프로젝트에서 검증된 Claude API + OpenAI Embedding + RAG + Vec
 | 2026-05-02 #10_4 묶음 J | orchestration-decision Skill 자가 분류 의무 + PostToolUse Task hook + reports 골격 정합 (책 Ch 16) | `.claude/AGENTS.md §2.2.1` |
 | 2026-05-02 #10_4 묶음 K | drift-check §17 검증 + book 운영 데이터 + feedback 14일 단축 | `.claude/knowledge/book-harness-engineering-completion.md` |
 | 2026-05-02 #10_4 묶음 L | HARNESS §13/§15/§17 분리 (1328 → 1105줄) — `HARNESS_FIELD_PATTERNS_4.md` + `HARNESS_BIBLIOGRAPHY.md` + `HARNESS_SPLIT_AND_EDD.md` | `research/HARNESS_*.md` 4개 |
+| 2026-05-02 #10_5 | 책 V1.1 「하네스 엔지니어링 완전 정복」 전체 학습 (Ch 1~23 + 부록 A/B/C, 206 페이지) → NEW P0 10건 도출 | `.claude/knowledge/book-harness-engineering-completion.md` |
+| 2026-05-02 #10_6 묶음 R+S+T+V' | 책 결론 즉시 적용: cost-tracker / self-diagnose / loop-detection / 5 오케스트레이션 / AGENT_BUDGETS / context-budget / shared-contracts §4 / harness-cross-ref | 8 sensor 신규 |
+| 2026-05-02 #10_6 묶음 W | **Red Team Constitution 16 Principles 신설** (Anthropic Constitutional AI 차용) + sensor-adversarial-pre-commit + .githooks/pre-commit [4/4] 강화 | `.claude/knowledge/red-team-constitution.md` |
+| 2026-05-02 #10_6 묶음 X | **Socratic Self-Critique Skill 신설** (Q00/ouroboros Two-diamond 차용) | `.claude/skills/socratic-self-critique/` |
+| 2026-05-02 #10_6 묶음 Y | **Bounded Retry Loop max 2** (ng/adversarial-review 정합) — 자동 fix 결정적 영역만 | `.claude/scripts/adversarial-retry-handler.sh` |
+| 2026-05-02 #10_6 묶음 Z | **자율학습 3단 분리** (α-자율 수집 + α-반자율 propose + 사용자 승인 게이트) — 거버넌스 부재 안티패턴 #7 방어 | `.claude/skills/red-team-update-propose/` + `.claude/proposals/` |
+| 2026-05-03 #10_6 묶음 AA+BB | adversarial WARN 2건 ACCEPTABLE 마크 + 자율학습 첫 시범 운영 (proposal red-team-update-20260503.md 생성) | `.claude/proposals/red-team-update-20260503.md` |
+| 2026-05-03 #10_6 묶음 CC | **Constitution 16 → 19 Principles 확장** (OWASP LLM Top 10 통합 — P17 Prompt Injection / P18 Output Encoding / P19 Sensitive Info Disclosure) + socratic Q11~Q14 (Lateral Personas) + Ambiguity 정량 공식 + cost gate 명시 | proposal §10-1 적용 |
+| 2026-05-03 #10_6 J8 머지 3회 | claude-docs develop → main (총 22 commit, 100% 비파괴적) | main 7e7c7ec |
+| 2026-05-03 #10_6 묶음 DD | 본 PLANNING 갱신 (#9~#10_6 결정사항 누적) | §16 |
 
-### 운영 정책 강화 누적 (2026-04-25 ~ 2026-05-02, 외부 API 0)
+### 운영 정책 강화 누적 (2026-04-25 ~ 2026-05-03, 외부 API 0)
 
-- **하네스 분할 정본 확립**: CLAUDE.md (73) + .claude/AGENTS.md (126) + docs/AGENTS.md (195) + .githooks/AGENTS.md (142) + shared-contracts.md — instruction degradation 위험 해소
+- **하네스 분할 정본 확립**: CLAUDE.md (73) + .claude/AGENTS.md (167) + docs/AGENTS.md (195) + .githooks/AGENTS.md (142) + shared-contracts.md — instruction degradation 위험 해소
 - **에이전트 7개 모두 분할 완료**: 각 ≤ 300줄 (sensor-instruction-degradation 11/11 PASS)
 - **인벤토리 자동 갱신**: pre-commit hook + update-harness-inventory.sh — 새 sensor/skill 추가 시 HARNESS §14 자동 갱신
 - **위임 매트릭스 자가 분류**: 작업 시작 전 orchestration-decision Skill 강제 (책 Ch 16 패턴 1 KPI 추적)
 - **회귀/EDD 시계열 추적**: sensor-eval-trend (30일 mean / 7일 slope / 회귀 빈도 임계)
-- **인벤토리 (2026-05-02 묶음 M 후)**: Skills 20 / Sensors 18 / Knowledge 6 / Hooks 9 이벤트 11 스크립트 / Generators 2 / Eval task 38 (regression) + 2 (EDD only)
+- **자가진단 7질문 (책 Ch 23)**: PASS 5 / FAIL 1 (Q1 ratio P1) / SKIP 1 (Q4 사용자 보류) — 건강 영역
+- **적대적 검증 시스템 (#10_6 W~Z+CC)**: Red Team Constitution 19 Principles + Socratic Self-Critique + Bounded Retry + 자율학습 3단 분리 — pre-commit 자동 차단 + 자가-비판
+- **인벤토리 (2026-05-03 묶음 CC 종료)**: Skills 22 / Sensors 25 / Knowledge 8 / Hooks 10 이벤트 14 스크립트 / Generators 2 / Eval task 49 + Constitution 19 Principles + Proposals 1건
 
-본 §16은 다음 PLANNING 갱신 시 (J5 후속) 추가로 누적.
+### 사용자 명시 결정 영역 (2026-04-30 ~ 2026-05-03 박제)
+
+- **외부 Anthropic API 신규 의존 보류** (4-30): LLM-as-Judge SDK / 모델 티어링 / Agent teams — 0-1 결정 무기한 보류
+- **Polar KYC + 한국 payout** (사용자 본인 액션): 승인 전까지 test mode
+- **PLANNING_GRIMOIRE.md 갱신**: 본 §16 (사용자 명시 시만, proposals 패턴 가능)
+- **claude-docs main 머지**: 사용자 명시 J8 (지금까지 3회 — e26b627 / 8158a5e / 7e7c7ec)
+- **server·web main 머지**: 동일 패턴
+
+본 §16은 다음 PLANNING 갱신 시 추가로 누적.
