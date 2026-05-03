@@ -438,7 +438,7 @@ model WebhookEvent {
 
 ### 처리 흐름 (payment.usecase.processWebhook)
 1. polar.adapter.verifyAndParseWebhook 호출 → eventId 박제된 NormalizedWebhookEvent 반환
-2. webhookEventRepo.findByEventId(event.eventId) → 이미 있으면 즉시 `{ processed: false, reason: 'already_processed_event' }` 반환 (200 OK)
+2. webhookEventRepo.findByEventId(event.eventId) → 이미 있으면 즉시 `{ processed: false, reason: 'duplicate_event' }` 반환 (200 OK)
 3. payment 처리 (현재 로직 그대로)
 4. 성공 시 webhookEventRepo.createIfAbsent(eventId, ..., status='processed') — race 시 null 반환 시 다른 worker 처리 중으로 간주, 무시
 5. 실패 시 createIfAbsent(..., status='failed', errorMessage=...) — DLQ 보강 전 임시 박제
