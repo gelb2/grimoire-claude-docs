@@ -55,35 +55,85 @@
 
 ---
 
-## 🎯 1.5. 진행 현황 (2026-05-04 04:50 기준 — 채팅방 폭파 예방 박제)
+## 🎯 1.5. 진행 현황 (2026-05-04 07:00 기준 — 채팅방 폭파 예방 박제)
 
-### ✅ 완료 (3 레포 develop push 완료)
-- 작업 B (테마 에디터 preset name 자동 동기) — web `3682081`
-- 작업 C (publishTheme bakedCssUrl 절대 URL) — server `ff493dd` + web `70ca832`
-- PAY-P0-1 webhook event_id 멱등성 — server `8c13103` + claude-docs `06de6c6`
-- PAY-P0-2 PG↔DB 정합성 cron — server `8e9e02e` + web `849f771` + claude-docs `790e692`
-- PAY-P0-3 운영자 수동 크레딧 UI — web `af3f04c` + claude-docs `841e704`
-- commit hook 자동화 보강 — server `1f43b05` + web `dd3717b` + claude-docs `43c1728`
-- CERTI_PROJ 외부 leak 제거 — server `b67233c`
-- 결제 전수검사 + 다음 계획 박제 — `reports/PAYMENT_NEXT_STEPS.md` (claude-docs `43c1728`)
+### ✅ 완료 (3 레포 develop push 완료, 모든 commit hash 박제)
 
-### ⏳ 진행 중 (사용자 명시 옵션 A)
-- **PAY-P1-1 Refund 정밀 처리** (~2h) — 채팅방 폭파 예방용 박제: `memory/project_session_20260503_3.md §2`
-- 핵심 갭: webhook 'cancel' 분기에서 status='refunded' 마킹만, 크레딧 환수 트랜잭션 부재 → 적자 위험
-- 산출물 후보: `refund-payment.usecase.ts` + `RefundLog` 모델 + spec + sensor-refund-atomicity + regression-55 + shared-contracts §13
-- 멀티에이전트: planner Initializer → server Generator → qa Evaluator (cost-accountant/VCK 면제)
+| 작업 | server | web | claude-docs |
+|------|--------|-----|-------------|
+| 작업 B (테마 에디터 preset name) | — | `3682081` | `2bf9dc5` |
+| 작업 C (publishTheme bakedCssUrl) | `ff493dd` | `70ca832` | `8bfc737` |
+| PAY-P0-1 webhook event_id 멱등성 | `8c13103` | `9c4b409` | `86f7487` |
+| PAY-P0-1 drift fix (sensor 25→26) | — | — | `06de6c6` |
+| PAY-P0-2 PG↔DB 정합성 cron | `8e9e02e` | `849f771` | `790e692` |
+| PAY-P0-3 운영자 수동 크레딧 UI | — | `af3f04c` | `841e704` |
+| **commit hook 자동화 보강** (사용자 지적 후) | `1f43b05` | `dd3717b` | `43c1728` (다른 동시 세션 묶음 KK) |
+| CERTI_PROJ 외부 leak 제거 | `b67233c` | — | — |
+| 결제 전수검사 + 계획 박제 | — | — | `43c1728` (`reports/PAYMENT_NEXT_STEPS.md`) |
+| HANDOVER §1.5 박제 (채팅방 폭파 예방) | — | — | `7d30131` |
+| **PAY-P1-1 Refund 정밀 처리** (적자 위험 차단) | `adfcae8` | `eb64a8b` | `2ed585e` |
+| **PAY-P1-1 종료 메모리 박제** | — | — | (메모리 박제만, 본 commit) |
 
-### 🚀 다음 트랙 (PAY-P1-1 후)
-1. PAY-P1-2 결제 알림 이메일 (cost-accountant 외부 API 위임 필수)
-2. PAY-P1-3 결제 실패 retry 정책
-3. 작업 D (작품별 테마 배정 UI) + E (조회수 급락 조사)
-4. PAY-P2 (부분 환불 / DLQ / audit 강화 / SMS)
-5. 작업 A + PAY-P1-4 (구독제 요금제 통합, 큰 작업)
+### 🚀 다음 트랙 (사용자 결정 영역, PAYMENT_SYSTEM_PLAN.md §3-2)
 
-### 📦 사용자 영역 잔존 (PAY-P0)
-- main per-repo 머지 (3 레포)
-- dev 환경 검증 (PUBLIC_API_BASE_URL env + Container Apps 로그 + admin 화면 클릭)
-- prod 배포 (`npx prisma migrate deploy` + `make deploy-prod`)
+| 옵션 | 트랙 | 시간 | 비고 |
+|---|---|---|---|
+| **A** | PAY-P1-2 결제 알림 이메일 | ~3h | **cost-accountant 외부 API 위임 필수** (Resend/SendGrid/Postmark 중 사용자 결정) |
+| **B** | PAY-P1-3 결제 실패 retry 정책 | ~2h | 24h 이내 same payment 재사용 + 만료 cron |
+| **C** | 작업 D (테마 배정 UI) + 작업 E (조회수 조사) | ~3~4h | production-bug-triage skill 발동 |
+| **D** | main per-repo 머지 + dev 검증 + 휴식 | 사용자 영역 | 안전 stop |
+| **E** | 작업 A + PAY-P1-4 (구독제 요금제 통합) | ~5~8h | 큰 작업, 기획 단계 선행 필수 |
+
+### 📦 사용자 영역 잔존 (PAY-P0 + P1-1 통합)
+
+| # | 항목 | 명령 |
+|---|------|------|
+| 1 | main per-repo 머지 (3 레포) | "claude-docs main 머지" / "server main 머지" / "web main 머지" 형식 명시 |
+| 2 | PAY-P0-1 dev 검증 | dev에 `PUBLIC_API_BASE_URL` env 추가 + Polar 동일 event_id 두 번 시뮬 |
+| 3 | PAY-P0-2 dev 검증 | Container Apps 로그에서 `[PaymentReconciliationJob] 시작 ... 완료` 1회 박제 |
+| 4 | PAY-P0-3 dev 검증 | admin 화면 클릭 (검색→amount+reason→confirm→toast + DB credit_logs row 박제) |
+| 5 | **PAY-P1-1 dev 검증** | Polar `order.refunded` webhook 발생 시 RefundLog row + Author.credits decrement + AuditLog operator='system_refund' 박제 확인 |
+| 6 | prod 배포 | `npx prisma migrate deploy` (3 신규 테이블: webhook_events / reconciliation_checkpoints / refund_logs 무중단) + `make deploy-prod` |
+
+### 📊 인벤토리 변동 (B/C + PAY 누적 4건)
+- Skills 24 (불변)
+- Sensors **25 → 29** (+4: payment-idempotency / payment-reconciliation / admin-credit-ui / refund-atomicity)
+- Knowledge 9 (불변)
+- shared-contracts **§1~10 → §1~13** (+3: WebhookEventIdempotency / PaymentReconciliation / RefundPaymentAtomically)
+- Eval regression **51 → 55** (+4)
+- jest server **494 → 543** (+49 신규 spec)
+- vitest web **125 → 140** (+15 신규 spec)
+- DB 모델 +3 (WebhookEvent / ReconciliationCheckpoint / RefundLog)
+- Constitution 19 principles (불변)
+- Hooks 9 이벤트 14 스크립트 + 3 레포 pre-commit/pre-push 자동 발동 강제
+
+### 🔍 거짓말 차단 효과 (PAY-P0 → P1-1 강화 흐름 검증)
+- ✅ PAY-P0-2/3/P1-1 모두 server/web agent commit/push 0건 (메인 위임 정합)
+- ✅ spec 더미 assertion 0건 (qa Evaluator 직접 Read 검증)
+- ✅ CERTI_PROJ/brightmall/thermage/inapi 외부 인용 0건 (server/web grep)
+- ✅ commit/push 직전 sensor-adversarial 자동 발동 강제 (3 레포 모두)
+- ⚠️ 1건 부분 거짓 (PAY-P1-1 server agent "eval 55/55" → 실제 52/55, docs drift 누락) → qa 즉시 발견 + 메인 server→web sync 보강
+
+### 🎯 다음 세션 시작 시 첫 명령 (채팅방 폭파 시 즉시 이어받기)
+```bash
+cd /Users/sokol/Desktop/Git/ProjectGrimoire
+
+# 1. 핸드오버 + 메모리 Read
+cat HANDOVER_NEXT_SESSION.md  # 본 파일 §1.5 진행 현황
+cat /Users/sokol/.claude/projects/-Users-sokol-Desktop-Git-ProjectGrimoire/memory/project_session_20260503_3.md
+cat reports/PAYMENT_NEXT_STEPS.md
+
+# 2. 현재 상태 확인
+git log --oneline -10
+git -C grimoire-server log --oneline -5
+git -C grimoire-web log --oneline -5
+
+# 3. 시스템 인벤토리 검증
+bash .claude/scripts/sensor-adversarial-pre-commit.sh
+bash eval/scripts/eval-runner.sh
+
+# 4. 사용자 결정 영역 확인 후 다음 트랙 진입 (옵션 A~E 중)
+```
 
 ---
 
