@@ -1,0 +1,16 @@
+{
+  "id": "regression-051",
+  "name": "api_contract — publishTheme bakedCssUrl 절대 URL 응답 정책 가드 (P1-#7)",
+  "category": "api_contract",
+  "source_session": "20260503_2 sprint-baked-css-url-absolute (P1-#7) — Generator grimoire-server + grimoire-web",
+  "prompt": "server bake-theme.usecase가 상대 경로 박제를 폐지하고, 응답 시점에 url-resolver helper로 절대 URL 결합하는지 검증. (a) bake-theme.usecase.ts에 '/api/themes/css/' 상대 경로 박제 패턴 0건 (b) url-resolver helper 존재 (c) data-model.md에 '절대 URL 또는 NULL' 정책 명시 (d) web layout.tsx에 상대 경로 fallback 처리 주석/코드 0건 (e) 마이그레이션 파일 존재. 회귀로 정책 폐기 시 즉시 FAIL.",
+  "eval_criteria": [
+    {"type": "command", "command": "grep -c \"'/api/themes/css/\" /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/src/application/theme/bake-theme.usecase.ts | xargs -I{} test {} -eq 0", "desc": "server bake-theme.usecase.ts에 상대 경로 박제 패턴 0건"},
+    {"type": "command", "command": "test -f /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/src/lib/url-resolver.ts", "desc": "url-resolver helper 신설 (응답 절대화 책임)"},
+    {"type": "command", "command": "grep -E '절대 URL|NULL' /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/docs/data-model.md > /dev/null", "desc": "server data-model.md에 절대 URL/NULL 정책 명시"},
+    {"type": "command", "command": "grep -E '상대 (URL|경로) (fallback|폴백)' /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-web/src/app/\\[author\\]/layout.tsx | grep -v '폐지' | wc -l | xargs -I{} test {} -eq 0", "desc": "web layout.tsx에 상대 경로 fallback 잔존 0건 (폐지 주석은 허용)"},
+    {"type": "command", "command": "ls /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/prisma/migrations/ | grep baked_css_url_clear_relative > /dev/null", "desc": "Prisma 마이그레이션 파일 존재"}
+  ],
+  "threshold": 1.0,
+  "runs": 1
+}

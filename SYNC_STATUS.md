@@ -4,7 +4,7 @@
 > 서버 기능 추가 또는 웹 연결 시 이 문서를 업데이트한다.
 > 각 레포 TECH_STATUS.md는 레포 내부 구현 상태만 기록한다.
 >
-> **마지막 갱신: 2026-04-30 #10 (J2 작업)**. 분석 4 크레딧 인상 + AI 채팅 크레딧 차감 미연동 사실 명시.
+> **마지막 갱신: 2026-05-03 #10_7 (작업 C, P1-#7)**. server publishTheme bakedCssUrl 절대화 — 응답은 항상 절대 URL (Blob CDN 또는 폴백 절대 URL). web 동기화는 web agent가 진행 (`grimoire-web/src/app/[author]/layout.tsx` 주석 정리 + types).
 
 ---
 
