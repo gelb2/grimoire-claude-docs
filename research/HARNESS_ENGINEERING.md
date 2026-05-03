@@ -763,7 +763,7 @@ v2 추가 제안:
 | **PostToolBatch** (2026-04-25 #7 신설) | - (전체) | post-batch-tsc.sh | parallel batch 완료 후 server+web tsc 일괄 (debounce 60s, 빌드 중복 60% ↓ 목표) |
 | **PostToolUseFailure** (2026-04-27 #9 F2 신설) | - (전체) | posttooluse-failure-handler.sh | 도구 실패 시 적재 + Chrome MCP 한정 정책 처리 (1회 재시도 신호 / reCAPTCHA 즉시 차단 / prod 도메인 자동 재시도 안 함). additionalContext로 Claude에게 재시도 신호만 전달, 실제 재시도는 Claude 판단 |
 
-### 14.4 Sensors 27개 (`.claude/scripts/sensor-*.sh`)
+### 14.4 Sensors 28개 (`.claude/scripts/sensor-*.sh`)
 
 | Sensor | 용도 |
 |---|---|
@@ -779,6 +779,7 @@ v2 추가 제안:
 | sensor-feedback-promotion.sh (2026-04-26 #9 신설, X-L) | memory/feedback_*.md 영향력 측정 (다른 정본/메모리/skill 참조 카운트). count ≥3 + 신규 90일 면제 → PROMOTE 후보 식별. HARNESS §8.9 v2. 첫 실측 (2026-04-26): PROMOTE 0 / OBSERVE 10 / KEEP 18. |
 | **sensor-deploy-drift.sh (2026-04-26 #9 신설, B)** | server/web develop ↔ origin/develop ↔ main + dev/prod health endpoint 동기화 검증. 운영 image SHA 비교는 권한 차단으로 사용자 직접 명령 (안내). 첫 실측: PASS 3 / WARN 4 — server develop ahead main 8건 (prod 미배포 검출). |
 | **sensor-cost-margin.sh (2026-04-26 #9 신설, C)** | ai-cost-table.md 안전배수 ≥3.0× 자동 검증 (PLANNING §0 강제). 12 항목 마크다운 표 파싱 + 갱신일 stale 검사. 첫 실측: 안전배수 12건 / FAIL 0 / WARN 5 (3.0~3.5×) / 최소 3.14× / 평균 3.73× / 최대 5.39×. |
+| **sensor-admin-credit-ui.sh (2026-05-03 #10_7 PAY-P0-3 신설)** | 운영자 수동 크레딧 지급/차감 web UI 가드 — 10 항목 (CreditsTab 별도 파일 / adminListAuthors 호출 / grant+deduct 둘 다 / page.tsx import + 라우팅 + Tab union 'credits' / spec 파일 / g-* 토큰 0건 / confirm() 멀티콘펌 / sonner toast / dangerouslySetInnerHTML 0건). VCK 정본(admin = neutral-* 영역) 보호 + Constitution P14(BFF) + P16(결제 원자성) 정합. 첫 실측: PASS 10/10. |
 
 ### 14.5 Knowledge 9개 (`.claude/knowledge/`)
 - README.md · agent-system.md · sensors.md · **agent-interaction-matrix.md (2026-04-26 #9 신설 — 7×7 핸드오프 매트릭스 + 산출물 정합 + 트리거 규칙 + 금지 조합)** · book-harness-engineering-completion.md (2026-04-30 #10) · researcher-scope.md (2026-04-30 #10) · visual-canon-inventory.md (2026-04-30 #10) · **red-team-constitution.md (2026-05-02 #10_6 묶음 W — Constitutional AI 16 principles + ProjectGrimoire 정책)** · **build-to-delete-policy.md (2026-05-03 #10_6 묶음 II — 책 부록 B + Mitchell Ghostty 패턴, Skills/Sensors/Hooks 3 카테고리)**
