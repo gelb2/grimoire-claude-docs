@@ -55,11 +55,44 @@
 
 ---
 
+## 🎯 1.5. 진행 현황 (2026-05-04 04:50 기준 — 채팅방 폭파 예방 박제)
+
+### ✅ 완료 (3 레포 develop push 완료)
+- 작업 B (테마 에디터 preset name 자동 동기) — web `3682081`
+- 작업 C (publishTheme bakedCssUrl 절대 URL) — server `ff493dd` + web `70ca832`
+- PAY-P0-1 webhook event_id 멱등성 — server `8c13103` + claude-docs `06de6c6`
+- PAY-P0-2 PG↔DB 정합성 cron — server `8e9e02e` + web `849f771` + claude-docs `790e692`
+- PAY-P0-3 운영자 수동 크레딧 UI — web `af3f04c` + claude-docs `841e704`
+- commit hook 자동화 보강 — server `1f43b05` + web `dd3717b` + claude-docs `43c1728`
+- CERTI_PROJ 외부 leak 제거 — server `b67233c`
+- 결제 전수검사 + 다음 계획 박제 — `reports/PAYMENT_NEXT_STEPS.md` (claude-docs `43c1728`)
+
+### ⏳ 진행 중 (사용자 명시 옵션 A)
+- **PAY-P1-1 Refund 정밀 처리** (~2h) — 채팅방 폭파 예방용 박제: `memory/project_session_20260503_3.md §2`
+- 핵심 갭: webhook 'cancel' 분기에서 status='refunded' 마킹만, 크레딧 환수 트랜잭션 부재 → 적자 위험
+- 산출물 후보: `refund-payment.usecase.ts` + `RefundLog` 모델 + spec + sensor-refund-atomicity + regression-55 + shared-contracts §13
+- 멀티에이전트: planner Initializer → server Generator → qa Evaluator (cost-accountant/VCK 면제)
+
+### 🚀 다음 트랙 (PAY-P1-1 후)
+1. PAY-P1-2 결제 알림 이메일 (cost-accountant 외부 API 위임 필수)
+2. PAY-P1-3 결제 실패 retry 정책
+3. 작업 D (작품별 테마 배정 UI) + E (조회수 급락 조사)
+4. PAY-P2 (부분 환불 / DLQ / audit 강화 / SMS)
+5. 작업 A + PAY-P1-4 (구독제 요금제 통합, 큰 작업)
+
+### 📦 사용자 영역 잔존 (PAY-P0)
+- main per-repo 머지 (3 레포)
+- dev 환경 검증 (PUBLIC_API_BASE_URL env + Container Apps 로그 + admin 화면 클릭)
+- prod 배포 (`npx prisma migrate deploy` + `make deploy-prod`)
+
+---
+
 ## 🎯 2. 사용자 명시 작업 시퀀스 (B → C → D → E → A)
 
 > **사용자 의도**: 우리 하네스 + 에이전트 + 레드팀 시스템 전체를 실제 ProjectGrimoire 작업으로 한번 쭉 발동시켜 본다.
 >
 > **순서 결정 (사용자 명시 2026-05-03)**: B → C → D → E 먼저, A는 모두 끝나고 마지막 (기획 변동 동반).
+> **진행 현황 갱신 (2026-05-04)**: B + C 완료 → 결제 전수검사 + PAY-P0 3건 우선 진행 → 사용자 옵션 A로 **PAY-P1-1 진입**. D/E는 PAY-P1 후.
 
 ### 2-1. 작업 B — 테마 에디터 preset 변경 시 name 자동 동기 UX (P2-#10)
 
