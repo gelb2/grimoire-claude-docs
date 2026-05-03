@@ -458,6 +458,122 @@ model WebhookEvent {
 
 ---
 
+## 12. PaymentReconciliation (server 도메인 — PG↔DB 정합성 검증 cron)
+
+**위치**:
+- Job: `grimoire-server/src/application/payment/payment-reconciliation.job.ts`
+- Port (gateway): `grimoire-server/src/domain/port/outbound/payment-gateway.port.ts` (listRecentCheckouts)
+- Port (checkpoint): `grimoire-server/src/domain/port/outbound/reconciliation-checkpoint-repository.port.ts`
+- DB 모델: `grimoire-server/prisma/schema.prisma` (ReconciliationCheckpoint singleton)
+
+**적용**: NestJS @Cron('0 */10 * * * *') 10분 주기. webhook 누락 자동 발견 + 자동 보정. cost-accountant PAY-P0-2 (2026-05-03) 보고에서 Polar `/v1` rate limit 분당 500회 default 그룹 → 사용률 1% 미만 압도적 PASS, 10분 권고 유지.
+
+### 시그니처
+
+```typescript
+// PaymentGatewayPort 확장
+export interface NormalizedCheckout {
+  externalTransactionId: string  // Polar checkout.id
+  status: 'succeeded' | 'refunded' | 'failed' | 'open'
+  amount: number                  // KRW
+  metadata?: Record<string, unknown>
+  createdAt: Date
+}
+
+export interface PaymentGatewayPort {
+  // 기존 +
+  listRecentCheckouts(since: Date, limit: number): Promise<NormalizedCheckout[]>
+}
+
+// 신규 Port
+export interface ReconciliationCheckpointRecord {
+  id: string                    // 항상 'singleton'
+  lastRunAt: Date
+  processedCount: number
+  boostCount: number
+  mismatchCount: number
+  expireCount: number
+  errorMessage: string | null
+  updatedAt: Date
+}
+
+export interface ReconciliationCheckpointRepositoryPort {
+  /** singleton row 조회 — 미존재 시 default seed 반환 (lastRunAt = 24h 전) */
+  findSingleton(): Promise<ReconciliationCheckpointRecord>
+  /** singleton row 갱신 (upsert) */
+  update(data: {
+    lastRunAt: Date
+    processedCount: number
+    boostCount: number
+    mismatchCount: number
+    expireCount: number
+    errorMessage?: string | null
+  }): Promise<ReconciliationCheckpointRecord>
+}
+
+// PaymentRepositoryPort 확장
+export interface PaymentRepositoryPort {
+  // 기존 +
+  findPendingPaymentsOlderThan(hours: number): Promise<PaymentRecord[]>
+  expirePayment(paymentId: string): Promise<void>
+}
+```
+
+### DB 모델 (Prisma)
+```prisma
+model ReconciliationCheckpoint {
+  id              String   @id @default("singleton")  // 항상 1 row
+  lastRunAt       DateTime @map("last_run_at") @db.Timestamptz(3)
+  processedCount  Int      @default(0) @map("processed_count")
+  boostCount      Int      @default(0) @map("boost_count")
+  mismatchCount   Int      @default(0) @map("mismatch_count")
+  expireCount     Int      @default(0) @map("expire_count")
+  errorMessage    String?  @map("error_message")
+  updatedAt       DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@map("reconciliation_checkpoints")
+}
+```
+
+### 정책
+- ReconciliationCheckpoint는 항상 1 row 유지 (id='singleton'). 마이그레이션에서 INSERT seed 1회.
+- cron 동시 실행 차단: in-memory `isRunning` lock + try-finally (replicas=1 가정, ≥2는 PAY-P1 advisory_lock으로 강화)
+- **4 시나리오**:
+  - **S1 boost** (PG=succeeded + DB=pending) → `completePaymentAtomically` 호출 + AuditLog operator='system_reconciliation' / action='reconciliation_boost'
+  - **S2 mismatch** (PG=refunded + DB=completed) → logger.warn + AuditLog action='reconciliation_refund_mismatch' (P1-1 refundPaymentAtomically 미도입 — 운영자 수동 처리)
+  - **S3 expire** (PG=NotFound + DB=pending + 24h 경과) → `expirePayment` 호출 + AuditLog action='reconciliation_expire'
+  - **S4 정합** → skip (no-op)
+- 모든 자동 보정 action은 AdminAuditLog operator='system_reconciliation' + 3 action 식별자 박제
+
+### 처리 흐름 (PaymentReconciliationJob.run)
+1. `if (this.isRunning) return` — 동시 실행 차단
+2. `this.isRunning = true; try { ... } finally { this.isRunning = false }`
+3. `checkpoint = await checkpointRepo.findSingleton()`
+4. `polarCheckouts = await paymentGateway.listRecentCheckouts(checkpoint.lastRunAt, 100)` — 페이지네이션
+5. polarCheckouts 각각:
+   - `payment = await paymentRepo.findByExternalTransactionId(checkout.externalTransactionId)`
+   - 4 시나리오 분기 (S1/S2/S3/S4)
+6. `pendingPayments = await paymentRepo.findPendingPaymentsOlderThan(24)` — 24h 만료 대상
+7. pendingPayments 각각: PG에 record 없으면 expire (S3)
+8. `checkpointRepo.update({ lastRunAt: now, processedCount, boostCount, mismatchCount, expireCount })`
+
+### 변경 시 동시 갱신 대상
+- `grimoire-server/src/application/payment/payment-reconciliation.job.ts` (신설)
+- `grimoire-server/src/application/payment/payment-reconciliation.job.spec.ts` (신설)
+- `grimoire-server/src/adapter/outbound/payment/polar.adapter.ts` (listRecentCheckouts 구현)
+- `grimoire-server/src/adapter/outbound/persistence/prisma-reconciliation-checkpoint.repository.ts` (신설)
+- `grimoire-server/src/app.module.ts` (ScheduleModule.forRoot + PaymentReconciliationJob provider + DI)
+- `grimoire-server/package.json` (@nestjs/schedule 의존성)
+- `grimoire-server/prisma/schema.prisma` + `prisma/migrations/{ts}_add_reconciliation_checkpoint/`
+- `grimoire-server/docs/data-model.md` + `SCHEMA.md` (server 정본)
+- `eval/tasks/regression-53-payment-reconciliation.json`
+- `.claude/scripts/sensor-payment-reconciliation.sh`
+
+### 변경 이력
+- 2026-05-03 #10_7 PAY-P0-2: 신설 — PG↔DB 정합성 검증 cron (CERTI_PROJ thermage-batch-api `@Cron('*/10 * * * * *')` 패턴 차용 + Grimoire 10분 주기 완화). cost-accountant Polar `/v1` rate limit 사용률 1% PASS, §0 면제.
+
+---
+
 ## 변경 시 절차 (책 Ch 16 충돌 2번 해결책)
 
 agent A가 인터페이스 변경 시:
