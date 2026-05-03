@@ -570,7 +570,105 @@ model ReconciliationCheckpoint {
 - `.claude/scripts/sensor-payment-reconciliation.sh`
 
 ### 변경 이력
-- 2026-05-03 #10_7 PAY-P0-2: 신설 — PG↔DB 정합성 검증 cron (CERTI_PROJ thermage-batch-api `@Cron('*/10 * * * * *')` 패턴 차용 + Grimoire 10분 주기 완화). cost-accountant Polar `/v1` rate limit 사용률 1% PASS, §0 면제.
+- 2026-05-03 #10_7 PAY-P0-2: 신설 — PG↔DB 정합성 검증 cron (의료 결제 시스템 정합성 검증 패턴 차용 + Grimoire 10분 주기 완화). cost-accountant Polar `/v1` rate limit 사용률 1% PASS, §0 면제.
+
+---
+
+## 13. RefundPaymentAtomically (server 도메인 — 환불 시 크레딧 환수 트랜잭션)
+
+**위치**:
+- UseCase: `grimoire-server/src/application/payment/refund-payment.usecase.ts`
+- Port: `grimoire-server/src/domain/port/outbound/payment-repository.port.ts` (refundPaymentAtomically 시그니처)
+- DB 모델: `grimoire-server/prisma/schema.prisma` (RefundLog)
+
+**적용**: Polar `order.refunded` webhook 수신 시 `payment.usecase.processWebhook` event.status='cancel' 분기에서 호출. 환불 시 사용자 크레딧 환수 + RefundLog 박제 + AdminAuditLog(operator='system_refund').
+
+### 시그니처
+
+```typescript
+// PaymentRepositoryPort 확장
+export interface PaymentRepositoryPort {
+  // 기존 +
+  refundPaymentAtomically(input: {
+    paymentId: string
+    authorId: string
+    credits: number          // 환수할 크레딧
+    refundedAmount: number   // PG 환불 금액 (KRW)
+    reason: string
+    source: 'webhook' | 'manual'
+  }): Promise<{
+    actualDeducted: number   // 실제 차감 (잔액 부족 시 잔액만큼)
+    deficitCredits: number   // 부족분 (잔액 < credits 시 양수, 정상 시 0)
+  }>
+}
+
+// RefundLog DB 모델 (Prisma)
+model RefundLog {
+  id              String   @id @default(uuid())
+  paymentId       String   @map("payment_id")
+  amount          Int                                  // PG 환불 금액 (KRW)
+  credits         Int                                  // 요청 환수 크레딧
+  deficitCredits  Int      @default(0) @map("deficit_credits")  // 잔액 부족분 (운영자 회수 대상)
+  reason          String
+  processedAt     DateTime @default(now()) @map("processed_at") @db.Timestamptz(3)
+  source          String                               // 'webhook' | 'manual'
+
+  @@index([paymentId])
+  @@map("refund_logs")
+}
+```
+
+### 정책 — 3중 멱등성 + 잔액 부족 처리
+
+**3중 멱등성 (환불 webhook 중복 차단)**:
+- L1: PAY-P0-1 `webhook_events.eventId @unique` (기존)
+- L2: payment.status='refunded' 체크 (이미 환불된 payment는 skip)
+- L3: RefundLog 박제 (운영자 조회 + 추적용)
+
+**잔액 부족 분기**:
+- Author.credits ≥ credits → 정상 환수 (`actualDeducted = credits`, `deficitCredits = 0`)
+- Author.credits < credits → 0 fix + `actualDeducted = Author.credits`, `deficitCredits = credits - Author.credits`
+- 음수 잔액 절대 차단 (Author.credits = 0 floor)
+
+**$transaction 본문**:
+```typescript
+await this.prisma.$transaction(async (tx) => {
+  // 1. Payment 상태 갱신
+  await tx.payment.update({ where: { id: paymentId }, data: { status: 'refunded' } })
+  // 2. Author.credits decrement (0 fix)
+  const author = await tx.author.findUnique({ where: { id: authorId } })
+  const actualDeducted = Math.min(author.credits, credits)
+  const deficitCredits = Math.max(0, credits - author.credits)
+  await tx.author.update({ where: { id: authorId }, data: { credits: { decrement: actualDeducted } } })
+  // 3. CreditLog 음수 amount 박제 (대칭)
+  await tx.creditLog.create({ data: { authorId, amount: -actualDeducted, reason: `refund_${paymentId}_${reason}` } })
+  // 4. RefundLog 박제
+  await tx.refundLog.create({ data: { paymentId, amount: refundedAmount, credits, deficitCredits, reason, source } })
+  return { actualDeducted, deficitCredits }
+})
+// 5. AdminAuditLog 후행 (트랜잭션 외)
+await this.auditLogService.log(
+  'system_refund',
+  deficitCredits > 0 ? 'refund_deficit' : 'refund_normal',
+  paymentId,
+  { authorId, refundedAmount, creditsRequested: credits, creditsActuallyDeducted: actualDeducted, deficitCredits, reason, source }
+)
+```
+
+### 변경 시 동시 갱신 대상
+- `grimoire-server/src/application/payment/refund-payment.usecase.ts` (신설)
+- `grimoire-server/src/application/payment/refund-payment.usecase.spec.ts` (신설)
+- `grimoire-server/src/application/payment/payment.usecase.ts` (event.status='cancel' 분기에서 refund usecase 호출)
+- `grimoire-server/src/adapter/outbound/persistence/prisma-payment.repository.ts` (refundPaymentAtomically 구현)
+- `grimoire-server/src/domain/port/outbound/payment-repository.port.ts` (시그니처 추가)
+- `grimoire-server/src/app.module.ts` (RefundPaymentUseCase DI)
+- `grimoire-server/prisma/schema.prisma` (RefundLog) + `prisma/migrations/{ts}_add_refund_log/`
+- `grimoire-server/docs/data-model.md` + `SCHEMA.md` (RefundLog 박제)
+- `eval/tasks/regression-55-refund-atomicity.json`
+- `.claude/scripts/sensor-refund-atomicity.sh`
+
+### 변경 이력
+- 2026-05-04 #10_7 PAY-P1-1: 신설 — Polar 환불 webhook 시 크레딧 환수 트랜잭션 + RefundLog + AdminAuditLog. 적자 위험 차단(현재 webhook 'cancel'은 status='refunded' 마킹만, 크레딧 환수 부재). PAY-P0-2 'system_reconciliation' 패턴 정합 (operator='system_refund').
 
 ---
 
