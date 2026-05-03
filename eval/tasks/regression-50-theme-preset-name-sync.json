@@ -1,0 +1,16 @@
+{
+  "id": "regression-050",
+  "name": "convention — 테마 에디터 preset 변경 시 name 자동 동기 보존 가드 (P2-#10)",
+  "category": "convention",
+  "source_session": "20260503 sprint-theme-editor-name-sync (P2-#10 UX) — Generator grimoire-web",
+  "prompt": "테마 에디터 page.tsx + useThemeName hook이 사용자 편집 후 preset 변경 시 themeName을 보존하는 가드를 유지하는지 검증. (a) useThemeName hook 파일 존재 (b) userEditedName state 패턴 존재 (c) syncNameFromPreset 가드(!userEditedName) 존재 (d) page.tsx가 OptionsPanel onNameChange로 handleNameChange(setThemeName 직접 X)을 전달. 회귀로 가드 제거 시 즉시 FAIL.",
+  "eval_criteria": [
+    {"type": "command", "command": "test -f /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-web/src/app/dashboard/theme/_hooks/useThemeName.ts", "desc": "useThemeName hook 파일 존재"},
+    {"type": "command", "command": "grep -c 'userEditedName' /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-web/src/app/dashboard/theme/_hooks/useThemeName.ts | xargs -I{} test {} -ge 3", "desc": "userEditedName state 패턴 ≥3회 등장 (선언+set+가드)"},
+    {"type": "command", "command": "grep -E '!userEditedName' /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-web/src/app/dashboard/theme/_hooks/useThemeName.ts > /dev/null", "desc": "syncNameFromPreset !userEditedName 가드 존재"},
+    {"type": "command", "command": "grep -E 'onNameChange=\\{handleNameChange\\}' /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-web/src/app/dashboard/theme/page.tsx > /dev/null", "desc": "page.tsx가 OptionsPanel onNameChange로 handleNameChange 전달 (setThemeName 직접 노출 금지)"},
+    {"type": "command", "command": "test -f /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-web/src/app/dashboard/theme/_hooks/preset-name-sync.test.tsx", "desc": "preset-name-sync.test.tsx 신설 spec 존재"}
+  ],
+  "threshold": 1.0,
+  "runs": 1
+}
