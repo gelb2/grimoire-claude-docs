@@ -373,6 +373,91 @@ export const ANALYSIS_CREDIT_COST = 4;  // 2026-04-27 인상 (3 → 4)
 
 ---
 
+## 11. WebhookEventIdempotency (server 도메인 — Polar webhook 멱등성)
+
+**위치**: `grimoire-server/src/domain/port/outbound/webhook-event-repository.port.ts`
+**적용**: `payment.usecase.processWebhook` (PAY-P0-1, 2026-05-03 신설)
+
+### 목적
+Polar(또는 다른 PG)가 같은 webhook event를 retry 전송 시 **DB unique 제약**으로 중복 처리 원천 차단. 같은 payment의 다른 event 종류(succeeded → refunded) 모두 개별 eventId로 식별 가능.
+
+### 시그니처
+```typescript
+export interface WebhookEventRecord {
+  id: string
+  eventId: string                                                  // Polar webhook-id 헤더
+  source: string                                                   // 'polar'
+  eventType: string                                                // 'order.paid' / 'order.refunded' / ...
+  status: 'processed' | 'skipped' | 'failed'
+  processedAt: Date
+}
+
+export interface WebhookEventRepositoryPort {
+  findByEventId(eventId: string): Promise<WebhookEventRecord | null>
+  /** event 박제 — eventId unique 위반(P2002) 시 null 반환 (race 안전) */
+  createIfAbsent(input: {
+    eventId: string
+    source: string
+    eventType: string
+    payload: object
+    status?: 'processed' | 'skipped' | 'failed'
+    errorMessage?: string | null
+  }): Promise<WebhookEventRecord | null>
+  markStatus(eventId: string, status: 'processed' | 'skipped' | 'failed', errorMessage?: string): Promise<void>
+}
+```
+
+### NormalizedWebhookEvent 시그니처 변경 (§6 AskOptions 형식 정합)
+```typescript
+export interface NormalizedWebhookEvent {
+  eventId: string                                                  // [신설 PAY-P0-1] Polar webhook-id 헤더
+  type: string
+  tradeNo: string
+  amount: number
+  status: 'success' | 'fail' | 'cancel'
+  userId?: string
+}
+```
+
+### DB 모델 (Prisma)
+```prisma
+model WebhookEvent {
+  id           String   @id @default(uuid())
+  eventId      String   @unique @map("event_id")
+  source       String                            // 'polar'
+  eventType    String   @map("event_type")
+  payload      Json
+  processedAt  DateTime @default(now()) @map("processed_at") @db.Timestamptz(3)
+  status       String   @default("processed")    // 'processed' | 'skipped' | 'failed'
+  errorMessage String?  @map("error_message")
+
+  @@index([eventType, processedAt])
+  @@map("webhook_events")
+}
+```
+
+### 처리 흐름 (payment.usecase.processWebhook)
+1. polar.adapter.verifyAndParseWebhook 호출 → eventId 박제된 NormalizedWebhookEvent 반환
+2. webhookEventRepo.findByEventId(event.eventId) → 이미 있으면 즉시 `{ processed: false, reason: 'already_processed_event' }` 반환 (200 OK)
+3. payment 처리 (현재 로직 그대로)
+4. 성공 시 webhookEventRepo.createIfAbsent(eventId, ..., status='processed') — race 시 null 반환 시 다른 worker 처리 중으로 간주, 무시
+5. 실패 시 createIfAbsent(..., status='failed', errorMessage=...) — DLQ 보강 전 임시 박제
+
+### 변경 시 동시 갱신 대상
+- `grimoire-server/src/adapter/outbound/payment/polar.adapter.ts` (webhook-id 헤더 추출)
+- `grimoire-server/src/application/payment/payment.usecase.ts` (findByEventId 게이트)
+- `grimoire-server/src/application/payment/payment.usecase.spec.ts` (멱등성 spec)
+- `grimoire-server/prisma/schema.prisma` (WebhookEvent 모델)
+- `grimoire-server/prisma/migrations/{ts}_webhook_event_idempotency/`
+- `grimoire-server/docs/data-model.md` + `SCHEMA.md` (정본 갱신)
+- `eval/tasks/regression-52-webhook-event-id-idempotency.json` (회귀 차단)
+- `.claude/scripts/sensor-payment-idempotency.sh` (패턴 검증)
+
+### 변경 이력
+- 2026-05-03 #10_7 PAY-P0-1: 신설 — webhook event_id 멱등성 테이블 (CERTI_PROJ inapi 분석 + research/PAYMENT_SYSTEM_PLAN.md §3-1 정합)
+
+---
+
 ## 변경 시 절차 (책 Ch 16 충돌 2번 해결책)
 
 agent A가 인터페이스 변경 시:
