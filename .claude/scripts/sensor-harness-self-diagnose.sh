@@ -42,11 +42,22 @@ echo "=== sensor-harness-self-diagnose (책 Ch 23 자가진단 7질문) ==="
 echo ""
 
 # Q1: 작업 시간 70%+ 실제 구현 (sensor-orchestration-ratio)
+# 2026-05-03 묶음 II — META_PASS 상태 인식 (메타 세션 정합 ≥ 70% 시 PASS)
 RATIO_FILE="$ROOT/.claude/state/orchestration-ratio.jsonl"
 if [ -s "$RATIO_FILE" ]; then
-  RATIO=$(tail -1 "$RATIO_FILE" | python3 -c "import sys,json; d=json.loads(sys.stdin.read()); print(d.get('orchestration_ratio', 0))" 2>/dev/null || echo 0)
+  Q1_DATA=$(tail -1 "$RATIO_FILE" | python3 -c "
+import sys, json
+d = json.loads(sys.stdin.read())
+print(d.get('ratio', 0), d.get('status', 'UNKNOWN'), d.get('meta_pct', 0))
+" 2>/dev/null || echo "0 UNKNOWN 0")
+  RATIO=$(echo "$Q1_DATA" | awk '{print $1}')
+  STATUS=$(echo "$Q1_DATA" | awk '{print $2}')
+  META_PCT=$(echo "$Q1_DATA" | awk '{print $3}')
+
   if python3 -c "exit(0 if $RATIO >= 0.5 else 1)" 2>/dev/null; then
     check 1 "구현 시간 비율" "PASS" "ratio=$RATIO ≥ 0.5"
+  elif [ "$STATUS" = "META_PASS" ]; then
+    check 1 "구현 시간 비율" "PASS" "META_PASS — 메타 세션 정합 (meta=$META_PCT ≥ 70% claude/memory/docs/research)"
   else
     check 1 "구현 시간 비율" "FAIL" "ratio=$RATIO < 0.5 (메인 직접 작업이 너무 많음)"
   fi

@@ -124,6 +124,18 @@ def grade_inventory_match(doc, pattern, actual, project_root=""):
         return False, "검증 실패: " + str(e)
 
 
+# 2026-05-03 묶음 II — TaskFlow 5차원 가중치 (책 Ch 15)
+# 기능 정확성 40 + 코드 품질 20 + 성능 15 + 보안 15 + UX 10 = 100
+TASKFLOW_WEIGHTS = {
+    'functional': 40,    # 기능 정확성
+    'code_quality': 20,  # 코드 품질 (lint / type / test coverage)
+    'performance': 15,   # 성능 (응답시간 / 메모리)
+    'security': 15,      # 보안 (auth / injection / leak)
+    'ux': 10,            # UX (Visual canon / accessibility)
+}
+DEFAULT_DIMENSION = 'functional'  # criteria.dimension 미지정 시 기본
+
+
 def grade_task(task_path, project_root):
     with open(task_path, encoding='utf-8') as f:
         task = json.load(f)
@@ -132,6 +144,9 @@ def grade_task(task_path, project_root):
     threshold = task.get('threshold', 1.0)
     results = []
     passed = 0
+    weighted_sum = 0.0
+    total_weight = 0.0
+    dim_scores = {}  # 차원별 점수 누적
 
     for c in criteria:
         ctype = c.get('type', 'unknown')
@@ -165,17 +180,32 @@ def grade_task(task_path, project_root):
         else:
             ok, detail = False, "unknown criterion type: " + ctype
 
+        # 가중치 계산 (TaskFlow 5차원, 묶음 II)
+        # criteria.dimension 명시 시 해당 차원 가중치, 없으면 'functional' (기본 40)
+        dim = c.get('dimension', DEFAULT_DIMENSION)
+        weight = c.get('weight', TASKFLOW_WEIGHTS.get(dim, TASKFLOW_WEIGHTS['functional']))
+        total_weight += weight
+        if ok:
+            weighted_sum += weight
+        dim_scores.setdefault(dim, {'total': 0, 'earned': 0})
+        dim_scores[dim]['total'] += weight
+        if ok:
+            dim_scores[dim]['earned'] += weight
+
         results.append({
             'type': ctype,
             'desc': c.get('desc', ''),
             'pass': ok,
             'detail': detail,
+            'dimension': dim,
+            'weight': weight,
         })
         if ok:
             passed += 1
 
     total = len(criteria)
     pass_rate = passed / total if total > 0 else 0
+    weighted_score = (weighted_sum / total_weight) if total_weight > 0 else 0
     overall_pass = pass_rate >= threshold
 
     return {
@@ -185,6 +215,11 @@ def grade_task(task_path, project_root):
         'total': total,
         'passed': passed,
         'pass_rate': round(pass_rate, 4),
+        'weighted_score': round(weighted_score, 4),  # 0~1 정규화 (TaskFlow 5차원, 묶음 II)
+        'dim_scores': {
+            d: round(v['earned'] / v['total'], 4) if v['total'] > 0 else 0
+            for d, v in dim_scores.items()
+        },
         'threshold': threshold,
         'pass': overall_pass,
         'criteria': results,

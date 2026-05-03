@@ -16,6 +16,11 @@
 #   - 0.05 ≤ ratio < 0.20: WARN (위임 부족)
 #   - ratio < 0.05: FAIL (메인이 사실상 모두 직접 — 패턴 1 위배)
 #
+# 2026-05-03 #10_6 묶음 II 보강 — 메타 세션 정밀화:
+#   - claude/memory/docs/research 등 메타 도메인 비율 ≥ 70% 시 FAIL → META_PASS 다운그레이드
+#   - 사유: 책 §15.7 매트릭스 + agent-interaction-matrix.md "메인 직접 처리" 정합 (조율 작업)
+#   - jsonl flush 지연 검증: 가장 최근 세션 mtime ≤ 5분 시 "in-progress" 마크 (다음 측정 보강 예상)
+#
 # 추가 산출물:
 #   - subagent type 분포 (어떤 에이전트가 자주 호출되는지)
 #   - sidechain edits (subagent 내부 작업량)
@@ -148,6 +153,16 @@ ratio = task_calls / m_total if m_total > 0 else 0
 unique_domains = len([d for d, c in domain_counter.items() if c > 0])
 multi_domain_pct = sum(c for d, c in domain_counter.items() if d not in ('claude', 'memory', 'docs', 'research', 'root-doc')) / m_total if m_total > 0 else 0
 
+# 2026-05-03 묶음 II — 메타 세션 비율 (FAIL → META_PASS 다운그레이드 판정용)
+meta_pct = sum(c for d, c in domain_counter.items() if d in ('claude', 'memory', 'docs', 'research', 'root-doc')) / m_total if m_total > 0 else 0
+
+# jsonl in-progress 검증 — 가장 최근 mtime ≤ 5분 시 마크
+in_progress = False
+if recent:
+    most_recent_mtime = max(os.path.getmtime(f) for f in recent)
+    if time.time() - most_recent_mtime < 300:  # 5 minutes
+        in_progress = True
+
 # stdout: pipe-separated for shell parsing
 print("FILES|" + str(file_count))
 print("MAIN_EDITS|" + str(main_edits))
@@ -159,6 +174,8 @@ print("SIDECHAIN_WRITES|" + str(sidechain_writes))
 print("RATIO|" + ("%.4f" % ratio))
 print("UNIQUE_DOMAINS|" + str(unique_domains))
 print("MULTI_DOMAIN_PCT|" + ("%.4f" % multi_domain_pct))
+print("META_PCT|" + ("%.4f" % meta_pct))
+print("IN_PROGRESS|" + ("1" if in_progress else "0"))
 for s, c in stypes.most_common():
     print("STYPE|" + s + "|" + str(c))
 for d, c in domain_counter.most_common():
@@ -177,6 +194,8 @@ SIDECHAIN_WRITES=$(echo "$RESULT" | grep "^SIDECHAIN_WRITES|" | cut -d'|' -f2)
 RATIO=$(echo "$RESULT" | grep "^RATIO|" | cut -d'|' -f2)
 UNIQUE_DOMAINS=$(echo "$RESULT" | grep "^UNIQUE_DOMAINS|" | cut -d'|' -f2)
 MULTI_DOMAIN_PCT=$(echo "$RESULT" | grep "^MULTI_DOMAIN_PCT|" | cut -d'|' -f2)
+META_PCT=$(echo "$RESULT" | grep "^META_PCT|" | cut -d'|' -f2)
+IN_PROGRESS=$(echo "$RESULT" | grep "^IN_PROGRESS|" | cut -d'|' -f2)
 
 if [ "$QUIET" -eq 0 ]; then
   echo "분석 jsonl 파일: $FILES"
@@ -222,9 +241,17 @@ if [ "$MAIN_TOTAL" -lt 10 ]; then
   RESULT_STATUS="SKIP"
   [ "$QUIET" -eq 0 ] && echo "[RESULT] SKIP — 메인 작업 표본 부족 ($MAIN_TOTAL < 10)"
 elif awk -v r="$RATIO" 'BEGIN{exit !(r < 0.05)}'; then
-  RESULT_STATUS="FAIL"
-  EXIT_CODE=$([ "$STRICT" -eq 1 ] && echo 1 || echo 0)
-  [ "$QUIET" -eq 0 ] && echo "[RESULT] FAIL — ratio $RATIO < 0.05 (패턴 1 위배: 메인이 사실상 모두 직접 작업)"
+  # 2026-05-03 묶음 II — 메타 세션 다운그레이드 판정
+  if awk -v m="$META_PCT" 'BEGIN{exit !(m >= 0.70)}'; then
+    RESULT_STATUS="META_PASS"
+    [ "$QUIET" -eq 0 ] && echo "[RESULT] META_PASS — ratio $RATIO < 0.05이지만 메타 세션 ($META_PCT ≥ 70% claude/memory/docs/research)"
+    [ "$QUIET" -eq 0 ] && echo "        → §15.7 매트릭스 정합 (메타 작업은 메인 직접 처리가 적합 — 조율 자체)"
+  else
+    RESULT_STATUS="FAIL"
+    EXIT_CODE=$([ "$STRICT" -eq 1 ] && echo 1 || echo 0)
+    [ "$QUIET" -eq 0 ] && echo "[RESULT] FAIL — ratio $RATIO < 0.05 (패턴 1 위배: 메인이 사실상 모두 직접 작업)"
+    [ "$QUIET" -eq 0 ] && echo "        → server/web 작업 비율 $MULTI_DOMAIN_PCT, 메타 비율 $META_PCT"
+  fi
 elif awk -v r="$RATIO" 'BEGIN{exit !(r < 0.20)}'; then
   RESULT_STATUS="WARN"
   [ "$QUIET" -eq 0 ] && echo "[RESULT] WARN — ratio $RATIO < 0.20 (subagent 위임 부족)"
@@ -232,20 +259,26 @@ else
   [ "$QUIET" -eq 0 ] && echo "[RESULT] PASS — ratio $RATIO ≥ 0.20"
 fi
 
+# in-progress 마크 (다음 측정 보강 안내)
+if [ "$IN_PROGRESS" = "1" ] && [ "$QUIET" -eq 0 ]; then
+  echo "[NOTE] in-progress 세션 검출 (mtime ≤ 5분) — 다음 측정에서 추가 박제 예상"
+fi
+
 # JSONL 적재 (§15.7 합치 데이터 포함)
 TS=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-printf '{"ts":"%s","files":%s,"main_edits":%s,"main_writes":%s,"main_total":%s,"task_calls":%s,"sidechain_edits":%s,"sidechain_writes":%s,"ratio":%s,"status":"%s","days":%s,"unique_domains":%s,"multi_domain_pct":%s}\n' \
+printf '{"ts":"%s","files":%s,"main_edits":%s,"main_writes":%s,"main_total":%s,"task_calls":%s,"sidechain_edits":%s,"sidechain_writes":%s,"ratio":%s,"status":"%s","days":%s,"unique_domains":%s,"multi_domain_pct":%s,"meta_pct":%s,"in_progress":%s}\n' \
   "$TS" "$FILES" "$MAIN_EDITS" "$MAIN_WRITES" "$MAIN_TOTAL" "$TASK_CALLS" \
   "$SIDECHAIN_EDITS" "$SIDECHAIN_WRITES" "$RATIO" "$RESULT_STATUS" "$DAYS" \
-  "$UNIQUE_DOMAINS" "$MULTI_DOMAIN_PCT" \
+  "$UNIQUE_DOMAINS" "$MULTI_DOMAIN_PCT" "$META_PCT" "$IN_PROGRESS" \
   >> "$RATIO_FILE"
 
 [ "$QUIET" -eq 0 ] && echo "[기록] $RATIO_FILE"
 [ "$QUIET" -eq 0 ] && echo "=== 끝 ==="
 
-# sensor-log 박제 (2026-05-02 H8) — RESULT_STATUS는 PASS/WARN/FAIL/SKIP 중
+# sensor-log 박제 (2026-05-02 H8) — RESULT_STATUS는 PASS/WARN/FAIL/SKIP/META_PASS 중
 LOG_TAG="$RESULT_STATUS"
 [ "$LOG_TAG" = "SKIP" ] && LOG_TAG="PASS"  # SKIP은 PASS로 간주 (실측 불가, 데이터 없음)
-bash "$(dirname "$0")/sensor-log.sh" "sensor-orchestration-ratio" "$LOG_TAG" "ratio=$RATIO main=$MAIN_TOTAL task=$TASK_CALLS days=$DAYS" 2>/dev/null || true
+[ "$LOG_TAG" = "META_PASS" ] && LOG_TAG="PASS"  # META_PASS는 PASS (메타 세션 정합)
+bash "$(dirname "$0")/sensor-log.sh" "sensor-orchestration-ratio" "$LOG_TAG" "ratio=$RATIO main=$MAIN_TOTAL task=$TASK_CALLS meta=$META_PCT days=$DAYS" 2>/dev/null || true
 
 exit $EXIT_CODE

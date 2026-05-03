@@ -780,8 +780,8 @@ v2 추가 제안:
 | **sensor-deploy-drift.sh (2026-04-26 #9 신설, B)** | server/web develop ↔ origin/develop ↔ main + dev/prod health endpoint 동기화 검증. 운영 image SHA 비교는 권한 차단으로 사용자 직접 명령 (안내). 첫 실측: PASS 3 / WARN 4 — server develop ahead main 8건 (prod 미배포 검출). |
 | **sensor-cost-margin.sh (2026-04-26 #9 신설, C)** | ai-cost-table.md 안전배수 ≥3.0× 자동 검증 (PLANNING §0 강제). 12 항목 마크다운 표 파싱 + 갱신일 stale 검사. 첫 실측: 안전배수 12건 / FAIL 0 / WARN 5 (3.0~3.5×) / 최소 3.14× / 평균 3.73× / 최대 5.39×. |
 
-### 14.5 Knowledge 8개 (`.claude/knowledge/`)
-- README.md · agent-system.md · sensors.md · **agent-interaction-matrix.md (2026-04-26 #9 신설 — 7×7 핸드오프 매트릭스 + 산출물 정합 + 트리거 규칙 + 금지 조합)** · book-harness-engineering-completion.md (2026-04-30 #10) · researcher-scope.md (2026-04-30 #10) · visual-canon-inventory.md (2026-04-30 #10) · **red-team-constitution.md (2026-05-02 #10_6 묶음 W — Constitutional AI 16 principles + ProjectGrimoire 정책)**
+### 14.5 Knowledge 9개 (`.claude/knowledge/`)
+- README.md · agent-system.md · sensors.md · **agent-interaction-matrix.md (2026-04-26 #9 신설 — 7×7 핸드오프 매트릭스 + 산출물 정합 + 트리거 규칙 + 금지 조합)** · book-harness-engineering-completion.md (2026-04-30 #10) · researcher-scope.md (2026-04-30 #10) · visual-canon-inventory.md (2026-04-30 #10) · **red-team-constitution.md (2026-05-02 #10_6 묶음 W — Constitutional AI 16 principles + ProjectGrimoire 정책)** · **build-to-delete-policy.md (2026-05-03 #10_6 묶음 II — 책 부록 B + Mitchell Ghostty 패턴, Skills/Sensors/Hooks 3 카테고리)**
 
 ### 14.6 Slash commands 0개 (`.claude/commands/*.md` 폐기)
 

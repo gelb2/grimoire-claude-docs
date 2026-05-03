@@ -123,9 +123,30 @@ for fpath in feedback_files:
                 references.append(os.path.relpath(sp, PROJECT_ROOT) if sp.startswith(PROJECT_ROOT) else os.path.basename(sp))
 
     is_new = age_days < NEW_DAYS
-    cat = "PROMOTE" if (count >= THRESHOLD and not is_new) else \
-          "OBSERVE" if count == THRESHOLD - 1 else \
-          "KEEP"
+
+    # 2026-05-03 묶음 II — absorbed 마크 인식 (false positive 차단)
+    # feedback 파일 자체에 frontmatter `status: absorbed` + `absorbed-into:` 있으면
+    # 이미 흡수된 것이므로 PROMOTE 신호 차단
+    is_absorbed = False
+    absorbed_into = None
+    try:
+        with open(fpath, encoding='utf-8') as f:
+            head = f.read(2048)  # frontmatter는 파일 앞부분
+        if 'status: absorbed' in head:
+            is_absorbed = True
+            for line in head.split('\n'):
+                if line.startswith('absorbed-into:'):
+                    absorbed_into = line.split(':', 1)[1].strip()
+                    break
+    except:
+        pass
+
+    if is_absorbed:
+        cat = "ABSORBED"  # 이미 흡수 — KEEP과 별도로 분류
+    else:
+        cat = "PROMOTE" if (count >= THRESHOLD and not is_new) else \
+              "OBSERVE" if count == THRESHOLD - 1 else \
+              "KEEP"
 
     entry = {
         "file": name,
@@ -135,8 +156,12 @@ for fpath in feedback_files:
         "category": cat,
         "references": references[:5],  # 상위 5건만
     }
+    if is_absorbed:
+        entry["absorbed_into"] = absorbed_into
 
-    if is_new and count >= THRESHOLD:
+    if is_absorbed:
+        candidates_keep.append(entry)  # ABSORBED는 KEEP에 분류 (PROMOTE 신호 차단)
+    elif is_new and count >= THRESHOLD:
         # 신규지만 영향력 큼 — OBSERVE로 강등 (관찰)
         cat = "OBSERVE_NEW"
         entry["category"] = cat

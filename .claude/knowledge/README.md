@@ -21,6 +21,8 @@
 | `book-harness-engineering-completion.md` (2026-04-30 #10 D1 신설) | 책 「하네스 엔지니어링 완전 정복」 Ch 08+15+16 학습 박제 | 분할 정본 + EDD + shared-contracts 적용 패턴 정본 + 운영 데이터 누적 (L2) | 전 에이전트 (자가 검증 시) |
 | `visual-canon-inventory.md` (2026-04-30 Phase B 분할) | grimoire-visual-canon-keeper.md §2~§3 분리 | 사슴악마 정본 4 영역 인벤토리 + 6 카테고리 불일치 (Critical/High/Medium/Low) | visual-canon-keeper, web |
 | `researcher-scope.md` (2026-04-30 Phase B 분할) | grimoire-researcher.md 일부 분리 | researcher 자료 계층 (Canonical / Live / Ephemeral) + 매일 sweep 대상 | researcher |
+| `red-team-constitution.md` (2026-05-02 #10_6 묶음 W 신설) | Anthropic Constitutional AI 16 principles + ProjectGrimoire 도메인 + OWASP LLM Top 10 (P17/P18/P19) | 매 commit 직전 sensor-adversarial-pre-commit 자동 검증용 정본 | 전 에이전트 (특히 server) |
+| `build-to-delete-policy.md` (2026-05-03 #10_6 묶음 II 신설) | 책 부록 B 신개념 + Mitchell Ghostty 패턴. Skills/Sensors/Hooks를 영구(A) / 진화(B) / 폐기 후보(C) 3 카테고리로 분류 | 분기별 Build-to-Delete 리뷰 시 (사용자 승인 게이트 + 회귀 검증) | 전 에이전트 (특히 책임자 사용자) |
 
 ## 사용 규칙
 

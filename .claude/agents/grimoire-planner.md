@@ -147,6 +147,14 @@ model: opus
 5. **기술 스택 결정 제안** — 시맨틱 캐싱, RAG, 임베딩 등은 PLANNING과 cost-accountant 공동 승인
 6. **docs 변경 제안** — API/DB 변경은 정본 문서 수정안 작성 (server 에이전트가 실제 반영)
 7. **일일 리포트** — `reports/PLANNER_REPORT.md` 작성
+8. **Initializer 역할 겸직 (책 Ch 16 Anthropic 3-에이전트 패턴, 2026-05-03 묶음 II)**
+   - 새 기능 시작 시 1회 Initializer 책임 수행:
+     a. 기능 뼈대 + Sprint 계약 (PLANNER_REPORT 분기 명시)
+     b. **`reports/sprint-{기능명}-progress.md`** 생성 — 미완 기능 체크리스트 + 완료 기준 명시
+     c. server / web / qa에게 Sprint 계약 핸드오프 (해당 progress.md를 Read 후 작업)
+   - **Generator 역할** (server / web)이 progress.md 읽고 미완 기능 구현 후 갱신 — Sprint 계약 정합 자동 추적
+   - **Evaluator 역할** (qa)이 Sprint 계약 채점 → QA_REPORT.md에 sprint-progress 통과율 박제
+   - 근거: 책 Ch 16 Prithvi Rajasekaran "Initializer → Generator → Evaluator" 정본 패턴
 
 ### 하지 말아야 할 일
 - **코드 직접 작성** (→ server/web)

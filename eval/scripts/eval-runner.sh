@@ -179,6 +179,47 @@ fi
 [ "$QUIET" -eq 0 ] && echo "PASS: $PASS_TASKS / TOTAL: $TOTAL_TASKS / FAIL: $FAIL_TASKS"
 [ "$QUIET" -eq 0 ] && echo "통과율: $PASS_RATE"
 
+# TaskFlow 5차원 가중 점수 집계 (책 Ch 15, 묶음 II)
+if [ "$QUIET" -eq 0 ] && [ -f "$RESULTS_DIR/details.jsonl" ]; then
+  WEIGHTED_SUMMARY=$(python3 <<PYEOF
+import json
+from collections import defaultdict
+
+dim_total = defaultdict(float)
+dim_earned = defaultdict(float)
+overall_total = 0.0
+overall_earned = 0.0
+n = 0
+
+with open("$RESULTS_DIR/details.jsonl") as f:
+    for line in f:
+        try:
+            d = json.loads(line)
+        except:
+            continue
+        ws = d.get('weighted_score')
+        if ws is None:
+            continue
+        n += 1
+        overall_total += 1.0
+        overall_earned += ws
+        for dim, score in d.get('dim_scores', {}).items():
+            dim_total[dim] += 1.0
+            dim_earned[dim] += score
+
+if n > 0:
+    print(f"가중 점수 (TaskFlow 5차원): {round(overall_earned/overall_total, 4)} (n={n})")
+    for dim in ['functional', 'code_quality', 'performance', 'security', 'ux']:
+        if dim in dim_total:
+            print(f"  - {dim:12} : {round(dim_earned[dim]/dim_total[dim], 4)} (n={int(dim_total[dim])})")
+PYEOF
+)
+  if [ -n "$WEIGHTED_SUMMARY" ]; then
+    echo ""
+    echo "$WEIGHTED_SUMMARY"
+  fi
+fi
+
 # baseline.csv 적재 (모드별 분리, SINGLE_TASK는 skip — NEW-6: 노이즈 회피)
 TS=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 mkdir -p "$EVAL_DIR/results"
