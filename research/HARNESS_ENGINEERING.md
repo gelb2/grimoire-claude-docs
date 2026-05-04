@@ -763,7 +763,7 @@ v2 추가 제안:
 | **PostToolBatch** (2026-04-25 #7 신설) | - (전체) | post-batch-tsc.sh | parallel batch 완료 후 server+web tsc 일괄 (debounce 60s, 빌드 중복 60% ↓ 목표) |
 | **PostToolUseFailure** (2026-04-27 #9 F2 신설) | - (전체) | posttooluse-failure-handler.sh | 도구 실패 시 적재 + Chrome MCP 한정 정책 처리 (1회 재시도 신호 / reCAPTCHA 즉시 차단 / prod 도메인 자동 재시도 안 함). additionalContext로 Claude에게 재시도 신호만 전달, 실제 재시도는 Claude 판단 |
 
-### 14.4 Sensors 31개 (`.claude/scripts/sensor-*.sh`)
+### 14.4 Sensors 32개 (`.claude/scripts/sensor-*.sh`)
 
 | Sensor | 용도 |
 |---|---|
