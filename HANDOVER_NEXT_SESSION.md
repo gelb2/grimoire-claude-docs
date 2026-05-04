@@ -75,22 +75,26 @@
 | **PAY-P1-1 종료 메모리 박제** | — | — | (메모리 박제만, 본 commit) |
 | **EMAIL-P0-1 시드/db-sync/e2e 가짜 도메인 정리** (2026-05-04) | `ddb14ab` | `4f9ae73` | `8820684` |
 | **PAY-P1-3 결제 실패 retry 정책 + cleanup cron** (2026-05-04) | `888fe2b` | `1d924db` (docs sync) | `59a33e4` |
+| **EmailServicePort 캡슐화 인터페이스 + NullAdapter** (2026-05-05) | `b49b6ba` | — | `afdaf56` (PLAN §11/§12/§13 + Sprint 계약) |
+| **EMAIL-P0-3 Phase 1 + Phase 2 slug 로그인 마이그레이션** (2026-05-05) | `fe4ca93` | `a04eca2` | `004a825` |
 
-### 🚀 다음 트랙 (사용자 결정 영역 — 2026-05-04 갱신, PAY-P1-3 + EMAIL-P0-1 완료 후)
+### 🚀 다음 트랙 (사용자 결정 영역 — 2026-05-05 갱신, EMAIL-P0-3 완료 후)
 
 | 옵션 | 트랙 | 시간 | 비고 |
 |---|---|---|---|
 | **A** | EMAIL-P0-2 운영 DB SQL 백필 (사용자 영역) | 30분 | 12~15 row 가짜 이메일 정리, 사용자 직접 SQL 실행 |
-| **B** | server↔web docs drift 4건 회복 sprint | ~30분 | eval-runner 4 FAIL (05-docs-sync / 06-drift-zero / 28/29-api-contract+data-model) — PAY-P1-3에서 OUT 정합 검증, 별도 sprint |
-| **C** | EMAIL-P1-1 이메일 인증 시스템 | ~12~16h | **사용자 절대 규정 0-1 외부 API 해제 결정 필수** (Resend/SendGrid/Postmark) |
-| **D** | EMAIL-P1-2 OAuth Kakao/Naver 확장 | ~8h | 사용자 Developer Console 등록 필요 |
+| **B** | server↔web docs drift 회복 sprint | ~30분 | 잔존 eval drift, 자율 가능 |
+| **C** | EMAIL-P1-1 이메일 인증 시스템 + 비밀번호 초기화 | ~12~16h | **사용자 절대 규정 0-1 외부 API 해제 결정 필수** (AWS SES 추천 / Resend / SendGrid / Postmark). EmailServicePort 캡슐화 박제 완료 → 어댑터만 구현 |
+| **D** | EMAIL-P1-2 OAuth Kakao/Naver 확장 | ~8h | 사용자 Developer Console 등록 필요, 외부 API 0건 |
 | **E** | EMAIL-P1-3 결제 이메일 알림 (PAY-P1-2 흡수) | ~16~20h | EMAIL-P1-1 선행 의존, 외부 API 결정 필수 |
-| **F** | 작업 D (테마 배정 UI) + E (조회수 조사) | ~3~4h | production-bug-triage skill 발동 |
-| **G** | main per-repo 머지 + dev 검증 + 휴식 | 사용자 영역 | 안전 stop |
-| **H** | PAY-P2 (부분 환불 / DLQ / SMS) | ~9h | DLQ는 CERTI 차용 가능 |
-| **I** | 작업 A + PAY-P1-4 (구독제 요금제 통합) | ~5~8h | 큰 작업, 기획 단계 선행 필수 |
+| **F** | OAuth 자동 링크 보안 강화 sprint (위험 영역 #1) | ~3~4h | 별도 보안 sprint, EMAIL-P0-3에서 OUT 박제 |
+| **G** | SignupHistory slug 정책 검토 sprint (위험 영역 #2) | ~2h | EMAIL-P0-3에서 OUT 박제 |
+| **H** | 작업 D (테마 배정 UI) + E (조회수 조사) | ~3~4h | production-bug-triage skill 발동 |
+| **I** | main per-repo 머지 + dev 검증 + 휴식 | 사용자 영역 | 안전 stop |
+| **J** | PAY-P2 (부분 환불 / DLQ / SMS) | ~9h | DLQ는 CERTI 차용 가능 |
+| **K** | 작업 A + PAY-P1-4 (구독제 요금제 통합) | ~5~8h | 큰 작업, 기획 단계 선행 필수 |
 
-### 📦 사용자 영역 잔존 (PAY-P0 + P1-1 + P1-3 + EMAIL-P0-1 통합 — 2026-05-04 갱신)
+### 📦 사용자 영역 잔존 (PAY-P0 + P1-1 + P1-3 + EMAIL-P0-1 + EMAIL-P0-3 통합 — 2026-05-05 갱신)
 
 | # | 항목 | 명령 |
 |---|------|------|
@@ -103,20 +107,24 @@
 | 7 | **EMAIL-P0-2 운영 DB SQL** | research/EMAIL_INTEGRITY_PLAN.md §2-1 EMAIL-P0-2 SQL 4 Phase (백업 → 영향 row 확인 → 종속 데이터 정리 → 작가 row 삭제 → 회귀 검증) — dev → prod 순차 |
 | 8 | prod 배포 | `npx prisma generate` (PAY-P1-3 schema 변경 0건이므로 migrate deploy 불필요) + `make deploy-prod` |
 | 9 | **PAY-P1-3 dev 검증 추가** | `PAYMENT_CLEANUP_DISABLED=1` env 미박제 (운영자 긴급 차단용 미리 박제 권장, INFRASTRUCTURE.md §7-B 참조) |
+| 10 | **EMAIL-P0-3 dev 검증** | `curl POST /api/auth/login -d '{"slug":"deerdevil","password":"..."}'` 200 반환 검증 + email 후향호환 200 검증 + email+slug 동시 박제 시 400 검증 |
+| 11 | **이메일 SaaS 결정** | research/EMAIL_INTEGRITY_PLAN.md §11 결정 게이트 — AWS SES (추천 ₩700/월) / Resend / SendGrid / Postmark 중 1택 + 사용자 절대 규정 0-1 해제 명시. EmailServicePort 캡슐화 박제 완료 → 어댑터만 추가 |
 
-### 📊 인벤토리 변동 (B/C + PAY-P0~P1-3 + EMAIL-P0-1 누적 — 2026-05-04 갱신)
+### 📊 인벤토리 변동 (B/C + PAY-P0~P1-3 + EMAIL-P0-1 + EMAIL-P0-3 + EmailServicePort 캡슐화 누적 — 2026-05-05 갱신)
 - Skills 24 (불변)
-- Sensors **25 → 31** (+6: payment-idempotency / payment-reconciliation / admin-credit-ui / refund-atomicity / fake-email-leak / payment-retry-reuse)
+- Sensors **25 → 32** (+7: payment-idempotency / payment-reconciliation / admin-credit-ui / refund-atomicity / fake-email-leak / payment-retry-reuse / slug-login)
 - Knowledge 9 (불변)
-- shared-contracts **§1~10 → §1~14** (+4: WebhookEventIdempotency / PaymentReconciliation / RefundPaymentAtomically / PaymentRetryReuse)
-- Eval regression **51 → 57** (+6: regression-52~55 PAY-P0/P1-1, regression-58 EMAIL-P0-1, regression-57 PAY-P1-3)
-- jest server **494 → 558** (+64 신규 spec — PAY-P0/P1-1 38 + PAY-P1-3 15 + 기타)
-- vitest web **125 → 140** (+15 신규 spec)
-- DB 모델 +3 (WebhookEvent / ReconciliationCheckpoint / RefundLog) — PAY-P1-3은 schema 변경 0건
+- shared-contracts **§1~10 → §1~15** (+5: WebhookEventIdempotency / PaymentReconciliation / RefundPaymentAtomically / PaymentRetryReuse / SlugLogin)
+- Eval regression **51 → 58** (+7: regression-52~55 PAY-P0/P1-1, regression-58 EMAIL-P0-1, regression-57 PAY-P1-3, regression-59 EMAIL-P0-3 slug 로그인)
+- jest server **494 → 572** (+78 신규 spec — PAY-P0/P1-1 38 + PAY-P1-3 15 + EMAIL-P0-3 6 + EmailServicePort/NullAdapter 8 + 기타 11)
+- vitest web **125 → 151** (+26 신규 spec — EMAIL-P0-3 11 (AuthProvider.test) + 기타 15)
+- DB 모델 +3 (WebhookEvent / ReconciliationCheckpoint / RefundLog) — PAY-P1-3 + EMAIL-P0-3 schema 변경 0건
 - Constitution 19 principles (불변)
 - Hooks 9 이벤트 14 스크립트 + 3 레포 pre-commit/pre-push 자동 발동 강제
-- 정본 신설: research/EMAIL_INTEGRITY_PLAN.md (이메일 시스템 전수 정본)
+- 정본 신설: research/EMAIL_INTEGRITY_PLAN.md (이메일 시스템 전수 정본, §11~§13 정밀 박제)
 - Cron Job +2 (PaymentReconciliationJob 새벽 3시 + 10분 주기 + PaymentCleanupJob 새벽 4시 1회)
+- Hexagonal Port +1 (EmailServicePort) + Adapter +1 (NullEmailAdapter, 외부 API 0건) — 사용자 SaaS 결정 후 ResendAdapter / SesAdapter 어댑터만 추가
+- Auth 시그니처 변경 (LoginDto + auth.usecase.login) — email/slug 양립 + 후향호환 보존
 
 ### 🔍 거짓말 차단 효과 (PAY-P0 → P1-1 강화 흐름 검증)
 - ✅ PAY-P0-2/3/P1-1 모두 server/web agent commit/push 0건 (메인 위임 정합)
