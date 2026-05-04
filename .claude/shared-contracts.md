@@ -672,6 +672,94 @@ await this.auditLogService.log(
 
 ---
 
+## 14. PaymentRetryReuse (server 도메인 — 결제 실패 retry 정책)
+
+**위치**:
+- UseCase 변경: `grimoire-server/src/application/payment/payment.usecase.ts` (`initiatePayment` 진입 게이트, line 43-70)
+- Cron Job: `grimoire-server/src/application/payment/payment-cleanup.job.ts` (신설 — `@Cron('0 0 4 * * *')`, line 45)
+- Port (extend): `grimoire-server/src/domain/port/outbound/payment-repository.port.ts` (`findReusablePendingPayment` 시그니처, line 57-71)
+- Adapter: `grimoire-server/src/adapter/outbound/persistence/prisma-payment.repository.ts` (구현, line 85-99)
+- DB 모델: `grimoire-server/prisma/schema.prisma` (변경 0건 — 'expired' status는 PAY-P0-2에서 도입됨, 본 sprint에서 활용)
+
+**적용**: 사용자가 결제 실패 후 재시도 시 동일 (authorId, productId, status='pending', createdAt > now-24h) Payment row 재사용 + Polar Checkout URL 재발급. 만료된 pending row는 매일 새벽 4시 cron으로 'expired' 마킹 (delete 아닌 soft expire).
+
+### 시그니처
+
+```typescript
+// PaymentRepositoryPort 확장
+findReusablePendingPayment(
+  authorId: string,
+  productId: string,
+  expireSince: Date,    // now - 24h
+): Promise<PaymentRecord | null>
+
+// PaymentUseCase.initiatePayment 진입 흐름
+async initiatePayment(authorId, productId, returnUrl) {
+  const expireSince = new Date(Date.now() - 24 * 60 * 60 * 1000)
+  let payment = await this.paymentRepo.findReusablePendingPayment(authorId, productId, expireSince)
+  if (!payment) {
+    payment = await this.paymentRepo.create({ authorId, productId, ... })
+  }
+  const result = await this.paymentGateway.initiatePayment({ ... })
+  await this.paymentRepo.updateExternalTransactionId(payment.id, result.tradeNo)
+  return { paymentId: payment.id, paymentUrl: result.paymentUrl, tradeNo: result.tradeNo }
+}
+
+// PaymentCleanupJob (신설)
+@Cron('0 0 4 * * *')
+async cleanupExpiredPendingPayments(): Promise<void>
+```
+
+### 정책
+
+- **재사용 조건**: `authorId AND productId AND status='pending' AND createdAt > now - 24h` ORDER BY `createdAt DESC` LIMIT 1
+- **재사용 시 Polar URL**: 매 호출마다 신규 발급 (Polar SDK 정책 — 같은 externalTransactionId 재발급 불가)
+- **race condition 차단**: 트랜잭션 SELECT FOR UPDATE 권고 (옵션 A — DB schema 변경 0건). Generator 구현은 spec 수준 race 검증 (Promise.all 시뮬). DB advisory_lock은 P2 보류 (replicas ≥2 시점).
+- **만료 정책**: 24h 초과 pending row → cron이 'expired' 마킹 (delete 아닌 soft expire — 운영자 추적 가능)
+- **AuditLog**: cron 발동 시 operator='system_cleanup' + action='payment_expire' 박제 (PAY-P0-2 'system_reconciliation' 패턴 정합)
+- **PAY-P0-2 cron과 분리**: 별도 클래스(`payment-cleanup.job.ts`) + 별도 시간대(새벽 4시 vs PAY-P0-2 새벽 3시)
+- **비활성화 게이트**: `process.env.PAYMENT_CLEANUP_DISABLED === '1'` 즉시 return (운영자 수동 차단용)
+
+### 처리 흐름 (PaymentUseCase.initiatePayment)
+
+1. `expireSince = new Date(Date.now() - 24*60*60*1000)`
+2. `paymentRepo.findReusablePendingPayment(authorId, productId, expireSince)`
+3. 결과 null → `paymentRepo.create({ ... })` 신규 생성
+4. 결과 not-null → 재사용 (paymentId 동일)
+5. `paymentGateway.initiatePayment({ ... })` Polar SDK 호출 (신규 URL 발급)
+6. `paymentRepo.updateExternalTransactionId(payment.id, result.tradeNo)` 갱신
+7. return `{ paymentId, paymentUrl, tradeNo }`
+
+### 처리 흐름 (PaymentCleanupJob.cleanupExpiredPendingPayments)
+
+1. `process.env.PAYMENT_CLEANUP_DISABLED === '1'` → skip
+2. `isRunning` 플래그 체크 → 동시 실행 차단
+3. `paymentRepo.findPendingPaymentsOlderThan(24)` → stalePending 목록
+4. 각 row: `paymentRepo.expirePayment(payment.id)` + `auditLog.log('system_cleanup', 'payment_expire', payment.id, { reason: 'pending_24h_cleanup', authorId, productId, createdAt, elapsedHours })`
+5. 개별 row 실패 시 다음 row 처리 계속 (resilient)
+6. finally: `isRunning = false`
+
+### 변경 시 동시 갱신 대상
+
+- `grimoire-server/src/application/payment/payment.usecase.ts` (initiatePayment 진입 게이트)
+- `grimoire-server/src/application/payment/payment.usecase.spec.ts` (재사용 4 it 시나리오)
+- `grimoire-server/src/application/payment/payment-cleanup.job.ts` (신설)
+- `grimoire-server/src/application/payment/payment-cleanup.job.spec.ts` (신설)
+- `grimoire-server/src/adapter/outbound/persistence/prisma-payment.repository.spec.ts` (신설 — `findReusablePendingPayment` ≥4 it)
+- `grimoire-server/src/domain/port/outbound/payment-repository.port.ts` (시그니처)
+- `grimoire-server/src/adapter/outbound/persistence/prisma-payment.repository.ts` (구현)
+- `grimoire-server/src/app.module.ts` (PaymentCleanupJob DI)
+- `grimoire-server/docs/api-contract.md` (재사용 정책 박제)
+- `grimoire-server/docs/data-model.md` (Payment status enum 'expired' 사용 명세)
+- `grimoire-server/INFRASTRUCTURE.md` §9 (cron 시간대 박제)
+- `eval/tasks/regression-57-payment-retry-reuse.json`
+- `.claude/scripts/sensor-payment-retry-reuse.sh`
+
+### 변경 이력
+- 2026-05-04 #10_7 PAY-P1-3: 신설 — `initiatePayment` 진입에 24h 이내 pending row 재사용 게이트 + 매일 새벽 4시 cleanup cron으로 만료 row 'expired' 마킹. DB schema 변경 0건. AuditLog operator='system_cleanup' + action='payment_expire'. 정본: `reports/sprint-pay-p1-3-retry-policy-progress.md`. server `findReusablePendingPayment` 시그니처는 PAY-P0-2 `findPendingPaymentsOlderThan` + PAY-P1-1 `refundPaymentAtomically` 패턴 정합.
+
+---
+
 ## 변경 시 절차 (책 Ch 16 충돌 2번 해결책)
 
 agent A가 인터페이스 변경 시:
