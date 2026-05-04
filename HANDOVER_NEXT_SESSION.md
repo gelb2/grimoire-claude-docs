@@ -73,18 +73,24 @@
 | HANDOVER §1.5 박제 (채팅방 폭파 예방) | — | — | `7d30131` |
 | **PAY-P1-1 Refund 정밀 처리** (적자 위험 차단) | `adfcae8` | `eb64a8b` | `2ed585e` |
 | **PAY-P1-1 종료 메모리 박제** | — | — | (메모리 박제만, 본 commit) |
+| **EMAIL-P0-1 시드/db-sync/e2e 가짜 도메인 정리** (2026-05-04) | `ddb14ab` | `4f9ae73` | `8820684` |
+| **PAY-P1-3 결제 실패 retry 정책 + cleanup cron** (2026-05-04) | `888fe2b` | `1d924db` (docs sync) | `59a33e4` |
 
-### 🚀 다음 트랙 (사용자 결정 영역, PAYMENT_SYSTEM_PLAN.md §3-2)
+### 🚀 다음 트랙 (사용자 결정 영역 — 2026-05-04 갱신, PAY-P1-3 + EMAIL-P0-1 완료 후)
 
 | 옵션 | 트랙 | 시간 | 비고 |
 |---|---|---|---|
-| **A** | PAY-P1-2 결제 알림 이메일 | ~3h | **cost-accountant 외부 API 위임 필수** (Resend/SendGrid/Postmark 중 사용자 결정) |
-| **B** | PAY-P1-3 결제 실패 retry 정책 | ~2h | 24h 이내 same payment 재사용 + 만료 cron |
-| **C** | 작업 D (테마 배정 UI) + 작업 E (조회수 조사) | ~3~4h | production-bug-triage skill 발동 |
-| **D** | main per-repo 머지 + dev 검증 + 휴식 | 사용자 영역 | 안전 stop |
-| **E** | 작업 A + PAY-P1-4 (구독제 요금제 통합) | ~5~8h | 큰 작업, 기획 단계 선행 필수 |
+| **A** | EMAIL-P0-2 운영 DB SQL 백필 (사용자 영역) | 30분 | 12~15 row 가짜 이메일 정리, 사용자 직접 SQL 실행 |
+| **B** | server↔web docs drift 4건 회복 sprint | ~30분 | eval-runner 4 FAIL (05-docs-sync / 06-drift-zero / 28/29-api-contract+data-model) — PAY-P1-3에서 OUT 정합 검증, 별도 sprint |
+| **C** | EMAIL-P1-1 이메일 인증 시스템 | ~12~16h | **사용자 절대 규정 0-1 외부 API 해제 결정 필수** (Resend/SendGrid/Postmark) |
+| **D** | EMAIL-P1-2 OAuth Kakao/Naver 확장 | ~8h | 사용자 Developer Console 등록 필요 |
+| **E** | EMAIL-P1-3 결제 이메일 알림 (PAY-P1-2 흡수) | ~16~20h | EMAIL-P1-1 선행 의존, 외부 API 결정 필수 |
+| **F** | 작업 D (테마 배정 UI) + E (조회수 조사) | ~3~4h | production-bug-triage skill 발동 |
+| **G** | main per-repo 머지 + dev 검증 + 휴식 | 사용자 영역 | 안전 stop |
+| **H** | PAY-P2 (부분 환불 / DLQ / SMS) | ~9h | DLQ는 CERTI 차용 가능 |
+| **I** | 작업 A + PAY-P1-4 (구독제 요금제 통합) | ~5~8h | 큰 작업, 기획 단계 선행 필수 |
 
-### 📦 사용자 영역 잔존 (PAY-P0 + P1-1 통합)
+### 📦 사용자 영역 잔존 (PAY-P0 + P1-1 + P1-3 + EMAIL-P0-1 통합 — 2026-05-04 갱신)
 
 | # | 항목 | 명령 |
 |---|------|------|
@@ -92,20 +98,25 @@
 | 2 | PAY-P0-1 dev 검증 | dev에 `PUBLIC_API_BASE_URL` env 추가 + Polar 동일 event_id 두 번 시뮬 |
 | 3 | PAY-P0-2 dev 검증 | Container Apps 로그에서 `[PaymentReconciliationJob] 시작 ... 완료` 1회 박제 |
 | 4 | PAY-P0-3 dev 검증 | admin 화면 클릭 (검색→amount+reason→confirm→toast + DB credit_logs row 박제) |
-| 5 | **PAY-P1-1 dev 검증** | Polar `order.refunded` webhook 발생 시 RefundLog row + Author.credits decrement + AuditLog operator='system_refund' 박제 확인 |
-| 6 | prod 배포 | `npx prisma migrate deploy` (3 신규 테이블: webhook_events / reconciliation_checkpoints / refund_logs 무중단) + `make deploy-prod` |
+| 5 | PAY-P1-1 dev 검증 | Polar `order.refunded` webhook 발생 시 RefundLog row + Author.credits decrement + AuditLog operator='system_refund' 박제 확인 |
+| 6 | **PAY-P1-3 dev 검증** | `curl POST /api/payments/initiate` 동일 productId 2회 → 응답 paymentId 동일 + Polar URL 신규 발급 + Container Apps 로그 `[PaymentCleanupJob] 시작 ... 완료` 새벽 4시 1회 박제 |
+| 7 | **EMAIL-P0-2 운영 DB SQL** | research/EMAIL_INTEGRITY_PLAN.md §2-1 EMAIL-P0-2 SQL 4 Phase (백업 → 영향 row 확인 → 종속 데이터 정리 → 작가 row 삭제 → 회귀 검증) — dev → prod 순차 |
+| 8 | prod 배포 | `npx prisma generate` (PAY-P1-3 schema 변경 0건이므로 migrate deploy 불필요) + `make deploy-prod` |
+| 9 | **PAY-P1-3 dev 검증 추가** | `PAYMENT_CLEANUP_DISABLED=1` env 미박제 (운영자 긴급 차단용 미리 박제 권장, INFRASTRUCTURE.md §7-B 참조) |
 
-### 📊 인벤토리 변동 (B/C + PAY 누적 4건)
+### 📊 인벤토리 변동 (B/C + PAY-P0~P1-3 + EMAIL-P0-1 누적 — 2026-05-04 갱신)
 - Skills 24 (불변)
-- Sensors **25 → 29** (+4: payment-idempotency / payment-reconciliation / admin-credit-ui / refund-atomicity)
+- Sensors **25 → 31** (+6: payment-idempotency / payment-reconciliation / admin-credit-ui / refund-atomicity / fake-email-leak / payment-retry-reuse)
 - Knowledge 9 (불변)
-- shared-contracts **§1~10 → §1~13** (+3: WebhookEventIdempotency / PaymentReconciliation / RefundPaymentAtomically)
-- Eval regression **51 → 55** (+4)
-- jest server **494 → 543** (+49 신규 spec)
+- shared-contracts **§1~10 → §1~14** (+4: WebhookEventIdempotency / PaymentReconciliation / RefundPaymentAtomically / PaymentRetryReuse)
+- Eval regression **51 → 57** (+6: regression-52~55 PAY-P0/P1-1, regression-58 EMAIL-P0-1, regression-57 PAY-P1-3)
+- jest server **494 → 558** (+64 신규 spec — PAY-P0/P1-1 38 + PAY-P1-3 15 + 기타)
 - vitest web **125 → 140** (+15 신규 spec)
-- DB 모델 +3 (WebhookEvent / ReconciliationCheckpoint / RefundLog)
+- DB 모델 +3 (WebhookEvent / ReconciliationCheckpoint / RefundLog) — PAY-P1-3은 schema 변경 0건
 - Constitution 19 principles (불변)
 - Hooks 9 이벤트 14 스크립트 + 3 레포 pre-commit/pre-push 자동 발동 강제
+- 정본 신설: research/EMAIL_INTEGRITY_PLAN.md (이메일 시스템 전수 정본)
+- Cron Job +2 (PaymentReconciliationJob 새벽 3시 + 10분 주기 + PaymentCleanupJob 새벽 4시 1회)
 
 ### 🔍 거짓말 차단 효과 (PAY-P0 → P1-1 강화 흐름 검증)
 - ✅ PAY-P0-2/3/P1-1 모두 server/web agent commit/push 0건 (메인 위임 정합)
