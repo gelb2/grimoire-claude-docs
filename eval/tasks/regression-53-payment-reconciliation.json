@@ -1,0 +1,20 @@
+{
+  "id": "regression-053",
+  "name": "api_contract — PG↔DB 정합성 검증 cron + Sprint AC 박제 가드 (PAY-P0-2)",
+  "category": "api_contract",
+  "source_session": "20260503_2 sprint-pay-p0-2-payment-reconciliation-cron — Generator grimoire-server",
+  "prompt": "PAY-P0-2: NestJS @Cron 10분 PG↔DB 정합성 검증. (a) PaymentReconciliationJob 파일 + @Injectable + @Cron 박제 (b) ReconciliationCheckpoint Prisma 모델 + singleton 정책 (c) PaymentGatewayPort.listRecentCheckouts 시그니처 (d) AdminAuditLog operator='system_reconciliation' 박제 (e) isRunning lock 박제 (f) reconciliation_boost/refund_mismatch/expire 3 action 박제 (g) 마이그레이션 파일 존재. 회귀 시 cron 차단되거나 lock 우회되면 즉시 FAIL.",
+  "eval_criteria": [
+    {"type": "command", "command": "test -f /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/src/application/payment/payment-reconciliation.job.ts", "desc": "PaymentReconciliationJob 파일 존재"},
+    {"type": "command", "command": "grep -E '@Cron\\s*\\(' /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/src/application/payment/payment-reconciliation.job.ts > /dev/null", "desc": "@Cron 데코레이터 박제"},
+    {"type": "command", "command": "grep -E 'model ReconciliationCheckpoint' /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/prisma/schema.prisma > /dev/null", "desc": "ReconciliationCheckpoint Prisma 모델 존재"},
+    {"type": "command", "command": "grep -E 'listRecentCheckouts' /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/src/domain/port/outbound/payment-gateway.port.ts > /dev/null", "desc": "PaymentGatewayPort.listRecentCheckouts 시그니처 박제"},
+    {"type": "command", "command": "grep -E \"system_reconciliation\" /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/src/application/payment/payment-reconciliation.job.ts > /dev/null", "desc": "AdminAuditLog operator='system_reconciliation' 박제"},
+    {"type": "command", "command": "grep -cE 'reconciliation_boost|reconciliation_refund_mismatch|reconciliation_expire' /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/src/application/payment/payment-reconciliation.job.ts | xargs -I{} test {} -ge 3", "desc": "3 action 식별자 모두 박제 (boost/refund_mismatch/expire)"},
+    {"type": "command", "command": "grep -E 'isRunning' /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/src/application/payment/payment-reconciliation.job.ts > /dev/null", "desc": "isRunning lock 박제 (동시 cron 차단)"},
+    {"type": "command", "command": "test -f /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/src/domain/port/outbound/reconciliation-checkpoint-repository.port.ts", "desc": "ReconciliationCheckpointRepositoryPort 인터페이스 신설"},
+    {"type": "command", "command": "ls /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/prisma/migrations/ | grep reconciliation_checkpoint > /dev/null", "desc": "Prisma 마이그레이션 파일 존재"}
+  ],
+  "threshold": 1.0,
+  "runs": 1
+}

@@ -1,0 +1,20 @@
+{
+  "id": "regression-055",
+  "name": "api_contract — Refund 정밀 처리 + 크레딧 환수 $transaction 가드 (PAY-P1-1)",
+  "category": "api_contract",
+  "source_session": "20260503_3 sprint-pay-p1-1-refund-atomicity — Generator grimoire-server",
+  "prompt": "PAY-P1-1: Polar 환불 webhook 시 크레딧 환수 트랜잭션 + RefundLog + AdminAuditLog. (a) RefundLog Prisma 모델 + @@index([paymentId]) (b) RefundPaymentUseCase 신설 (c) refundPaymentAtomically $transaction 시그니처 (d) payment.usecase 'cancel' 분기에서 refund usecase 호출 (e) AuditLog operator='system_refund' + 2 action(refund_normal/refund_deficit) (f) 마이그레이션 파일 존재 (g) deficitCredits 분기 박제. 회귀 시 환수 누락되면 즉시 FAIL.",
+  "eval_criteria": [
+    {"type": "command", "command": "grep -E 'model RefundLog' /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/prisma/schema.prisma > /dev/null", "desc": "RefundLog Prisma 모델 존재"},
+    {"type": "command", "command": "grep -E 'deficitCredits|deficit_credits' /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/prisma/schema.prisma > /dev/null", "desc": "RefundLog deficitCredits 컬럼 박제"},
+    {"type": "command", "command": "test -f /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/src/application/payment/refund-payment.usecase.ts", "desc": "RefundPaymentUseCase 신설"},
+    {"type": "command", "command": "grep -E 'refundPaymentAtomically' /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/src/domain/port/outbound/payment-repository.port.ts > /dev/null", "desc": "refundPaymentAtomically 시그니처 박제"},
+    {"type": "command", "command": "grep -E 'refundPaymentUseCase|RefundPaymentUseCase' /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/src/application/payment/payment.usecase.ts > /dev/null", "desc": "payment.usecase 'cancel' 분기에서 refund usecase 호출"},
+    {"type": "command", "command": "grep -E \"system_refund\" /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/src/application/payment/refund-payment.usecase.ts > /dev/null", "desc": "AuditLog operator='system_refund' 박제"},
+    {"type": "command", "command": "grep -cE 'refund_normal|refund_deficit' /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/src/application/payment/refund-payment.usecase.ts | xargs -I{} test {} -ge 2", "desc": "2 action 식별자 박제 (refund_normal + refund_deficit)"},
+    {"type": "command", "command": "ls /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/prisma/migrations/ | grep refund_log > /dev/null", "desc": "Prisma 마이그레이션 파일 존재"},
+    {"type": "command", "command": "test -f /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/src/application/payment/refund-payment.usecase.spec.ts", "desc": "spec 파일 신설"}
+  ],
+  "threshold": 1.0,
+  "runs": 1
+}

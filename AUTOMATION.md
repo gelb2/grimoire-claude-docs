@@ -276,7 +276,7 @@ bash .claude/scripts/update-harness-inventory.sh --apply    # §14.2 Skills + §
 
 ---
 
-## 5. knowledge 디렉토리 (6개 — 2026-05-02 묶음 M NEW-10 갱신)
+## 5. knowledge 디렉토리 (8개 — 2026-05-03 #10_6 묶음 II 갱신, README 제외)
 
 `.claude/knowledge/` — Progressive Disclosure 지식 베이스. 에이전트가 필요 시 Read로 명시 호출. 자동 검증: `sensor-knowledge-drift.sh` (README 인덱스 정합 + AUTOMATION 카운트 + orphan 식별).
 
@@ -289,6 +289,8 @@ bash .claude/scripts/update-harness-inventory.sh --apply    # §14.2 Skills + §
 | **`book-harness-engineering-completion.md` (2026-04-30 #10 D1 신설)** | 책 Ch 08/15/16 학습 박제 + 운영 데이터 누적 (L2) |
 | **`visual-canon-inventory.md` (2026-04-30 Phase B 분할)** | 사슴악마 정본 4 영역 + 6 카테고리 불일치 |
 | **`researcher-scope.md` (2026-04-30 Phase B 분할)** | researcher 자료 계층 + 매일 sweep 대상 |
+| **`red-team-constitution.md` (2026-05-02 #10_6 묶음 W 신설)** | Red-Team Constitution 19 Principles (Anthropic Constitutional + ProjectGrimoire 도메인 + OWASP LLM Top 10 P17/P18/P19). sensor-adversarial-pre-commit 자동 검증용 정본 |
+| **`build-to-delete-policy.md` (2026-05-03 #10_6 묶음 II 신설)** | 책 부록 B + Mitchell Ghostty 패턴. Skills/Sensors/Hooks 3 카테고리 (영구/진화/폐기 후보) + 분기별 리뷰 절차 |
 
 ---
 

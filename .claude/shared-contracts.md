@@ -373,6 +373,488 @@ export const ANALYSIS_CREDIT_COST = 4;  // 2026-04-27 인상 (3 → 4)
 
 ---
 
+## 11. WebhookEventIdempotency (server 도메인 — Polar webhook 멱등성)
+
+**위치**: `grimoire-server/src/domain/port/outbound/webhook-event-repository.port.ts`
+**적용**: `payment.usecase.processWebhook` (PAY-P0-1, 2026-05-03 신설)
+
+### 목적
+Polar(또는 다른 PG)가 같은 webhook event를 retry 전송 시 **DB unique 제약**으로 중복 처리 원천 차단. 같은 payment의 다른 event 종류(succeeded → refunded) 모두 개별 eventId로 식별 가능.
+
+### 시그니처
+```typescript
+export interface WebhookEventRecord {
+  id: string
+  eventId: string                                                  // Polar webhook-id 헤더
+  source: string                                                   // 'polar'
+  eventType: string                                                // 'order.paid' / 'order.refunded' / ...
+  status: 'processed' | 'skipped' | 'failed'
+  processedAt: Date
+}
+
+export interface WebhookEventRepositoryPort {
+  findByEventId(eventId: string): Promise<WebhookEventRecord | null>
+  /** event 박제 — eventId unique 위반(P2002) 시 null 반환 (race 안전) */
+  createIfAbsent(input: {
+    eventId: string
+    source: string
+    eventType: string
+    payload: object
+    status?: 'processed' | 'skipped' | 'failed'
+    errorMessage?: string | null
+  }): Promise<WebhookEventRecord | null>
+  markStatus(eventId: string, status: 'processed' | 'skipped' | 'failed', errorMessage?: string): Promise<void>
+}
+```
+
+### NormalizedWebhookEvent 시그니처 변경 (§6 AskOptions 형식 정합)
+```typescript
+export interface NormalizedWebhookEvent {
+  eventId: string                                                  // [신설 PAY-P0-1] Polar webhook-id 헤더
+  type: string
+  tradeNo: string
+  amount: number
+  status: 'success' | 'fail' | 'cancel'
+  userId?: string
+}
+```
+
+### DB 모델 (Prisma)
+```prisma
+model WebhookEvent {
+  id           String   @id @default(uuid())
+  eventId      String   @unique @map("event_id")
+  source       String                            // 'polar'
+  eventType    String   @map("event_type")
+  payload      Json
+  processedAt  DateTime @default(now()) @map("processed_at") @db.Timestamptz(3)
+  status       String   @default("processed")    // 'processed' | 'skipped' | 'failed'
+  errorMessage String?  @map("error_message")
+
+  @@index([eventType, processedAt])
+  @@map("webhook_events")
+}
+```
+
+### 처리 흐름 (payment.usecase.processWebhook)
+1. polar.adapter.verifyAndParseWebhook 호출 → eventId 박제된 NormalizedWebhookEvent 반환
+2. webhookEventRepo.findByEventId(event.eventId) → 이미 있으면 즉시 `{ processed: false, reason: 'duplicate_event' }` 반환 (200 OK)
+3. payment 처리 (현재 로직 그대로)
+4. 성공 시 webhookEventRepo.createIfAbsent(eventId, ..., status='processed') — race 시 null 반환 시 다른 worker 처리 중으로 간주, 무시
+5. 실패 시 createIfAbsent(..., status='failed', errorMessage=...) — DLQ 보강 전 임시 박제
+
+### 변경 시 동시 갱신 대상
+- `grimoire-server/src/adapter/outbound/payment/polar.adapter.ts` (webhook-id 헤더 추출)
+- `grimoire-server/src/application/payment/payment.usecase.ts` (findByEventId 게이트)
+- `grimoire-server/src/application/payment/payment.usecase.spec.ts` (멱등성 spec)
+- `grimoire-server/prisma/schema.prisma` (WebhookEvent 모델)
+- `grimoire-server/prisma/migrations/{ts}_webhook_event_idempotency/`
+- `grimoire-server/docs/data-model.md` + `SCHEMA.md` (정본 갱신)
+- `eval/tasks/regression-52-webhook-event-id-idempotency.json` (회귀 차단)
+- `.claude/scripts/sensor-payment-idempotency.sh` (패턴 검증)
+
+### 변경 이력
+- 2026-05-03 #10_7 PAY-P0-1: 신설 — webhook event_id 멱등성 테이블 (CERTI_PROJ inapi 분석 + research/PAYMENT_SYSTEM_PLAN.md §3-1 정합)
+
+---
+
+## 12. PaymentReconciliation (server 도메인 — PG↔DB 정합성 검증 cron)
+
+**위치**:
+- Job: `grimoire-server/src/application/payment/payment-reconciliation.job.ts`
+- Port (gateway): `grimoire-server/src/domain/port/outbound/payment-gateway.port.ts` (listRecentCheckouts)
+- Port (checkpoint): `grimoire-server/src/domain/port/outbound/reconciliation-checkpoint-repository.port.ts`
+- DB 모델: `grimoire-server/prisma/schema.prisma` (ReconciliationCheckpoint singleton)
+
+**적용**: NestJS @Cron('0 */10 * * * *') 10분 주기. webhook 누락 자동 발견 + 자동 보정. cost-accountant PAY-P0-2 (2026-05-03) 보고에서 Polar `/v1` rate limit 분당 500회 default 그룹 → 사용률 1% 미만 압도적 PASS, 10분 권고 유지.
+
+### 시그니처
+
+```typescript
+// PaymentGatewayPort 확장
+export interface NormalizedCheckout {
+  externalTransactionId: string  // Polar checkout.id
+  status: 'succeeded' | 'refunded' | 'failed' | 'open'
+  amount: number                  // KRW
+  metadata?: Record<string, unknown>
+  createdAt: Date
+}
+
+export interface PaymentGatewayPort {
+  // 기존 +
+  listRecentCheckouts(since: Date, limit: number): Promise<NormalizedCheckout[]>
+}
+
+// 신규 Port
+export interface ReconciliationCheckpointRecord {
+  id: string                    // 항상 'singleton'
+  lastRunAt: Date
+  processedCount: number
+  boostCount: number
+  mismatchCount: number
+  expireCount: number
+  errorMessage: string | null
+  updatedAt: Date
+}
+
+export interface ReconciliationCheckpointRepositoryPort {
+  /** singleton row 조회 — 미존재 시 default seed 반환 (lastRunAt = 24h 전) */
+  findSingleton(): Promise<ReconciliationCheckpointRecord>
+  /** singleton row 갱신 (upsert) */
+  update(data: {
+    lastRunAt: Date
+    processedCount: number
+    boostCount: number
+    mismatchCount: number
+    expireCount: number
+    errorMessage?: string | null
+  }): Promise<ReconciliationCheckpointRecord>
+}
+
+// PaymentRepositoryPort 확장
+export interface PaymentRepositoryPort {
+  // 기존 +
+  findPendingPaymentsOlderThan(hours: number): Promise<PaymentRecord[]>
+  expirePayment(paymentId: string): Promise<void>
+}
+```
+
+### DB 모델 (Prisma)
+```prisma
+model ReconciliationCheckpoint {
+  id              String   @id @default("singleton")  // 항상 1 row
+  lastRunAt       DateTime @map("last_run_at") @db.Timestamptz(3)
+  processedCount  Int      @default(0) @map("processed_count")
+  boostCount      Int      @default(0) @map("boost_count")
+  mismatchCount   Int      @default(0) @map("mismatch_count")
+  expireCount     Int      @default(0) @map("expire_count")
+  errorMessage    String?  @map("error_message")
+  updatedAt       DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@map("reconciliation_checkpoints")
+}
+```
+
+### 정책
+- ReconciliationCheckpoint는 항상 1 row 유지 (id='singleton'). 마이그레이션에서 INSERT seed 1회.
+- cron 동시 실행 차단: in-memory `isRunning` lock + try-finally (replicas=1 가정, ≥2는 PAY-P1 advisory_lock으로 강화)
+- **4 시나리오**:
+  - **S1 boost** (PG=succeeded + DB=pending) → `completePaymentAtomically` 호출 + AuditLog operator='system_reconciliation' / action='reconciliation_boost'
+  - **S2 mismatch** (PG=refunded + DB=completed) → logger.warn + AuditLog action='reconciliation_refund_mismatch' (P1-1 refundPaymentAtomically 미도입 — 운영자 수동 처리)
+  - **S3 expire** (PG=NotFound + DB=pending + 24h 경과) → `expirePayment` 호출 + AuditLog action='reconciliation_expire'
+  - **S4 정합** → skip (no-op)
+- 모든 자동 보정 action은 AdminAuditLog operator='system_reconciliation' + 3 action 식별자 박제
+
+### 처리 흐름 (PaymentReconciliationJob.run)
+1. `if (this.isRunning) return` — 동시 실행 차단
+2. `this.isRunning = true; try { ... } finally { this.isRunning = false }`
+3. `checkpoint = await checkpointRepo.findSingleton()`
+4. `polarCheckouts = await paymentGateway.listRecentCheckouts(checkpoint.lastRunAt, 100)` — 페이지네이션
+5. polarCheckouts 각각:
+   - `payment = await paymentRepo.findByExternalTransactionId(checkout.externalTransactionId)`
+   - 4 시나리오 분기 (S1/S2/S3/S4)
+6. `pendingPayments = await paymentRepo.findPendingPaymentsOlderThan(24)` — 24h 만료 대상
+7. pendingPayments 각각: PG에 record 없으면 expire (S3)
+8. `checkpointRepo.update({ lastRunAt: now, processedCount, boostCount, mismatchCount, expireCount })`
+
+### 변경 시 동시 갱신 대상
+- `grimoire-server/src/application/payment/payment-reconciliation.job.ts` (신설)
+- `grimoire-server/src/application/payment/payment-reconciliation.job.spec.ts` (신설)
+- `grimoire-server/src/adapter/outbound/payment/polar.adapter.ts` (listRecentCheckouts 구현)
+- `grimoire-server/src/adapter/outbound/persistence/prisma-reconciliation-checkpoint.repository.ts` (신설)
+- `grimoire-server/src/app.module.ts` (ScheduleModule.forRoot + PaymentReconciliationJob provider + DI)
+- `grimoire-server/package.json` (@nestjs/schedule 의존성)
+- `grimoire-server/prisma/schema.prisma` + `prisma/migrations/{ts}_add_reconciliation_checkpoint/`
+- `grimoire-server/docs/data-model.md` + `SCHEMA.md` (server 정본)
+- `eval/tasks/regression-53-payment-reconciliation.json`
+- `.claude/scripts/sensor-payment-reconciliation.sh`
+
+### 변경 이력
+- 2026-05-03 #10_7 PAY-P0-2: 신설 — PG↔DB 정합성 검증 cron (의료 결제 시스템 정합성 검증 패턴 차용 + Grimoire 10분 주기 완화). cost-accountant Polar `/v1` rate limit 사용률 1% PASS, §0 면제.
+
+---
+
+## 13. RefundPaymentAtomically (server 도메인 — 환불 시 크레딧 환수 트랜잭션)
+
+**위치**:
+- UseCase: `grimoire-server/src/application/payment/refund-payment.usecase.ts`
+- Port: `grimoire-server/src/domain/port/outbound/payment-repository.port.ts` (refundPaymentAtomically 시그니처)
+- DB 모델: `grimoire-server/prisma/schema.prisma` (RefundLog)
+
+**적용**: Polar `order.refunded` webhook 수신 시 `payment.usecase.processWebhook` event.status='cancel' 분기에서 호출. 환불 시 사용자 크레딧 환수 + RefundLog 박제 + AdminAuditLog(operator='system_refund').
+
+### 시그니처
+
+```typescript
+// PaymentRepositoryPort 확장
+export interface PaymentRepositoryPort {
+  // 기존 +
+  refundPaymentAtomically(input: {
+    paymentId: string
+    authorId: string
+    credits: number          // 환수할 크레딧
+    refundedAmount: number   // PG 환불 금액 (KRW)
+    reason: string
+    source: 'webhook' | 'manual'
+  }): Promise<{
+    actualDeducted: number   // 실제 차감 (잔액 부족 시 잔액만큼)
+    deficitCredits: number   // 부족분 (잔액 < credits 시 양수, 정상 시 0)
+  }>
+}
+
+// RefundLog DB 모델 (Prisma)
+model RefundLog {
+  id              String   @id @default(uuid())
+  paymentId       String   @map("payment_id")
+  amount          Int                                  // PG 환불 금액 (KRW)
+  credits         Int                                  // 요청 환수 크레딧
+  deficitCredits  Int      @default(0) @map("deficit_credits")  // 잔액 부족분 (운영자 회수 대상)
+  reason          String
+  processedAt     DateTime @default(now()) @map("processed_at") @db.Timestamptz(3)
+  source          String                               // 'webhook' | 'manual'
+
+  @@index([paymentId])
+  @@map("refund_logs")
+}
+```
+
+### 정책 — 3중 멱등성 + 잔액 부족 처리
+
+**3중 멱등성 (환불 webhook 중복 차단)**:
+- L1: PAY-P0-1 `webhook_events.eventId @unique` (기존)
+- L2: payment.status='refunded' 체크 (이미 환불된 payment는 skip)
+- L3: RefundLog 박제 (운영자 조회 + 추적용)
+
+**잔액 부족 분기**:
+- Author.credits ≥ credits → 정상 환수 (`actualDeducted = credits`, `deficitCredits = 0`)
+- Author.credits < credits → 0 fix + `actualDeducted = Author.credits`, `deficitCredits = credits - Author.credits`
+- 음수 잔액 절대 차단 (Author.credits = 0 floor)
+
+**$transaction 본문**:
+```typescript
+await this.prisma.$transaction(async (tx) => {
+  // 1. Payment 상태 갱신
+  await tx.payment.update({ where: { id: paymentId }, data: { status: 'refunded' } })
+  // 2. Author.credits decrement (0 fix)
+  const author = await tx.author.findUnique({ where: { id: authorId } })
+  const actualDeducted = Math.min(author.credits, credits)
+  const deficitCredits = Math.max(0, credits - author.credits)
+  await tx.author.update({ where: { id: authorId }, data: { credits: { decrement: actualDeducted } } })
+  // 3. CreditLog 음수 amount 박제 (대칭)
+  await tx.creditLog.create({ data: { authorId, amount: -actualDeducted, reason: `refund_${paymentId}_${reason}` } })
+  // 4. RefundLog 박제
+  await tx.refundLog.create({ data: { paymentId, amount: refundedAmount, credits, deficitCredits, reason, source } })
+  return { actualDeducted, deficitCredits }
+})
+// 5. AdminAuditLog 후행 (트랜잭션 외)
+await this.auditLogService.log(
+  'system_refund',
+  deficitCredits > 0 ? 'refund_deficit' : 'refund_normal',
+  paymentId,
+  { authorId, refundedAmount, creditsRequested: credits, creditsActuallyDeducted: actualDeducted, deficitCredits, reason, source }
+)
+```
+
+### 변경 시 동시 갱신 대상
+- `grimoire-server/src/application/payment/refund-payment.usecase.ts` (신설)
+- `grimoire-server/src/application/payment/refund-payment.usecase.spec.ts` (신설)
+- `grimoire-server/src/application/payment/payment.usecase.ts` (event.status='cancel' 분기에서 refund usecase 호출)
+- `grimoire-server/src/adapter/outbound/persistence/prisma-payment.repository.ts` (refundPaymentAtomically 구현)
+- `grimoire-server/src/domain/port/outbound/payment-repository.port.ts` (시그니처 추가)
+- `grimoire-server/src/app.module.ts` (RefundPaymentUseCase DI)
+- `grimoire-server/prisma/schema.prisma` (RefundLog) + `prisma/migrations/{ts}_add_refund_log/`
+- `grimoire-server/docs/data-model.md` + `SCHEMA.md` (RefundLog 박제)
+- `eval/tasks/regression-55-refund-atomicity.json`
+- `.claude/scripts/sensor-refund-atomicity.sh`
+
+### 변경 이력
+- 2026-05-04 #10_7 PAY-P1-1: 신설 — Polar 환불 webhook 시 크레딧 환수 트랜잭션 + RefundLog + AdminAuditLog. 적자 위험 차단(현재 webhook 'cancel'은 status='refunded' 마킹만, 크레딧 환수 부재). PAY-P0-2 'system_reconciliation' 패턴 정합 (operator='system_refund').
+
+---
+
+## 14. PaymentRetryReuse (server 도메인 — 결제 실패 retry 정책)
+
+**위치**:
+- UseCase 변경: `grimoire-server/src/application/payment/payment.usecase.ts` (`initiatePayment` 진입 게이트, line 43-70)
+- Cron Job: `grimoire-server/src/application/payment/payment-cleanup.job.ts` (신설 — `@Cron('0 0 4 * * *')`, line 45)
+- Port (extend): `grimoire-server/src/domain/port/outbound/payment-repository.port.ts` (`findReusablePendingPayment` 시그니처, line 57-71)
+- Adapter: `grimoire-server/src/adapter/outbound/persistence/prisma-payment.repository.ts` (구현, line 85-99)
+- DB 모델: `grimoire-server/prisma/schema.prisma` (변경 0건 — 'expired' status는 PAY-P0-2에서 도입됨, 본 sprint에서 활용)
+
+**적용**: 사용자가 결제 실패 후 재시도 시 동일 (authorId, productId, status='pending', createdAt > now-24h) Payment row 재사용 + Polar Checkout URL 재발급. 만료된 pending row는 매일 새벽 4시 cron으로 'expired' 마킹 (delete 아닌 soft expire).
+
+### 시그니처
+
+```typescript
+// PaymentRepositoryPort 확장
+findReusablePendingPayment(
+  authorId: string,
+  productId: string,
+  expireSince: Date,    // now - 24h
+): Promise<PaymentRecord | null>
+
+// PaymentUseCase.initiatePayment 진입 흐름
+async initiatePayment(authorId, productId, returnUrl) {
+  const expireSince = new Date(Date.now() - 24 * 60 * 60 * 1000)
+  let payment = await this.paymentRepo.findReusablePendingPayment(authorId, productId, expireSince)
+  if (!payment) {
+    payment = await this.paymentRepo.create({ authorId, productId, ... })
+  }
+  const result = await this.paymentGateway.initiatePayment({ ... })
+  await this.paymentRepo.updateExternalTransactionId(payment.id, result.tradeNo)
+  return { paymentId: payment.id, paymentUrl: result.paymentUrl, tradeNo: result.tradeNo }
+}
+
+// PaymentCleanupJob (신설)
+@Cron('0 0 4 * * *')
+async cleanupExpiredPendingPayments(): Promise<void>
+```
+
+### 정책
+
+- **재사용 조건**: `authorId AND productId AND status='pending' AND createdAt > now - 24h` ORDER BY `createdAt DESC` LIMIT 1
+- **재사용 시 Polar URL**: 매 호출마다 신규 발급 (Polar SDK 정책 — 같은 externalTransactionId 재발급 불가)
+- **race condition 차단**: 트랜잭션 SELECT FOR UPDATE 권고 (옵션 A — DB schema 변경 0건). Generator 구현은 spec 수준 race 검증 (Promise.all 시뮬). DB advisory_lock은 P2 보류 (replicas ≥2 시점).
+- **만료 정책**: 24h 초과 pending row → cron이 'expired' 마킹 (delete 아닌 soft expire — 운영자 추적 가능)
+- **AuditLog**: cron 발동 시 operator='system_cleanup' + action='payment_expire' 박제 (PAY-P0-2 'system_reconciliation' 패턴 정합)
+- **PAY-P0-2 cron과 분리**: 별도 클래스(`payment-cleanup.job.ts`) + 별도 시간대(새벽 4시 vs PAY-P0-2 새벽 3시)
+- **비활성화 게이트**: `process.env.PAYMENT_CLEANUP_DISABLED === '1'` 즉시 return (운영자 수동 차단용)
+
+### 처리 흐름 (PaymentUseCase.initiatePayment)
+
+1. `expireSince = new Date(Date.now() - 24*60*60*1000)`
+2. `paymentRepo.findReusablePendingPayment(authorId, productId, expireSince)`
+3. 결과 null → `paymentRepo.create({ ... })` 신규 생성
+4. 결과 not-null → 재사용 (paymentId 동일)
+5. `paymentGateway.initiatePayment({ ... })` Polar SDK 호출 (신규 URL 발급)
+6. `paymentRepo.updateExternalTransactionId(payment.id, result.tradeNo)` 갱신
+7. return `{ paymentId, paymentUrl, tradeNo }`
+
+### 처리 흐름 (PaymentCleanupJob.cleanupExpiredPendingPayments)
+
+1. `process.env.PAYMENT_CLEANUP_DISABLED === '1'` → skip
+2. `isRunning` 플래그 체크 → 동시 실행 차단
+3. `paymentRepo.findPendingPaymentsOlderThan(24)` → stalePending 목록
+4. 각 row: `paymentRepo.expirePayment(payment.id)` + `auditLog.log('system_cleanup', 'payment_expire', payment.id, { reason: 'pending_24h_cleanup', authorId, productId, createdAt, elapsedHours })`
+5. 개별 row 실패 시 다음 row 처리 계속 (resilient)
+6. finally: `isRunning = false`
+
+### 변경 시 동시 갱신 대상
+
+- `grimoire-server/src/application/payment/payment.usecase.ts` (initiatePayment 진입 게이트)
+- `grimoire-server/src/application/payment/payment.usecase.spec.ts` (재사용 4 it 시나리오)
+- `grimoire-server/src/application/payment/payment-cleanup.job.ts` (신설)
+- `grimoire-server/src/application/payment/payment-cleanup.job.spec.ts` (신설)
+- `grimoire-server/src/adapter/outbound/persistence/prisma-payment.repository.spec.ts` (신설 — `findReusablePendingPayment` ≥4 it)
+- `grimoire-server/src/domain/port/outbound/payment-repository.port.ts` (시그니처)
+- `grimoire-server/src/adapter/outbound/persistence/prisma-payment.repository.ts` (구현)
+- `grimoire-server/src/app.module.ts` (PaymentCleanupJob DI)
+- `grimoire-server/docs/api-contract.md` (재사용 정책 박제)
+- `grimoire-server/docs/data-model.md` (Payment status enum 'expired' 사용 명세)
+- `grimoire-server/INFRASTRUCTURE.md` §9 (cron 시간대 박제)
+- `eval/tasks/regression-57-payment-retry-reuse.json`
+- `.claude/scripts/sensor-payment-retry-reuse.sh`
+
+### 변경 이력
+- 2026-05-04 #10_7 PAY-P1-3: 신설 — `initiatePayment` 진입에 24h 이내 pending row 재사용 게이트 + 매일 새벽 4시 cleanup cron으로 만료 row 'expired' 마킹. DB schema 변경 0건. AuditLog operator='system_cleanup' + action='payment_expire'. 정본: `reports/sprint-pay-p1-3-retry-policy-progress.md`. server `findReusablePendingPayment` 시그니처는 PAY-P0-2 `findPendingPaymentsOlderThan` + PAY-P1-1 `refundPaymentAtomically` 패턴 정합.
+
+---
+
+## 15. SlugLogin (server + web 도메인 — slug 기반 로그인 마이그레이션)
+
+**위치**:
+- DTO: `grimoire-server/src/adapter/inbound/http/dto/auth.dto.ts` (`LoginDto` 확장 + `EmailXorSlugConstraint` validator)
+- UseCase: `grimoire-server/src/application/auth/auth.usecase.ts` (`login(input)` 시그니처 + 분기, line 77-102)
+- Controller: `grimoire-server/src/adapter/inbound/http/controller/auth.controller.ts` (AccessLog identifier 통합, line 86-89)
+- Web Form: `grimoire-web/src/app/login/page.tsx` (입력칸 1개 통합 + 정규식 자동 판별)
+- API client: `grimoire-web/src/lib/api.ts` (`login()` 시그니처 확장)
+- AuthProvider: `grimoire-web/src/features/auth/AuthProvider.tsx` (`login(emailOrSlug, password, ...)`)
+- E2E: `grimoire-web/e2e/auth.spec.ts` + `e2e/dashboard.spec.ts` + `.env.example` (`E2E_AUTHOR_SLUG`)
+
+**적용**: 사용자가 이메일 또는 슬러그 + 비밀번호로 로그인 가능. 기존 email 로그인 후향호환 보존. DB schema 변경 0건 (Author.email/slug @unique 이미 박제).
+
+### 시그니처
+
+```typescript
+// LoginDto (server)
+class LoginDto {
+  @IsOptional() @IsEmail() email?: string
+  @IsOptional() @IsString() @Matches(/^[a-z0-9-]+$/) @MinLength(2) slug?: string
+  @IsString() @MinLength(6) password!: string
+
+  // class-level XOR validator — email 또는 slug 1택만 허용
+  @Validate(EmailXorSlugConstraint)
+  __emailXorSlug?: any
+}
+
+// AuthUseCase.login (server)
+async login(input: { email?: string; slug?: string; password: string }) {
+  if (input.email && input.slug) throw new BadRequestException('이메일 또는 슬러그 중 하나만 박제하세요')
+  if (!input.email && !input.slug) throw new BadRequestException('이메일 또는 슬러그가 필요합니다')
+
+  const author = input.email
+    ? await this.authorRepo.findByEmail(input.email)
+    : await this.authorRepo.findBySlug(input.slug!)
+
+  if (!author || !author.passwordHash) throw new UnauthorizedException('이메일/슬러그 또는 비밀번호가 올바르지 않습니다')
+
+  const valid = await bcrypt.compare(input.password, author.passwordHash)
+  if (!valid) throw new UnauthorizedException('이메일/슬러그 또는 비밀번호가 올바르지 않습니다')
+
+  // ... accessToken + refreshToken 발급
+}
+
+// API client login (web)
+login(input: { email?: string; slug?: string; password: string }): Promise<AuthResponse>
+
+// Web form 자동 판별 (login/page.tsx)
+const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)
+const payload = isEmail ? { email: trimmed, password } : { slug: trimmed, password }
+```
+
+### 정책
+
+- **email XOR slug 1택 강제**: 둘 다 박제 시 BadRequestException + 둘 다 비어있으면 BadRequestException (DTO + UseCase 양 단계)
+- **후향 호환**: 기존 email 로그인 그대로 동작 (회귀 0건)
+- **DB schema 변경 0건**: Author.email/slug @unique 이미 박제됨
+- **JWT payload 변경 0건**: sub=authorId + slug + role 이미 박제 (변경 불필요)
+- **AccessLog identifier 통합**: schema 컬럼 변경 0 — AccessLog.email 컬럼은 양립 사용 (slug 로그인 시 slug 박제), detail에 `identifierType:email|slug` 박제
+- **OAuth 자동 링크 정책 변경 0**: `auth.usecase.ts:100` `findByEmail` 자동 링크 그대로 (보안 위험 #1은 별도 sprint)
+- **SignupHistory 정책 변경 0**: providerId=email 그대로 (위험 #2는 별도 sprint)
+- **자동 판별 (web)**: 클라이언트 정규식 `/^[^\s@]+@[^\s@]+\.[^\s@]+$/` 1차 판별 후 `{ email }` 또는 `{ slug }` payload 전송
+
+### 처리 흐름 (Web Login Form → Server UseCase)
+
+1. 사용자가 입력칸 1개 ("이메일 또는 슬러그")에 식별자 입력 + 비번 입력
+2. `handleSubmit` 진입 시 `trim()` 후 정규식 `/^[^\s@]+@[^\s@]+\.[^\s@]+$/` 판별
+3. 매치 시 `{ email: trimmed, password }`, 미매치 시 `{ slug: trimmed, password }` payload
+4. `POST /auth/login` (LoginDto) 전송
+5. server LoginDto class-level XOR 검증 통과
+6. `AuthUseCase.login(input)` 진입 → 도메인 XOR 검증 (transport 우회 차단)
+7. `findByEmail(input.email) ?? findBySlug(input.slug)` 분기
+8. 비번 bcrypt compare → accessToken + refreshToken 발급
+9. AccessLog `identifierType:email|slug` detail 박제
+
+### 변경 시 동시 갱신 대상
+
+- `grimoire-server/src/adapter/inbound/http/dto/auth.dto.ts` (LoginDto + EmailXorSlugConstraint)
+- `grimoire-server/src/application/auth/auth.usecase.ts` (login 시그니처)
+- `grimoire-server/src/application/auth/auth.usecase.spec.ts` (slug 로그인 6 it)
+- `grimoire-server/src/adapter/inbound/http/controller/auth.controller.ts` (AccessLog identifierType detail)
+- `grimoire-web/src/app/login/page.tsx` (입력칸 통합 + 자동 판별)
+- `grimoire-web/src/lib/api.ts` (login 시그니처)
+- `grimoire-web/src/features/auth/AuthProvider.tsx` (login 시그니처)
+- `grimoire-web/e2e/auth.spec.ts` + `e2e/dashboard.spec.ts` (E2E_AUTHOR_SLUG 양립)
+- `grimoire-web/.env.example` (E2E_AUTHOR_SLUG=deerdevil)
+- `grimoire-server/docs/api-contract.md` (POST /auth/login 갱신)
+- `eval/tasks/regression-59-slug-login.json`
+- `.claude/scripts/sensor-slug-login.sh`
+
+### 변경 이력
+- 2026-05-05 #10_7 EMAIL-P0-3: 신설 — slug 로그인 마이그레이션. Phase 1 server (LoginDto XOR + login 분기 + AccessLog identifierType + spec 6 it) + Phase 2 web (입력칸 통합 + 자동 판별 + e2e + .env.example). DB schema 변경 0건. 후향호환 보존 (email 로그인 회귀 0). 정본: `research/EMAIL_INTEGRITY_PLAN.md` §13 + `reports/sprint-email-p0-3-slug-login-progress.md`.
+
+---
+
 ## 변경 시 절차 (책 Ch 16 충돌 2번 해결책)
 
 agent A가 인터페이스 변경 시:

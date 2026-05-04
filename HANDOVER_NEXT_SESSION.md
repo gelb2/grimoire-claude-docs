@@ -1,21 +1,21 @@
-# HANDOVER — 2026-05-02 #10_6 (묶음 W+X+Y+Z 추가) → 다음 세션
+# HANDOVER — 2026-05-03 #10_6 (묶음 II 종료 + B/C/D/E + A 시연 시퀀스) → 다음 세션
 
-> **작성자**: 2026-05-02 로컬 세션 (Claude Opus 4.7 1M, #10_6 — 4 + 4 = 8 묶음 자율 진행)
-> **수신자**: 다음 세션 (로컬/리모트)
-> **검증 명령**: `cd /Users/sokol/Desktop/Git/ProjectGrimoire && git log --oneline -10 && bash eval/scripts/eval-runner.sh`
+> **작성자**: 2026-05-03 로컬 세션 (Claude, #10_6 — DD/EE/FF/GG/HH/II 묶음 일괄 자율 진행)
+> **수신자**: 다음 세션 (로컬 또는 리모트 채팅방)
+> **검증 명령**: `cd /Users/sokol/Desktop/Git/ProjectGrimoire && git log --oneline -10 && bash eval/scripts/eval-runner.sh && bash .claude/scripts/sensor-adversarial-pre-commit.sh`
 >
-> **핵심**: 적대적 검증 시스템 도입 완료 — Red Team Constitution 16 Principles + Socratic Self-Critique + Bounded Retry + 자율학습 3단 분리 (모두 외부 API 0).
+> **핵심**: 사용자 지시 — **B → C → D → E 4건 자율 진행**, **A는 마지막** (구독제 요금제 + 코드/DB 기획 변동 동반)
 
 ---
 
 ## 🚨 0. 절대 준수 사항 (사용자 명시 결정 — 보존)
 
-### 0-1. 외부 Anthropic API 신규 의존 보류 (2026-04-30)
+### 0-1. 외부 Anthropic API 신규 의존 영구 보류 (2026-04-30)
 > "앤스로픽 외부 api를 쓰는 방향으로의 하네스엔지니어링, 에이전트 고도화는 나중 과제로 좀 미루고 싶다"
 
 **금지 카테고리** (Claude Code 구독 외 종량제 API):
 - LLM-as-Judge 실제 SDK 연동 (grade-llm.py는 stub 그대로 유지)
-- **에이전트별 모델 티어링 (Opus/Sonnet/Haiku 분리)** — **본 세션 책 학습 결과 강력 권장이지만 사용자 보류 결정 우선**
+- **에이전트별 모델 티어링 (Opus/Sonnet/Haiku 분리)** — 사용자 보류 결정 우선
 - Agent teams experimental
 - 책 Ch 17 협업 패턴
 
@@ -25,262 +25,465 @@
 - 추정 보고 절대 금지 (직접 명령 검증)
 - 정책·PRD 강제 종속
 
-### 0-3. 한국어 존댓말 필수
+### 0-3. 한국어 존댓말 필수 (Constitution P10 + sensor 자동 검증)
+
+### 0-4. main 머지 정책 (.githooks/AGENTS.md §1)
+- **3 레포 모두 develop → main 머지는 사용자 per-repo 명시 승인 필요**
+- 이전 세션에서 "메인 머지 진행" 일반 표현은 **per-repo 명시 부족**으로 시스템 가드 deny 발생
+- 사용자가 "claude-docs main 머지" / "server main 머지" 등 **레포 명시 후 진행**
 
 ---
 
-## 1. 본 세션 #10_6 핵심 결과 (총 8 묶음 자율 진행)
+## 📊 1. 현재 시스템 인벤토리 (2026-05-03 #10_6 묶음 II 종료 시점)
 
-### 묶음 W+X+Y+Z (적대적 검증 시스템 — 사용자 지시 후속)
-- **묶음 W (`fd63509`)**: red-team-constitution.md 16 principles + sensor-adversarial-pre-commit.sh + .githooks/pre-commit [4/4] 강화
-- **묶음 X (`d43ed90`)**: socratic-self-critique skill (Q00/ouroboros Two-diamond + Constitutional AI 차용)
-- **묶음 Y (`fc18049`)**: adversarial-retry-handler.sh (max 2 iterations, ng/adversarial-review 정합)
-- **묶음 Z (`250cb5a`)**: 자율학습 3단 분리 — red-team-data-collector.sh + sensor-red-team-source-whitelist.sh + red-team-update-propose skill + proposals/ 게이트
+| 항목 | 수량 | 비고 |
+|------|------|------|
+| Skills | 24 | dispatching-parallel-agents + requesting-code-review (묶음 EE) 포함 |
+| Sensors | 25 | sensor-adversarial-pre-commit (P17 정밀화) + sensor-orch-ratio (META_PASS) 보강 |
+| Knowledge 정본 | 8 (README 제외) | build-to-delete-policy.md (묶음 II) 포함 |
+| Constitution Principles | **19** | OWASP LLM Top 10 P17/P18/P19 통합 (묶음 CC) |
+| Eval tasks (regression) | 49 | 100% PASS 안정 |
+| Eval tasks (EDD 추가) | 3 (총 52) | 96.15% PASS 안정 (3 runs 동일) |
+| Eval 점수 가중치 | TaskFlow 5차원 | 묶음 II 도입 (functional 40 + code 20 + perf 15 + security 15 + ux 10) |
+| Agents | 7 | planner Initializer 역할 명시 (묶음 II) |
+| Hooks | 9 이벤트 14 스크립트 | |
 
-### 1.5 책 V1.1 학습 박제 (research)
-- **HARNESS_ADVERSARIAL_VERIFICATION.md** (`9788afd` + `e14dc51`): 우로보로스 + 악마의 변호인 + 레드팀 적용 리서치 (374줄, 출처 17개) + §5.5 자율학습 평가
-
-### 묶음 R+S+T+V' (이전 사용자 위임 자율 진행)
-
-사용자 위임 (피곤 상태): "최대한 많은 묶음을 컨텍스트 rot 없이 두 번 작업할 일 없이 작업순서를 정하고 진행" → 4 묶음 자율 commit.
-
-### 묶음 R (`88996c4`) — 책 Ch 23 자가진단 갭 해소
-- BN-#4: cost-tracker.sh 신설 (호출별 JSONL 박제 + log/report/estimate 명령)
-- BN-#6: sensor-harness-self-diagnose.sh 신설 (Ch 23 7질문 자동화)
-- 효과: Q6 ❌→✅ + 안티패턴 #6 비용 블랙홀 영구 방어
-
-### 묶음 S (`cc57c8a`) — 책 Ch 21 Correct + Ch 16 패턴
-- BN-#5: loop-detection-tracker (PostToolUse Edit|Write 자동 박제) + sensor-loop-detection (MAX_EDITS_PER_FILE=5)
-- BN-#10: .claude/AGENTS.md §2.2.2 5 오케스트레이션 패턴 박제 (Ralph Loop 신규)
-
-### 묶음 T (`c4e1653`) — 책 Ch 16 + Ch 18
-- BN-#3: .claude/AGENTS.md §2.4 7 에이전트 AGENT_BUDGETS 박제 (옵션 C — 7 에이전트 .md 0 변경)
-- BN-#9: sensor-context-budget.sh (베이스라인 + 전체 분할 + 7 에이전트 토큰 추정)
-
-### 묶음 V' (`0cc5d44`) — 자가진단 Q7 ⚠️→✅
-- NEW-B: sensor-shared-contracts §4 변경 리뷰 프로세스 강화 (90일 stale + 7 에이전트 mtime 동기)
-- NEW-C: sensor-harness-cross-ref (#10_4 묶음 L 분리 4정본 cross-ref 검증)
-
-### 자가진단 진화
-- 묶음 시작 전: PASS 3 / FAIL 2 (Q6/Q7) / SKIP 1 (Q4)
-- 묶음 종료 후: **PASS 5 / FAIL 1 (Q1 별도 P1) / SKIP 1 (Q4)** — 책 Ch 23 건강 영역 강화
+**최근 커밋**:
+- claude-docs `c10cc25` (2026-05-03) — 시연 데모 후보 14건 조사 보고서
+- claude-docs `a248927` (2026-05-03) — 묶음 II 자율 적용 6건
+- grimoire-server `71a96d3` main (2026-05-03) — P17 LLM Prompt Injection 방어 (Bundle FF)
 
 ---
 
-## 1.5 [구 #10_5] 책 V1.1 전체 학습 완료 (참조 보존)
+## 🎯 1.5. 진행 현황 (2026-05-04 07:00 기준 — 채팅방 폭파 예방 박제)
 
-### 1-1. 책 학습 완료
-- **「하네스 엔지니어링 완전 정복」V1.1 (shuntailor, 2026-03)** — 206 페이지 전부 학습
-- PDF Read tool 7회 호출 (page 1~206)
-- 학습 박제: `.claude/knowledge/book-harness-engineering-completion.md` 전면 갱신 (Ch 08/15/16 → 책 전체로 확장)
+### ✅ 완료 (3 레포 develop push 완료, 모든 commit hash 박제)
 
-### 1-2. 책 결론 (사용자 즉시 알아야 함)
-> **"모델은 범용품(commodity)이다. 하네스가 해자(moat)다."** — 책 결론
-> **"Foundation Model = CPU, 하네스 = OS"** — Philipp Schmid
-> **"하네스는 코드보다 빠르게 썩는다. 정원과 같다."** — Ch 23
+| 작업 | server | web | claude-docs |
+|------|--------|-----|-------------|
+| 작업 B (테마 에디터 preset name) | — | `3682081` | `2bf9dc5` |
+| 작업 C (publishTheme bakedCssUrl) | `ff493dd` | `70ca832` | `8bfc737` |
+| PAY-P0-1 webhook event_id 멱등성 | `8c13103` | `9c4b409` | `86f7487` |
+| PAY-P0-1 drift fix (sensor 25→26) | — | — | `06de6c6` |
+| PAY-P0-2 PG↔DB 정합성 cron | `8e9e02e` | `849f771` | `790e692` |
+| PAY-P0-3 운영자 수동 크레딧 UI | — | `af3f04c` | `841e704` |
+| **commit hook 자동화 보강** (사용자 지적 후) | `1f43b05` | `dd3717b` | `43c1728` (다른 동시 세션 묶음 KK) |
+| CERTI_PROJ 외부 leak 제거 | `b67233c` | — | — |
+| 결제 전수검사 + 계획 박제 | — | — | `43c1728` (`reports/PAYMENT_NEXT_STEPS.md`) |
+| HANDOVER §1.5 박제 (채팅방 폭파 예방) | — | — | `7d30131` |
+| **PAY-P1-1 Refund 정밀 처리** (적자 위험 차단) | `adfcae8` | `eb64a8b` | `2ed585e` |
+| **PAY-P1-1 종료 메모리 박제** | — | — | (메모리 박제만, 본 commit) |
+| **EMAIL-P0-1 시드/db-sync/e2e 가짜 도메인 정리** (2026-05-04) | `ddb14ab` | `4f9ae73` | `8820684` |
+| **PAY-P1-3 결제 실패 retry 정책 + cleanup cron** (2026-05-04) | `888fe2b` | `1d924db` (docs sync) | `59a33e4` |
+| **EmailServicePort 캡슐화 인터페이스 + NullAdapter** (2026-05-05) | `b49b6ba` | — | `afdaf56` (PLAN §11/§12/§13 + Sprint 계약) |
+| **EMAIL-P0-3 Phase 1 + Phase 2 slug 로그인 마이그레이션** (2026-05-05) | `fe4ca93` | `a04eca2` | `004a825` |
 
-### 1-3. 우리 시스템 95% 정합 (책 권장 그대로 적용)
-| 정합 항목 | 책 출처 | 우리 구현 |
-|---------|--------|---------|
-| **shared-contracts.md** (책 정본 파일명 동일!) | Ch 16 | 4-30 박제 완료 |
-| 60-line 황금률 4 분할 | Ch 08 | CLAUDE.md 73 + 3 AGENTS.md |
-| EDD (실패 수집 → 기준선 → 반복 개선) | Ch 15 | 38 task / 30일 평균 97%+ |
-| Hooks 9 이벤트 | Ch 11 | 12 스크립트 |
-| Skills (Progressive Disclosure) | Ch 11 | 14개 |
-| Sprint 계약 (Initializer/Generator/Evaluator) | Ch 16 | Plan/QA agent 부분 적용 |
-| **.claude/ = 사내 위키 패턴** | 솔로 사례 (Cuneiform Chat 인용) | 30+ 참조 문서 |
-| PreCompact memory guard | Ch 21 | 신설 |
+### 🚀 다음 트랙 (사용자 결정 영역 — 2026-05-05 갱신, EMAIL-P0-3 완료 후)
 
----
+| 옵션 | 트랙 | 시간 | 비고 |
+|---|---|---|---|
+| **A** | EMAIL-P0-2 운영 DB SQL 백필 (사용자 영역) | 30분 | 12~15 row 가짜 이메일 정리, 사용자 직접 SQL 실행 |
+| **B** | server↔web docs drift 회복 sprint | ~30분 | 잔존 eval drift, 자율 가능 |
+| **C** | EMAIL-P1-1 이메일 인증 시스템 + 비밀번호 초기화 | ~12~16h | **사용자 절대 규정 0-1 외부 API 해제 결정 필수** (AWS SES 추천 / Resend / SendGrid / Postmark). EmailServicePort 캡슐화 박제 완료 → 어댑터만 구현 |
+| **D** | EMAIL-P1-2 OAuth Kakao/Naver 확장 | ~8h | 사용자 Developer Console 등록 필요, 외부 API 0건 |
+| **E** | EMAIL-P1-3 결제 이메일 알림 (PAY-P1-2 흡수) | ~16~20h | EMAIL-P1-1 선행 의존, 외부 API 결정 필수 |
+| **F** | OAuth 자동 링크 보안 강화 sprint (위험 영역 #1) | ~3~4h | 별도 보안 sprint, EMAIL-P0-3에서 OUT 박제 |
+| **G** | SignupHistory slug 정책 검토 sprint (위험 영역 #2) | ~2h | EMAIL-P0-3에서 OUT 박제 |
+| **H** | 작업 D (테마 배정 UI) + E (조회수 조사) | ~3~4h | production-bug-triage skill 발동 |
+| **I** | main per-repo 머지 + dev 검증 + 휴식 | 사용자 영역 | 안전 stop |
+| **J** | PAY-P2 (부분 환불 / DLQ / SMS) | ~9h | DLQ는 CERTI 차용 가능 |
+| **K** | 작업 A + PAY-P1-4 (구독제 요금제 통합) | ~5~8h | 큰 작업, 기획 단계 선행 필수 |
 
-## 2. 책 학습 결과 → NEW P0 10건 도출 (5% 갭)
+### 📦 사용자 영역 잔존 (PAY-P0 + P1-1 + P1-3 + EMAIL-P0-1 + EMAIL-P0-3 통합 — 2026-05-05 갱신)
 
-### 🟢 P0 즉시 진행 가능 (외부 API 0)
-| # | 과제 | 책 근거 | 우선순위 | 예상 시간 |
-|---|------|--------|---------|---------|
-| **#4** | **cost-tracker.jsonl** (호출별 task_id/model/tokens/cost JSONL) | Ch 18 cost_tracker.py 정본 | P0 | 1.5h |
-| **#6** | **sensor-harness-self-diagnose** (Ch 23 자가진단 7질문 자동화) | Ch 23 | P0 | 1h (sensor 6/7 이미 보유, 통합만) |
-| **#5** | **sensor-loop-detection** (MAX_EDITS_PER_FILE=5 둠 루프 방지) | Ch 21 LangChain LoopDetectionMiddleware | P0 | 1h |
-| **#10** | **5 오케스트레이션 박제** (.claude/AGENTS.md §2.2.1 위임 매트릭스 → 5 패턴 표 추가, Ralph Loop 신규) | Ch 16 + 부록 B | P0 | 30분 |
-| #9 | 컨텍스트 토큰 예산 sensor (시스템 프롬프트 + CLAUDE.md + 누적 대화) | Ch 18 | P1 | 1h |
+| # | 항목 | 명령 |
+|---|------|------|
+| 1 | main per-repo 머지 (3 레포) | "claude-docs main 머지" / "server main 머지" / "web main 머지" 형식 명시 |
+| 2 | PAY-P0-1 dev 검증 | dev에 `PUBLIC_API_BASE_URL` env 추가 + Polar 동일 event_id 두 번 시뮬 |
+| 3 | PAY-P0-2 dev 검증 | Container Apps 로그에서 `[PaymentReconciliationJob] 시작 ... 완료` 1회 박제 |
+| 4 | PAY-P0-3 dev 검증 | admin 화면 클릭 (검색→amount+reason→confirm→toast + DB credit_logs row 박제) |
+| 5 | PAY-P1-1 dev 검증 | Polar `order.refunded` webhook 발생 시 RefundLog row + Author.credits decrement + AuditLog operator='system_refund' 박제 확인 |
+| 6 | **PAY-P1-3 dev 검증** | `curl POST /api/payments/initiate` 동일 productId 2회 → 응답 paymentId 동일 + Polar URL 신규 발급 + Container Apps 로그 `[PaymentCleanupJob] 시작 ... 완료` 새벽 4시 1회 박제 |
+| 7 | **EMAIL-P0-2 운영 DB SQL** | research/EMAIL_INTEGRITY_PLAN.md §2-1 EMAIL-P0-2 SQL 4 Phase (백업 → 영향 row 확인 → 종속 데이터 정리 → 작가 row 삭제 → 회귀 검증) — dev → prod 순차 |
+| 8 | prod 배포 | `npx prisma generate` (PAY-P1-3 schema 변경 0건이므로 migrate deploy 불필요) + `make deploy-prod` |
+| 9 | **PAY-P1-3 dev 검증 추가** | `PAYMENT_CLEANUP_DISABLED=1` env 미박제 (운영자 긴급 차단용 미리 박제 권장, INFRASTRUCTURE.md §7-B 참조) |
+| 10 | **EMAIL-P0-3 dev 검증** | `curl POST /api/auth/login -d '{"slug":"deerdevil","password":"..."}'` 200 반환 검증 + email 후향호환 200 검증 + email+slug 동시 박제 시 400 검증 |
+| 11 | **이메일 SaaS 결정** | research/EMAIL_INTEGRITY_PLAN.md §11 결정 게이트 — AWS SES (추천 ₩700/월) / Resend / SendGrid / Postmark 중 1택 + 사용자 절대 규정 0-1 해제 명시. EmailServicePort 캡슐화 박제 완료 → 어댑터만 추가 |
 
-### 🟡 P1 (외부 API 0이지만 인프라 변경)
-| # | 과제 | 책 근거 |
-|---|------|--------|
-| #8 | Eval 점수 가중치 도입 (이분법 PASS/FAIL → 0~100 점수 분포) | Ch 20 TaskFlow 5차원 |
-| #3 | 에이전트별 예산 할당 (max_tokens/max_tool_calls/max_wall_time) | Ch 16 AGENT_BUDGETS |
-| #7 | Hooks에 Semgrep/Snyk 통합 (AI 코드 정적 분석) | Ch 17 보안 체크리스트 #4 |
+### 📊 인벤토리 변동 (B/C + PAY-P0~P1-3 + EMAIL-P0-1 + EMAIL-P0-3 + EmailServicePort 캡슐화 누적 — 2026-05-05 갱신)
+- Skills 24 (불변)
+- Sensors **25 → 32** (+7: payment-idempotency / payment-reconciliation / admin-credit-ui / refund-atomicity / fake-email-leak / payment-retry-reuse / slug-login)
+- Knowledge 9 (불변)
+- shared-contracts **§1~10 → §1~15** (+5: WebhookEventIdempotency / PaymentReconciliation / RefundPaymentAtomically / PaymentRetryReuse / SlugLogin)
+- Eval regression **51 → 58** (+7: regression-52~55 PAY-P0/P1-1, regression-58 EMAIL-P0-1, regression-57 PAY-P1-3, regression-59 EMAIL-P0-3 slug 로그인)
+- jest server **494 → 572** (+78 신규 spec — PAY-P0/P1-1 38 + PAY-P1-3 15 + EMAIL-P0-3 6 + EmailServicePort/NullAdapter 8 + 기타 11)
+- vitest web **125 → 151** (+26 신규 spec — EMAIL-P0-3 11 (AuthProvider.test) + 기타 15)
+- DB 모델 +3 (WebhookEvent / ReconciliationCheckpoint / RefundLog) — PAY-P1-3 + EMAIL-P0-3 schema 변경 0건
+- Constitution 19 principles (불변)
+- Hooks 9 이벤트 14 스크립트 + 3 레포 pre-commit/pre-push 자동 발동 강제
+- 정본 신설: research/EMAIL_INTEGRITY_PLAN.md (이메일 시스템 전수 정본, §11~§13 정밀 박제)
+- Cron Job +2 (PaymentReconciliationJob 새벽 3시 + 10분 주기 + PaymentCleanupJob 새벽 4시 1회)
+- Hexagonal Port +1 (EmailServicePort) + Adapter +1 (NullEmailAdapter, 외부 API 0건) — 사용자 SaaS 결정 후 ResendAdapter / SesAdapter 어댑터만 추가
+- Auth 시그니처 변경 (LoginDto + auth.usecase.login) — email/slug 양립 + 후향호환 보존
 
-### 👤 사용자 결정 영역 (자율 진행 금지)
-| # | 과제 | 사용자 결정 사유 |
-|---|------|--------------|
-| #1 | **MCP 연동** (Figma/GitHub/Playwright) | 외부 도구 연동 — 사용자 결정 |
-| #2 | **에이전트별 모델 티어링** (Opus/Sonnet/Haiku) | **0-1 보류 결정 적용** — 책에서 강력 권장하지만 사용자 명시 보류 유지 |
+### 🔍 거짓말 차단 효과 (PAY-P0 → P1-1 강화 흐름 검증)
+- ✅ PAY-P0-2/3/P1-1 모두 server/web agent commit/push 0건 (메인 위임 정합)
+- ✅ spec 더미 assertion 0건 (qa Evaluator 직접 Read 검증)
+- ✅ CERTI_PROJ/brightmall/thermage/inapi 외부 인용 0건 (server/web grep)
+- ✅ commit/push 직전 sensor-adversarial 자동 발동 강제 (3 레포 모두)
+- ⚠️ 1건 부분 거짓 (PAY-P1-1 server agent "eval 55/55" → 실제 52/55, docs drift 누락) → qa 즉시 발견 + 메인 server→web sync 보강
 
----
-
-## 3. 자가진단 7질문 (Ch 23) — 우리 현재 상태
-
-3 이상 "아니오"면 쇠퇴 경로. **현재 우리 5/7 ✅ — 건강**:
-
-| # | 질문 | 우리 sensor | 상태 |
-|---|------|-----------|------|
-| 1 | 작업 시간 70%+ 실제 구현? | sensor-orchestration-ratio (NEW-17) | ✅ |
-| 2 | CLAUDE.md ≤100줄? | sensor-claude-md-size | ✅ (73줄) |
-| 3 | 하네스 수정 효과 수치 증명? | sensor-eval-trend | ✅ |
-| 4 | 모델 개선 여지 측정? | — | ❌ (보류 결정) |
-| 5 | CLAUDE.md ↔ 코드 일치? | sensor-doc-drift | ✅ |
-| 6 | 태스크 유형별 비용 인지? | — | ❌ → **NEW P0 #4** |
-| 7 | 하네스 변경 리뷰 프로세스? | sensor-shared-contracts (부분) | ⚠️ |
-
-→ **NEW P0 #4 (cost-tracker) + #6 (자가진단 자동화) 우선순위 이유**: 7 질문 중 ⚠️/❌ 3건 모두 해소 가능
-
----
-
-## 4. Git 상태 (2026-05-02 #10_6 종료, 8 묶음 + research/ 박제 commit/push 완료)
-
+### 🎯 다음 세션 시작 시 첫 명령 (채팅방 폭파 시 즉시 이어받기)
 ```bash
-develop: 250cb5a (push 완료) — 묶음 Z 자율학습 3단 분리
-main:    78914cd (이전 머지 시점, 묶음 Q)
+cd /Users/sokol/Desktop/Git/ProjectGrimoire
 
-develop이 main + 16 commit 앞섬 (#10_5 + #10_6 누적):
-  250cb5a 묶음 Z (Phase ε) — 자율학습 3단 분리 (사용자 추가 요구)
-  fc18049 묶음 Y (Phase γ) — Bounded Retry Loop (max 2)
-  d43ed90 묶음 X (Phase β) — Socratic Self-Critique Skill
-  fd63509 묶음 W (Phase α) — Red Team Constitution 16 Principles + adversarial sensor
-  6f44866 sensor-server Jest flaky 회복탄력성
-  e14dc51 HARNESS_ADVERSARIAL_VERIFICATION §5.5 자율학습 평가
-  9788afd HARNESS_ADVERSARIAL_VERIFICATION.md 신설 (우로보로스 + 악마의 변호인 + 레드팀)
-  caa7361 Hook 스크립트 13→14 정합
-  fd2c75f #10_6 R+S+T+V' 박제
-  ... (R/S/T/V' 4건)
-  ... (이전 #10_5 정합)
-  0cc5d44 묶음 V' — NEW-B sensor-shared-contracts §4 + NEW-C harness-cross-ref
-  c4e1653 묶음 T — BN-#3 에이전트 예산 + BN-#9 context-budget
-  cc57c8a 묶음 S — BN-#5 loop-detection + BN-#10 5 오케스트레이션
-  88996c4 묶음 R — BN-#4 cost-tracker + BN-#6 self-diagnose
-  80e2645 우선처리 — gitignore lock + HANDOVER 38→41 정합
-  dc0a09e #10_5 git 상태 정확 반영
-  3893c5b 책 V1.1 전체 학습
+# 1. 핸드오버 + 메모리 Read
+cat HANDOVER_NEXT_SESSION.md  # 본 파일 §1.5 진행 현황
+cat /Users/sokol/.claude/projects/-Users-sokol-Desktop-Git-ProjectGrimoire/memory/project_session_20260503_3.md
+cat reports/PAYMENT_NEXT_STEPS.md
 
-본 세션 미commit (사용자 결정 영역):
-  ?? V1.1 하네스 엔지니어링 완전정복.pdf (1.7MB)
+# 2. 현재 상태 확인
+git log --oneline -10
+git -C grimoire-server log --oneline -5
+git -C grimoire-web log --oneline -5
+
+# 3. 시스템 인벤토리 검증
+bash .claude/scripts/sensor-adversarial-pre-commit.sh
+bash eval/scripts/eval-runner.sh
+
+# 4. 사용자 결정 영역 확인 후 다음 트랙 진입 (옵션 A~E 중)
 ```
 
-**main 머지 가능 여부**: 7 commit, 100% 비파괴적 (sensor/script/문서 박제만, server·web·db 0 변경). 사용자 명시 후 안전 머지 가능.
+---
+
+## 🎯 2. 사용자 명시 작업 시퀀스 (B → C → D → E → A)
+
+> **사용자 의도**: 우리 하네스 + 에이전트 + 레드팀 시스템 전체를 실제 ProjectGrimoire 작업으로 한번 쭉 발동시켜 본다.
+>
+> **순서 결정 (사용자 명시 2026-05-03)**: B → C → D → E 먼저, A는 모두 끝나고 마지막 (기획 변동 동반).
+> **진행 현황 갱신 (2026-05-04)**: B + C 완료 → 결제 전수검사 + PAY-P0 3건 우선 진행 → 사용자 옵션 A로 **PAY-P1-1 진입**. D/E는 PAY-P1 후.
+
+### 2-1. 작업 B — 테마 에디터 preset 변경 시 name 자동 동기 UX (P2-#10)
+
+- **규모**: ~1~1.5h
+- **도메인**: web only
+- **발동 시스템**:
+  - `orchestration-decision` skill (위임 가치 매트릭스)
+  - `planner` Initializer (Sprint 계약 — 묶음 II 신규)
+  - **`visual-canon-keeper`** ★ 핵심 발동 (사슴악마 정본 + 테마 에디터 검수)
+  - `web` 에이전트 (Generator)
+  - `qa` 에이전트 (Evaluator)
+  - `verification-before-completion` skill
+  - `socratic-self-critique` skill
+  - `requesting-code-review` skill (묶음 EE 신규)
+  - sensor-adversarial-pre-commit (P2 사슴악마 시각 정본 검증)
+- **현황**: PLANNING_GRIMOIRE.md "테마 에디터 preset 변경 시 사용자가 name 필드를 수정 안 했으면 자동으로 preset의 기본 name으로 동기화"
+- **예상 산출물**:
+  - `grimoire-web/src/features/theme-editor/` 컴포넌트 수정
+  - `grimoire-web/src/features/theme-editor/__tests__/*.spec.ts` 추가
+  - `reports/sprint-theme-editor-name-sync-progress.md` (Initializer 패턴 시연)
+- **검증**:
+  - sensor-web 3/3 PASS
+  - visual-canon-keeper 검수 PASS (VISUAL_CANON_REPORT)
+  - sensor-adversarial-pre-commit P2 PASS
+  - eval task 신규 1건 추가 (regression 49→50)
+- **commit + 머지**: feature/theme-editor-name-sync → develop → (사용자 명시 시) main
+
+### 2-2. 작업 C — publishTheme bakedCssUrl 무효 처리 (P1-#7)
+
+- **규모**: ~1.5~2h
+- **도메인**: server (DB 마이그레이션 가능) + web (CSS URL 절대 경로 처리)
+- **발동 시스템**:
+  - `planner` Initializer
+  - **`server`** 에이전트 (Prisma 마이그레이션 + UseCase 변경)
+  - **`web`** 에이전트 (bakedCssUrl 절대 경로 fetch 처리)
+  - `qa` 에이전트
+  - `cost-accountant` (Blob 업로드 비용 영향 검증)
+  - sensor-adversarial-pre-commit (P3 작가 콘텐츠 보호 — 테마 영향)
+  - sensor-shared-contracts (server↔web 인터페이스 정합)
+- **현황**: 현재 publishTheme이 상대 경로 bakedCssUrl 박제 → 환경 전환 시 무효
+- **예상 산출물**:
+  - `grimoire-server/src/application/theme/publish-theme.usecase.ts` 갱신
+  - `grimoire-server/prisma/migrations/YYYYMMDD_xxxxxx_baked_css_url_absolute/`
+  - `grimoire-web/src/widgets/theme-loader/` 절대 URL fetch 처리
+  - `grimoire-server/docs/data-model.md` 갱신
+- **검증**:
+  - sensor-server 4/4 PASS
+  - sensor-web 3/3 PASS
+  - sensor-docs-sync PASS
+  - 마이그레이션 rollback 테스트 (MIGRATION.md §5 절차)
+- **commit + 머지**: feature/baked-css-url-absolute → develop → (사용자 명시 시) main
+
+### 2-3. 작업 D — 작품별 테마 배정 UI (P2-#16, api 있음)
+
+- **규모**: ~2h
+- **도메인**: web only (서버 API는 이미 존재)
+- **발동 시스템**:
+  - `planner` Initializer
+  - **`visual-canon-keeper`** (테마 배정 UI 시각 검수)
+  - `web` 에이전트
+  - `qa` 에이전트
+  - `requesting-code-review` skill
+- **현황**: `grimoire-web/src/shared/api.ts`에 `assignThemeToWork` 등 API 있으나 대시보드 UI 없음
+- **예상 산출물**:
+  - `grimoire-web/src/features/work-theme-assign/` 신설
+  - `grimoire-web/src/app/dashboard/works/[workId]/theme/page.tsx` 신설
+  - 테스트 + visual-canon-keeper 검수
+- **검증**:
+  - sensor-web 3/3 PASS
+  - visual-canon-keeper PASS
+  - eval task 신규 1건 추가
+
+### 2-4. 작업 E — 4월 12일 이후 조회수 급락 원인 조사 (P1-#6)
+
+- **규모**: ~1~2h (조사형)
+- **도메인**: server (DB + 로그 조사) + 운영 데이터 분석
+- **발동 시스템**:
+  - **`production-bug-triage`** skill ★ 전용 발동 (실측 + 추정 금지)
+  - `verification-before-completion` skill (실측 증거 강제)
+  - `server` 에이전트 (DB 쿼리 + UseCase 추적)
+  - `qa` 에이전트 (재검증)
+  - sensor-adversarial-pre-commit P1 (§0 ZERO-TOLERANCE — 추정 패턴 0건)
+- **현황**: 4월 12일 이후 조회수 카운트 급락 — `incrementDailyView` UseCase 장애 가능성
+- **조사 절차** (production-bug-triage skill 정합):
+  1. **DB 실측**: `psql` 또는 prisma studio로 daily_views 테이블 일자별 카운트 추출
+  2. **코드 경로**: `grimoire-server/src/application/stats/increment-daily-view.usecase.ts` git log 추적
+  3. **운영 로그**: Azure Container Apps logs (`az containerapp logs show`)
+  4. **수치 근거 확보**: 4-11 vs 4-12 vs 5-3 일자별 카운트 비교
+  5. **원인 가설 → 코드 수정 또는 인프라 복구**
+- **예상 산출물**:
+  - `reports/INCIDENT_view_count_drop_20260412.md` 신설
+  - 원인 발견 시 server 코드 수정 + 마이그레이션 (필요 시)
+  - eval task 신규 1건 (회귀 차단)
+- **검증**:
+  - 운영 데이터 회복 확인 (Chrome 또는 curl로 실제 조회수 응답 검증)
+  - sensor-adversarial-pre-commit P1 ZERO-TOLERANCE 통과
+  - sensor-server 회귀 통과
+
+### 2-5. 작업 A — AI 채팅 1턴 크레딧 차감 + 구독제 요금제 기획 (P1-#8 확장)
+
+> **⚠️ 사용자 명시 (2026-05-03)**: A는 단순 1턴 차감 아님 — **구독제 요금제 구성 + 코드/DB 기획 수립 먼저** 필요. B/C/D/E 모두 끝난 다음에 진행.
+
+- **규모**: ~5~8h (기획 + 구현 + 검증)
+- **도메인**: planning + cost-accountant + server (chat + credit + plan + payment) + web (요금제 UI)
+- **발동 시스템 (시연 의도 — 시스템 전체 발동)**:
+  - **`writing-plans`** skill ★ (큰 작업 분할)
+  - **`planner`** Initializer (★ 기획 Draft 신설)
+  - **`researcher`** ★ (경쟁사 구독제 비교 — 한줄/네이버 시리즈/카카오페이지/Wattpad)
+  - **`cost-accountant`** ★★ (마진 ≥3배 검증 + ai-cost-table.md 갱신 + 구독 등급별 시뮬)
+  - **`visual-canon-keeper`** (요금제 UI 시각 검수)
+  - **`server`** 에이전트 (Plan 모델 확장 + Credit usecase + Chat usecase + Payment usecase)
+  - **`web`** 에이전트 (요금제 페이지 + 채팅 크레딧 잔여 표시)
+  - **`qa`** 에이전트 (Sprint 계약 채점)
+  - **`socratic-self-critique`** skill (14 질문 + Ambiguity ≤ 0.2)
+  - **`requesting-code-review`** skill (12 항목 체크리스트)
+  - **레드팀 발동**:
+    - P4 §0 원가 (cost-accountant 게이트)
+    - P16 결제 원자성 (Payment + Credit + CreditLog $transaction)
+    - **P17 LLM Prompt Injection** (이미 chat.usecase에 적용됨 — Bundle FF)
+    - P18 LLM Output Encoding (응답 마스킹)
+    - P19 Sensitive Info Disclosure (잔여 크레딧 응답 PII 검증)
+- **사용자 결정 요건 (자율 진행 X)**:
+  1. **구독 요금제 등급 구조** (예: Free / Plus / Pro / Enterprise) — 가격 + 포함 크레딧 + 월/연
+  2. **AI 채팅 1턴 크레딧 비용** (Sonnet 4.6 기반 마진 ≥3배 충족 값)
+  3. **시맨틱 캐시 히트 시 할인 정책** (P1-#9와 연동)
+  4. **Polar 결제 연동 방식** (구독은 Polar Subscription Product 사용 — 현재 일회성 결제만)
+  5. **DB 스키마 확장** (Subscription / SubscriptionPlan / SubscriptionLog 테이블)
+  6. **기존 일회성 결제 사용자 마이그레이션** (사용자 결정 영역)
+- **기획 단계 산출물 (구현 전)**:
+  - `PLANNING_GRIMOIRE.md` 새 섹션 (구독제 요금제 — Draft, 사용자 승인 후 정식)
+  - `reports/SUBSCRIPTION_RESEARCH.md` (researcher 위임 결과 — 경쟁사 구독제 5종 비교)
+  - `reports/SUBSCRIPTION_COST_AUDIT.md` (cost-accountant — 등급별 마진 시뮬)
+  - `reports/SUBSCRIPTION_PLAN_DRAFT.md` (planner — 기획 Draft)
+- **구현 단계 산출물 (사용자 승인 후)**:
+  - `grimoire-server/prisma/schema.prisma` (Subscription 모델 + SubscriptionPlan enum 확장)
+  - `grimoire-server/prisma/migrations/YYYYMMDD_xxxxxx_subscription_model/`
+  - `grimoire-server/src/domain/model/subscription.ts` 신설
+  - `grimoire-server/src/application/subscription/` 디렉토리 신설
+  - `grimoire-server/src/application/chat/chat.usecase.ts` 크레딧 차감 + 환불 분기
+  - `grimoire-server/src/application/payment/payment.usecase.ts` Polar Subscription webhook 처리
+  - `grimoire-web/src/features/subscription/` 페이지 신설
+  - `grimoire-web/src/widgets/credit-balance/` 잔여 표시
+- **검증**:
+  - 480/480 server jest + 신규 subscription spec
+  - sensor-credit-atomicity PASS (P16 결제 원자성)
+  - sensor-cost-margin PASS (구독제 모든 등급 ≥3배 마진)
+  - sensor-adversarial-pre-commit 19 principles 모두 PASS
+  - EDD eval 회귀 차단 (regression 50→51 등)
+  - Chrome 시각 검증 (claude-in-chrome MCP 또는 사용자 직접)
 
 ---
 
-## 5. 검증 baseline (본 세션 #10_6 종료 시점, 8 묶음 누적)
+## 🛠️ 3. 발동 절차 (모든 작업 공통 — 우리 시스템 정합)
 
-| 검증 | 결과 |
+```
+[Step 1] 작업 시작 전
+  → orchestration-decision skill (위임 가치 매트릭스)
+  → §15.7 매트릭스로 메인 직접 vs subagent 위임 결정
+
+[Step 2] 기획 (planner Initializer — 묶음 II 신규)
+  → planner 에이전트 호출 (Task tool)
+  → reports/sprint-{name}-progress.md 생성 (Sprint 계약)
+  → reports/PLANNER_REPORT.md 작성
+
+[Step 3] 외부 검증 게이트 (필요 시)
+  → AI 기능 → cost-accountant (마진 ≥3배)
+  → 시각 영향 → visual-canon-keeper (사슴악마 정본)
+  → 시장 조사 → researcher (경쟁사 + AI 가격)
+
+[Step 4] 구현 (Generator — server/web)
+  → server 또는 web 에이전트 호출
+  → progress.md 읽고 미완 기능 구현 → progress.md 갱신
+
+[Step 5] 회귀 검증
+  → verification-before-completion skill (실측 증거 강제)
+  → sensor-server / sensor-web / sensor-docs-sync
+  → eval-runner.sh (regression + EDD)
+
+[Step 6] 적대적 검증 (commit 직전)
+  → sensor-adversarial-pre-commit (19 principles)
+  → socratic-self-critique skill (14 질문 + Ambiguity ≤ 0.2)
+  → requesting-code-review skill (12 항목 체크리스트)
+
+[Step 7] 평가 (Evaluator — qa)
+  → qa 에이전트 호출
+  → reports/QA_REPORT.md 작성 (Sprint 계약 채점 포함)
+
+[Step 8] commit + 머지
+  → feature/{name} → develop (.githooks/pre-commit 자동 검증)
+  → develop → main (사용자 per-repo 명시 승인 후)
+
+[Step 9] 메모리 박제 (Stop hook 강제)
+  → memory/project_session_YYYYMMDD*.md
+  → memory/MEMORY.md 인덱스 갱신
+  → memory/project_remaining_tasks.md 현행화
+```
+
+---
+
+## 🚦 4. 검증 게이트 (commit 직전 자동 차단)
+
+`.githooks/pre-commit` 자동 발동:
+1. `update-harness-inventory --apply` (NEW-5)
+2. `instructions-drift-check.sh` (exit 0 강제)
+3. `eval-precommit.sh` (regression-tolerance 0.05)
+4. `sensor-adversarial-pre-commit.sh` (19 principles, FAIL 0건 강제)
+
+**현재 검증 결과 (#10_6 묶음 II 종료)**:
+- regression eval 49/49 PASS (1.0)
+- EDD eval 50/52 PASS (0.9615) × 3 runs 동일
+- TaskFlow 가중 점수 0.9932
+- 19 Principles 17 PASS / 2 WARN / 0 FAIL
+- 자가진단 활성 6/6 PASS (Q1 META_PASS 인식)
+- knowledge drift 0건
+- feedback PROMOTE 6→0건 (모두 absorbed 마크)
+
+---
+
+## 📁 5. 핵심 정본 위치
+
+| 정본 | 위치 |
 |------|------|
-| Regression | **48/48 PASS = 100%** (#10_6 8 묶음 누적: +8 sensor wrap) |
-| EDD | 의도된 갭 유지 (edd-031/edd-033) |
-| Drift sensor | exit 0 |
-| sensor-instruction-degradation | 11/11 PASS, WARN 0 |
-| sensor-agent-priority-labels | PASS 7/7 |
-| sensor-harness-self-diagnose (Ch 23) | PASS 5 / FAIL 1 (Q1 ratio P1) / SKIP 1 (Q4 사용자 보류) |
-| sensor-shared-contracts §4 강화 | PASS (90일 stale + mtime 동기) |
-| sensor-harness-cross-ref | PASS (분리 5정본 정합 — ADVERSARIAL_VERIFICATION 추가) |
-| **sensor-adversarial-pre-commit (16 Principles)** | **PASS 13 / WARN 3 / FAIL 0** (P1 commit 패턴 / P4 cost-margin 조기 / P16 CreditLog audit) |
-| **sensor-red-team-source-whitelist** | PASS (whitelist 정합 / 차단 정합) |
-| Skills 22 / Sensors 25 / Hooks 10이벤트 14스크립트 / Knowledge 8 / Agents 7 | 정합 |
+| 절대 규정 | `CLAUDE.md` (73줄) + `PLANNING_GRIMOIRE.md` |
+| 하네스 | `.claude/AGENTS.md` |
+| 문서 동기화 | `docs/AGENTS.md` |
+| Git/CI | `.githooks/AGENTS.md` |
+| 7 에이전트 인터페이스 | `.claude/shared-contracts.md` |
+| 책 학습 결과 | `.claude/knowledge/book-harness-engineering-completion.md` |
+| Red-Team Constitution | `.claude/knowledge/red-team-constitution.md` (19 principles) |
+| Build-to-Delete 정책 | `.claude/knowledge/build-to-delete-policy.md` (묶음 II 신규) |
+| 위임 가치 매트릭스 | `research/HARNESS_FIELD_PATTERNS_4.md` §15.7 |
+| 적대적 검증 | `research/HARNESS_ADVERSARIAL_VERIFICATION.md` |
+| 시연 후보 (참고) | `reports/SHOWCASE_DEMO_CANDIDATES.md` |
+| 본 묶음 검수 | `reports/inspection-20260503-bundle-hh.md` |
 
 ---
 
-## 6. 즉시 검증 명령 (다음 세션 첫 5분)
+## ⚠️ 6. 주의사항 (이전 세션 반복 방지)
+
+### 6-1. main 머지는 per-repo 명시 승인
+- "메인 머지 진행" 일반 표현은 시스템 가드 deny 발생 (이전 세션 경험)
+- 사용자에게 **"claude-docs main 머지" / "server main 머지" / "web main 머지"** 형태로 명시 요청
+
+### 6-2. 외부 Anthropic API 신규 의존 0건
+- 모든 사전 검토 시 anthropic SDK import 금지 (현재 stub 유지)
+- 모델 티어링 / agent teams / LLM-as-Judge 실 SDK 호출 금지
+
+### 6-3. 작가 본문 수정/인용/로깅 금지
+- 본문 변환/요약/저장 패턴 sensor-adversarial-pre-commit P3 검출
+
+### 6-4. flaky test 인식
+- `grimoire-server/src/lib/hwp-parser.spec.ts` (Zip Bomb 50MB 테스트) 가끔 timeout
+- 단독 재실행 (`npx jest src/lib/hwp-parser.spec.ts`) 시 PASS
+
+### 6-5. EDD 96.15% 2 fail은 정상 baseline
+- `edd-sample-001` (LLM-as-Judge 시연) 외부 Anthropic API 보류로 의도 차단됨
+- 회귀 신호 아님 — 무시 가능
+
+---
+
+## 🎬 7. 다음 세션 시작 시 첫 명령
 
 ```bash
 cd /Users/sokol/Desktop/Git/ProjectGrimoire
 
-# 1. git 정합 확인
-git log --oneline -10
-git status
+# 1. 현재 상태 확인
+git -C grimoire-server log --oneline -5
+git -C grimoire-web log --oneline -5
+git log --oneline -5
 
-# 2. 회귀 검증 (41/41 PASS여야 — 의도된 EDD-only 갭은 tasks-edd/만 영향)
+# 2. 시스템 인벤토리 검증
+bash .claude/scripts/sensor-adversarial-pre-commit.sh
+bash .claude/scripts/sensor-harness-self-diagnose.sh
 bash eval/scripts/eval-runner.sh
 
-# 3. drift 검증 (exit 0)
-bash .claude/scripts/instructions-drift-check.sh
+# 3. 본 핸드오버 Read
+cat HANDOVER_NEXT_SESSION.md  # 본 파일
 
-# 4. 책 학습 박제 확인
-cat .claude/knowledge/book-harness-engineering-completion.md | head -50
+# 4. 작업 시작 (B 추천 — 가장 작고 visual-canon-keeper 시연)
 ```
 
 ---
 
-## 7. 다음 세션 시작 시 추천 작업 (사용자 명시 후)
+## 📝 8. 권장 진행 순서 (사용자 명시 정합)
 
-**Option A — 적대적 시스템 안정화 + 자율학습 시범 운영** (외부 API 0):
-1. **묶음 AA**: sensor-adversarial-pre-commit WARN 3건 해소 — 1h
-   - P1 commit 패턴 false positive 정밀화
-   - P4 cost-margin 조기 경보 추적
-   - P16 CreditLog audit 보강 (server 도메인 — 사용자 결정)
-2. **묶음 BB**: 자율학습 시범 운영 — 1주 후 첫 propose 생성
-   - red-team-data-collector add (5건 whitelist 출처 박제)
-   - red-team-update-propose 첫 호출 → proposals/ 박제
-   - 사용자 검토 후 적용 결정
+```
+세션 1 (1~1.5h): 작업 B (테마 에디터 preset name 자동 동기)
+  → visual-canon-keeper 시연 + Sprint 계약 패턴 첫 적용
 
-**Option B — 자가진단 Q1 정밀화 + Eval 점수 가중치** (외부 API 0):
-- sensor-orchestration-ratio 정밀도 강화 (Q1 FAIL 해소) — 1h
-- BN-#8 Eval 점수 가중치 (이분법 → 0~100 5차원, 책 Ch 20 TaskFlow) — 2h
+세션 2 (1.5~2h): 작업 C (publishTheme bakedCssUrl 무효 처리)
+  → server + web 동시 변경 + 마이그레이션 시연
 
-**Option C — 사용자 직접 결정 영역 (자율 진행 금지)**:
-- **NEW P0 #1 MCP 연동** (Figma/GitHub/Playwright)
-- **NEW P0 #2 모델 티어링** (Opus/Sonnet/Haiku, 책 40~60% 절감 강력 권장 vs 0-1 보류)
-- **NEW-A**: EDD 의도된 갭 2건 해소 (server·web 코드 변경 동반)
-- **J8**: claude-docs develop → main 머지 (현재 + 16 commit, 100% 비파괴적)
-- **PDF**: V1.1 하네스 엔지니어링 PDF (1.7MB) gitignore vs 박제 결정
-- **proposals/{date}.md** 적용 (자율학습 결과 — 각 proposal 사용자 명시 후만)
+세션 3 (2h): 작업 D (작품별 테마 배정 UI)
+  → web only + visual-canon-keeper 두 번째 시연
+
+세션 4 (1~2h): 작업 E (4-12일 조회수 급락 원인 조사)
+  → production-bug-triage skill 전용 발동 + 운영 데이터 분석
+
+세션 5~ (5~8h): 작업 A (AI 채팅 + 구독제 요금제)
+  → 기획 단계 (researcher + cost-accountant + planner) 먼저
+  → 사용자 승인 후 구현 단계 (server + web + qa)
+  → 시스템 전체 발동 (모든 sensor + 모든 skill + 모든 agent)
+```
 
 ---
 
-## 8. 메모리 절대 규칙 (Stop hook H10 자동 검증)
+## 🤝 9. 사용자 협력 요청 사항
 
-다음 세션 종료 전:
-1. 코드 변경 → `memory/project_session_YYYYMMDD[_N].md` 작성
-2. `memory/MEMORY.md` 인덱스에 1줄 추가 (Stop hook 검증)
-3. `memory/project_remaining_tasks.md` 현행화 (7일 stale WARN)
+### 9-1. 즉시 답변 필요 (작업 진행 중)
+- 작업 B/C/D/E 각각 commit 후 develop → main 머지 명시 (per-repo)
+- 작업 E에서 운영 데이터 접근 필요 시 Azure 또는 DB 자격 증명 확인
 
----
-
-## 9. 알아둘 부수 사항
-
-### 본 세션 외부 API 0건 (사용자 명시 0-1 준수)
-- 책 학습은 PDF Read tool만 사용 (Anthropic API 신규 호출 0)
-- 책 학습 후 신규 NEW P0 #2 (모델 티어링)는 책에서 강력 권장하지만 사용자 명시 보류 결정 유지
-
-### 책 PDF 위치
-`/Users/sokol/Desktop/Git/ProjectGrimoire/V1.1 하네스 엔지니어링 완전정복.pdf` (1.7MB)
-- 사용자 직접 드래그앤드롭으로 추가 (2026-04-29)
-- claude-docs PRIVATE 레포에 박제 가치 vs 용량 — 사용자 결정 필요
-
-### 본 세션 변경 파일 (총 2건)
-1. `.claude/knowledge/book-harness-engineering-completion.md` (전면 갱신, 173 → 약 250줄)
-2. `memory/project_session_20260501_3.md` (신설)
-3. `memory/MEMORY.md` (1줄 추가)
-4. `HANDOVER_NEXT_SESSION.md` (본 파일, 전면 갱신)
-
----
-
-## 10. 핵심 정본 위치
-
-| 영역 | 정본 |
-|------|------|
-| 절대 규정 | `CLAUDE.md` §0 (73줄) |
-| 메모리/멀티에이전트 | `.claude/AGENTS.md` |
-| 문서 동기화/피라미드 | `docs/AGENTS.md` |
-| Git/Pre-Push | `.githooks/AGENTS.md` |
-| 에이전트 인터페이스 | `.claude/shared-contracts.md` (10건) |
-| **책 학습 박제 (전면 갱신)** | `.claude/knowledge/book-harness-engineering-completion.md` |
-| 우선순위 (남은 과제) | `memory/project_remaining_tasks.md` (NEW P0 10건 추가 필요) |
-| 인벤토리 | `AUTOMATION.md` |
-| 하네스 이론 | `research/HARNESS_ENGINEERING.md` + 분리 4 정본 |
-| **본 핸드오버** | `HANDOVER_NEXT_SESSION.md` (워크스페이스 루트, 본 파일) |
+### 9-2. 작업 A 시작 전 결정 필요
+- 구독 등급 구조 (예: Free / Plus / Pro / Enterprise — 사용자 결정)
+- 구독 가격대 (월 / 연 — 사용자 결정)
+- AI 채팅 1턴 크레딧 비용 (cost-accountant 시뮬 후 사용자 승인)
+- Polar Subscription Product 도입 여부 (현재 일회성만)
+- 기존 일회성 결제 사용자 마이그레이션 정책
 
 ---
 
 ## 변경 이력
-- 2026-05-01 #10_2: 본 파일 신설
-- 2026-05-01 #10_5: **책 V1.1 전체 학습 완료 박제 — Ch 1~23 + 부록 A/B/C, 206 페이지. NEW P0 10건 도출 (cost-tracker / 자가진단 / loop-detection / 5 오케스트레이션 등). 우리 시스템 95% 정합. 외부 API 0건.**
+- 2026-05-03 #10_6 묶음 II 종료: 본 핸드오버 신설
+- B/C/D/E + A 시퀀스 명시 (사용자 2026-05-03 결정)
+- A는 구독제 요금제 + 코드/DB 기획 변동 동반 (사용자 추가 요구)

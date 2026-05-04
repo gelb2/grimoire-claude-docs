@@ -110,14 +110,16 @@ case "$INSTR_RESULT" in
 esac
 
 # Principle 8 — Sensor 모두 PASS/WARN (lenient: exit ≤2 PASS, exit ≥3 FAIL — 우리 컨벤션)
+# 2026-05-04 묶음 KK: PAY-P0 신규 sensor 3건 추가 (전수조사로 호출 누락 발견)
 SENSOR_FAIL=0
-for s in sensor-server sensor-web sensor-docs-sync sensor-secret-leak sensor-credit-atomicity; do
+for s in sensor-server sensor-web sensor-docs-sync sensor-secret-leak sensor-credit-atomicity \
+         sensor-payment-idempotency sensor-payment-reconciliation sensor-admin-credit-ui; do
   bash "$ROOT/.claude/scripts/$s.sh" >/dev/null 2>&1
   EC=$?
   [ "$EC" -gt 2 ] && SENSOR_FAIL=$((SENSOR_FAIL+1))
 done
 if [ "$SENSOR_FAIL" -eq 0 ]; then
-  check 8 "핵심 Sensor exit ≤2" "PASS" "5 핵심 sensor 모두 통과 (exit ≤2)"
+  check 8 "핵심 Sensor exit ≤2" "PASS" "8 핵심 sensor 모두 통과 (exit ≤2, PAY-P0 3건 포함)"
 else
   check 8 "핵심 Sensor exit ≤2" "FAIL" "$SENSOR_FAIL 핵심 sensor exit ≥3 (FAIL)"
 fi
