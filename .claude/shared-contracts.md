@@ -760,6 +760,101 @@ async cleanupExpiredPendingPayments(): Promise<void>
 
 ---
 
+## 15. SlugLogin (server + web 도메인 — slug 기반 로그인 마이그레이션)
+
+**위치**:
+- DTO: `grimoire-server/src/adapter/inbound/http/dto/auth.dto.ts` (`LoginDto` 확장 + `EmailXorSlugConstraint` validator)
+- UseCase: `grimoire-server/src/application/auth/auth.usecase.ts` (`login(input)` 시그니처 + 분기, line 77-102)
+- Controller: `grimoire-server/src/adapter/inbound/http/controller/auth.controller.ts` (AccessLog identifier 통합, line 86-89)
+- Web Form: `grimoire-web/src/app/login/page.tsx` (입력칸 1개 통합 + 정규식 자동 판별)
+- API client: `grimoire-web/src/lib/api.ts` (`login()` 시그니처 확장)
+- AuthProvider: `grimoire-web/src/features/auth/AuthProvider.tsx` (`login(emailOrSlug, password, ...)`)
+- E2E: `grimoire-web/e2e/auth.spec.ts` + `e2e/dashboard.spec.ts` + `.env.example` (`E2E_AUTHOR_SLUG`)
+
+**적용**: 사용자가 이메일 또는 슬러그 + 비밀번호로 로그인 가능. 기존 email 로그인 후향호환 보존. DB schema 변경 0건 (Author.email/slug @unique 이미 박제).
+
+### 시그니처
+
+```typescript
+// LoginDto (server)
+class LoginDto {
+  @IsOptional() @IsEmail() email?: string
+  @IsOptional() @IsString() @Matches(/^[a-z0-9-]+$/) @MinLength(2) slug?: string
+  @IsString() @MinLength(6) password!: string
+
+  // class-level XOR validator — email 또는 slug 1택만 허용
+  @Validate(EmailXorSlugConstraint)
+  __emailXorSlug?: any
+}
+
+// AuthUseCase.login (server)
+async login(input: { email?: string; slug?: string; password: string }) {
+  if (input.email && input.slug) throw new BadRequestException('이메일 또는 슬러그 중 하나만 박제하세요')
+  if (!input.email && !input.slug) throw new BadRequestException('이메일 또는 슬러그가 필요합니다')
+
+  const author = input.email
+    ? await this.authorRepo.findByEmail(input.email)
+    : await this.authorRepo.findBySlug(input.slug!)
+
+  if (!author || !author.passwordHash) throw new UnauthorizedException('이메일/슬러그 또는 비밀번호가 올바르지 않습니다')
+
+  const valid = await bcrypt.compare(input.password, author.passwordHash)
+  if (!valid) throw new UnauthorizedException('이메일/슬러그 또는 비밀번호가 올바르지 않습니다')
+
+  // ... accessToken + refreshToken 발급
+}
+
+// API client login (web)
+login(input: { email?: string; slug?: string; password: string }): Promise<AuthResponse>
+
+// Web form 자동 판별 (login/page.tsx)
+const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)
+const payload = isEmail ? { email: trimmed, password } : { slug: trimmed, password }
+```
+
+### 정책
+
+- **email XOR slug 1택 강제**: 둘 다 박제 시 BadRequestException + 둘 다 비어있으면 BadRequestException (DTO + UseCase 양 단계)
+- **후향 호환**: 기존 email 로그인 그대로 동작 (회귀 0건)
+- **DB schema 변경 0건**: Author.email/slug @unique 이미 박제됨
+- **JWT payload 변경 0건**: sub=authorId + slug + role 이미 박제 (변경 불필요)
+- **AccessLog identifier 통합**: schema 컬럼 변경 0 — AccessLog.email 컬럼은 양립 사용 (slug 로그인 시 slug 박제), detail에 `identifierType:email|slug` 박제
+- **OAuth 자동 링크 정책 변경 0**: `auth.usecase.ts:100` `findByEmail` 자동 링크 그대로 (보안 위험 #1은 별도 sprint)
+- **SignupHistory 정책 변경 0**: providerId=email 그대로 (위험 #2는 별도 sprint)
+- **자동 판별 (web)**: 클라이언트 정규식 `/^[^\s@]+@[^\s@]+\.[^\s@]+$/` 1차 판별 후 `{ email }` 또는 `{ slug }` payload 전송
+
+### 처리 흐름 (Web Login Form → Server UseCase)
+
+1. 사용자가 입력칸 1개 ("이메일 또는 슬러그")에 식별자 입력 + 비번 입력
+2. `handleSubmit` 진입 시 `trim()` 후 정규식 `/^[^\s@]+@[^\s@]+\.[^\s@]+$/` 판별
+3. 매치 시 `{ email: trimmed, password }`, 미매치 시 `{ slug: trimmed, password }` payload
+4. `POST /auth/login` (LoginDto) 전송
+5. server LoginDto class-level XOR 검증 통과
+6. `AuthUseCase.login(input)` 진입 → 도메인 XOR 검증 (transport 우회 차단)
+7. `findByEmail(input.email) ?? findBySlug(input.slug)` 분기
+8. 비번 bcrypt compare → accessToken + refreshToken 발급
+9. AccessLog `identifierType:email|slug` detail 박제
+
+### 변경 시 동시 갱신 대상
+
+- `grimoire-server/src/adapter/inbound/http/dto/auth.dto.ts` (LoginDto + EmailXorSlugConstraint)
+- `grimoire-server/src/application/auth/auth.usecase.ts` (login 시그니처)
+- `grimoire-server/src/application/auth/auth.usecase.spec.ts` (slug 로그인 6 it)
+- `grimoire-server/src/adapter/inbound/http/controller/auth.controller.ts` (AccessLog identifierType detail)
+- `grimoire-web/src/app/login/page.tsx` (입력칸 통합 + 자동 판별)
+- `grimoire-web/src/lib/api.ts` (login 시그니처)
+- `grimoire-web/src/features/auth/AuthProvider.tsx` (login 시그니처)
+- `grimoire-web/e2e/auth.spec.ts` + `e2e/dashboard.spec.ts` (E2E_AUTHOR_SLUG 양립)
+- `grimoire-web/.env.example` (E2E_AUTHOR_SLUG=deerdevil)
+- `grimoire-server/docs/api-contract.md` (POST /auth/login 갱신)
+- `eval/tasks/regression-59-slug-login.json`
+- `.claude/scripts/sensor-slug-login.sh`
+
+### 변경 이력
+- 2026-05-05 #10_7 EMAIL-P0-3: 신설 — slug 로그인 마이그레이션. Phase 1 server (LoginDto XOR + login 분기 + AccessLog identifierType + spec 6 it) + Phase 2 web (입력칸 통합 + 자동 판별 + e2e + .env.example). DB schema 변경 0건. 후향호환 보존 (email 로그인 회귀 0). 정본: `research/EMAIL_INTEGRITY_PLAN.md` §13 + `reports/sprint-email-p0-3-slug-login-progress.md`.
+
+---
+
 ## 변경 시 절차 (책 Ch 16 충돌 2번 해결책)
 
 agent A가 인터페이스 변경 시:

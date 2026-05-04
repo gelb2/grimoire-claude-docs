@@ -1,0 +1,23 @@
+{
+  "id": "regression-059",
+  "name": "auth_contract — EMAIL-P0-3 slug 로그인 마이그레이션 (LoginDto XOR + login 분기 + AccessLog identifier + web 자동 판별)",
+  "category": "auth_contract",
+  "source_session": "20260505 sprint-email-p0-3-slug-login — Generator grimoire-server + grimoire-web",
+  "prompt": "EMAIL-P0-3: 사용자가 이메일 또는 슬러그 + 비번 로그인 가능. (a) LoginDto email?/slug?/password + EmailXorSlugConstraint (b) auth.usecase.login(input) XOR + findByEmail/findBySlug 분기 (c) AccessLog identifierType detail (d) spec PAY-P0-3 / EMAIL-P0-3 describe + 의미 있는 assertion ≥6건 (e) web login/page.tsx 자동 판별 (f) lib/api.ts login 시그니처 확장 (g) .env.example E2E_AUTHOR_SLUG (h) shared-contracts §15 박제 (i) DB schema 변경 0건. 회귀 시 임의 영역 누락하면 즉시 FAIL.",
+  "eval_criteria": [
+    {"type": "command", "command": "grep -qE 'class LoginDto' /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/src/adapter/inbound/http/dto/auth.dto.ts && grep -A 10 'class LoginDto' /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/src/adapter/inbound/http/dto/auth.dto.ts | grep -qE '@IsOptional'", "desc": "LoginDto email/slug @IsOptional 박제"},
+    {"type": "command", "command": "grep -qE 'EmailXorSlugConstraint' /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/src/adapter/inbound/http/dto/auth.dto.ts", "desc": "EmailXorSlugConstraint validator 박제"},
+    {"type": "command", "command": "grep -E 'async login\\(input:' /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/src/application/auth/auth.usecase.ts | grep -qE 'email\\?|slug\\?'", "desc": "AuthUseCase.login(input) 시그니처"},
+    {"type": "command", "command": "grep -qE 'input\\.email && input\\.slug' /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/src/application/auth/auth.usecase.ts", "desc": "login() 도메인 XOR 검증"},
+    {"type": "command", "command": "grep -qE 'findByEmail.*input\\.email' /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/src/application/auth/auth.usecase.ts && grep -qE 'findBySlug.*input\\.slug' /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/src/application/auth/auth.usecase.ts", "desc": "findByEmail / findBySlug 분기 박제"},
+    {"type": "command", "command": "grep -qE 'identifierType' /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/src/adapter/inbound/http/controller/auth.controller.ts", "desc": "AccessLog identifierType detail 박제"},
+    {"type": "command", "command": "grep -qE 'EMAIL-P0-3|slug 로그인' /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/src/application/auth/auth.usecase.spec.ts", "desc": "spec PAY-P0-3 / EMAIL-P0-3 describe 박제"},
+    {"type": "command", "command": "test $(grep -cE 'toHaveBeenCalledWith|toHaveBeenCalledTimes|toEqual' /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/src/application/auth/auth.usecase.spec.ts) -ge 6", "desc": "의미 있는 assertion ≥6건"},
+    {"type": "command", "command": "grep -qE '이메일 또는 슬러그|isEmail|emailOrSlug' /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-web/src/app/login/page.tsx", "desc": "web login/page.tsx 자동 판별 + 통합 입력 박제"},
+    {"type": "command", "command": "grep -qE 'E2E_AUTHOR_SLUG' /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-web/.env.example", "desc": "web .env.example E2E_AUTHOR_SLUG 박제"},
+    {"type": "command", "command": "grep -qE '## 15\\. SlugLogin' /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/shared-contracts.md", "desc": "shared-contracts §15 SlugLogin 박제"},
+    {"type": "command", "command": "test -x /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/scripts/sensor-slug-login.sh", "desc": "sensor-slug-login.sh 실행 권한"}
+  ],
+  "threshold": 1.0,
+  "runs": 1
+}
