@@ -77,6 +77,8 @@
 | **PAY-P1-3 결제 실패 retry 정책 + cleanup cron** (2026-05-04) | `888fe2b` | `1d924db` (docs sync) | `59a33e4` |
 | **EmailServicePort 캡슐화 인터페이스 + NullAdapter** (2026-05-05) | `b49b6ba` | — | `afdaf56` (PLAN §11/§12/§13 + Sprint 계약) |
 | **EMAIL-P0-3 Phase 1 + Phase 2 slug 로그인 마이그레이션** (2026-05-05) | `fe4ca93` | `a04eca2` | `004a825` |
+| **HANDOVER §1.5 + USER_VERIFICATION_GUIDE-2026-05-05** (2026-05-05) | — | — | `6def365` + `06e727b` |
+| **claude-docs main 머지** (2026-05-05, 사용자 정정 "dev까지만") | — | — | `a63eb36` (정본만, 운영 영향 0) |
 
 ### 🚀 다음 트랙 (사용자 결정 영역 — 2026-05-05 갱신, EMAIL-P0-3 완료 후)
 
@@ -133,26 +135,47 @@
 - ✅ commit/push 직전 sensor-adversarial 자동 발동 강제 (3 레포 모두)
 - ⚠️ 1건 부분 거짓 (PAY-P1-1 server agent "eval 55/55" → 실제 52/55, docs drift 누락) → qa 즉시 발견 + 메인 server→web sync 보강
 
-### 🎯 다음 세션 시작 시 첫 명령 (채팅방 폭파 시 즉시 이어받기)
+### 🎯 다음 세션 시작 시 첫 명령 (채팅방 폭파 시 즉시 이어받기 — 2026-05-05 갱신)
+
 ```bash
 cd /Users/sokol/Desktop/Git/ProjectGrimoire
 
-# 1. 핸드오버 + 메모리 Read
-cat HANDOVER_NEXT_SESSION.md  # 본 파일 §1.5 진행 현황
-cat /Users/sokol/.claude/projects/-Users-sokol-Desktop-Git-ProjectGrimoire/memory/project_session_20260503_3.md
-cat reports/PAYMENT_NEXT_STEPS.md
+# 1. 핸드오버 + 사용자 검증 가이드 + 메모리 Read
+cat HANDOVER_NEXT_SESSION.md  # 본 파일 §1.5 진행 현황 (다음 트랙 11 옵션 + 사용자 영역 11건)
+cat reports/USER_VERIFICATION_GUIDE-2026-05-05.md  # 사용자 권한 영역 검증 절차 (10번 EMAIL-P0-2 SQL + 4-9번 dev curl)
+cat reports/sprint-email-p0-3-slug-login-progress.md  # 종료 박제 (정본)
+cat research/EMAIL_INTEGRITY_PLAN.md  # 이메일 시스템 정본 (§11~§13 정밀)
+cat /Users/sokol/.claude/projects/-Users-sokol-Desktop-Git-ProjectGrimoire/memory/MEMORY.md
 
-# 2. 현재 상태 확인
-git log --oneline -10
+# 2. 현재 상태 확인 (EMAIL-P0-3 종료 시점)
+git log --oneline -5
 git -C grimoire-server log --oneline -5
 git -C grimoire-web log --oneline -5
 
 # 3. 시스템 인벤토리 검증
 bash .claude/scripts/sensor-adversarial-pre-commit.sh
-bash eval/scripts/eval-runner.sh
+bash .claude/scripts/sensor-slug-login.sh        # EMAIL-P0-3 회귀 차단 (12/12 PASS)
+bash .claude/scripts/sensor-fake-email-leak.sh   # EMAIL-P0-1 회귀 차단
+bash eval/scripts/eval-runner.sh                 # regression-58/59 포함
 
-# 4. 사용자 결정 영역 확인 후 다음 트랙 진입 (옵션 A~E 중)
+# 4. dev 환경 상태 확인 (사용자 영역)
+gh run list -R gelb2/grimoire-server -L 3
+gh run list -R gelb2/grimoire-web -L 3
+az containerapp show --name grimoire-server-dev --resource-group zenith-rg --query "{runningStatus:properties.runningStatus, minReplicas:properties.template.scale.minReplicas}"
+
+# 5. dev API cold start 진단 (반드시 wake up 후 검증)
+# 첫 요청은 524/timeout 가능 — minReplicas=0 + Container Apps startup 30~60s
+# wake up 후 재시도: curl ... --max-time 60
+
+# 6. 다음 트랙 진입 (사용자 결정 영역, §1.5 다음 트랙 11 옵션 중)
 ```
+
+### 🚨 다음 세션 즉시 알아야 할 사항 (2026-05-05 EMAIL-P0-3 종료 시점)
+
+1. **dev API server `cold start` 한계**: minReplicas=0 → 첫 요청 startup 30~60s → Cloudflare 100s timeout. 메인 curl 검증은 wake up 후 재시도 필요. 사용자가 **az containerapp logs**로 직접 진단 권장.
+2. **사용자 영역 잔존 11건** (§1.5 박제) — main per-repo 머지 (server/web만 보류, claude-docs 완료) + dev 검증 (자격증명 영역) + EMAIL-P0-2 운영 DB SQL + 이메일 SaaS 결정.
+3. **시스템 가드 deny 박제**: server/web main push가 시스템 가드로 차단 — "Pushing to main bypasses PR review". 사용자 명시 권한 (예: `gh pr create` 또는 직접 명시) 필요.
+4. **다음 트랙 결정 영역**: §1.5 11 옵션 중 사용자 선택. 외부 API 결정 (이메일 SaaS) 진입 여부 + main per-repo 머지 시점 결정.
 
 ---
 
