@@ -285,23 +285,20 @@ Polar는 MoR(Merchant of Record)이므로 영수증/세금계산서/VAT 처리�
 
 **규모**: ~2h
 
-#### P1-2: 결제 알림 (이메일)
+#### P1-2: 결제 알림 (이메일) — EMAIL_INTEGRITY_PLAN.md EMAIL-P1-3 흡수
 
-**목표**: 결제 성공/실패/환불 시 사용자 이메일 통보.
+> **2026-05-04 갱신**: 본 P1-2는 `research/EMAIL_INTEGRITY_PLAN.md` EMAIL-P1-3 (결제 이메일 알림)으로 흡수. EMAIL-P1-1 (이메일 인증 시스템) 선행 의존성 추가 — 인증 미완 사용자에게 결제 알림을 보내면 spam/bounce 위험.
 
-**산출물**:
-- 외부 API: Resend / SendGrid / Postmark 중 1택 (cost-accountant 위임 → 마진 영향 검증)
-- `application/notification/email.service.ts` 신설
-- `payment.usecase.processWebhook` + refund usecase에서 이메일 큐 push (또는 직접 호출)
-- 템플릿: 결제 성공(영수증 링크 포함) / 환불 / 실패
-- 우선 SMS는 P2 (한국 KISA 인증 + Toast SMS 등 추가 인프라)
+**진입 게이트**:
+1. EMAIL-P1-1 이메일 인증 시스템 완료 (Author.emailVerified 박제 + EmailVerification 모델)
+2. **사용자 절대 규정 0-1 (외부 Anthropic API 신규 의존 영구 보류)** 이메일 SaaS에 대해 명시적 해제 결정
+3. 외부 API 결정 (Resend / SendGrid / Postmark — cost-accountant 위임 후 마진 영향 검증)
 
-**검증 게이트**:
-- jest spec (mock 이메일 서비스) PASS
-- cost-accountant: 이메일 발송 비용 / 월 (예: Resend 100/일 무료, 초과 $20/월) → §0 영향 검증
-- eval task 신규 (regression-56-payment-email-notification)
+**산출물**: `EMAIL_INTEGRITY_PLAN.md §2-2 EMAIL-P1-3` 참조.
 
-**규모**: ~3h (외부 API 통합 + 템플릿 + spec)
+**규모**: ~16~20h (EMAIL-P1-1 + EMAIL-P1-3 통합 진입 시점)
+
+**검증 게이트**: `EMAIL_INTEGRITY_PLAN.md §4` sensor 4종 + jest spec + eval `regression-61-payment-email-notification`.
 
 #### P1-3: 결제 실패 retry 정책
 
@@ -318,6 +315,11 @@ Polar는 MoR(Merchant of Record)이므로 영수증/세금계산서/VAT 처리�
 - eval task 신규 (regression-57-payment-retry-reuse)
 
 **규모**: ~2h
+
+**CERTI_PROJ 차용 결정 (2026-05-04 추가 리서치)**:
+- 부적합: CERTI_PROJ retry는 매월 5일 배치 (구독제 모델). Grimoire는 일회성 결제 + 사용자 즉시 재시도 UX → 다른 구조.
+- 차용: pending payment 만료 cron 패턴은 CERTI `thermage-batch-api/src/modules/batch/schedules/batch.schedule.ts:17-37` (`@Cron('*/10 * * * * *')`) 박제 패턴 정합 — 이미 PAY-P0-2 reconciliation cron과 동일 패턴.
+- 미차용: CERTI는 webhook 서명 검증 미흡 (Toss 직접 인증 누락) — Grimoire는 Polar `validateEvent` 캡슐화로 우월. 본 P1-3에서 추가 보강 불필요.
 
 #### P1-4: Polar Subscription Product 도입 (작업 A 결합)
 
@@ -529,6 +531,11 @@ model Payment {
 ## 10. 변경 이력
 
 - 2026-05-03 #10_7: 본 plan 신설 — CERTI_PROJ 15 프로젝트 정밀 분석(3 Explore subagent + 메인 직접) + Grimoire 결제 모듈 정밀 인벤토리 + 갭 10건 + 우선순위 4단계(P0~P3) + DB 모델 + API + sensor + 일정 권고 박제
+- 2026-05-03 #10_7 (1): PAY-P0-1 webhook event_id 멱등성 자율 완료 (server `8c13103`) + sensor-payment-idempotency + regression-52
+- 2026-05-03 #10_7 (2): PAY-P0-2 PG↔DB 정합성 cron 자율 완료 (server `8e9e02e`) + sensor-payment-reconciliation + regression-53
+- 2026-05-03 #10_7 (3): PAY-P0-3 운영자 수동 크레딧 UI 자율 완료 (web `af3f04c`) + sensor-admin-credit-ui + regression-54
+- 2026-05-04 #10_7 (4): PAY-P1-1 Refund 정밀 처리 자율 완료 (server `adfcae8` / web `eb64a8b` / claude-docs `2ed585e`) — 3중 멱등성(L1 webhook event_id + L2 payment.status + L3 RefundLog index) + 잔액 부족 deficit 분기 + AuditLog operator='system_refund' + sensor-refund-atomicity + regression-55
+- 2026-05-04 #10_7 (5): PAY-P1-3 진입 직전 — CERTI_PROJ 웹 프로젝트 추가 리서치 (Explore 위임). 결과: retry 정책은 구조 다름(구독제 배치 vs Grimoire 일회성), 차용 가치 낮음. 단, 결제 실패 이메일 알림 (P1-2)와 DLQ Bull/Redis 패턴 (P2-2)은 향후 차용 후보로 박제.
 
 ---
 
