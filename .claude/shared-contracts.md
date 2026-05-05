@@ -1018,6 +1018,111 @@ async execute(input): Promise<{
 
 ---
 
+## 18. WebhookDLQ (server 도메인 — PAY-P2-2 Postgres 기반 webhook 재시도 큐)
+
+**위치**:
+- Schema: `grimoire-server/prisma/schema.prisma` (`model WebhookRetryQueue`)
+- Migration: `grimoire-server/prisma/migrations/20260505020000_add_webhook_retry_queue/migration.sql`
+- Port: `grimoire-server/src/domain/port/outbound/webhook-retry-queue-repository.port.ts` (5 메서드)
+- Repository: `grimoire-server/src/adapter/outbound/persistence/prisma-webhook-retry-queue.repository.ts` (P2002 race 안전)
+- Job: `grimoire-server/src/application/payment/webhook-retry.job.ts` (`@Cron('0 */5 * * * *')` 5분 주기)
+- Spec: `grimoire-server/src/application/payment/webhook-retry.job.spec.ts` (8 it, 8/8 PASS)
+- Sensor: `.claude/scripts/sensor-webhook-dlq.sh` (12 검증)
+- Regression: `eval/tasks/regression-62-webhook-dlq.json` (12 criteria)
+- 정본: `reports/sprint-pay-p2-2-webhook-dlq-progress.md` + `reports/PAY-P2-MASTER-PLAN.md` §4
+
+**적용**: `payment.usecase.processWebhook` 실패 분기(success 트랜잭션 실패 + cancel/refund 실패)에서 `webhook_retry_queues` 테이블에 멱등 박제(eventId @unique). `WebhookRetryJob` @Cron 5분이 `nextRetryAt <= now()` row를 재처리. 외부 인프라 의존 0건 (Postgres만, 절대 규정 0-1 정합).
+
+### 시그니처
+
+```typescript
+// Schema
+model WebhookRetryQueue {
+  id          String   @id @default(uuid())
+  eventId     String   @unique @map("event_id")
+  payload     Json
+  retryCount  Int      @default(0) @map("retry_count")
+  lastError   String?  @map("last_error")
+  nextRetryAt DateTime @map("next_retry_at") @db.Timestamptz(3)
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  @@index([nextRetryAt])
+  @@map("webhook_retry_queues")
+}
+
+// Port (5 메서드)
+interface WebhookRetryQueueRepositoryPort {
+  upsert(input: { eventId; payload; nextRetryAt }): Promise<Record | null>  // P2002 시 null
+  findDue(now: Date, limit?: number): Promise<Record[]>                     // ORDER BY nextRetryAt LIMIT N
+  deleteById(id: string): Promise<void>
+  markRetry(id: string, error: string, nextRetryAt: Date): Promise<void>    // retryCount++
+  findByEventId(eventId: string): Promise<Record | null>
+}
+
+// Job (@Cron 5분)
+@Cron('0 */5 * * * *')
+async retryDueWebhooks(): Promise<void>
+
+// PaymentUseCase 신규 메서드
+async processNormalizedWebhook(event: NormalizedWebhookEvent): Promise<{
+  processed: boolean
+  credits?: number
+  deficitCredits?: number
+  reason?: string
+}>
+```
+
+### 정책
+
+- **멱등성 키**: `eventId @unique` (webhook_events.eventId와 정합 — 같은 webhook은 한 큐 row만)
+- **race 안전**: `upsert` P2002 시 null 반환 (기존 row 보존, retryCount는 markRetry로만 증가)
+- **백오프 매트릭스 (분 단위)**:
+  - retryCount=1 → 1분
+  - retryCount=2 → 5분
+  - retryCount=3 → 30분
+  - retryCount=4 → 120분 (2h)
+  - retryCount=5 → 720분 (12h)
+  - retryCount=6+ → 1440분 (24h)
+- **MAX_RETRY=10**: 초과 시 webhook_events status='failed' 갱신 + AuditLog operator='system_dlq' + queue row 삭제
+- **isRunning lock**: 같은 process 내 동시 실행 차단 (replicas ≥2 시 advisory_lock 보강 보류)
+- **비활성화 게이트**: `WEBHOOK_RETRY_DISABLED=1` env 시 즉시 return
+- **BATCH_SIZE=100**: 한 cron tick 최대 처리 row 수
+- **Optional 의존**: payment.usecase는 `@Optional()` 주입으로 retryQueueRepo 미주입 시 회귀 보존 (기존 동작 유지)
+- **payment.usecase 분리**: `processWebhook(rawBody, headers)` (verify) + `processNormalizedWebhook(event)` (DB 처리). retry 시점에는 verify 우회.
+
+### 처리 흐름 (실패 → 재시도 → 성공/permanent_failed)
+
+1. Polar webhook → `payment.usecase.processWebhook(rawBody, headers)` 진입
+2. `verifyAndParseWebhook` → `processNormalizedWebhook(event)` 호출
+3. `completePaymentAtomically` (success) 또는 `refundPaymentUseCase.execute` (cancel) 트랜잭션 실패
+4. catch 블록: `webhook_events.createIfAbsent(status='failed')` + `enqueueWebhookRetry(event, eventId)`
+5. `webhook_retry_queues.upsert({ eventId, payload, nextRetryAt: now+1m })` (P2002 시 null 반환, race 안전)
+6. throw → caller가 webhook 응답 500 → Polar 자체 재전송 + 본 큐의 자체 cron 재시도 (이중 보호)
+7. `WebhookRetryJob` 5분 주기 진입:
+   - `findDue(now)` → due row 100건 조회
+   - 각 row → `processNormalizedWebhook(event)` 호출
+   - 성공 → `deleteById(id)` (큐 row 제거)
+   - 실패 (retryCount+1 < 10) → `markRetry(id, error, calcNextRetry(retryCount+1))`
+   - 실패 (retryCount+1 ≥ 10) → `webhookEventRepo.markStatus('failed')` + `auditLog.log('system_dlq', 'webhook_permanent_failed')` + `deleteById(id)`
+
+### 변경 시 동시 갱신 대상
+
+- `grimoire-server/prisma/schema.prisma` (model)
+- `grimoire-server/prisma/migrations/20260505020000_add_webhook_retry_queue/migration.sql`
+- `grimoire-server/src/domain/port/outbound/webhook-retry-queue-repository.port.ts`
+- `grimoire-server/src/adapter/outbound/persistence/prisma-webhook-retry-queue.repository.ts`
+- `grimoire-server/src/application/payment/webhook-retry.job.ts`
+- `grimoire-server/src/application/payment/webhook-retry.job.spec.ts`
+- `grimoire-server/src/application/payment/payment.usecase.ts` (Optional 주입 + processNormalizedWebhook 분리 + enqueueWebhookRetry)
+- `grimoire-server/src/app.module.ts` (WebhookRetryJob + WebhookRetryQueueRepositoryPort 등록)
+- `.claude/scripts/sensor-webhook-dlq.sh`
+- `eval/tasks/regression-62-webhook-dlq.json`
+- `reports/sprint-pay-p2-2-webhook-dlq-progress.md`
+
+### 변경 이력
+- 2026-05-05 #10_7 PAY-P2-2: 신설 — Postgres 기반 webhook DLQ. 외부 인프라 의존 0건 (Redis/ServiceBus/Kafka 미사용). schema +1 모델 + migration 1건. payment.usecase processWebhook → processNormalizedWebhook 분리 (retry 시점 verify 우회). spec 8/8 + sensor 12/12 + jest server 583→591. 정본: PAY-P2 마스터 플랜 §4 + reports/sprint-pay-p2-2-webhook-dlq-progress.md.
+
+---
+
 ## 변경 시 절차 (책 Ch 16 충돌 2번 해결책)
 
 agent A가 인터페이스 변경 시:
