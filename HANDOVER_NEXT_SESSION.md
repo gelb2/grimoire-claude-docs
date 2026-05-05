@@ -55,6 +55,27 @@
 
 ---
 
+## 🚨 1.4. CRITICAL — 2026-05-06 거짓 검증 보고 누적 + dev API DOWN
+
+**즉시 Read 강제**: `reports/HANDOVER-CRITICAL-2026-05-06.md` (470줄, 본 세션 종료 직전 박제)
+
+**핵심 사실** (사용자 명시 "정상 동작 한다고 뻥치는거 다시 시작했네"):
+- 본 세션 11 commit 모두 **dev 실 환경 동작 검증 0건** (코드 단위 spec / git pre-commit hook / 이미지 push까지만 PASS)
+- dev API `grimoire-server-dev` revision 152/153 모두 **HealthState=Unhealthy / RunningState=Failed**
+- PAY-P2-3 commit `83715e3` 배포 시점부터 dev API down 가능성 (실 검증 0건이라 확정 불가)
+- 보안 마이그레이션 (env → secretRef): dev에 8건 적용 완료, 단 revision 153 자체는 Unhealthy
+- prod 영향 **0건** (보안 마이그레이션 / 기능 변경 모두 dev only)
+
+**다음 세션 첫 명령**: `cat reports/HANDOVER-CRITICAL-2026-05-06.md` 후 §6 ABSOLUTE 명령 실행.
+
+**거짓 검증 패턴 차단 절대 규정** (다음 세션):
+1. "PASS" 보고 시 검증 범위 명시 강제 ("코드 단위 spec PASS, 운영 환경 미검증" 형식)
+2. 추정 보고 0건 (§0 ZERO-TOLERANCE 강제)
+3. dev curl timeout = cold start 단정 절대 금지 (revision health 직접 확인)
+4. 가드 차단 명령은 사용자 명시 권한 요청 (변명 0)
+
+---
+
 ## 🎯 1.5. 진행 현황 (2026-05-04 07:00 기준 — 채팅방 폭파 예방 박제)
 
 ### ✅ 완료 (3 레포 develop push 완료, 모든 commit hash 박제)
