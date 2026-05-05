@@ -2,6 +2,11 @@
 # sensor-server.sh — grimoire-server 빌드 건전성 센서
 # 에이전트는 이 스크립트의 raw stdout을 reports/DEV_REPORT.md에 전체 첨부해야 함
 # vibe-coding 게이트 체크 패턴 + GMP v2.2 독립 검증 원칙 구현
+# sensor-log 자동 박제 (트랙 1-C 보강 — cd 후에도 절대경로 보존)
+_SENSOR_LOG_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+_SENSOR_NAME="$(basename "${BASH_SOURCE[0]}" .sh)"
+trap '_rc=$?; bash "$_SENSOR_LOG_DIR/sensor-log.sh" "$_SENSOR_NAME" "$_rc" "" 2>/dev/null || true' EXIT
+
 set -u  # set -e 빼고 각 단계 수동 처리 (실패 시에도 나머지 돌려서 전체 상태 파악)
 START_TIME=$(date +%s)
 cd /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server

@@ -39,7 +39,7 @@
 | 항목 | 수량 | 비고 |
 |------|------|------|
 | Skills | 24 | dispatching-parallel-agents + requesting-code-review (묶음 EE) 포함 |
-| Sensors | 25 | sensor-adversarial-pre-commit (P17 정밀화) + sensor-orch-ratio (META_PASS) 보강 |
+| Sensors | 25 | sensor-adversarial-pre-commit (P17 정밀화) + sensor-orchestration-ratio (META_PASS) 보강 |
 | Knowledge 정본 | 8 (README 제외) | build-to-delete-policy.md (묶음 II) 포함 |
 | Constitution Principles | **19** | OWASP LLM Top 10 P17/P18/P19 통합 (묶음 CC) |
 | Eval tasks (regression) | 49 | 100% PASS 안정 |

@@ -15,6 +15,9 @@
 #   0 = PASS (모든 패턴 검출)
 #   1 = FAIL (1건 이상 누락)
 
+# sensor-log 자동 박제 (트랙 1-A 보강 — exit code 자동 매핑: 0=PASS / 1=FAIL / 2=WARN)
+trap '_rc=$?; bash "$(dirname "$0")/sensor-log.sh" "$(basename "$0" .sh)" "$_rc" "" 2>/dev/null || true' EXIT
+
 set -uo pipefail
 
 ROOT="/Users/sokol/Desktop/Git/ProjectGrimoire"

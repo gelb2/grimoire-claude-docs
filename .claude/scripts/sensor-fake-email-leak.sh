@@ -15,6 +15,9 @@
 # - 1 WARN — 의도적 박제만 검출 (상위 라이센서 결정)
 # - 2 FAIL — 운영 코드 박제 발견 (commit/push 차단)
 
+# sensor-log 자동 박제 (트랙 1-A 보강 — exit code 자동 매핑: 0=PASS / 1=FAIL / 2=WARN)
+trap '_rc=$?; bash "$(dirname "$0")/sensor-log.sh" "$(basename "$0" .sh)" "$_rc" "" 2>/dev/null || true' EXIT
+
 set +e
 
 REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
