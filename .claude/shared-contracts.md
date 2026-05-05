@@ -924,6 +924,100 @@ async googleLogin(googleToken: string) {
 
 ---
 
+## 17. PartialRefund (server 도메인 — PAY-P2-1 부분 환불 비율 계산)
+
+**위치**:
+- Port: `grimoire-server/src/domain/port/outbound/payment-repository.port.ts:79-100` (반환 타입 4 필드 확장)
+- Repository: `grimoire-server/src/adapter/outbound/persistence/prisma-payment.repository.ts:117-220` (`refundPaymentAtomically` 비율 계산 보강)
+- UseCase: `grimoire-server/src/application/payment/refund-payment.usecase.ts:40-130` (4 action 매트릭스)
+- Spec: `grimoire-server/src/application/payment/refund-payment.usecase.spec.ts` (`describe('부분 환불 (PAY-P2-1)')` 6 it 추가, 16/16 PASS)
+- Sensor: `.claude/scripts/sensor-partial-refund.sh` (10 검증)
+- Regression: `eval/tasks/regression-61-partial-refund.json` (10 criteria)
+- 정본: `reports/sprint-pay-p2-1-partial-refund-progress.md` + `reports/PAY-P2-MASTER-PLAN.md` §3
+
+**적용**: Polar 환불 webhook (`order.refunded`) 또는 운영자 수동 부분 환불 시 `refundedAmount` 비율에 따라 크레딧을 비례 차감. PAY-P1-1 전액 환불 회귀 보존 + 부분 환불 신규 수용. RefundLog 호환성은 PAY-P1-1 박제 시점부터 이미 확보 (UNIQUE 미부여, amount/credits 분리 설계).
+
+### 시그니처
+
+```typescript
+// PaymentRepositoryPort (반환 타입 확장)
+refundPaymentAtomically(input: {
+  paymentId: string
+  authorId: string
+  credits: number          // 원래 결제 적립 크레딧 (양수 — 비율로 비례 차감)
+  refundedAmount: number   // 전액 시 payment.amount, 부분 시 그 미만
+  reason: string
+  source: 'webhook' | 'manual'
+}): Promise<{
+  actualDeducted: number       // 실제 차감 크레딧 (deficit 시 잔액)
+  deficitCredits: number       // 잔액 부족분
+  proportionalCredits: number  // ★ 신규 — 비율 적용 후 차감 목표
+  isPartial: boolean           // ★ 신규 — 부분 환불 여부 (ratio < 1.0)
+}>
+
+// RefundPaymentUseCase.execute (반환 타입 확장 + action 4 매트릭스)
+async execute(input): Promise<{
+  actualDeducted: number
+  deficitCredits: number
+  proportionalCredits: number
+  isPartial: boolean
+}>
+```
+
+### 정책
+
+- **비율 계산 (트랜잭션 내부)**: `ratio = refundedAmount / payment.amount` (`prisma-payment.repository.ts`)
+- **비례 크레딧**: `proportionalCredits = isPartial ? Math.floor(credits * ratio) : credits`
+- **반올림 정책**: `Math.floor` 고정 (사용자 우호 — 차감 ↓ 소수점 버림)
+- **isPartial 분기**: `ratio < 1.0` (전액 환불은 PAY-P1-1 회귀 보존)
+- **Payment.status 분기**: 부분 환불 시 `'partial_refunded'`, 전액 시 `'refunded'`
+- **Validation**:
+  - `refundedAmount <= 0` → `BadRequestException` (usecase)
+  - `payment.amount <= 0` → throw (free 결제 환불 무의미)
+  - `refundedAmount > payment.amount` → throw (validation)
+- **AuditLog action 4 매트릭스** (isPartial × deficitCredits):
+  - `refund_normal` (전액 + 정상)
+  - `refund_deficit` (전액 + deficit)
+  - `refund_partial` (부분 + 정상)
+  - `refund_partial_deficit` (부분 + deficit)
+- **CreditLog reason 접미사**: 부분 환불 시 `_partial` 추가 (`refund_<paymentId>_<source>_partial`)
+- **deficit 분기**: 부분 환불 시 proportionalCredits 기준으로 deficit 계산 (잔액 < proportionalCredits)
+
+### 처리 흐름 (Polar order.refunded → 비율 계산 → 차감)
+
+1. Polar webhook → `polar.adapter.verifyAndParseWebhook` → `NormalizedWebhookEvent { type:'order.refunded', amount, ... }`
+2. `payment.usecase.processWebhook` → `event.status === 'cancel'` 분기 → `refundPaymentUseCase.execute`
+3. `refundPaymentUseCase.execute` → `paymentRepo.refundPaymentAtomically` 호출
+4. `prisma-payment.repository.refundPaymentAtomically` $transaction:
+   - tx.payment.findUnique → amount 조회
+   - validation (refundedAmount > 0, payment.amount > 0, refundedAmount ≤ payment.amount)
+   - ratio = refundedAmount / payment.amount
+   - isPartial = ratio < 1.0
+   - proportionalCredits = isPartial ? Math.floor(credits * ratio) : credits
+   - tx.payment.update → status='partial_refunded'|'refunded'
+   - tx.author.findUnique → currentBalance 조회
+   - actualDeducted = Math.min(currentBalance, proportionalCredits)
+   - deficitCredits = Math.max(0, proportionalCredits - currentBalance)
+   - tx.author.update → credits decrement (actualDeducted > 0 시만)
+   - tx.creditLog.create → amount=-actualDeducted (대칭, `_partial` 접미사)
+   - tx.refundLog.create → amount=refundedAmount + credits=actualDeducted + deficitCredits
+5. UseCase 반환 후 AuditLog 후행 (4 action 매트릭스 분기)
+
+### 변경 시 동시 갱신 대상
+
+- `grimoire-server/src/domain/port/outbound/payment-repository.port.ts` (시그니처)
+- `grimoire-server/src/adapter/outbound/persistence/prisma-payment.repository.ts` (구현)
+- `grimoire-server/src/application/payment/refund-payment.usecase.ts` (action 매트릭스)
+- `grimoire-server/src/application/payment/refund-payment.usecase.spec.ts` (부분 환불 6 it + 기존 7 it 시그니처 갱신)
+- `.claude/scripts/sensor-partial-refund.sh` (10 검증)
+- `eval/tasks/regression-61-partial-refund.json` (10 criteria)
+- `reports/sprint-pay-p2-1-partial-refund-progress.md` (정본)
+
+### 변경 이력
+- 2026-05-05 #10_7 PAY-P2-1: 신설 — 부분 환불 비율 계산 sprint. 외부 API 신규 의존 0건 (Polar webhook 내부 amount 필드만 활용). RefundLog 호환성은 PAY-P1-1 박제 시점부터 이미 확보. 회귀: PAY-P1-1 전액 환불 spec 7건 모두 PASS (16/16 jest + 10/10 sensor + 10/10 regression-61). 정본: PAY-P2 마스터 플랜 §3.
+
+---
+
 ## 변경 시 절차 (책 Ch 16 충돌 2번 해결책)
 
 agent A가 인터페이스 변경 시:
