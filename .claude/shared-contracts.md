@@ -1123,6 +1123,95 @@ async processNormalizedWebhook(event: NormalizedWebhookEvent): Promise<{
 
 ---
 
+## 19. SmsServicePort (server 도메인 — PAY-P2-3 사전 작업: SMS Hexagonal 캡슐화)
+
+**위치**:
+- Port: `grimoire-server/src/domain/port/outbound/sms-service.port.ts` (4 메서드 — sendPaymentNotification/sendVerificationCode/isEnabled/getProviderName)
+- Adapter (default): `grimoire-server/src/adapter/outbound/sms/null-sms.adapter.ts` (외부 API 0건, PII 마스킹)
+- Spec: `grimoire-server/src/adapter/outbound/sms/null-sms.adapter.spec.ts` (10/10 PASS)
+- Sensor: `.claude/scripts/sensor-sms-service-port.sh` (8 검증)
+- Regression: `eval/tasks/regression-63-sms-service-port.json` (10 criteria)
+- 정본: `reports/sprint-pay-p2-3-sms-service-port-progress.md` + `reports/PAY-P2-MASTER-PLAN.md` §5
+
+**적용**: SMS provider 캡슐화 (Hexagonal) — UseCase는 본 인터페이스만 의존. 절대 규정 0-1 (외부 API 신규 의존) **사용자 명시 해제 전까지 NullSmsAdapter default**. 결정 후 KakaoBizmessageAdapter / NhnCloudAdapter / TwilioAdapter 어댑터만 추가. EmailServicePort §12와 동일 패턴 정합.
+
+### 시그니처
+
+```typescript
+// Port 인터페이스
+export type SmsProvider = 'null' | 'kakao' | 'nhn' | 'twilio'
+export type PaymentSmsType = 'payment_success' | 'payment_failed' | 'payment_refunded'
+
+export interface SmsSendResult {
+  messageId: string | null
+  provider: SmsProvider
+}
+
+export interface SmsServicePort {
+  sendPaymentNotification(input: {
+    to: string
+    type: PaymentSmsType
+    displayName?: string
+    payload: Record<string, unknown>
+  }): Promise<SmsSendResult>
+
+  sendVerificationCode(input: {
+    to: string
+    code: string
+    displayName?: string
+    expireAt: Date
+  }): Promise<SmsSendResult>
+
+  isEnabled(): boolean
+  getProviderName(): SmsProvider
+}
+```
+
+### 정책
+
+- **default Provider = 'null'**: env 미박제 시 NullSmsAdapter — `isEnabled()=false` 반환, 실 발송 0건, logger.warn만.
+- **PII 마스킹 강제**: 전화번호 (`+821****5678`), 인증코드 (`1***`) — 평문 박제 차단 (PIPA / GDPR 정합).
+- **외부 SDK import 0건**: 절대 규정 0-1 정합. provider 결정 시 별도 sprint에서 어댑터만 추가.
+- **EmailServicePort 패턴 정합**:
+  - PaymentSmsType ↔ PaymentNotificationType 동일 3 타입 (success/failed/refunded)
+  - sendPaymentNotification 시그니처 동일 형태 (`to + type + displayName + payload`)
+- **결제 트리거 미연동 (의도된 OUT)**: payment.usecase에 sendPaymentNotification 호출 박제 0건. EMAIL-P1-3 / PAY-P2-3 진입 시 한 번에 통합 (Email + SMS 동시 알림).
+- **app.module DI 미등록 (의도된 OUT)**: EmailServicePort와 동일 패턴 — 캡슐화 + spec만 박제. provider 결정 후 별도 sprint에서 등록.
+- **payload 키 매트릭스** (EmailServicePort 정합):
+  - `payment_success`: { paymentId, amount, credits, productName }
+  - `payment_failed`: { paymentId, amount, productName }
+  - `payment_refunded`: { paymentId, refundedAmount, credits, deficitCredits, reason, isPartial }
+
+### 처리 흐름 (provider 결정 후 + 트리거 진입 시 예상)
+
+```
+PAY 트랜잭션 (success / refund) commit 후
+  → EmailServicePort.sendPaymentNotification (이미 캡슐화)
+  → SmsServicePort.sendPaymentNotification (본 캡슐화)
+  → 둘 다 NullAdapter면 noop (logger.warn만)
+  → 사용자가 "이메일 SaaS 진입" + "SMS 진입" 명시 후
+    → ResendEmailAdapter / KakaoBizmessageAdapter 등으로 교체
+    → UseCase 코드 변경 0건 (인터페이스만 의존)
+```
+
+### 변경 시 동시 갱신 대상
+
+- `grimoire-server/src/domain/port/outbound/sms-service.port.ts` (Port 인터페이스)
+- `grimoire-server/src/adapter/outbound/sms/null-sms.adapter.ts` (default 어댑터)
+- `grimoire-server/src/adapter/outbound/sms/null-sms.adapter.spec.ts` (10 it)
+- `.claude/scripts/sensor-sms-service-port.sh` (8 검증)
+- `eval/tasks/regression-63-sms-service-port.json` (10 criteria)
+- `reports/sprint-pay-p2-3-sms-service-port-progress.md` (정본)
+- 향후 진입 시 추가:
+  - `grimoire-server/src/adapter/outbound/sms/kakao-bizmessage.adapter.ts` (사용자 결정 후)
+  - `grimoire-server/src/app.module.ts` (DI factory + env 분기)
+  - `grimoire-server/src/application/payment/payment.usecase.ts` (트리거 호출)
+
+### 변경 이력
+- 2026-05-05 #10_7 PAY-P2-3 사전 작업: 신설 — SMS Hexagonal Port 캡슐화. 외부 API 신규 의존 0건 (NullSmsAdapter default + 외부 SDK import 0건). 절대 규정 0-1 정합. EmailServicePort 패턴 차용. spec 10/10 + sensor 8/8 + regression-63. 결제 트리거 + app.module DI 등록은 SMS provider 사용자 결정 후 별도 sprint 진입.
+
+---
+
 ## 변경 시 절차 (책 Ch 16 충돌 2번 해결책)
 
 agent A가 인터페이스 변경 시:
