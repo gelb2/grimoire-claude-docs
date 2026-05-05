@@ -855,6 +855,75 @@ const payload = isEmail ? { email: trimmed, password } : { slug: trimmed, passwo
 
 ---
 
+## 16. OAuthEmailVerification (server 도메인 — OAuth 자동 링크 보안 강화 강화안 A)
+
+**위치**:
+- UseCase: `grimoire-server/src/application/auth/auth.usecase.ts` `googleLogin(googleToken)` 메서드 line 112-122 (email_verified 차단 게이트)
+- Spec: `grimoire-server/src/application/auth/auth.usecase.spec.ts` `describe('googleLogin (트랙 F email_verified 차단)')` 4 it 박제
+- Sensor: `.claude/scripts/sensor-oauth-email-verification.sh` (8 검증)
+- Regression task: `eval/tasks/regression-60-oauth-email-verification.json` (10 criteria)
+- 정본: `reports/sprint-oauth-email-verification-progress.md`
+
+**적용**: Google OAuth 로그인 시 `payload.email_verified === false`이면 즉시 `UnauthorizedException` 발생 — 자동 계정 링크(`findByEmail` → `linkSocialAccount`) 차단으로 victim 이메일의 미인증 OAuth 계정이 기존 일반 회원 계정을 인수하는 위험 차단 (RFC 6819 §5.1.1, OWASP A07:2021).
+
+### 시그니처
+
+```typescript
+async googleLogin(googleToken: string) {
+  const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID)
+  const ticket = await client.verifyIdToken({ idToken: googleToken, audience: process.env.GOOGLE_CLIENT_ID })
+  const payload = ticket.getPayload()
+  if (!payload?.email) throw new UnauthorizedException('Google 인증 실패')
+
+  // 트랙 F 강화안 A — RFC 6819 §5.1.1 / OWASP A07:2021 자동 링크 차단
+  if (payload.email_verified === false) {
+    throw new UnauthorizedException(
+      'Google 이메일이 아직 인증되지 않았습니다. Google 계정에서 이메일 인증 후 다시 시도해주세요.',
+    )
+  }
+
+  // 이후 findBySocialAccount → findByEmail → linkSocialAccount 순으로 진행 (위 게이트 통과 후)
+  let author = await this.authorRepo.findBySocialAccount('google', payload.sub!)
+  // ...
+}
+```
+
+### 정책
+
+- **`email_verified === false` → UnauthorizedException**: 명시 false만 차단. `undefined` (필드 미박제)는 통과 (Google 기본 verified=true 정합).
+- **차단 게이트 위치**: `findBySocialAccount` 호출 **앞에** 위치 강제 — 자동 링크 시도 자체 차단. sensor가 line 비교로 정합 검증.
+- **기존 사용자 영향 0**: Google은 기본 `email_verified=true` 반환 → 정상 사용자 회귀 0.
+- **외부 API 신규 의존 0건**: 절대 규정 0-1 정합 (이미 사용 중인 google-auth-library 내부 필드만 활용).
+- **사용자 메시지 한국어 존댓말**: Constitution P10 정합 — "Google 이메일이 아직 인증되지 않았습니다."
+- **향후 확장**: Kakao/Naver OAuth 도입 시 (EMAIL-P1-2) 각 provider의 verified 필드 확인 + 미존재 시 강화안 C(이메일 검증 발송) 강제 진입.
+
+### 처리 흐름 (Google ID token → 차단 / 통과)
+
+1. 클라이언트가 Google ID token + `POST /auth/google`
+2. `googleLogin(googleToken)` 진입 → `OAuth2Client.verifyIdToken` Google JWT 검증
+3. `payload = ticket.getPayload()` 추출 (email / email_verified / sub / name)
+4. `payload.email` 누락 → `UnauthorizedException('Google 인증 실패')`
+5. **`payload.email_verified === false` → `UnauthorizedException('Google 이메일이 아직 인증되지 않았습니다...')`**
+6. 통과 시 `findBySocialAccount('google', payload.sub)` → 기존 연결 author 검색
+7. 미존재 시 `findByEmail(payload.email)` → 자동 링크 후보 검색
+8. 미존재 시 신규 가입 (slug 자동 생성 + 가입 보너스 3 크레딧)
+9. `linkSocialAccount` 호출 + accessToken/refreshToken 발급
+
+### 변경 시 동시 갱신 대상
+
+- `grimoire-server/src/application/auth/auth.usecase.ts` (line 112-122 차단 게이트)
+- `grimoire-server/src/application/auth/auth.usecase.spec.ts` (`describe('googleLogin')` 4 it: payload.email 누락 / email_verified=false / email_verified=true 회귀 / email_verified undefined 통과)
+- `.claude/scripts/sensor-oauth-email-verification.sh` (8 검증)
+- `eval/tasks/regression-60-oauth-email-verification.json` (10 criteria)
+- `reports/sprint-oauth-email-verification-progress.md` (정본)
+- `research/EMAIL_INTEGRITY_PLAN.md` §13-5 #1 상태 표 (해소됨 박제)
+- `grimoire-server/SECURITY.md` (향후 §2 OAuth 검증 정책 추가)
+
+### 변경 이력
+- 2026-05-05 #10_7 트랙 F 강화안 A: 신설 — OAuth 자동 링크 보안 강화 1단계. `email_verified === false` 차단 게이트 + spec 4 it (16/16 PASS) + sensor (8/8 PASS) + regression-60. 외부 API 신규 의존 0건 (절대 규정 0-1 정합). 강화안 B(명시 동의) / C(이메일 인증 발송)는 EMAIL-P1-1 후 별도 sprint.
+
+---
+
 ## 변경 시 절차 (책 Ch 16 충돌 2번 해결책)
 
 agent A가 인터페이스 변경 시:
