@@ -1212,6 +1212,78 @@ PAY 트랜잭션 (success / refund) commit 후
 
 ---
 
+## 20. AdminAuditLog beforeState/afterState Convention (server 도메인 — PAY-P2-4 정밀화)
+
+**위치**:
+- Service: `grimoire-server/src/application/admin/audit-log.service.ts` (`log()` 시그니처 6-arg BACKWARD COMPATIBLE 확장, line 22-49)
+- Spec: `grimoire-server/src/application/admin/audit-log.service.spec.ts` (신설 10 it)
+- 호출처:
+  - `application/admin/admin.usecase.ts` (grantCredits + deductCredits, line 93-129)
+  - `application/payment/payment.usecase.ts` (processWebhook 'success' 'payment_completed', line 188-247)
+  - `application/payment/refund-payment.usecase.ts` (4 action: refund_normal/deficit/partial/partial_deficit, line 75-170)
+
+**적용**: 모든 audit log 호출 시 detail JSON에 표준 키 `beforeState` + `afterState` 박제. 감사 추적 시 변경 전/후 값 명시적 박제로 회귀/부정행위 식별 가능. DB schema 변경 0건 (AdminAuditLog.detail JSON 컬럼 활용).
+
+### 시그니처 (BACKWARD COMPATIBLE)
+
+```typescript
+async log(
+  operator: string,           // 'admin:{id}' | 'system_payment' | 'system_refund' | 'system_cleanup' | 'system_reconciliation'
+  action: string,             // 'credit_grant' | 'credit_deduct' | 'payment_completed' | 'refund_normal' | ...
+  targetId: string,
+  detail?: Record<string, unknown>,
+  beforeState?: Record<string, unknown>,  // PAY-P2-4 신규 — optional, BACKWARD COMPATIBLE
+  afterState?: Record<string, unknown>,   // PAY-P2-4 신규 — optional, BACKWARD COMPATIBLE
+): Promise<void>
+
+// 4-arg 호출 — 기존 패턴 유지 (회귀 0)
+auditLog.log('system_refund', 'refund_normal', paymentId, { reason })
+
+// 6-arg 호출 — PAY-P2-4 신규 패턴
+auditLog.log(
+  'admin:admin-1', 'credit_grant', authorId,
+  { reason: 'manual grant' },
+  { credits: 100 }, { credits: 150 },
+)
+```
+
+### 정책 (action별 표준 매트릭스)
+
+| action | operator | beforeState | afterState |
+|---|---|---|---|
+| `credit_grant` | `admin:{id}` | `{ credits: oldBalance }` | `{ credits: newBalance }` |
+| `credit_deduct` | `admin:{id}` | `{ credits: oldBalance }` | `{ credits: newBalance }` |
+| `payment_completed` | `system_payment` | `{ credits: balanceBefore }` | `{ credits: balanceAfter, paymentId, addedCredits }` |
+| `refund_normal` | `system_refund` | `{ credits, paymentStatus: 'completed' }` | `{ credits, paymentStatus: 'refunded', deficitCredits: 0, creditsActuallyDeducted }` |
+| `refund_deficit` | `system_refund` | `{ credits, paymentStatus: 'completed' }` | `{ credits: 0, paymentStatus: 'refunded', deficitCredits, creditsActuallyDeducted }` |
+| `refund_partial` | `system_refund` | `{ credits, paymentStatus: 'completed' }` | `{ credits, paymentStatus: 'partial_refunded', deficitCredits: 0, creditsActuallyDeducted }` |
+| `refund_partial_deficit` | `system_refund` | `{ credits, paymentStatus: 'completed' }` | `{ credits: 0, paymentStatus: 'partial_refunded', deficitCredits, creditsActuallyDeducted }` |
+| `payment_expire` | `system_cleanup` | (생략 — pending row 만료, 잔액 변경 0) | (생략) |
+
+### 처리 흐름
+
+1. `log()` 진입
+2. `hasBefore = beforeState !== undefined` / `hasAfter = afterState !== undefined`
+3. detail JSON 빌드: `detail` spread + `hasBefore` true → `beforeState` 키 추가 + `hasAfter` true → `afterState` 키 추가
+4. 둘 다 undefined → detail JSON에 키 미박제 (4-arg 호출 회귀 0)
+5. AdminAuditLog DB INSERT (detail JSON 컬럼 활용)
+
+### 변경 시 동시 갱신 대상
+
+- `audit-log.service.ts` (시그니처)
+- `audit-log.service.spec.ts` (신설 ≥6 it)
+- `admin.usecase.ts` (grantCredits + deductCredits)
+- `payment.usecase.ts` (processWebhook 'success')
+- `refund-payment.usecase.ts` (4 action)
+- 위 4개 spec 파일 (회귀 보존 + 검증 강화)
+- `eval/tasks/regression-64-audit-log-before-after.json`
+- `.claude/scripts/sensor-audit-log-before-after.sh`
+
+### 변경 이력
+- 2026-05-06 #10_8 (다른 세션 + 본 세션 공동) PAY-P2-4: 신설 — AuditLogService.log() 6-arg BACKWARD COMPATIBLE 확장 + admin.usecase + payment.usecase + refund-payment.usecase 호출처 갱신 + audit-log.service.spec 신설 10 it. PAY-P1-1 refund spec 16 it 회귀 0건 보존. DB schema 변경 0건. 정본: `reports/sprint-pay-p2-4-audit-strengthening-progress.md` + `.claude/shared-contracts.md §20`. 검증: jest server 604→625 (+21), sensor 10/10 PASS, 의미 있는 assertion 19건.
+
+---
+
 ## 변경 시 절차 (책 Ch 16 충돌 2번 해결책)
 
 agent A가 인터페이스 변경 시:
