@@ -153,6 +153,8 @@ bash .claude/scripts/sensor-adversarial-pre-commit.sh 2>&1 | grep "P20"
 | **claude-docs main 머지** (2026-05-05, 사용자 정정 "dev까지만") | — | — | `a63eb36` (정본만, 운영 영향 0) |
 | **다른 세션 #10_8 PP-3~PP-11 + PAY-P2-1/2/3** (2026-05-06) | `709ad12` + `88487c3` + `83715e3` + `d115f13` + `138435f` | — | `4310875` ~ `a5bf760` (14 commit 사슬) |
 | **PAY-P2-4 AdminAuditLog 정밀화 — beforeState/afterState** (2026-05-07) | `64b6187` | — | `50c9676` |
+| **dev cron 작동 검증** (2026-05-07) — PAY-P2-2 WebhookRetryJob 16:05/16:10 + PAY-P0-2 Reconciliation 16:10 + PAY-P2-2 마이그레이션 dev 적용 간접 검증 | — | — | (incident-log 박제) |
+| **HANDOVER 종료 박제** (2026-05-07) | — | — | (다음 commit) |
 
 ### 🚀 다음 트랙 (사용자 결정 영역 — 2026-05-05 갱신, EMAIL-P0-3 완료 후)
 
@@ -259,6 +261,30 @@ az containerapp show --name grimoire-server-dev --resource-group zenith-rg --que
 
 # 6. 다음 트랙 진입 (사용자 결정 영역, §1.5 다음 트랙 11 옵션 중)
 ```
+
+### 🟢 dev 작동 검증 종합 (2026-05-07 종료 시점)
+
+| Sprint | dev 작동 | logs 박제 raw |
+|---|---|---|
+| PAY-P0-1 webhook event_id 멱등성 | (간접 검증 — webhook 201 응답) | — |
+| PAY-P0-2 Reconciliation @Cron 10분 | ✅ 실 작동 | `16:10:00 [PaymentReconciliationJob] 시작 since=15:20:00 / 16:10:01 완료 processed=0 boost=0 mismatch=0 expire=0` |
+| PAY-P0-3 admin/credits/grant route | ✅ 401 정상 | (curl 직접) |
+| PAY-P1-1 RefundPaymentUseCase | (코드 spec PASS만 — webhook 시뮬 미수행) | — |
+| PAY-P1-3 PaymentCleanupJob @Cron 새벽 4시 | (시간대 외, KST 4시 / UTC 19시) | — |
+| **PAY-P2-2 WebhookRetryJob @Cron 5분** | **✅ 실 작동** | `16:05:00 / 16:10:00 [WebhookRetryJob] 시작/완료 due=0 success=0 retry=0 permanent=0` |
+| PAY-P2-2 webhook_retry_queues 테이블 | **간접 검증 — cron 정상 작동 = 테이블 존재 정합** (직접 prisma migrate status는 가드 deny) | — |
+| EMAIL-P0-3 slug 로그인 | (XOR 위반 400 검증, 정상 로그인 reCAPTCHA + 자격증명 영역) | — |
+
+→ **다른 세션 #10_8 §0 거짓 검증 매트릭스 정정** — PAY-P2-2 + PAY-P0-2 dev 실 동작 박제 (코드 spec PASS만 아닌 운영 환경 정합).
+
+### 🔴 가드 deny 사용자 영역 잔존 (2026-05-07 종료)
+
+| 영역 | 가드 사유 | 사용자 직접 명령 |
+|---|---|---|
+| 4-2 prisma migrate status (dev DB 직접) | "Direct production database query — Production Reads requiring dev-target approval" | Azure Portal Container Apps Console 진입 후 `npx prisma migrate status` 또는 사용자 .env에서 `set -a && source .env && set +a && npx prisma migrate status` |
+| 5 EMAIL-P0-2 dev DB SQL 백필 | DATABASE_URL 평문 추출 가드 | `USER_VERIFICATION_GUIDE-2026-05-05.md §10` Phase 1 사용자 직접 |
+| 2 dev curl 정상 로그인 (reCAPTCHA + JWT) | 자격증명 영역 | 사용자 사파리 cookie 추출 후 `curl -b cookie.txt` 또는 SEED_PASSWORD env |
+| PaymentCleanupJob 작동 검증 | 시간대 외 (UTC 19시 / KST 4시) | 새벽 4시 logs 자동 캡처 후 다음 세션 검증 |
 
 ### 🚨 다음 세션 즉시 알아야 할 사항 (2026-05-05 EMAIL-P0-3 종료 시점)
 
