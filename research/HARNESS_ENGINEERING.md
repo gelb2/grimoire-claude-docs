@@ -23,7 +23,7 @@
 | 11 | 루트 workspace Git 관리 → **분리됨** | 628 | `research/HARNESS_ROOT_WORKSPACE.md` (2026-05-02 묶음 N NEW-12) |
 | 12 | ProjectGrimoire 종합 대조 | 779 | Fowler 4축 매핑 |
 | 13 | 출처 (citations) → **분리됨** | 850 | `research/HARNESS_BIBLIOGRAPHY.md` (2026-05-02 묶음 L M2) |
-| 14 | **인벤토리** (sensors/skills/hooks/agents) | 856 | 14.2 Skills 20 / 14.3 Hooks 9 / 14.4 Sensors 17 |
+| 14 | **인벤토리** (sensors/skills/hooks/agents) | 856 | 14.2 Skills 17 (현역) + Archive 9 / 14.3 Hooks 9 / 14.4 Sensors 17 |
 | 15 | **현장 운영 4 패턴** → **분리됨** | 1074 | `research/HARNESS_FIELD_PATTERNS_4.md` (§15.7 위임 가치 매트릭스 포함, 2026-05-02 묶음 L M1) |
 | 16 | ProjectGrimoire 4 패턴 위치 | 1080 | 채택 결정 + KPI |
 | 17 | CLAUDE.md 60줄 분할 + EDD → **분리됨** | 1102 | `research/HARNESS_SPLIT_AND_EDD.md` (2026-05-02 묶음 L M3) |
@@ -722,7 +722,13 @@ v2 추가 제안:
 
 각 에이전트 `.md` 하단에 "Skills 프로토콜 참조" 섹션으로 `.claude/skills/*/SKILL.md` 경로 embed (ouroboros 방식 — 공식 스펙상 서브에이전트는 Skill 자동 발동 불가).
 
-### 14.2 Skills 24종 (`.claude/skills/<name>/SKILL.md`)
+### 14.2 Skills 17종 현역 + 9 Archive (`.claude/skills/<name>/SKILL.md`)
+
+> **2026-05-06 묶음 PP-3 슬림화**: 26 → 17 현역 (-9 archive). 30일 호출 0회 + disable-model-invocation: true + 비상 가치 낮음 9건을 `.claude/skills/_archive/`로 이동(보존, 삭제 X). GRAY 9건 KEEP + owner-agent 매트릭스 박제 (deploy-image-verify·gc-sweep → server / orchestration-decision → main / requesting-code-review·sensors-overview·socratic-self-critique·systematic-debugging·verification-before-completion → qa / writing-plans → planner). 활용률 0.0769 (FAIL) → 0.1176 (WARN).
+
+**Archive 9건**: dev-login-smoke / dispatching-parallel-agents / drift-check / eval-run / feedback-to-skill / handover-refresh / red-team-update-propose / shared-contracts-check / worktree-isolation. 비상 시 `.claude/skills/_archive/<name>/SKILL.md` 직접 Read 또는 사용자 명시 호출 가능.
+
+
 
 | Skill | 트리거 / 호출 | 용도 |
 |---|---|---|
@@ -763,7 +769,7 @@ v2 추가 제안:
 | **PostToolBatch** (2026-04-25 #7 신설) | - (전체) | post-batch-tsc.sh | parallel batch 완료 후 server+web tsc 일괄 (debounce 60s, 빌드 중복 60% ↓ 목표) |
 | **PostToolUseFailure** (2026-04-27 #9 F2 신설) | - (전체) | posttooluse-failure-handler.sh | 도구 실패 시 적재 + Chrome MCP 한정 정책 처리 (1회 재시도 신호 / reCAPTCHA 즉시 차단 / prod 도메인 자동 재시도 안 함). additionalContext로 Claude에게 재시도 신호만 전달, 실제 재시도는 Claude 판단 |
 
-### 14.4 Sensors 36개 (`.claude/scripts/sensor-*.sh`)
+### 14.4 Sensors 39개 (`.claude/scripts/sensor-*.sh`)
 
 | Sensor | 용도 |
 |---|---|

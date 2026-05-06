@@ -12,9 +12,18 @@ triggers:
   - "PR 검토"
   - "리뷰 요청"
   - "review request"
+owner-agent: grimoire-qa
+owner-skill: ""
+responsibility-note: "코드 리뷰 게이트 (qa 도메인)"
 ---
 
 # Requesting Code Review — 사전 검토 체크리스트 (메타)
+
+## 책임 영역 (2026-05-06 묶음 PP-3 박제)
+
+- **owner**: grimoire-qa agent (코드 리뷰·게이트 도메인)
+- **trigger 패턴**: 사용자 입력 키워드 매칭 시 본 skill의 additionalContext 주입 + grimoire-qa agent가 명시 호출
+- **메인 책임**: 본 skill을 직접 호출 X — grimoire-qa agent에 위임 후 qa agent가 본 skill 활용
 
 > **trigger-mode**: user-invocation + 키워드 매칭. paths 미적용 — 메타 검증.
 > **신설**: 2026-05-03 #10_6 묶음 EE — 사용자 명시 (proposal §10-3 적용)

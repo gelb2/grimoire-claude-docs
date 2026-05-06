@@ -10,9 +10,18 @@ paths:
   - "grimoire-server/scripts/deploy-*.sh"
   - "grimoire-web/Dockerfile"
   - "**/azure*.yaml"
+owner-agent: grimoire-server
+owner-skill: ""
+responsibility-note: "배포 직전 image 정합 검증 (server 도메인)"
 ---
 
 # Deploy Image Verify — Container App image SHA 정합 검증
+
+## 책임 영역 (2026-05-06 묶음 PP-3 박제)
+
+- **owner**: grimoire-server agent (배포·인프라 정합 도메인)
+- **trigger 패턴**: 사용자 입력 키워드 매칭 시 본 skill의 additionalContext 주입 + grimoire-server agent가 명시 호출
+- **메인 책임**: 본 skill을 직접 호출 X — grimoire-server agent에 위임 후 server agent가 본 skill 활용
 
 ## 동기 (HARNESS §10 Phase 4)
 

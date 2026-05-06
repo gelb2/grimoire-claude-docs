@@ -8,6 +8,8 @@ effort: medium
 trigger-mode: keyword (triggers field) — paths 미적용 명시 (NEW-16 J4 패턴)
 ---
 
+> **2026-05-06 묶음 PP-3 ARCHIVE**: 30일간 자율 호출 0회 + disable-model-invocation: true + 비상 가치 낮음. 비상 시 `.claude/skills/_archive/worktree-isolation/SKILL.md` 직접 Read 또는 사용자 명시 호출.
+
 # Worktree Isolation — Edit 폭주 작업 안전망
 
 > **trigger-mode**: user-invocation (disable-model-invocation:true). paths 미적용 — 사용자 `/worktree-isolation` 명시 호출만.

@@ -22,7 +22,16 @@ triggers:
   - "이상 없음"
 effort: high
 trigger-mode: keyword (triggers field) — paths 미적용 명시 (NEW-16 J4 패턴)
+owner-agent: grimoire-qa
+owner-skill: ""
+responsibility-note: "완료 선언 전 실측 강제 (qa 도메인)"
 ---
+
+## 책임 영역 (2026-05-06 묶음 PP-3 박제)
+
+- **owner**: grimoire-qa agent (완료 검증·실측 도메인)
+- **trigger 패턴**: 완료 선언 키워드 매칭 시 본 skill의 additionalContext 주입 + grimoire-qa agent가 명시 호출
+- **메인 책임**: 본 skill을 직접 호출 X — grimoire-qa agent에 위임 후 qa agent가 본 skill 활용
 
 # Verification Before Completion — 완료 선언 전 실측 증거 강제
 

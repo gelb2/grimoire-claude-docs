@@ -12,6 +12,8 @@ paths:
   - "research/HARNESS_ENGINEERING.md"
 ---
 
+> **2026-05-06 묶음 PP-3 ARCHIVE**: 30일간 자율 호출 0회 + disable-model-invocation: true + 비상 가치 낮음. 비상 시 `.claude/skills/_archive/drift-check/SKILL.md` 직접 Read 또는 사용자 명시 호출.
+
 # Drift Check — 인벤토리 정합 검증
 
 ## 사용 패턴

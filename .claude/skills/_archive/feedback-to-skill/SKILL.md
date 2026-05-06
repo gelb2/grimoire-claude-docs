@@ -11,6 +11,8 @@ paths:
   - ".claude/scripts/sensor-feedback-promotion.sh"
 ---
 
+> **2026-05-06 묶음 PP-3 ARCHIVE**: 30일간 자율 호출 0회 + disable-model-invocation: true + 비상 가치 낮음. 비상 시 `.claude/skills/_archive/feedback-to-skill/SKILL.md` 직접 Read 또는 사용자 명시 호출.
+
 # Feedback to Skill — 메모리 승격 자동화
 
 ## 동기 (HARNESS §8.9 v2)

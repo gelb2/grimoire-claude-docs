@@ -6,9 +6,18 @@ allowed-tools: Bash, Read
 effort: low
 paths:
   - ".claude/scripts/sensor-*.sh"
+owner-agent: grimoire-qa
+owner-skill: ""
+responsibility-note: "sensor 인벤토리 조회 (qa 도메인)"
 ---
 
 # Sensors Overview — 14 sensor 인벤토리 + 진단
+
+## 책임 영역 (2026-05-06 묶음 PP-3 박제)
+
+- **owner**: grimoire-qa agent (sensor·검증 도메인)
+- **trigger 패턴**: 사용자 입력 키워드 매칭 시 본 skill의 additionalContext 주입 + grimoire-qa agent가 명시 호출
+- **메인 책임**: 본 skill을 직접 호출 X — grimoire-qa agent에 위임 후 qa agent가 본 skill 활용
 
 ## 사용 패턴
 

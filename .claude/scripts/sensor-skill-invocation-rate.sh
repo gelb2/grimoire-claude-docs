@@ -26,8 +26,8 @@ LOG_FILE="$ROOT/.claude/state/skill-invocation-rate.jsonl"
 
 mkdir -p "$(dirname "$LOG_FILE")"
 
-# 박제된 skill 수
-TOTAL_SKILLS=$(find "$SKILLS_DIR" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | wc -l | tr -d ' ')
+# 박제된 skill 수 (현역만 — _archive/ 제외, 묶음 PP-3 정합)
+TOTAL_SKILLS=$(find "$SKILLS_DIR" -mindepth 1 -maxdepth 1 -type d ! -name "_archive" 2>/dev/null | wc -l | tr -d ' ')
 
 # 7일간 Skill tool_use 추적
 RESULT=$(python3 <<PYEOF

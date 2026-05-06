@@ -13,6 +13,8 @@ triggers:
   - "다중 도메인 동시"
 ---
 
+> **2026-05-06 묶음 PP-3 ARCHIVE**: 30일간 자율 호출 0회 + disable-model-invocation: true + 비상 가치 낮음. 비상 시 `.claude/skills/_archive/dispatching-parallel-agents/SKILL.md` 직접 Read 또는 사용자 명시 호출.
+
 # Dispatching Parallel Agents — 다중 서브에이전트 동시 dispatch
 
 > **trigger-mode**: user-invocation (disable-model-invocation:true) + 키워드 매칭. paths 미적용 — 메타 절차.
