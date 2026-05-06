@@ -69,6 +69,16 @@
     ],
     "PreToolUse": [
       {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/scripts/pretooluse-edit-write-guard.sh",
+            "timeout": 15
+          }
+        ]
+      },
+      {
         "matcher": "Bash",
         "hooks": [
           {
