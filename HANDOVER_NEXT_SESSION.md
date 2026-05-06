@@ -151,6 +151,8 @@ bash .claude/scripts/sensor-adversarial-pre-commit.sh 2>&1 | grep "P20"
 | **EMAIL-P0-3 Phase 1 + Phase 2 slug 로그인 마이그레이션** (2026-05-05) | `fe4ca93` | `a04eca2` | `004a825` |
 | **HANDOVER §1.5 + USER_VERIFICATION_GUIDE-2026-05-05** (2026-05-05) | — | — | `6def365` + `06e727b` |
 | **claude-docs main 머지** (2026-05-05, 사용자 정정 "dev까지만") | — | — | `a63eb36` (정본만, 운영 영향 0) |
+| **다른 세션 #10_8 PP-3~PP-11 + PAY-P2-1/2/3** (2026-05-06) | `709ad12` + `88487c3` + `83715e3` + `d115f13` + `138435f` | — | `4310875` ~ `a5bf760` (14 commit 사슬) |
+| **PAY-P2-4 AdminAuditLog 정밀화 — beforeState/afterState** (2026-05-07) | `64b6187` | — | `50c9676` |
 
 ### 🚀 다음 트랙 (사용자 결정 영역 — 2026-05-05 갱신, EMAIL-P0-3 완료 후)
 
@@ -184,7 +186,23 @@ bash .claude/scripts/sensor-adversarial-pre-commit.sh 2>&1 | grep "P20"
 | 10 | **EMAIL-P0-3 dev 검증** | `curl POST /api/auth/login -d '{"slug":"deerdevil","password":"..."}'` 200 반환 검증 + email 후향호환 200 검증 + email+slug 동시 박제 시 400 검증 |
 | 11 | **이메일 SaaS 결정** | research/EMAIL_INTEGRITY_PLAN.md §11 결정 게이트 — AWS SES (추천 ₩700/월) / Resend / SendGrid / Postmark 중 1택 + 사용자 절대 규정 0-1 해제 명시. EmailServicePort 캡슐화 박제 완료 → 어댑터만 추가 |
 
-### 📊 인벤토리 변동 (B/C + PAY-P0~P1-3 + EMAIL-P0-1 + EMAIL-P0-3 + EmailServicePort 캡슐화 누적 — 2026-05-05 갱신)
+### 📊 인벤토리 변동 (PAY-P2-4 종료 시점 — 2026-05-07 갱신)
+- Skills 17 활성 + 9 GRAY (`_archive/`)
+- Sensors **32 → 37** (+5 다른 세션 #10_8: oauth-email-verification + partial-refund + webhook-dlq + sms-service-port + skill-invocation-rate, +1 본 세션: audit-log-before-after)
+- shared-contracts **§15 → §20** (+5: OAuthEmailVerification + PartialRefund + WebhookDLQ + SmsServicePort + AdminAuditLog beforeState/afterState)
+- Eval regression **58 → 64** (+6: regression-60 OAuth, +61 partial-refund, +62 webhook-dlq, +63 sms-port, +64 audit-log-before-after)
+- jest server **572 → 625** (+53 누적: PAY-P2-1 16 + P2-2 8 + P2-3 10 + P2-4 +21)
+- vitest web 151 (불변 — 본 sprint web 변경 0)
+- DB 모델 +1 (WebhookRetryQueue, PAY-P2-2)
+- @Cron Job +1 (WebhookRetryJob @Cron 5분)
+- Hexagonal Port +1 (SmsServicePort)
+- Hooks 13 / Hook 이벤트 12종 (PP-6 post-response-skill-injector + PP-7 pretooluse-edit-write-guard 신설)
+- jsonl state 13 (`.claude/state/`)
+- AuditLog action +5 (refund_partial / refund_partial_deficit / system_dlq / system_cleanup payment_expire / payment_completed)
+- AuditLogService.log() 시그니처: 4-arg → 6-arg BACKWARD COMPATIBLE (PAY-P2-4)
+- 정본 신설: research/EMAIL_INTEGRITY_PLAN.md + research/PAYMENT_SYSTEM_PLAN.md (PAY-P2 마스터 플랜) + reports/PAY-P2-MASTER-PLAN.md (다른 세션 박제) + reports/USER_VERIFICATION_GUIDE-2026-05-05.md + reports/HANDOVER-CRITICAL-2026-05-06.md + reports/HANDOVER-CRITICAL-2026-05-06-PP.md + HARNESS_MAP.html
+
+### 📊 다른 세션 인벤토리 변동 (참고 — 2026-05-06 박제, 본 세션과 별개)
 - Skills 24 (불변)
 - Sensors **25 → 32** (+7: payment-idempotency / payment-reconciliation / admin-credit-ui / refund-atomicity / fake-email-leak / payment-retry-reuse / slug-login)
 - Knowledge 9 (불변)
