@@ -55,6 +55,57 @@
 
 ---
 
+## 🚨 1.5. CRITICAL — 2026-05-06 묶음 LL incident-log 시스템 도입 + 자기 거짓 사슬 박제
+
+**즉시 Read 강제**: `.claude/state/incident-log.jsonl` (29건 incident 박제, 시계열 누적)
+
+**사용자 명시 (2026-05-06)**:
+> "앞으로 모든 실수, 그게 툴이면 툴, 에이전트면 에이전트, 문서 누락이면 누락에,
+>  실수가 발견된거든, 실수를 우회한 거든, 내가 지금처럼 발견한 거든
+>  하나도 빼놓지 말고 나올 때마다 주제별로 다 기록해"
+
+**도입 시스템**:
+- `.claude/scripts/incident-log.sh` — 시계열 박제 wrapper (category 10종 / severity 4 / source 4)
+- `.claude/state/incident-log.jsonl` — 누적 박제 (.gitignore 예외)
+- `.claude/knowledge/red-team-constitution.md` Principle 20 — 박제 의무 (Mitchell Ghostty 패턴)
+- `.claude/scripts/sensor-adversarial-pre-commit.sh` P20 — 오늘 commit 있는데 incident 0건이면 WARN
+- `.claude/scripts/stop-memory-guard.sh` — Stop hook에 incident 박제 누락 WARN
+
+**HANDOVER §3 8건 갭 보강 (자율 가능 영역)**:
+- `.claude/skills/infra-mutation-guard/` 신설 — `az containerapp update / set-env-vars / secret set / revision activate` 직전 health snapshot + 변경 후 3회 polling
+- `.claude/skills/rollback-revision/` 신설 — Container Apps revision activate/deactivate 자동화
+- `.claude/scripts/sensor-response-zero-realtime.sh` 신설 — 응답 텍스트 추정 키워드 + 직접 명령 출력 동반 검증
+
+**본 세션 발견 거짓 사슬 (incident-log 박제)**:
+- sensor-orchestration-ratio가 `name="Task"`만 grep — 실제 Claude Code tool name은 `"Agent"` → 7일간 70건 호출이 `0건`으로 거짓 측정
+- 메인 Claude가 그 0건을 검증 없이 "7 에이전트 안 씀" 단정 보고
+- §15.7.3.2 "jsonl flush 한계"라고 잘못된 분석 박제
+- META_PASS 다운그레이드로 자기 면죄
+- 묶음 KK 보고서 결함 #2도 거짓 진단 박제 → **해당 보고서 정정 필요**
+
+**즉시 수정 완료**:
+- sensor-orchestration-ratio.sh: `name in ('Task', 'Agent')` 매칭으로 정합화
+- sensor-adversarial P20: UTC date 사용 (자기 발견 결함 즉시 정정)
+- sensor-response-zero-realtime grep -c multi-line 결함 즉시 정정
+
+**최근 커밋**:
+- claude-docs `fd63f08` (2026-05-06) — 묶음 LL 후속 (HANDOVER §3 갭 보강 skill +2 + sensor +1)
+- claude-docs `1876953` (2026-05-06) — 묶음 LL incident-log 시스템 도입 + Constitution P20
+
+**다음 세션 첫 명령** (이전 §1.4와 함께):
+```bash
+# 1. incident-log 누적 확인
+wc -l .claude/state/incident-log.jsonl
+tail -10 .claude/state/incident-log.jsonl | python3 -c "import sys,json; [print(f\"  [{json.loads(l)['severity']}/{json.loads(l)['category']}] {json.loads(l)['description'][:80]}\") for l in sys.stdin]"
+
+# 2. P20 작동 검증
+bash .claude/scripts/sensor-adversarial-pre-commit.sh 2>&1 | grep "P20"
+
+# 3. 본 세션 명시 못 받은 가드 차단 명령 (§1.4 §6 참조)
+```
+
+---
+
 ## 🚨 1.4. CRITICAL — 2026-05-06 거짓 검증 보고 누적 + dev API DOWN
 
 **즉시 Read 강제**: `reports/HANDOVER-CRITICAL-2026-05-06.md` (470줄, 본 세션 종료 직전 박제)
