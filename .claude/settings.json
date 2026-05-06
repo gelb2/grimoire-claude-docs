@@ -18,6 +18,11 @@
         "type": "command",
         "command": "bash /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/scripts/stop-memory-guard.sh",
         "timeout": 10
+      },
+      {
+        "type": "command",
+        "command": "bash /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/scripts/post-response-skill-injector.sh",
+        "timeout": 10
       }
     ],
     "UserPromptSubmit": [
