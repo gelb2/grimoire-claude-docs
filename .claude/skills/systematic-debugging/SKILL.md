@@ -16,6 +16,8 @@ triggers:
   - "root cause"
   - "복잡한 버그"
   - "디버깅 막힘"
+  - "어디서 뭐가 잘못"
+  - "어떻게 풀어야"
 owner-agent: grimoire-qa
 owner-skill: production-bug-triage
 responsibility-note: "버그 진단 후속 절차 (qa + bug-triage skill 체인)"

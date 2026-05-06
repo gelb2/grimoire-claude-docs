@@ -12,6 +12,9 @@ triggers:
   - "Claude-in-Chrome"
   - "크롬 확인"
   - "브라우저 확인"
+  - "크롬 안 되"
+  - "extension 꺼졌"
+  - "claude in chrome"
 effort: medium
 trigger-mode: keyword (triggers field) — paths 미적용 명시 (NEW-16 J4 패턴)
 ---

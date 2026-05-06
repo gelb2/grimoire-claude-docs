@@ -722,7 +722,7 @@ v2 추가 제안:
 
 각 에이전트 `.md` 하단에 "Skills 프로토콜 참조" 섹션으로 `.claude/skills/*/SKILL.md` 경로 embed (ouroboros 방식 — 공식 스펙상 서브에이전트는 Skill 자동 발동 불가).
 
-### 14.2 Skills 17종 현역 + 9 Archive (`.claude/skills/<name>/SKILL.md`)
+### 14.2 Skills 18종 현역 + 9 Archive (`.claude/skills/<name>/SKILL.md`)
 
 > **2026-05-06 묶음 PP-3 슬림화**: 26 → 17 현역 (-9 archive). 30일 호출 0회 + disable-model-invocation: true + 비상 가치 낮음 9건을 `.claude/skills/_archive/`로 이동(보존, 삭제 X). GRAY 9건 KEEP + owner-agent 매트릭스 박제 (deploy-image-verify·gc-sweep → server / orchestration-decision → main / requesting-code-review·sensors-overview·socratic-self-critique·systematic-debugging·verification-before-completion → qa / writing-plans → planner). 활용률 0.0769 (FAIL) → 0.1176 (WARN).
 

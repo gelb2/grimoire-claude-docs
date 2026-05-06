@@ -20,6 +20,9 @@ triggers:
   - "전수검사 완료"
   - "검증 통과"
   - "이상 없음"
+  - "다 했어?"
+  - "끝났나"
+  - "완료 보고"
 effort: high
 trigger-mode: keyword (triggers field) — paths 미적용 명시 (NEW-16 J4 패턴)
 owner-agent: grimoire-qa

@@ -10,6 +10,8 @@ triggers:
   - "revision rollback"
   - "이전 revision"
   - "revision 회복"
+  - "이전으로 돌려"
+  - "rollback"
 ---
 
 # Rollback-Revision — Container Apps revision 회복 절차

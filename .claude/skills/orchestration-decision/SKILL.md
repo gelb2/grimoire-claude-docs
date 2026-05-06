@@ -14,6 +14,9 @@ triggers:
   - "분할"
   - "오케스트레이션"
   - "메인 직접"
+  - "위임해"
+  - "어디 맡길지"
+  - "agent 골라"
 effort: low
 # trigger-mode: keyword (triggers field) — paths 미적용, 작업 분해 키워드 기반
 owner-agent: main

@@ -1,0 +1,33 @@
+{
+  "id": "edd-main-skill-invocation-002",
+  "name": "[메인 본능 회귀 차단] 사용자 '메모리 너무 많아 정리하자' → consolidate-memory skill 호출 본능",
+  "category": "harness-degradation",
+  "source_session": "20260506 묶음 PP-5 — 메인 Claude Skill 호출 본능 회귀 차단 (R3, planner 진단 정합)",
+  "prompt": "사용자 자연 입력 '메모리 너무 많아 정리하자' 입력 시, 메인 Claude가 consolidate-memory 또는 동등 skill (gc-sweep) 을 실제로 호출하는지 회귀 차단. 현 시점 .claude/skills/에 consolidate-memory가 archive 되어 있을 수 있어 gc-sweep + memory-status 조합으로 fallback 검증.",
+  "input_simulation": "메모리 너무 많아 정리하자",
+  "expected_skill": "consolidate-memory or memory-status or gc-sweep",
+  "verification_method": "deterministic_grep",
+  "rubric": "(1) memory-status SKILL.md 또는 gc-sweep SKILL.md 존재 (PP-3 ARCHIVE 후 fallback) (2) ≥1개의 trigger에 '메모리|memory|정리|consolidate|sweep' 어휘 (3) 의도 호출 메커니즘 명시 — planner §2-2 'gc-sweep는 사용자 명시 `/gc-sweep` 전용' 정합 보존. R3 본능 회귀는 별도 sensor.",
+  "eval_criteria": [
+    {
+      "type": "command",
+      "command": "test -f /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/skills/memory-status/SKILL.md || test -f /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/skills/gc-sweep/SKILL.md",
+      "desc": "(1) memory-status 또는 gc-sweep SKILL.md 존재 (PP-3 ARCHIVE 정합)"
+    },
+    {
+      "type": "command",
+      "command": "grep -lE '메모리|memory|정리|consolidate|sweep|기억' /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/skills/memory-status/SKILL.md /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/skills/gc-sweep/SKILL.md 2>/dev/null | wc -l | xargs -I{} test {} -ge 1",
+      "desc": "(2) trigger/description에 '메모리|memory|정리|기억' 어휘 ≥1건"
+    },
+    {
+      "type": "command",
+      "command": "grep -qE 'disable-model-invocation:|triggers:' /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/skills/memory-status/SKILL.md 2>/dev/null || grep -qE 'disable-model-invocation:|triggers:' /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/skills/gc-sweep/SKILL.md 2>/dev/null",
+      "desc": "(3) 호출 메커니즘 명시 보존 (planner §2-2 '사용자 명시 `/gc-sweep` 호출 전용' 정합 또는 memory-status manual 호출 정합)"
+    }
+  ],
+  "threshold": 1.0,
+  "edd_threshold": 0.95,
+  "runs": 1,
+  "auto_generated": false,
+  "baseline_estimate": "현 시점 0/5 (planner §2-2 30일 호출 0건 객관화 + memory-status/gc-sweep 모두 disable-model-invocation:true 의도 설계). 본 task는 PP-3 ARCHIVE 후 fallback 자산(memory-status/gc-sweep) 무결성 회귀 차단."
+}

@@ -13,6 +13,9 @@ triggers:
   - "credsStore"
   - "acr login"
   - "Docker Desktop"
+  - "권한 거절"
+  - "권한 다이얼로그"
+  - "credstore"
 paths:
   - "**/Makefile"
   - "~/.docker/config.json"

@@ -12,6 +12,9 @@ triggers:
   - "PR 검토"
   - "리뷰 요청"
   - "review request"
+  - "리뷰"
+  - "검토"
+  - "PR 직전"
 owner-agent: grimoire-qa
 owner-skill: ""
 responsibility-note: "코드 리뷰 게이트 (qa 도메인)"

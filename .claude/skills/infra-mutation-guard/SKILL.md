@@ -14,6 +14,9 @@ triggers:
   - "polar webhook update"
   - "infra-mutation"
   - "인프라 변경"
+  - "인프라 바꿔"
+  - "환경변수 추가"
+  - "배포 직전"
 ---
 
 # Infra-Mutation-Guard — 인프라 변경 안전망

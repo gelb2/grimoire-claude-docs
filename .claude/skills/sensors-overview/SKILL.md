@@ -6,6 +6,12 @@ allowed-tools: Bash, Read
 effort: low
 paths:
   - ".claude/scripts/sensor-*.sh"
+triggers:
+  - "sensors-overview"
+  - "sensor 뭐 있어"
+  - "sensor 목록"
+  - "sensor 인벤토리"
+  - "sensor 현황"
 owner-agent: grimoire-qa
 owner-skill: ""
 responsibility-note: "sensor 인벤토리 조회 (qa 도메인)"

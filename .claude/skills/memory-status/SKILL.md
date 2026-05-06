@@ -5,6 +5,12 @@ disable-model-invocation: true
 allowed-tools: Bash, Read
 effort: low
 trigger-mode: keyword (triggers field) — paths 미적용 명시 (NEW-16 J4 패턴)
+triggers:
+  - "memory-status"
+  - "메모리 봐"
+  - "기억 정리"
+  - "메모리 점검"
+  - "memory 상태"
 ---
 
 # Memory Status — 메모리 현황 점검

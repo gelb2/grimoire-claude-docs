@@ -10,6 +10,12 @@ paths:
   - "grimoire-server/scripts/deploy-*.sh"
   - "grimoire-web/Dockerfile"
   - "**/azure*.yaml"
+triggers:
+  - "deploy-image-verify"
+  - "image 확인"
+  - "deploy 정합"
+  - "image SHA"
+  - "운영 image"
 owner-agent: grimoire-server
 owner-skill: ""
 responsibility-note: "배포 직전 image 정합 검증 (server 도메인)"

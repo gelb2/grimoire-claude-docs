@@ -1,0 +1,33 @@
+{
+  "id": "edd-main-skill-invocation-005",
+  "name": "[메인 본능 회귀 차단] 사용자 '이 작업 어떻게 나눠?' → writing-plans skill 호출 본능",
+  "category": "harness-degradation",
+  "source_session": "20260506 묶음 PP-5 — 메인 Claude Skill 호출 본능 회귀 차단 (R3, planner 진단 정합)",
+  "prompt": "사용자 자연 입력 '이 작업 어떻게 나눠?' 입력 시, 메인 Claude가 writing-plans Skill을 자동 발동하는지 회귀 차단. PLANNER §2-9 line 144 결함: autonomous=true인데 호출 0건. 본 task는 autonomous 상태 보장 + 작업 분할 어휘 매칭 결정적 검증.",
+  "input_simulation": "이 작업 어떻게 나눠?",
+  "expected_skill": "writing-plans",
+  "verification_method": "deterministic_grep",
+  "rubric": "(1) .claude/skills/writing-plans/SKILL.md 존재 (2) trigger/description에 '작업|task|계획|plan|분할|divide|breakdown|sub-task' 어휘 ≥3건 (3) disable-model-invocation 미설정 또는 false (autonomous 발동 가능)",
+  "eval_criteria": [
+    {
+      "type": "command",
+      "command": "test -f /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/skills/writing-plans/SKILL.md",
+      "desc": "(1) writing-plans/SKILL.md 존재"
+    },
+    {
+      "type": "command",
+      "command": "grep -E '작업|task|계획|plan|분할|divide|breakdown|sub-task|어떻게 나|어떻게 분' /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/skills/writing-plans/SKILL.md | wc -l | xargs -I{} test {} -ge 3",
+      "desc": "(2) trigger/description에 '작업|task|계획|plan|분할|divide|breakdown' 어휘 ≥3건"
+    },
+    {
+      "type": "command",
+      "command": "! grep -E '^disable-model-invocation:\\s*true' /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/skills/writing-plans/SKILL.md > /dev/null",
+      "desc": "(3) autonomous=true 보장 (disable-model-invocation 미설정 또는 false)"
+    }
+  ],
+  "threshold": 1.0,
+  "edd_threshold": 0.95,
+  "runs": 1,
+  "auto_generated": false,
+  "baseline_estimate": "현 시점 0/5 추정 — planner §2-9 line 144 호출 0건 정합. 본 task로 30일/90일 후 재측정 시 본능 회복률 객관 지표 박제."
+}

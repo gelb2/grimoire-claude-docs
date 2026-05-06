@@ -1,0 +1,33 @@
+{
+  "id": "edd-main-skill-invocation-004",
+  "name": "[메인 본능 회귀 차단] 사용자 '다 했어?' → verification-before-completion skill 호출 본능 (autonomous 발동 회복 측정)",
+  "category": "harness-degradation",
+  "source_session": "20260506 묶음 PP-5 — 메인 Claude Skill 호출 본능 회귀 차단 (R3, planner 진단 PP-6 정합)",
+  "prompt": "사용자 자연 입력 '다 했어?' 입력 시, 메인 Claude가 verification-before-completion Skill을 자동 발동하는지 회귀 차단. **PLANNER §2-8 PP-6 결함 진단**: autonomous=true (=disable-model-invocation false) 인데 30일 호출 0건 = 메커니즘 결함. 본 task는 autonomous 상태 보장 + trigger 어휘 매칭 결정적 검증으로 회복 측정 토대.",
+  "input_simulation": "다 했어?",
+  "expected_skill": "verification-before-completion",
+  "verification_method": "deterministic_grep",
+  "rubric": "(1) .claude/skills/verification-before-completion/SKILL.md 존재 (2) trigger 어휘 ≥17건 박제 (planner §2-8 line 38) — '완료|done|다 했|작업 끝|finish|complete' 등 풍부 (3) disable-model-invocation 미설정 또는 false (autonomous=true 보장)",
+  "eval_criteria": [
+    {
+      "type": "command",
+      "command": "test -f /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/skills/verification-before-completion/SKILL.md",
+      "desc": "(1) verification-before-completion/SKILL.md 존재"
+    },
+    {
+      "type": "command",
+      "command": "grep -E '완료|done|다 했|끝|finish|complete|verify|검증' /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/skills/verification-before-completion/SKILL.md | wc -l | xargs -I{} test {} -ge 5",
+      "desc": "(2) trigger/description에 '완료|done|다 했|끝|finish|complete|verify|검증' 어휘 ≥5건 (planner §2-8 trigger 17건 정합 — 보수적 임계)"
+    },
+    {
+      "type": "command",
+      "command": "! grep -E '^disable-model-invocation:\\s*true' /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/skills/verification-before-completion/SKILL.md > /dev/null",
+      "desc": "(3) autonomous=true 보장 (disable-model-invocation 미설정 또는 false) — PP-6 결함 진단 정합"
+    }
+  ],
+  "threshold": 1.0,
+  "edd_threshold": 0.95,
+  "runs": 1,
+  "auto_generated": false,
+  "baseline_estimate": "현 시점 0/5 추정 — planner §2-8 line 38 '30일 호출 0건' 객관화. autonomous=true인데 본능 호출 실패 = 메커니즘 결함. 본 task는 30일 후 재측정 시 회복률 객관 지표."
+}

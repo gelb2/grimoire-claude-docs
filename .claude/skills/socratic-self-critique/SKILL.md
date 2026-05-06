@@ -16,6 +16,9 @@ triggers:
   - "self-critique"
   - "소크라테스"
   - "Socratic"
+  - "다시 생각"
+  - "한번 더"
+  - "비판"
 owner-agent: grimoire-qa
 owner-skill: ""
 responsibility-note: "자기 비판 검증 (qa 도메인 — verification 후속이 아님, 별도 절차)"

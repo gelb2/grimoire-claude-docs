@@ -11,6 +11,13 @@ paths:
   - ".claude/agents/**"
   - ".claude/prompts/**"
   - ".claude/knowledge/**"
+triggers:
+  - "gc-sweep"
+  - "정리해"
+  - "garbage 청소"
+  - "gc"
+  - "stale 정리"
+  - "harness 청소"
 owner-agent: grimoire-server
 owner-skill: ""
 responsibility-note: "인프라 garbage collection (server 도메인)"
