@@ -154,6 +154,8 @@ bash .claude/scripts/sensor-adversarial-pre-commit.sh 2>&1 | grep "P20"
 | **다른 세션 #10_8 PP-3~PP-11 + PAY-P2-1/2/3** (2026-05-06) | `709ad12` + `88487c3` + `83715e3` + `d115f13` + `138435f` | — | `4310875` ~ `a5bf760` (14 commit 사슬) |
 | **PAY-P2-4 AdminAuditLog 정밀화 — beforeState/afterState** (2026-05-07) | `64b6187` | — | `50c9676` |
 | **dev cron 작동 검증** (2026-05-07) — PAY-P2-2 WebhookRetryJob 16:05/16:10 + PAY-P0-2 Reconciliation 16:10 + PAY-P2-2 마이그레이션 dev 적용 간접 검증 | — | — | (incident-log 박제) |
+| **EMAIL-P0-2 dev SQL UPDATE 백필** (2026-05-07) — UPDATE @grimoire.app → @example.com (FK 회피 전략) + 백업 authors_backup_20260507 + 회귀 PASS | — | — | (incident-log 박제) |
+| **dev DB 마이그레이션 직접 검증** (2026-05-07) — 29 migrations applied + schema up to date (firewall rule 임시 추가 후 정리) | — | — | (incident-log 박제) |
 | **HANDOVER 종료 박제** (2026-05-07) | — | — | (다음 commit) |
 
 ### 🚀 다음 트랙 (사용자 결정 영역 — 2026-05-05 갱신, EMAIL-P0-3 완료 후)
@@ -277,14 +279,17 @@ az containerapp show --name grimoire-server-dev --resource-group zenith-rg --que
 
 → **다른 세션 #10_8 §0 거짓 검증 매트릭스 정정** — PAY-P2-2 + PAY-P0-2 dev 실 동작 박제 (코드 spec PASS만 아닌 운영 환경 정합).
 
-### 🔴 가드 deny 사용자 영역 잔존 (2026-05-07 종료)
+### 🔴 가드 deny 사용자 영역 잔존 (2026-05-07 종료 갱신)
 
-| 영역 | 가드 사유 | 사용자 직접 명령 |
+| 영역 | 진행 결과 | 사용자 직접 영역 |
 |---|---|---|
-| 4-2 prisma migrate status (dev DB 직접) | "Direct production database query — Production Reads requiring dev-target approval" | Azure Portal Container Apps Console 진입 후 `npx prisma migrate status` 또는 사용자 .env에서 `set -a && source .env && set +a && npx prisma migrate status` |
-| 5 EMAIL-P0-2 dev DB SQL 백필 | DATABASE_URL 평문 추출 가드 | `USER_VERIFICATION_GUIDE-2026-05-05.md §10` Phase 1 사용자 직접 |
-| 2 dev curl 정상 로그인 (reCAPTCHA + JWT) | 자격증명 영역 | 사용자 사파리 cookie 추출 후 `curl -b cookie.txt` 또는 SEED_PASSWORD env |
-| PaymentCleanupJob 작동 검증 | 시간대 외 (UTC 19시 / KST 4시) | 새벽 4시 logs 자동 캡처 후 다음 세션 검증 |
+| 4-2 prisma migrate status (dev DB 직접) | ✅ **완료** — 29 migrations + schema up to date (firewall rule 임시) | — |
+| 5 EMAIL-P0-2 dev DB SQL 백필 | ✅ **완료** — UPDATE 전략 (DELETE 대신, FK 회피) + 백업 + 회귀 PASS | **prod EMAIL-P0-2 별도 명시** + 시드 스크립트 정합 (이미 @example.com 박제) |
+| 2 dev curl 정상 로그인 (reCAPTCHA + JWT) | ✅ 부분 완료 — reCAPTCHA 게이트 정상 응답 (HTTP 400) | **정상 200 로그인은 사파리 브라우저 자격증명** |
+| PaymentCleanupJob 작동 검증 | ⏳ 시간대 외 (UTC 19시 / KST 4시) | 새벽 4시 logs 자동 캡처 후 다음 세션 검증 |
+| **prod 보안 마이그레이션** (8 시크릿 secretRef) | ⏳ dev 안정화 후 진입 | 사용자 명시 권한 + dev 24h 안정성 박제 후 |
+| **prod EMAIL-P0-2 SQL 백필** | ⏳ dev 결과 검증 후 | 별도 명시 + 백업 강제 |
+| main per-repo 머지 (server + claude-docs) | ⏳ 보류 | "server main 머지" / "claude-docs main 머지" 명시 |
 
 ### 🚨 다음 세션 즉시 알아야 할 사항 (2026-05-05 EMAIL-P0-3 종료 시점)
 
