@@ -57,42 +57,10 @@ case "$TOOL_NAME" in
   ;;
 esac
 
-# 우회 키워드 검사 함수 (사용자 직전 메시지)
-check_user_delegation() {
-  local jsonl_dir="$HOME/.claude/projects/-Users-sokol-Desktop-Git-ProjectGrimoire"
-  local latest_jsonl
-  latest_jsonl=$(ls -t "$jsonl_dir"/*.jsonl 2>/dev/null | head -1)
-
-  if [ -n "$latest_jsonl" ] && [ -f "$latest_jsonl" ]; then
-    local last_msg
-    last_msg=$(LATEST_JSONL_PATH="$latest_jsonl" python3 <<'PYEOF'
-import json, os
-jsonl = os.environ.get('LATEST_JSONL_PATH', '')
-last_user = ""
-try:
-    with open(jsonl) as f:
-        for line in f:
-            try: o = json.loads(line)
-            except: continue
-            m = o.get('message', {})
-            if isinstance(m, dict) and m.get('role') == 'user':
-                content = m.get('content', '')
-                if isinstance(content, list):
-                    for c in content:
-                        if isinstance(c, dict) and c.get('type') == 'text':
-                            last_user = c.get('text', '')
-                else:
-                    last_user = str(content)
-except: pass
-print(last_user[:1000])
-PYEOF
-)
-    if echo "$last_msg" | grep -qE "agent로|위임|처리해|진행해|메인 직접|직접 Edit|직접 작업|박아|박아버려|박제해|틀어 막|화이트리스트|whitelist"; then
-      return 0
-    fi
-  fi
-  return 1
-}
+# 우회 키워드 검사 함수 — 사용자 명시 (2026-05-08) "허용패턴만 통과로 남겨놔"로 제거됨.
+# 화이트리스트 외 = 무조건 차단 (백도어 X). 다음 옵션:
+#   1. 사용자 직접 박제
+#   2. agent 위임 (Task tool로 적합 agent 호출, isSidechain=True로 통과)
 
 # Bash 검증 명령 화이트리스트
 if [ "$TOOL_NAME" = "Bash" ]; then
@@ -157,9 +125,7 @@ except: print('')" 2>/dev/null || echo "")
     fi
   done
 
-  if check_user_delegation; then
-    exit 0
-  fi
+  # 우회 키워드 제거 (2026-05-08 사용자 명시 "허용패턴만")
 
   TS=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
   ESCAPED_CMD=$(echo "$COMMAND" | head -c 200 | sed 's/"/\\"/g; s/\\/\\\\/g')
@@ -213,9 +179,7 @@ EOF
     ;;
   esac
 
-  if check_user_delegation; then
-    exit 0
-  fi
+  # 우회 키워드 제거
 
   TS=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
   printf '{"ts":"%s","tool":"%s","type":"main_whitelist_violation","file":"%s"}\n' \
@@ -241,9 +205,7 @@ EOF
 fi
 
 # 기타 도구 (MultiEdit 등) — 화이트리스트 외, 차단
-if check_user_delegation; then
-  exit 0
-fi
+# 우회 키워드 제거
 
 TS=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 printf '{"ts":"%s","tool":"%s","type":"main_whitelist_violation_unknown_tool"}\n' \
