@@ -8,3 +8,13 @@
 {"ts":"2026-05-08T16:39:33Z","sidechain_value":"False","input_size":179,"file_path":"/Users/sokol/Desktop/Git/ProjectGrimoire/.claude/agents/grimoire-harness.md","tool":"Edit"}
 {"ts":"2026-05-08T16:43:02Z","sidechain_value":"False","input_size":1536,"file_path":"/Users/sokol/Desktop/Git/ProjectGrimoire/.gitignore","tool":"Edit"}
 {"ts":"2026-05-08T16:43:45Z","sidechain_value":"False","input_size":982,"file_path":"/Users/sokol/Desktop/Git/ProjectGrimoire/.gitignore","tool":"Edit"}
+{"ts":"2026-05-08T17:01:36Z","sidechain_value":"False","input_size":2447,"file_path":"/Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/src/application/payment/payment.usecase.ts","tool":"Edit"}
+{"ts":"2026-05-08T17:01:55Z","sidechain_value":"False","input_size":3187,"file_path":"/Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/src/adapter/outbound/persistence/prisma-payment.repository.ts","tool":"Edit"}
+{"ts":"2026-05-08T17:02:32Z","sidechain_value":"False","input_size":7642,"file_path":"/Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/src/application/payment/payment.usecase.spec.ts","tool":"Edit"}
+{"ts":"2026-05-08T17:03:16Z","sidechain_value":"False","input_size":8039,"file_path":"/Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/src/adapter/outbound/persistence/prisma-payment.repository.spec.ts","tool":"Edit"}
+{"ts":"2026-05-08T17:04:37Z","sidechain_value":"False","input_size":7033,"file_path":"/Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/src/application/payment/payment.usecase.spec.ts","tool":"Edit"}
+{"ts":"2026-05-08T17:05:38Z","sidechain_value":"False","input_size":5570,"file_path":"/Users/sokol/Desktop/Git/ProjectGrimoire/.claude/scripts/sensor-payment-race-condition.sh","tool":"Write"}
+{"ts":"2026-05-08T17:06:30Z","sidechain_value":"False","input_size":6506,"file_path":"/Users/sokol/Desktop/Git/ProjectGrimoire/.claude/shared-contracts.md","tool":"Edit"}
+{"ts":"2026-05-08T17:06:56Z","sidechain_value":"False","input_size":4646,"file_path":"/Users/sokol/Desktop/Git/ProjectGrimoire/eval/tasks/regression-66-payment-race-condition.json","tool":"Write"}
+{"ts":"2026-05-08T17:17:59Z","sidechain_value":"False","input_size":11500,"file_path":"/Users/sokol/Desktop/Git/ProjectGrimoire/reports/sprint-pay-p3-a-race-condition-progress.md","tool":"Write"}
+{"ts":"2026-05-08T17:54:23Z","sidechain_value":"False","input_size":21892,"file_path":"/Users/sokol/Desktop/Git/ProjectGrimoire/reports/QA_REPORT.md","tool":"Write"}
