@@ -1,0 +1,22 @@
+{
+  "id": "regression-066",
+  "name": "api_contract — PAY-P3-A race condition 차단 (구멍-A 사전 게이트 + 구멍-B CAS 패턴)",
+  "category": "api_contract",
+  "source_session": "20260509 sprint-pay-p3-a-race-condition — Generator grimoire-server (PP-7 라우팅 정정 후 재진입)",
+  "prompt": "PAY-P3-A: PAYMENT_AUDIT §1 구멍-A (eventId 다른 type 동시 처리 누락) + 구멍-B (transaction race) 동시 차단. (a) payment.usecase.ts payment.status='refunded' 사전 게이트 (b) payment.usecase.ts payment.status='partial_refunded' 사전 게이트 (c) [PaymentRaceCondition] logger.warn 박제 (d) prisma-payment.repository.ts findUniqueOrThrow 박제 (e) updateMany WHERE credits >= actualDeducted CAS 패턴 (f) CAS_MISMATCH throw + 호출자 retry 위임 (g) shared-contracts §22 PaymentRaceCondition (h) sensor-payment-race-condition.sh 신설. 회귀 시 race condition 차단 누락 즉시 FAIL.",
+  "eval_criteria": [
+    {"type": "command", "command": "grep -qE \"payment\\.status\\s*===\\s*'refunded'\" /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/src/application/payment/payment.usecase.ts", "desc": "payment.usecase.ts payment.status='refunded' 사전 게이트 박제"},
+    {"type": "command", "command": "grep -qE \"payment\\.status\\s*===\\s*'partial_refunded'\" /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/src/application/payment/payment.usecase.ts", "desc": "payment.usecase.ts payment.status='partial_refunded' 사전 게이트 박제"},
+    {"type": "command", "command": "grep -qE 'PaymentRaceCondition' /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/src/application/payment/payment.usecase.ts", "desc": "[PaymentRaceCondition] logger.warn 박제 (incident 박제 의무)"},
+    {"type": "command", "command": "grep -qE 'already_refunded|already_partial_refunded' /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/src/application/payment/payment.usecase.ts", "desc": "skip reason (already_refunded / already_partial_refunded) 박제"},
+    {"type": "command", "command": "grep -qE 'findUniqueOrThrow' /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/src/adapter/outbound/persistence/prisma-payment.repository.ts", "desc": "prisma-payment.repository.ts findUniqueOrThrow 박제 (race 진입 명시)"},
+    {"type": "command", "command": "grep -qE 'updateMany' /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/src/adapter/outbound/persistence/prisma-payment.repository.ts && grep -qE 'credits:\\s*\\{\\s*gte' /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/src/adapter/outbound/persistence/prisma-payment.repository.ts", "desc": "updateMany WHERE credits gte CAS 패턴 박제 (구멍-B 차단)"},
+    {"type": "command", "command": "grep -qE 'CAS_MISMATCH' /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/src/adapter/outbound/persistence/prisma-payment.repository.ts", "desc": "CAS_MISMATCH throw 박제 (DLQ retry 위임)"},
+    {"type": "command", "command": "grep -qE '## 22\\. PaymentRaceCondition' /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/shared-contracts.md", "desc": "shared-contracts §22 PaymentRaceCondition 박제"},
+    {"type": "command", "command": "test -x /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/scripts/sensor-payment-race-condition.sh", "desc": "sensor-payment-race-condition.sh 실행 권한 + 박제"},
+    {"type": "command", "command": "grep -qE 'PAY-P3-A' /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/src/application/payment/payment.usecase.spec.ts", "desc": "payment.usecase.spec.ts PAY-P3-A describe 박제"},
+    {"type": "command", "command": "grep -qE 'PAY-P3-A' /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/src/adapter/outbound/persistence/prisma-payment.repository.spec.ts", "desc": "prisma-payment.repository.spec.ts PAY-P3-A describe 박제"}
+  ],
+  "threshold": 1.0,
+  "runs": 1
+}

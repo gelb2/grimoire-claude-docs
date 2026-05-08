@@ -1360,6 +1360,97 @@ Exit codes: 0 PASS / 1 WARN (Activating/ScaledToZero) / 2 FAIL (Healthy != true 
 
 ---
 
+## 22. PaymentRaceCondition (server 도메인 — 결제 race condition 차단)
+
+**위치**:
+- UseCase: `grimoire-server/src/application/payment/payment.usecase.ts` (`processNormalizedWebhook` 사전 게이트)
+- UseCase: `grimoire-server/src/application/payment/refund-payment.usecase.ts` (호출자 정합)
+- Repository: `grimoire-server/src/adapter/outbound/persistence/prisma-payment.repository.ts` (`refundPaymentAtomically` CAS)
+- Sensor: `.claude/scripts/sensor-payment-race-condition.sh` (8 검증)
+
+**적용**: PAYMENT_AUDIT §1 구멍-A (eventId 다른 type 동시 처리 누락) + 구멍-B (transaction race — `Author.findUnique → update decrement` READ COMMITTED 격리 race window) 동시 차단. DB schema 변경 0건. 외부 인프라 의존 0건. PAY-P2-2 DLQ retry 패턴 정합.
+
+### 시그니처 — 사전 게이트 (구멍-A 차단)
+
+```typescript
+// payment.usecase.ts processNormalizedWebhook 진입 직후 (already_completed 게이트 다음)
+if (payment.status === 'refunded' || payment.status === 'partial_refunded') {
+  const reasonKey = `already_${payment.status}` as 'already_refunded' | 'already_partial_refunded'
+  this.logger.warn(
+    `[PaymentRaceCondition] ${reasonKey} eventId=${event.eventId} paymentId=${payment.id}`,
+  )
+  await this.webhookEventRepo.createIfAbsent({
+    eventId: event.eventId,
+    source: 'polar',
+    eventType: event.type,
+    payload: event as unknown as object,
+    status: 'skipped',
+    errorMessage: reasonKey,
+  })
+  return { processed: false, reason: reasonKey }
+}
+```
+
+### 시그니처 — CAS 패턴 (구멍-B 차단)
+
+```typescript
+// prisma-payment.repository.ts refundPaymentAtomically $transaction 내부
+const author = await tx.author.findUniqueOrThrow({
+  where: { id: authorId },
+  select: { credits: true },
+})
+const currentBalance = author.credits
+const actualDeducted = Math.min(currentBalance, proportionalCredits)
+const deficitCredits = Math.max(0, proportionalCredits - currentBalance)
+
+if (actualDeducted > 0) {
+  // CAS 패턴 — Postgres atomic check-and-set (race window 차단)
+  const updateResult = await tx.author.updateMany({
+    where: {
+      id: authorId,
+      credits: { gte: actualDeducted },
+    },
+    data: { credits: { decrement: actualDeducted } },
+  })
+  if (updateResult.count === 0) {
+    throw new Error(
+      `CAS_MISMATCH — race condition detected on author.credits (authorId=${authorId}, expected_min=${actualDeducted})`,
+    )
+  }
+}
+```
+
+### 정책
+
+- **사전 게이트 (구멍-A)**: payment.status='refunded' OR 'partial_refunded' → skip (이미 환불 완료된 payment에 대한 재처리 방어 — 환불 후 재차감 0건 보장)
+- **CAS 패턴 (구멍-B)**: `updateMany WHERE credits >= actualDeducted` (Postgres atomic CAS) → 0 row 시 throw 'CAS_MISMATCH' → 호출자 retry 위임 (PAY-P2-2 DLQ)
+- **격리 수준**: $transaction은 READ COMMITTED (Postgres 기본). CAS 패턴이 격리 부족분을 보강.
+- **재시도 위임**: CAS_MISMATCH throw → refund-payment.usecase 또는 payment.usecase catch → webhookEventRepo 'failed' + DLQ enqueue → WebhookRetryJob @Cron 5분 재처리 (정본: §18 WebhookDLQ)
+- **incident-log 박제 의무**: race condition 시도 차단 시 logger.warn `[PaymentRaceCondition] ...` 동반 (sensor-adversarial-pre-commit P20 정합)
+- **DB schema 변경 0건**: advisory_lock + partial unique index는 P2 보류 (replicas ≥2 시점)
+
+### 검증 게이트
+
+- jest server: `payment.usecase.spec.ts` PAY-P3-A describe (4 it) + `prisma-payment.repository.spec.ts` PAY-P3-A describe (5 it)
+- sensor: `sensor-payment-race-condition.sh` (8 검증)
+- eval: `regression-66-payment-race-condition.json`
+
+### 변경 시 동시 갱신 대상
+
+- `grimoire-server/src/application/payment/payment.usecase.ts` (사전 게이트)
+- `grimoire-server/src/application/payment/payment.usecase.spec.ts` (PAY-P3-A describe — 4 it: AC-1, AC-2, AC-3 시뮬, AC-6)
+- `grimoire-server/src/application/payment/refund-payment.usecase.ts` (호출자 정합)
+- `grimoire-server/src/adapter/outbound/persistence/prisma-payment.repository.ts` (CAS 패턴)
+- `grimoire-server/src/adapter/outbound/persistence/prisma-payment.repository.spec.ts` (PAY-P3-A CAS describe — 5 it)
+- `eval/tasks/regression-66-payment-race-condition.json`
+- `.claude/scripts/sensor-payment-race-condition.sh`
+- `reports/sprint-pay-p3-a-race-condition-progress.md` (Generator 진입 후 박제)
+
+### 변경 이력
+- 2026-05-09 #10_8 PAY-P3-A: 신설 — PAYMENT_AUDIT §1 구멍-A + 구멍-B 동시 차단. payment.status 사전 게이트 (refunded + partial_refunded) + refundPaymentAtomically CAS 패턴 (`findUniqueOrThrow + updateMany WHERE credits >= actualDeducted`). DB schema 변경 0건. PAY-P2-2 DLQ retry 패턴 정합. jest server 625 → 634 (+9 it). sensor 39 → 40 신설. eval regression 65 → 66 신설. 정본: `reports/sprint-pay-p3-a-race-condition-progress.md`.
+
+---
+
 ## 변경 시 절차 (책 Ch 16 충돌 2번 해결책)
 
 agent A가 인터페이스 변경 시:
