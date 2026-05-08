@@ -63,6 +63,18 @@ DANGEROUS = [
     (r'\bgit\s+checkout\s+--\s+\.\s*($|\s)', 'git checkout -- . 은 전체 미커밋 변경을 삭제합니다. 차단.'),
     (r'\bgit\s+clean\s+-f(d)?x?\b', 'git clean -f 는 untracked 파일 영구 삭제. 사용자 승인 없으면 차단.'),
 
+    # main push 우회 (HEAD:main / develop:main 등) — 5/8 prod revision 97 사고 후속
+    (r'\bgit\s+push\s+(-[a-zA-Z]+\s+)*origin\s+\S+:main\b', 'HEAD:main / develop:main 등 우회 push 차단 — main 머지/배포는 grimoire-infrastructure agent + 사용자 per-repo 명시 영역.'),
+
+    # 인프라 mutation — grimoire-infrastructure agent 위임 강제 (5/8 INFRA-1 사고 + 본 세션 베이비시팅 결함)
+    # 사용자 명시 (2026-05-08): "메인은 그냥 시발 아무것도 못 하게 권한 박아버려"
+    (r'\b(make|bash\s+scripts/)\s*deploy-(prod|dev|inhouse)', 'deploy-* mutation은 grimoire-infrastructure agent 위임 강제. 메인 직접 = 베이비시팅 (4/18 수동 배포 1차 + 5/8 prod revision 97 사고 박제 정면 위배). Task tool subagent_type=grimoire-infrastructure로 위임 후 진행.'),
+    (r'\baz\s+containerapp\s+(update|create|delete|revision\s+activate|revision\s+deactivate|revision\s+copy)\b', 'az containerapp mutation은 grimoire-infrastructure agent + infra-mutation-guard skill 영역. 메인 직접 차단. Task tool subagent_type=grimoire-infrastructure로 위임.'),
+    (r'\bgit\s+merge\s+(origin/)?develop\b', 'develop merge는 grimoire-infrastructure agent + 사용자 per-repo 명시 영역. 메인 자율 처리 차단. Task tool subagent_type=grimoire-infrastructure로 위임.'),
+    (r'\bnpx\s+prisma\s+migrate\s+(deploy|reset)\b', 'prisma migrate mutation (deploy/reset)은 grimoire-server agent 영역. Task tool subagent_type=grimoire-server로 위임.'),
+    (r'\bprisma\s+migrate\s+(deploy|reset)\b', 'prisma migrate mutation은 grimoire-server agent 영역. Task tool subagent_type=grimoire-server로 위임.'),
+    (r'\bnpm\s+run\s+db:(migrate|reset|seed|push)', 'DB mutation 명령 (db:migrate/reset/seed/push)은 grimoire-server agent 영역. Task tool subagent_type=grimoire-server로 위임.'),
+
     # SKIP_INTERACTIVE prod 단독 실행 (사용자 승인 필수)
     # 주석: 이건 정당 사용도 있으므로 경고만, 차단은 아님 (warning으로 처리)
 ]
@@ -73,9 +85,34 @@ WARNINGS = [
 ]
 
 blocked_reasons = []
+matched_patterns = []
 for pattern, reason in DANGEROUS:
     if re.search(pattern, command):
         blocked_reasons.append(f"[차단] {reason}\n  pattern: {pattern}\n  command: {command}")
+        matched_patterns.append((pattern, reason))
+
+# main-blocked-log 박제 (사용자 검증 raw 자료) — 사용자 명시 2026-05-08 "박아버려"
+if blocked_reasons:
+    try:
+        import datetime
+        TS = datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
+        log_path = os.path.expanduser("/Users/sokol/Desktop/Git/ProjectGrimoire/.claude/state/main-blocked-log.jsonl")
+        log_dir = os.path.dirname(log_path)
+        if not os.path.exists(log_dir):
+            os.makedirs(log_dir, exist_ok=True)
+        first_pattern, first_reason = matched_patterns[0]
+        # JSON 정합 박제
+        record = json.dumps({
+            "ts": TS,
+            "tool": "Bash",
+            "pattern": first_pattern[:120],
+            "command": command[:300],
+            "reason": first_reason[:200]
+        }, ensure_ascii=False)
+        with open(log_path, "a") as lf:
+            lf.write(record + "\n")
+    except Exception:
+        pass  # 로깅 실패 박제 차단 박제 영향 박제 X
 
 warning_reasons = []
 for pattern, reason in WARNINGS:

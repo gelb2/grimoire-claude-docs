@@ -67,9 +67,24 @@ case "$FILE_PATH" in
   *grimoire-web/src/*) EXPECTED_AGENT="grimoire-web" ;;
   *grimoire-web/docs/*) EXPECTED_AGENT="grimoire-web" ;;
   *grimoire-web/app/*) EXPECTED_AGENT="grimoire-web" ;;
-  *.claude/skills/*) EXPECTED_AGENT="grimoire-server" ;;
-  *.claude/scripts/sensor-*) EXPECTED_AGENT="grimoire-server" ;;
-  *.claude/scripts/pretooluse-*) EXPECTED_AGENT="grimoire-server" ;;
+  # .claude/ 하네스 영역 — grimoire-infrastructure (사용자 명시 2026-05-08)
+  *.claude/skills/*) EXPECTED_AGENT="grimoire-infrastructure" ;;
+  *.claude/scripts/sensor-*) EXPECTED_AGENT="grimoire-infrastructure" ;;
+  *.claude/scripts/pretooluse-*) EXPECTED_AGENT="grimoire-infrastructure" ;;
+  *.claude/scripts/incident-log*) EXPECTED_AGENT="grimoire-infrastructure" ;;
+  *.claude/scripts/stop-*) EXPECTED_AGENT="grimoire-infrastructure" ;;
+  *.claude/scripts/check-*) EXPECTED_AGENT="grimoire-infrastructure" ;;
+  *.claude/scripts/skill-*) EXPECTED_AGENT="grimoire-infrastructure" ;;
+  *.claude/scripts/post-*) EXPECTED_AGENT="grimoire-infrastructure" ;;
+  *.claude/scripts/user-*) EXPECTED_AGENT="grimoire-infrastructure" ;;
+  *.claude/scripts/pre-*) EXPECTED_AGENT="grimoire-infrastructure" ;;
+  *.claude/scripts/loop-detection-tracker*) EXPECTED_AGENT="grimoire-infrastructure" ;;
+  *.claude/scripts/posttooluse-*) EXPECTED_AGENT="grimoire-infrastructure" ;;
+  *.claude/scripts/subagent-*) EXPECTED_AGENT="grimoire-infrastructure" ;;
+  *.claude/scripts/instructions-*) EXPECTED_AGENT="grimoire-infrastructure" ;;
+  *.claude/scripts/generate-*) EXPECTED_AGENT="grimoire-infrastructure" ;;
+  *.claude/scripts/statusline*) EXPECTED_AGENT="grimoire-infrastructure" ;;
+  *.claude/settings.json*) EXPECTED_AGENT="grimoire-infrastructure" ;;
   *eval/tasks*) EXPECTED_AGENT="grimoire-qa" ;;
   *eval/scripts/*) EXPECTED_AGENT="grimoire-qa" ;;
   *reports/QA_REPORT*) EXPECTED_AGENT="grimoire-qa" ;;
@@ -140,7 +155,7 @@ except Exception:
 print(last_user[:1000])
 PYEOF
 )
-  if echo "$LAST_USER_MSG" | grep -qE "agent로|위임|처리해|진행해|메인 직접|직접 Edit|직접 작업"; then
+  if echo "$LAST_USER_MSG" | grep -qE "agent로|위임|처리해|진행해|메인 직접|직접 Edit|직접 작업|박아|박아버려|박제해"; then
     USER_DELEGATION_OK=1
   fi
 fi

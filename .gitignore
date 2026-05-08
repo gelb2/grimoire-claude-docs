@@ -39,6 +39,8 @@ reports/VISUAL_CANON_REPORT.md
 .claude/state/
 # 예외: incident-log.jsonl은 시계열 박제 (Mitchell Ghostty 패턴, 2026-05-06 사용자 명시)
 !.claude/state/incident-log.jsonl
+# 예외: main-blocked-log.jsonl 시계열 박제 (사용자 명시 2026-05-08 "메인 권한 박아버려")
+!.claude/state/main-blocked-log.jsonl
 
 # ──────────────── git worktree 격리 (worktree-isolation skill, HARNESS §8.10)
 .worktrees/

@@ -59,7 +59,7 @@ model: opus
 
 ## 2. 책임 영역 매트릭스
 
-### 메인 책임 (본 에이전트가 직접 진행)
+### 인프라 운영 (기존, 본 에이전트가 직접 진행)
 
 | 영역 | 명령 | 검증 |
 |---|---|---|
@@ -72,6 +72,26 @@ model: opus
 | prod DB 마이그레이션 검증 | `prisma migrate status` 또는 `prisma migrate deploy` | **사용자 prod 명시 매번** |
 | Cron job 모니터링 | `az containerapp logs show ... | grep [JobName]` | logs 직접 박제 |
 
+### 하네스 시스템 (추가, 사용자 명시 2026-05-08 "메인 권한 박아버려")
+
+본 에이전트가 직접 진행 — 메인 Claude 자율 무시 차단 강제:
+
+| 영역 | 파일 패턴 | 책임 |
+|---|---|---|
+| PreToolUse hook | `.claude/scripts/pretooluse-*` | Edit/Write/Bash 자동 차단 |
+| Sensor scripts | `.claude/scripts/sensor-*` | 검증 sensor (deploy-health, env-secret 등) |
+| Incident log | `.claude/scripts/incident-log*` | incident 박제 강제 |
+| Stop hook | `.claude/scripts/stop-*` | 세션 종료 게이트 |
+| Check scripts | `.claude/scripts/check-*` | 사전 검증 |
+| Skill helpers | `.claude/scripts/skill-*` | Skill 자동 주입 |
+| Post hooks | `.claude/scripts/post-*` | PostToolUse 자동 검증 |
+| User prompt hooks | `.claude/scripts/user-*` | UserPromptSubmit 게이트 |
+| Pre hooks | `.claude/scripts/pre-*` | PreCompact 등 |
+| Skill 정의 | `.claude/skills/*` | Skill 본체 (SKILL.md + 부수자료) |
+| settings.json | `.claude/settings.json` | hook 등록 |
+
+**중요**: `.claude/agents/*` 와 `.claude/AGENTS.md` 는 메타 영역 — 메인 Claude 직접 진행 가능 박제 (본 에이전트 책임 외).
+
 ### 사용자 명시 영역 (본 에이전트 차단)
 
 | 영역 | 사용자 명시 키워드 |
@@ -82,6 +102,12 @@ model: opus
 | main per-repo 머지 | `claude-docs/server/web main 머지 진행` |
 | GitHub Actions workflow 활성화 | 사용자 합의 4/18 위반 — **영구 차단** |
 | 다른 세션 진행 중인 인프라 변경 | 사용자 명시 정합 검증 후 |
+
+### 절대 금지 (정합 유지)
+
+- `grimoire-server/src/*` / `grimoire-web/src/*` (도메인 코드) — server/web agent 영역
+- `prisma migration` 실 변경 — server agent 영역 (단, 검증 명령은 본 에이전트 가능)
+- 작가 콘텐츠 (소설 원문)
 
 ---
 
