@@ -1284,6 +1284,82 @@ auditLog.log(
 
 ---
 
+## 21. InfraMutationGuard (.claude 도메인 — 인프라 변경 안전망)
+
+**위치**:
+- Skill: `.claude/skills/infra-mutation-guard/SKILL.md` (다른 세션 5/6 박제, disable-model-invocation:true)
+- Skill: `.claude/skills/rollback-revision/SKILL.md` (다른 세션 5/6 박제, destructive infra)
+- Sensor: `.claude/scripts/sensor-deploy-health.sh` (INFRA-1 신설, 5 검증)
+- Sensor: `.claude/scripts/sensor-azure-env-secret.sh` (INFRA-1 신설, 8 시크릿 + PUBLIC_API_BASE_URL + Polar env 14건 검증)
+
+**적용**: Azure Container Apps 인프라 변경 (image / env / secret / revision activate-deactivate) 직전·직후 health 자동 검증 + 운영 환경 미검증 패턴 차단. PAY-P1-1+P1-3+EMAIL-P0-3+다른 세션 #10_8 §0 거짓 검증 매트릭스 회고 정합.
+
+### 트리거 (skill)
+
+```yaml
+triggers:
+  - "az containerapp update"
+  - "az containerapp set-env-vars"
+  - "az containerapp secret set"
+  - "az containerapp revision activate"
+  - "main 머지 진행"
+  - "prod 배포"
+  - "Container Apps 변경"
+  - "rollback"
+  - "revision 회복"
+```
+
+### sensor-deploy-health 검증 영역 (5건)
+
+1. 신규 revision HealthState=Healthy
+2. Traffic=100%
+3. RunningState (RunningAtMaxScale / Running / ScaledToZero / Activating 분기)
+4. curl public endpoint HTTP 200/307
+5. startup time ≤120s (Cloudflare 524 회피)
+
+Exit codes: 0 PASS / 1 WARN (Activating/ScaledToZero) / 2 FAIL (Healthy != true 또는 Failed)
+
+### sensor-azure-env-secret 검증 영역 (14건)
+
+8 시크릿 secretRef 매트릭스:
+- DATABASE_URL / JWT_SECRET / RECAPTCHA_SECRET_KEY / ANTHROPIC_API_KEY / OPENAI_API_KEY / POLAR_ACCESS_TOKEN / POLAR_WEBHOOK_SECRET / AZURE_STORAGE_ACCOUNT_KEY
+
+추가 env 박제 검증:
+- **PUBLIC_API_BASE_URL** (dev 153 ActivationFailed 회귀 차단 핵심)
+- POLAR_SERVER + POLAR_ORGANIZATION_ID + POLAR_PRODUCT_BASIC/POPULAR/BEST (Polar 정합)
+- CORS_ORIGIN (BFF 정합)
+
+### 정책
+
+- **인프라 변경 직전 health snapshot 강제** (infra-mutation-guard skill Step 1)
+- **변경 후 3-stage polling** (10s/30s/60s)
+- **Failure 검출 시 자동 rollback 권고** (rollback-revision skill 호출)
+- **운영 환경 검증 필수** (코드 spec PASS만으로 "검증 완료" 보고 차단)
+- **PUBLIC_API_BASE_URL 누락 = startup fail** — sensor 강제 검증
+
+### 처리 흐름 (배포 직전 → 직후)
+
+1. `infra-mutation-guard` skill Step 1: pre-mutation health snapshot 박제 + last_healthy_revision 식별
+2. mutation 실행 (사용자 명시 명령)
+3. Step 3 polling 3-stage: 10s/30s/60s 후 신규 revision health 검증
+4. `sensor-deploy-health` 자동 호출 (5 검증)
+5. `sensor-azure-env-secret` 자동 호출 (14 검증)
+6. Failure 시 `rollback-revision` skill 즉시 호출 권고
+
+### 변경 시 동시 갱신 대상
+
+- `.claude/skills/infra-mutation-guard/SKILL.md` (이미 박제)
+- `.claude/skills/rollback-revision/SKILL.md` (이미 박제)
+- `.claude/scripts/sensor-deploy-health.sh` (INFRA-1 신설)
+- `.claude/scripts/sensor-azure-env-secret.sh` (INFRA-1 신설)
+- `eval/tasks/regression-65-infra-mutation-guard.json` (INFRA-1 신설)
+- `reports/sprint-infra-1-mutation-guard-progress.md` (Sprint progress)
+
+### 변경 이력
+- 2026-05-08 INFRA-1: 신설 — prod revision 97 ActivationFailed 사고 직후 사용자 분노 정합 ("다 고쳐놔"). sensor-deploy-health + sensor-azure-env-secret 신설. **즉시 가치 입증**: sprint 신설 30초 후 prod PUBLIC_API_BASE_URL 누락 정확 검출 (revision 97 Failed 사유 정확 진단). 정본: `reports/sprint-infra-1-mutation-guard-progress.md`.
+
+---
+
 ## 변경 시 절차 (책 Ch 16 충돌 2번 해결책)
 
 agent A가 인터페이스 변경 시:
