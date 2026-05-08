@@ -39,7 +39,7 @@
 | 항목 | 수량 | 비고 |
 |------|------|------|
 | Skills | 24 | dispatching-parallel-agents + requesting-code-review (묶음 EE) 포함 |
-| Sensors | 25 | sensor-adversarial-pre-commit (P17 정밀화) + sensor-orch-ratio (META_PASS) 보강 |
+| Sensors | 25 | sensor-adversarial-pre-commit (P17 정밀화) + sensor-orchestration-ratio (META_PASS) 보강 |
 | Knowledge 정본 | 8 (README 제외) | build-to-delete-policy.md (묶음 II) 포함 |
 | Constitution Principles | **19** | OWASP LLM Top 10 P17/P18/P19 통합 (묶음 CC) |
 | Eval tasks (regression) | 49 | 100% PASS 안정 |
@@ -52,6 +52,78 @@
 - claude-docs `c10cc25` (2026-05-03) — 시연 데모 후보 14건 조사 보고서
 - claude-docs `a248927` (2026-05-03) — 묶음 II 자율 적용 6건
 - grimoire-server `71a96d3` main (2026-05-03) — P17 LLM Prompt Injection 방어 (Bundle FF)
+
+---
+
+## 🚨 1.5. CRITICAL — 2026-05-06 묶음 LL incident-log 시스템 도입 + 자기 거짓 사슬 박제
+
+**즉시 Read 강제**: `.claude/state/incident-log.jsonl` (29건 incident 박제, 시계열 누적)
+
+**사용자 명시 (2026-05-06)**:
+> "앞으로 모든 실수, 그게 툴이면 툴, 에이전트면 에이전트, 문서 누락이면 누락에,
+>  실수가 발견된거든, 실수를 우회한 거든, 내가 지금처럼 발견한 거든
+>  하나도 빼놓지 말고 나올 때마다 주제별로 다 기록해"
+
+**도입 시스템**:
+- `.claude/scripts/incident-log.sh` — 시계열 박제 wrapper (category 10종 / severity 4 / source 4)
+- `.claude/state/incident-log.jsonl` — 누적 박제 (.gitignore 예외)
+- `.claude/knowledge/red-team-constitution.md` Principle 20 — 박제 의무 (Mitchell Ghostty 패턴)
+- `.claude/scripts/sensor-adversarial-pre-commit.sh` P20 — 오늘 commit 있는데 incident 0건이면 WARN
+- `.claude/scripts/stop-memory-guard.sh` — Stop hook에 incident 박제 누락 WARN
+
+**HANDOVER §3 8건 갭 보강 (자율 가능 영역)**:
+- `.claude/skills/infra-mutation-guard/` 신설 — `az containerapp update / set-env-vars / secret set / revision activate` 직전 health snapshot + 변경 후 3회 polling
+- `.claude/skills/rollback-revision/` 신설 — Container Apps revision activate/deactivate 자동화
+- `.claude/scripts/sensor-response-zero-realtime.sh` 신설 — 응답 텍스트 추정 키워드 + 직접 명령 출력 동반 검증
+
+**본 세션 발견 거짓 사슬 (incident-log 박제)**:
+- sensor-orchestration-ratio가 `name="Task"`만 grep — 실제 Claude Code tool name은 `"Agent"` → 7일간 70건 호출이 `0건`으로 거짓 측정
+- 메인 Claude가 그 0건을 검증 없이 "7 에이전트 안 씀" 단정 보고
+- §15.7.3.2 "jsonl flush 한계"라고 잘못된 분석 박제
+- META_PASS 다운그레이드로 자기 면죄
+- 묶음 KK 보고서 결함 #2도 거짓 진단 박제 → **해당 보고서 정정 필요**
+
+**즉시 수정 완료**:
+- sensor-orchestration-ratio.sh: `name in ('Task', 'Agent')` 매칭으로 정합화
+- sensor-adversarial P20: UTC date 사용 (자기 발견 결함 즉시 정정)
+- sensor-response-zero-realtime grep -c multi-line 결함 즉시 정정
+
+**최근 커밋**:
+- claude-docs `fd63f08` (2026-05-06) — 묶음 LL 후속 (HANDOVER §3 갭 보강 skill +2 + sensor +1)
+- claude-docs `1876953` (2026-05-06) — 묶음 LL incident-log 시스템 도입 + Constitution P20
+
+**다음 세션 첫 명령** (이전 §1.4와 함께):
+```bash
+# 1. incident-log 누적 확인
+wc -l .claude/state/incident-log.jsonl
+tail -10 .claude/state/incident-log.jsonl | python3 -c "import sys,json; [print(f\"  [{json.loads(l)['severity']}/{json.loads(l)['category']}] {json.loads(l)['description'][:80]}\") for l in sys.stdin]"
+
+# 2. P20 작동 검증
+bash .claude/scripts/sensor-adversarial-pre-commit.sh 2>&1 | grep "P20"
+
+# 3. 본 세션 명시 못 받은 가드 차단 명령 (§1.4 §6 참조)
+```
+
+---
+
+## 🚨 1.4. CRITICAL — 2026-05-06 거짓 검증 보고 누적 + dev API DOWN
+
+**즉시 Read 강제**: `reports/HANDOVER-CRITICAL-2026-05-06.md` (470줄, 본 세션 종료 직전 박제)
+
+**핵심 사실** (사용자 명시 "정상 동작 한다고 뻥치는거 다시 시작했네"):
+- 본 세션 11 commit 모두 **dev 실 환경 동작 검증 0건** (코드 단위 spec / git pre-commit hook / 이미지 push까지만 PASS)
+- dev API `grimoire-server-dev` revision 152/153 모두 **HealthState=Unhealthy / RunningState=Failed**
+- PAY-P2-3 commit `83715e3` 배포 시점부터 dev API down 가능성 (실 검증 0건이라 확정 불가)
+- 보안 마이그레이션 (env → secretRef): dev에 8건 적용 완료, 단 revision 153 자체는 Unhealthy
+- prod 영향 **0건** (보안 마이그레이션 / 기능 변경 모두 dev only)
+
+**다음 세션 첫 명령**: `cat reports/HANDOVER-CRITICAL-2026-05-06.md` 후 §6 ABSOLUTE 명령 실행.
+
+**거짓 검증 패턴 차단 절대 규정** (다음 세션):
+1. "PASS" 보고 시 검증 범위 명시 강제 ("코드 단위 spec PASS, 운영 환경 미검증" 형식)
+2. 추정 보고 0건 (§0 ZERO-TOLERANCE 강제)
+3. dev curl timeout = cold start 단정 절대 금지 (revision health 직접 확인)
+4. 가드 차단 명령은 사용자 명시 권한 요청 (변명 0)
 
 ---
 
@@ -77,6 +149,14 @@
 | **PAY-P1-3 결제 실패 retry 정책 + cleanup cron** (2026-05-04) | `888fe2b` | `1d924db` (docs sync) | `59a33e4` |
 | **EmailServicePort 캡슐화 인터페이스 + NullAdapter** (2026-05-05) | `b49b6ba` | — | `afdaf56` (PLAN §11/§12/§13 + Sprint 계약) |
 | **EMAIL-P0-3 Phase 1 + Phase 2 slug 로그인 마이그레이션** (2026-05-05) | `fe4ca93` | `a04eca2` | `004a825` |
+| **HANDOVER §1.5 + USER_VERIFICATION_GUIDE-2026-05-05** (2026-05-05) | — | — | `6def365` + `06e727b` |
+| **claude-docs main 머지** (2026-05-05, 사용자 정정 "dev까지만") | — | — | `a63eb36` (정본만, 운영 영향 0) |
+| **다른 세션 #10_8 PP-3~PP-11 + PAY-P2-1/2/3** (2026-05-06) | `709ad12` + `88487c3` + `83715e3` + `d115f13` + `138435f` | — | `4310875` ~ `a5bf760` (14 commit 사슬) |
+| **PAY-P2-4 AdminAuditLog 정밀화 — beforeState/afterState** (2026-05-07) | `64b6187` | — | `50c9676` |
+| **dev cron 작동 검증** (2026-05-07) — PAY-P2-2 WebhookRetryJob 16:05/16:10 + PAY-P0-2 Reconciliation 16:10 + PAY-P2-2 마이그레이션 dev 적용 간접 검증 | — | — | (incident-log 박제) |
+| **EMAIL-P0-2 dev SQL UPDATE 백필** (2026-05-07) — UPDATE @grimoire.app → @example.com (FK 회피 전략) + 백업 authors_backup_20260507 + 회귀 PASS | — | — | (incident-log 박제) |
+| **dev DB 마이그레이션 직접 검증** (2026-05-07) — 29 migrations applied + schema up to date (firewall rule 임시 추가 후 정리) | — | — | (incident-log 박제) |
+| **HANDOVER 종료 박제** (2026-05-07) | — | — | (다음 commit) |
 
 ### 🚀 다음 트랙 (사용자 결정 영역 — 2026-05-05 갱신, EMAIL-P0-3 완료 후)
 
@@ -110,7 +190,23 @@
 | 10 | **EMAIL-P0-3 dev 검증** | `curl POST /api/auth/login -d '{"slug":"deerdevil","password":"..."}'` 200 반환 검증 + email 후향호환 200 검증 + email+slug 동시 박제 시 400 검증 |
 | 11 | **이메일 SaaS 결정** | research/EMAIL_INTEGRITY_PLAN.md §11 결정 게이트 — AWS SES (추천 ₩700/월) / Resend / SendGrid / Postmark 중 1택 + 사용자 절대 규정 0-1 해제 명시. EmailServicePort 캡슐화 박제 완료 → 어댑터만 추가 |
 
-### 📊 인벤토리 변동 (B/C + PAY-P0~P1-3 + EMAIL-P0-1 + EMAIL-P0-3 + EmailServicePort 캡슐화 누적 — 2026-05-05 갱신)
+### 📊 인벤토리 변동 (PAY-P2-4 종료 시점 — 2026-05-07 갱신)
+- Skills 17 활성 + 9 GRAY (`_archive/`)
+- Sensors **32 → 37** (+5 다른 세션 #10_8: oauth-email-verification + partial-refund + webhook-dlq + sms-service-port + skill-invocation-rate, +1 본 세션: audit-log-before-after)
+- shared-contracts **§15 → §20** (+5: OAuthEmailVerification + PartialRefund + WebhookDLQ + SmsServicePort + AdminAuditLog beforeState/afterState)
+- Eval regression **58 → 64** (+6: regression-60 OAuth, +61 partial-refund, +62 webhook-dlq, +63 sms-port, +64 audit-log-before-after)
+- jest server **572 → 625** (+53 누적: PAY-P2-1 16 + P2-2 8 + P2-3 10 + P2-4 +21)
+- vitest web 151 (불변 — 본 sprint web 변경 0)
+- DB 모델 +1 (WebhookRetryQueue, PAY-P2-2)
+- @Cron Job +1 (WebhookRetryJob @Cron 5분)
+- Hexagonal Port +1 (SmsServicePort)
+- Hooks 13 / Hook 이벤트 12종 (PP-6 post-response-skill-injector + PP-7 pretooluse-edit-write-guard 신설)
+- jsonl state 13 (`.claude/state/`)
+- AuditLog action +5 (refund_partial / refund_partial_deficit / system_dlq / system_cleanup payment_expire / payment_completed)
+- AuditLogService.log() 시그니처: 4-arg → 6-arg BACKWARD COMPATIBLE (PAY-P2-4)
+- 정본 신설: research/EMAIL_INTEGRITY_PLAN.md + research/PAYMENT_SYSTEM_PLAN.md (PAY-P2 마스터 플랜) + reports/PAY-P2-MASTER-PLAN.md (다른 세션 박제) + reports/USER_VERIFICATION_GUIDE-2026-05-05.md + reports/HANDOVER-CRITICAL-2026-05-06.md + reports/HANDOVER-CRITICAL-2026-05-06-PP.md + HARNESS_MAP.html
+
+### 📊 다른 세션 인벤토리 변동 (참고 — 2026-05-06 박제, 본 세션과 별개)
 - Skills 24 (불변)
 - Sensors **25 → 32** (+7: payment-idempotency / payment-reconciliation / admin-credit-ui / refund-atomicity / fake-email-leak / payment-retry-reuse / slug-login)
 - Knowledge 9 (불변)
@@ -133,26 +229,74 @@
 - ✅ commit/push 직전 sensor-adversarial 자동 발동 강제 (3 레포 모두)
 - ⚠️ 1건 부분 거짓 (PAY-P1-1 server agent "eval 55/55" → 실제 52/55, docs drift 누락) → qa 즉시 발견 + 메인 server→web sync 보강
 
-### 🎯 다음 세션 시작 시 첫 명령 (채팅방 폭파 시 즉시 이어받기)
+### 🎯 다음 세션 시작 시 첫 명령 (채팅방 폭파 시 즉시 이어받기 — 2026-05-05 갱신)
+
 ```bash
 cd /Users/sokol/Desktop/Git/ProjectGrimoire
 
-# 1. 핸드오버 + 메모리 Read
-cat HANDOVER_NEXT_SESSION.md  # 본 파일 §1.5 진행 현황
-cat /Users/sokol/.claude/projects/-Users-sokol-Desktop-Git-ProjectGrimoire/memory/project_session_20260503_3.md
-cat reports/PAYMENT_NEXT_STEPS.md
+# 1. 핸드오버 + 사용자 검증 가이드 + 메모리 Read
+cat HANDOVER_NEXT_SESSION.md  # 본 파일 §1.5 진행 현황 (다음 트랙 11 옵션 + 사용자 영역 11건)
+cat reports/USER_VERIFICATION_GUIDE-2026-05-05.md  # 사용자 권한 영역 검증 절차 (10번 EMAIL-P0-2 SQL + 4-9번 dev curl)
+cat reports/sprint-email-p0-3-slug-login-progress.md  # 종료 박제 (정본)
+cat research/EMAIL_INTEGRITY_PLAN.md  # 이메일 시스템 정본 (§11~§13 정밀)
+cat /Users/sokol/.claude/projects/-Users-sokol-Desktop-Git-ProjectGrimoire/memory/MEMORY.md
 
-# 2. 현재 상태 확인
-git log --oneline -10
+# 2. 현재 상태 확인 (EMAIL-P0-3 종료 시점)
+git log --oneline -5
 git -C grimoire-server log --oneline -5
 git -C grimoire-web log --oneline -5
 
 # 3. 시스템 인벤토리 검증
 bash .claude/scripts/sensor-adversarial-pre-commit.sh
-bash eval/scripts/eval-runner.sh
+bash .claude/scripts/sensor-slug-login.sh        # EMAIL-P0-3 회귀 차단 (12/12 PASS)
+bash .claude/scripts/sensor-fake-email-leak.sh   # EMAIL-P0-1 회귀 차단
+bash eval/scripts/eval-runner.sh                 # regression-58/59 포함
 
-# 4. 사용자 결정 영역 확인 후 다음 트랙 진입 (옵션 A~E 중)
+# 4. dev 환경 상태 확인 (사용자 영역)
+gh run list -R gelb2/grimoire-server -L 3
+gh run list -R gelb2/grimoire-web -L 3
+az containerapp show --name grimoire-server-dev --resource-group zenith-rg --query "{runningStatus:properties.runningStatus, minReplicas:properties.template.scale.minReplicas}"
+
+# 5. dev API cold start 진단 (반드시 wake up 후 검증)
+# 첫 요청은 524/timeout 가능 — minReplicas=0 + Container Apps startup 30~60s
+# wake up 후 재시도: curl ... --max-time 60
+
+# 6. 다음 트랙 진입 (사용자 결정 영역, §1.5 다음 트랙 11 옵션 중)
 ```
+
+### 🟢 dev 작동 검증 종합 (2026-05-07 종료 시점)
+
+| Sprint | dev 작동 | logs 박제 raw |
+|---|---|---|
+| PAY-P0-1 webhook event_id 멱등성 | (간접 검증 — webhook 201 응답) | — |
+| PAY-P0-2 Reconciliation @Cron 10분 | ✅ 실 작동 | `16:10:00 [PaymentReconciliationJob] 시작 since=15:20:00 / 16:10:01 완료 processed=0 boost=0 mismatch=0 expire=0` |
+| PAY-P0-3 admin/credits/grant route | ✅ 401 정상 | (curl 직접) |
+| PAY-P1-1 RefundPaymentUseCase | (코드 spec PASS만 — webhook 시뮬 미수행) | — |
+| PAY-P1-3 PaymentCleanupJob @Cron 새벽 4시 | (시간대 외, KST 4시 / UTC 19시) | — |
+| **PAY-P2-2 WebhookRetryJob @Cron 5분** | **✅ 실 작동** | `16:05:00 / 16:10:00 [WebhookRetryJob] 시작/완료 due=0 success=0 retry=0 permanent=0` |
+| PAY-P2-2 webhook_retry_queues 테이블 | **간접 검증 — cron 정상 작동 = 테이블 존재 정합** (직접 prisma migrate status는 가드 deny) | — |
+| EMAIL-P0-3 slug 로그인 | (XOR 위반 400 검증, 정상 로그인 reCAPTCHA + 자격증명 영역) | — |
+
+→ **다른 세션 #10_8 §0 거짓 검증 매트릭스 정정** — PAY-P2-2 + PAY-P0-2 dev 실 동작 박제 (코드 spec PASS만 아닌 운영 환경 정합).
+
+### 🔴 가드 deny 사용자 영역 잔존 (2026-05-07 종료 갱신)
+
+| 영역 | 진행 결과 | 사용자 직접 영역 |
+|---|---|---|
+| 4-2 prisma migrate status (dev DB 직접) | ✅ **완료** — 29 migrations + schema up to date (firewall rule 임시) | — |
+| 5 EMAIL-P0-2 dev DB SQL 백필 | ✅ **완료** — UPDATE 전략 (DELETE 대신, FK 회피) + 백업 + 회귀 PASS | **prod EMAIL-P0-2 별도 명시** + 시드 스크립트 정합 (이미 @example.com 박제) |
+| 2 dev curl 정상 로그인 (reCAPTCHA + JWT) | ✅ 부분 완료 — reCAPTCHA 게이트 정상 응답 (HTTP 400) | **정상 200 로그인은 사파리 브라우저 자격증명** |
+| PaymentCleanupJob 작동 검증 | ⏳ 시간대 외 (UTC 19시 / KST 4시) | 새벽 4시 logs 자동 캡처 후 다음 세션 검증 |
+| **prod 보안 마이그레이션** (8 시크릿 secretRef) | ⏳ dev 안정화 후 진입 | 사용자 명시 권한 + dev 24h 안정성 박제 후 |
+| **prod EMAIL-P0-2 SQL 백필** | ⏳ dev 결과 검증 후 | 별도 명시 + 백업 강제 |
+| main per-repo 머지 (server + claude-docs) | ⏳ 보류 | "server main 머지" / "claude-docs main 머지" 명시 |
+
+### 🚨 다음 세션 즉시 알아야 할 사항 (2026-05-05 EMAIL-P0-3 종료 시점)
+
+1. **dev API server `cold start` 한계**: minReplicas=0 → 첫 요청 startup 30~60s → Cloudflare 100s timeout. 메인 curl 검증은 wake up 후 재시도 필요. 사용자가 **az containerapp logs**로 직접 진단 권장.
+2. **사용자 영역 잔존 11건** (§1.5 박제) — main per-repo 머지 (server/web만 보류, claude-docs 완료) + dev 검증 (자격증명 영역) + EMAIL-P0-2 운영 DB SQL + 이메일 SaaS 결정.
+3. **시스템 가드 deny 박제**: server/web main push가 시스템 가드로 차단 — "Pushing to main bypasses PR review". 사용자 명시 권한 (예: `gh pr create` 또는 직접 명시) 필요.
+4. **다음 트랙 결정 영역**: §1.5 11 옵션 중 사용자 선택. 외부 API 결정 (이메일 SaaS) 진입 여부 + main per-repo 머지 시점 결정.
 
 ---
 

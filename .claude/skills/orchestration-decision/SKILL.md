@@ -14,11 +14,23 @@ triggers:
   - "분할"
   - "오케스트레이션"
   - "메인 직접"
+  - "위임해"
+  - "어디 맡길지"
+  - "agent 골라"
 effort: low
 # trigger-mode: keyword (triggers field) — paths 미적용, 작업 분해 키워드 기반
+owner-agent: main
+owner-skill: ""
+responsibility-note: "작업 시작 시 메인 Claude의 위임 결정 (책 Ch 16 정합)"
 ---
 
 # Orchestration Decision — 메인 직접 vs subagent 위임 자동 분류
+
+## 책임 영역 (2026-05-06 묶음 PP-3 박제)
+
+- **owner**: main (메인 Claude 직접 호출만)
+- **trigger 패턴**: 작업 분해 키워드 매칭 시 본 skill의 additionalContext 주입
+- **메인 책임**: 본 skill은 메인 Claude 자체 의사결정용 — subagent 위임 X (메타 결정 도구)
 
 > **근거**: `research/HARNESS_FIELD_PATTERNS_4.md` §15.7 위임 가치 가이드라인 (2026-04-26 #9 신설). sensor-orchestration-ratio jsonl 사후 측정의 **사전 가이드** 역할. 패턴 1 KPI 추적용.
 

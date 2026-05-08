@@ -11,9 +11,25 @@ paths:
   - ".claude/agents/**"
   - ".claude/prompts/**"
   - ".claude/knowledge/**"
+triggers:
+  - "gc-sweep"
+  - "정리해"
+  - "garbage 청소"
+  - "gc"
+  - "stale 정리"
+  - "harness 청소"
+owner-agent: grimoire-server
+owner-skill: ""
+responsibility-note: "인프라 garbage collection (server 도메인)"
 ---
 
 # GC Sweep — Harness 자산 정기 청소
+
+## 책임 영역 (2026-05-06 묶음 PP-3 박제)
+
+- **owner**: grimoire-server agent (인프라·자산 청소 도메인)
+- **trigger 패턴**: 사용자 입력 키워드 매칭 시 본 skill의 additionalContext 주입 + grimoire-server agent가 명시 호출
+- **메인 책임**: 본 skill을 직접 호출 X — grimoire-server agent에 위임 후 server agent가 본 skill 활용
 
 ## 동기 (Fowler "Requisite Variety" 갭 해소)
 

@@ -76,6 +76,21 @@ if [ "$HAS_TODAY_COMMITS" = true ] && [ -f "$MEMORY_INDEX" ]; then
   fi
 fi
 
+# [4-A] incident-log.jsonl 오늘 박제 검증 (2026-05-06 사용자 명시 — Mitchell Ghostty 패턴)
+# 오늘 commit이 있는데 incident 박제 0건이면 결함 박제 누락 가능성 WARN
+INCIDENT_LOG="$PROJECT_DIR/.claude/state/incident-log.jsonl"
+TODAY_UTC=$(date -u +%Y-%m-%d)  # incident-log.sh가 UTC ts 박제하므로 정합
+if [ -f "$INCIDENT_LOG" ] && [ "$HAS_TODAY_COMMITS" = true ]; then
+  TODAY_INCIDENTS=$(grep -c "\"ts\":\"${TODAY_UTC}T" "$INCIDENT_LOG" 2>/dev/null || echo 0)
+  if [ "${TODAY_INCIDENTS:-0}" = "0" ]; then
+    echo ""
+    echo "⚠️ [ProjectGrimoire] WARN: 오늘 commit 있으나 incident-log.jsonl 박제 0건"
+    echo "   사용자 명시 (2026-05-06): 모든 실수/우회/발견 박제 의무"
+    echo "   bash .claude/scripts/incident-log.sh <category> <severity> <source> <description>"
+    echo ""
+  fi
+fi
+
 # [4] project_remaining_tasks.md 7일 이상 stale 검증 (H10 강화)
 REMAINING="$MEMORY_DIR/project_remaining_tasks.md"
 if [ -f "$REMAINING" ]; then

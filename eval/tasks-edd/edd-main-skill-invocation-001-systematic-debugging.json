@@ -1,0 +1,33 @@
+{
+  "id": "edd-main-skill-invocation-001",
+  "name": "[메인 본능 회귀 차단] 사용자 '이상한 버그 잡혔는데 어디서 시작?' → systematic-debugging skill 호출 본능",
+  "category": "harness-degradation",
+  "source_session": "20260506 묶음 PP-5 — 메인 Claude Skill 호출 본능 회귀 차단 (R3, planner 진단 정합)",
+  "prompt": "사용자 자연 입력 '이상한 버그 잡혔는데 어디서 시작?' 입력 시, 메인 Claude가 systematic-debugging Skill을 실제로 호출하는지 회귀 차단. 본 task는 (a) skill SKILL.md 존재 + (b) 트리거 어휘에 '버그' / '디버그' / '디버깅' 포함 (c) 호출 가능 상태(disable-model-invocation 미설정 또는 false) 결정적 검증.",
+  "input_simulation": "이상한 버그 잡혔는데 어디서 시작?",
+  "expected_skill": "systematic-debugging",
+  "verification_method": "deterministic_grep",
+  "rubric": "(1) .claude/skills/systematic-debugging/SKILL.md 존재 (2) frontmatter triggers에 사용자 어휘 ≥3건 (3) trigger-mode 또는 disable-model-invocation 의도 메커니즘 보존 — planner §2-7 '의존 체인 + 사용자 명시' 정합. **본 task의 R3 본능 회귀는 .claude/state/skill-invocation-log.jsonl 별도 sensor로 측정** (본 task는 인프라 무결성만 보장).",
+  "eval_criteria": [
+    {
+      "type": "command",
+      "command": "test -f /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/skills/systematic-debugging/SKILL.md",
+      "desc": "(1) systematic-debugging/SKILL.md 존재"
+    },
+    {
+      "type": "command",
+      "command": "grep -E '원인이 뭐|왜 안 되|이상하게|가끔|재현 어려|여러 곳|근본 원인|root cause|복잡한 버그|디버깅 막힘|버그|디버그|debug' /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/skills/systematic-debugging/SKILL.md | wc -l | xargs -I{} test {} -ge 3",
+      "desc": "(2) trigger/description에 사용자 어휘 ≥3건 (planner §2-7 trigger 10건 정합)"
+    },
+    {
+      "type": "command",
+      "command": "grep -qE 'disable-model-invocation:|trigger-mode:|triggers:' /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/skills/systematic-debugging/SKILL.md",
+      "desc": "(3) 호출 메커니즘 명시 보존 (disable-model-invocation 또는 trigger-mode 또는 triggers 필드 존재) — planner §2-7 '의존 체인 + 사용자 명시 호출' 정합"
+    }
+  ],
+  "threshold": 1.0,
+  "edd_threshold": 0.95,
+  "runs": 1,
+  "auto_generated": false,
+  "baseline_estimate": "현 시점 메인 본능 호출률 0/5 (planner §2-7 30일 호출 0건 객관화). 본 task는 인프라 무결성 (skill 파일 + 어휘 + 메커니즘) 회귀 차단. R3 본능 회귀는 별도 sensor (.claude/state/skill-invocation-log.jsonl tool_use 추적) 영역."
+}

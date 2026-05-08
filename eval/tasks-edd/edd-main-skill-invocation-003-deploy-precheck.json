@@ -1,0 +1,33 @@
+{
+  "id": "edd-main-skill-invocation-003",
+  "name": "[메인 본능 회귀 차단] 사용자 '배포 직전 점검해줘' → deploy-precheck skill 호출 본능",
+  "category": "harness-degradation",
+  "source_session": "20260506 묶음 PP-5 — 메인 Claude Skill 호출 본능 회귀 차단 (R3, planner 진단 정합)",
+  "prompt": "사용자 자연 입력 '배포 직전 점검해줘' 입력 시, 메인 Claude가 deploy-precheck Skill을 실제로 호출하는지 회귀 차단. 본 task는 deploy-precheck SKILL.md 존재 + '배포|deploy|점검|precheck' 어휘 매칭 결정적 검증.",
+  "input_simulation": "배포 직전 점검해줘",
+  "expected_skill": "deploy-precheck",
+  "verification_method": "deterministic_grep",
+  "rubric": "(1) .claude/skills/deploy-precheck/SKILL.md 존재 (2) trigger/description에 '배포|deploy|점검|precheck' 어휘 ≥3건 (3) 호출 메커니즘 명시 보존 — slash command `/deploy-precheck` 전용 의도 (disable-model-invocation:true) 정합. R3 본능 회귀는 별도 sensor.",
+  "eval_criteria": [
+    {
+      "type": "command",
+      "command": "test -f /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/skills/deploy-precheck/SKILL.md",
+      "desc": "(1) deploy-precheck/SKILL.md 존재"
+    },
+    {
+      "type": "command",
+      "command": "grep -E '배포|deploy|점검|precheck|sensor-secret-leak|prod' /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/skills/deploy-precheck/SKILL.md | wc -l | xargs -I{} test {} -ge 3",
+      "desc": "(2) trigger/description에 '배포|deploy|점검|precheck' 어휘 ≥3건"
+    },
+    {
+      "type": "command",
+      "command": "grep -qE 'disable-model-invocation:|triggers:|argument-hint:' /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/skills/deploy-precheck/SKILL.md",
+      "desc": "(3) 호출 메커니즘 명시 보존 (slash command `/deploy-precheck` 전용 의도)"
+    }
+  ],
+  "threshold": 1.0,
+  "edd_threshold": 0.95,
+  "runs": 1,
+  "auto_generated": false,
+  "baseline_estimate": "현 시점 0/5 (deploy-precheck는 disable-model-invocation:true 의도 설계 — `/deploy-precheck` slash 전용). 본 task는 인프라 무결성 회귀 차단."
+}

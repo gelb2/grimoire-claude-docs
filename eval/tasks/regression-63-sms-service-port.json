@@ -1,0 +1,21 @@
+{
+  "id": "regression-063",
+  "name": "sms_service_port — PAY-P2-3 사전 작업: SmsServicePort 캡슐화 (NullSmsAdapter)",
+  "category": "security",
+  "source_session": "20260505 sprint #10_7 PAY-P2-3 사전 작업 (마스터 플랜 §5 정본, EmailServicePort 패턴 차용)",
+  "prompt": "SmsServicePort 캡슐화 회귀 차단: (a) Port 인터페이스 4 메서드 (sendPaymentNotification/sendVerificationCode/isEnabled/getProviderName) (b) SmsProvider 타입 매트릭스 (null/kakao/nhn/twilio) (c) NullSmsAdapter 외부 API 0건 + PII 마스킹 (maskPhone + maskCode) (d) spec ≥7 it (실 외부 의존 0건) (e) PaymentSmsType ↔ PaymentNotificationType 정합 (f) 외부 SMS SDK import 0건 (g) sensor-sms-service-port.sh 신설 (h) shared-contracts §19 SmsServicePort 박제. 회귀 시 즉시 FAIL.",
+  "eval_criteria": [
+    {"type": "command", "command": "test -x /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/scripts/sensor-sms-service-port.sh", "desc": "sensor-sms-service-port.sh 실행 권한"},
+    {"type": "command", "command": "bash /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/scripts/sensor-sms-service-port.sh > /dev/null 2>&1", "desc": "sensor-sms-service-port PASS"},
+    {"type": "command", "command": "test -f /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/src/domain/port/outbound/sms-service.port.ts", "desc": "SmsServicePort 인터페이스 박제"},
+    {"type": "command", "command": "test -f /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/src/adapter/outbound/sms/null-sms.adapter.ts", "desc": "NullSmsAdapter 구현 박제"},
+    {"type": "command", "command": "test -f /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/src/adapter/outbound/sms/null-sms.adapter.spec.ts", "desc": "NullSmsAdapter spec 박제"},
+    {"type": "command", "command": "grep -nE 'maskPhone|maskCode' /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/src/adapter/outbound/sms/null-sms.adapter.ts > /dev/null", "desc": "PII 마스킹 메서드 박제"},
+    {"type": "command", "command": "grep -nE \"SmsProvider.*'null'.*'kakao'.*'nhn'.*'twilio'\" /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/src/domain/port/outbound/sms-service.port.ts > /dev/null", "desc": "SmsProvider 매트릭스 (null|kakao|nhn|twilio) 박제"},
+    {"type": "command", "command": "! grep -rEi \"from ['\\\"](twilio|@nhncloud|@kakao|kakao-bizmessage|aws-sdk/client-sns)\" /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/src/domain/port/outbound/sms-service.port.ts /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/src/adapter/outbound/sms/null-sms.adapter.ts 2>/dev/null", "desc": "외부 SMS SDK import 0건 (절대 규정 0-1)"},
+    {"type": "command", "command": "grep -nE '§19.*SmsServicePort|## 19\\. SmsServicePort' /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/shared-contracts.md > /dev/null", "desc": "shared-contracts §19 SmsServicePort 박제"},
+    {"type": "command", "command": "test -f /Users/sokol/Desktop/Git/ProjectGrimoire/reports/sprint-pay-p2-3-sms-service-port-progress.md", "desc": "sprint progress 보고서 박제"}
+  ],
+  "threshold": 1.0,
+  "runs": 1
+}

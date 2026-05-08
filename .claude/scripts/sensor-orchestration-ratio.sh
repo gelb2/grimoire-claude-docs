@@ -139,7 +139,7 @@ for fpath in recent:
                             main_writes += 1
                             fp = c.get('input', {}).get('file_path', '')
                             domain_counter[classify_domain(fp)] += 1
-                    elif name == 'Task' and not sidechain:
+                    elif name in ('Task', 'Agent') and not sidechain:  # 2026-05-06 INCIDENT KK': Claude Code tool name이 'Agent'로 변경됨 — 'Task'만 매칭하던 결함 → 7일간 0건 거짓 측정 → 메인 Claude 거짓 보고 사슬 유발
                         task_calls += 1
                         stype = c.get('input', {}).get('subagent_type', 'unknown')
                         stypes[stype] += 1

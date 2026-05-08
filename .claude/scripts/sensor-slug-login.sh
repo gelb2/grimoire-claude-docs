@@ -28,6 +28,9 @@
 # - 1 WARN — 일부 정책 미준수 (commit 허용)
 # - 2 FAIL — AC 미충족 (commit 차단)
 
+# sensor-log 자동 박제 (트랙 1-A 보강 — exit code 자동 매핑: 0=PASS / 1=FAIL / 2=WARN)
+trap '_rc=$?; bash "$(dirname "$0")/sensor-log.sh" "$(basename "$0" .sh)" "$_rc" "" 2>/dev/null || true' EXIT
+
 set +e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

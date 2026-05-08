@@ -117,6 +117,23 @@
 
 ---
 
+## 박제 의무 규정 (2026-05-06 사용자 명시 — Mitchell Ghostty + Cuneiform Chat 패턴)
+
+### Principle 20 — incident-log 박제 의무 (Mitchell Hashimoto Ghostty 패턴)
+> 사용자 명시 (2026-05-06): "앞으로 모든 실수, 그게 툴이면 툴, 에이전트면 에이전트, 문서 누락이면 누락에, 실수가 발견된거든, 실수를 우회한 거든, 내가 지금처럼 발견한 거든 하나도 빼놓지 말고 나올 때마다 주제별로 다 기록해"
+- **검증 sensor**: sensor-adversarial-pre-commit P20 (오늘 commit 있는데 incident 박제 0건이면 WARN)
+- **박제 도구**: `bash .claude/scripts/incident-log.sh <category> <severity> <source> <description>`
+- **카테고리**: tool / agent / sensor / hook / skill / doc / infra / response / workflow / security
+- **severity**: info / warn / error / critical
+- **source**: user / sensor / self / remote
+- **출처**:
+  - Mitchell Hashimoto Ghostty: "실수마다 규칙 1줄"
+  - Cuneiform Chat (Bikash Das): "팀의 기억"
+  - 책 V1.1 Ch 23 안티패턴 #5 "하네스 부패" 방어
+  - Anthropic Constitutional AI 자기-비판 루프 결과 박제
+
+---
+
 ## 적용 방식 (책 Ch 17 Constitutional AI 자기-비판 패턴)
 
 각 commit 직전 본 sensor가 16 principles 자동 검증:

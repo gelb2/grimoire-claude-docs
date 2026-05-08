@@ -19,6 +19,10 @@ triggers:
   - "안 된다"
   - "안 되요"
   - "느리다"
+  - "이상해"
+  - "왜 못 함"
+  - "동작 안 해"
+  - "안 보여요"
 effort: high
 trigger-mode: keyword (triggers field) — paths 미적용 명시 (NEW-16 J4 패턴)
 ---

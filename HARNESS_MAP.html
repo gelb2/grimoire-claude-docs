@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ProjectGrimoire — 하네스 관계도 v1.0</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --bg: #0a0a0f;
+    --panel: #141622;
+    --panel-deep: #0f1019;
+    --panel-ink: #08080e;
+    --border: #2a2a3a;
+    --border-soft: #1a1a2a;
+    --fg: #e0e0e0;
+    --muted: #888;
+    --dim: #555;
+    --gold: #d4a853;
+    --blue: #53a8d4;
+    --green: #53d4a8;
+    --purple: #a853d4;
+    --orange: #d47a53;
+    --cyan: #53d4d4;
+    --red: #d45353;
+    --teal: #14B8A6;
+    --mint: #5EEAD4;
+    --sepia: #c4a46a;
+    --deer-bg: #07070a;
+  }
+  body {
+    font-family: -apple-system, 'SUIT Variable', 'Pretendard', sans-serif;
+    background: var(--bg);
+    color: var(--fg);
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 40px 24px;
+    line-height: 1.6;
+  }
+  h1 { text-align: center; font-size: 1.6rem; margin-bottom: 8px; color: #fff; font-weight: 700; }
+  .subtitle { text-align: center; font-size: 0.85rem; color: var(--muted); margin-bottom: 8px; }
+  .updated { text-align: center; font-size: 0.75rem; color: var(--dim); margin-bottom: 8px; }
+  .truth { text-align: center; font-size: 0.72rem; color: #6a6a8a; margin-bottom: 32px; font-style: italic; }
+  .truth code { background: var(--border-soft); padding: 2px 6px; border-radius: 4px; color: #8aa8d4; font-family: 'SF Mono', 'JetBrains Mono', monospace; }
+
+  .toc {
+    background: var(--panel-deep);
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--mint);
+    padding: 16px 24px;
+    margin: 24px 0 32px;
+    border-radius: 8px;
+  }
+  .toc strong { color: var(--mint); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.16em; display: block; margin-bottom: 10px; }
+  .toc ol { margin: 0; padding-left: 20px; columns: 2; column-gap: 32px; }
+  .toc li { margin-bottom: 4px; font-size: 0.82rem; color: var(--muted); break-inside: avoid; }
+  .toc a { color: #8aa8d4; text-decoration: none; }
+  .toc a:hover { color: var(--mint); text-decoration: underline; }
+
+  h2 {
+    font-size: 1.1rem;
+    margin-top: 56px;
+    margin-bottom: 8px;
+    color: #fff;
+    border-left: 3px solid var(--mint);
+    padding-left: 12px;
+    font-weight: 600;
+  }
+  h2 + p.desc { font-size: 0.82rem; color: var(--muted); margin: 0 0 16px 15px; }
+  h3 {
+    font-size: 0.92rem;
+    margin-top: 24px;
+    margin-bottom: 10px;
+    color: var(--gold);
+    font-weight: 600;
+  }
+
+  .mermaid {
+    background: var(--panel-deep);
+    padding: 24px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    margin: 16px 0;
+    overflow-x: auto;
+    text-align: center;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.78rem;
+    background: var(--panel);
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    margin: 16px 0;
+  }
+  th {
+    background: var(--panel-ink);
+    color: var(--mint);
+    padding: 10px 14px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    border-bottom: 1px solid var(--border);
+  }
+  td { padding: 10px 14px; border-bottom: 1px solid var(--border-soft); color: var(--fg); }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--panel-ink); }
+  td.center { text-align: center; }
+  td code { color: #8aa8d4; background: var(--border-soft); padding: 2px 6px; border-radius: 4px; font-size: 0.9em; }
+  td.gray { color: var(--dim); }
+  td.archived { color: var(--dim); text-decoration: line-through; opacity: 0.6; }
+
+  code {
+    background: var(--border-soft);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: 'SF Mono', 'JetBrains Mono', monospace;
+    font-size: 0.88em;
+    color: #8aa8d4;
+  }
+
+  .info-box {
+    border: 1px solid #1a3b2e;
+    border-left: 3px solid var(--green);
+    background: #0f1a15;
+    padding: 14px 18px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+    font-size: 0.82rem;
+    color: var(--fg);
+  }
+  .info-box strong { color: var(--green); }
+
+  .alert-box {
+    border: 1px solid #3b2418;
+    border-left: 3px solid var(--orange);
+    background: #1a1410;
+    padding: 14px 18px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+    font-size: 0.82rem;
+    color: var(--fg);
+  }
+  .alert-box strong { color: var(--orange); }
+
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 12px;
+    margin: 16px 0;
+  }
+  .kpi-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--mint);
+    border-radius: 8px;
+    padding: 14px 18px;
+  }
+  .kpi-card .kpi-label { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.12em; color: var(--mint); margin-bottom: 6px; }
+  .kpi-card .kpi-value { font-size: 1.4rem; color: #fff; font-weight: 700; margin-bottom: 4px; }
+  .kpi-card .kpi-desc { font-size: 0.72rem; color: var(--muted); }
+
+  .donut-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 8px;
+    margin: 14px 0;
+  }
+  .donut-cat {
+    background: var(--panel);
+    border-left: 3px solid var(--blue);
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 0.78rem;
+  }
+  .donut-cat strong { color: var(--blue); display: block; margin-bottom: 4px; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.1em; }
+  .donut-cat.security { border-left-color: var(--red); }
+  .donut-cat.security strong { color: var(--red); }
+  .donut-cat.domain { border-left-color: var(--gold); }
+  .donut-cat.domain strong { color: var(--gold); }
+  .donut-cat.meta { border-left-color: var(--purple); }
+  .donut-cat.meta strong { color: var(--purple); }
+  .donut-cat.verify { border-left-color: var(--green); }
+  .donut-cat.verify strong { color: var(--green); }
+  .donut-cat.ops { border-left-color: var(--cyan); }
+  .donut-cat.ops strong { color: var(--cyan); }
+
+  .badge {
+    display: inline-block;
+    font-size: 0.62rem;
+    padding: 2px 8px;
+    border-radius: 10px;
+    margin-left: 6px;
+    font-weight: 500;
+  }
+  .badge-active { background: #1a3b2e; color: var(--green); }
+  .badge-gray { background: #2e1a3b; color: var(--purple); }
+  .badge-archived { background: #2a2a3a; color: var(--dim); }
+  .badge-warn { background: #3b2418; color: var(--orange); }
+
+  footer {
+    margin-top: 80px;
+    padding: 24px 0;
+    border-top: 1px solid var(--border);
+    color: var(--dim);
+    font-size: 0.76rem;
+    text-align: center;
+  }
+  footer code { color: #8aa8d4; }
+</style>
+</head>
+<body>
+
+<h1>ProjectGrimoire — 하네스 관계도 v1.0</h1>
+<p class="subtitle">7 grimoire-* agent · 13 Hooks · 17 Skills + 9 GRAY · 40 Sensors · 67 Eval tasks · 책 V1.1 「하네스 엔지니어링 완전 정복」 기반</p>
+<p class="updated">최초 작성 2026-05-06 · PP-9 (사용자 명시) — DocMap에서 분리 · 자율 강제 hook 즉시 효과 + Sprint C1 KPI 박제</p>
+<p class="truth">정본은 <code>research/HARNESS_ENGINEERING.md</code> + <code>.claude/AGENTS.md</code> + <code>.claude/shared-contracts.md</code> · 이 HTML 은 시각 보조</p>
+
+<div class="toc">
+  <strong>목차</strong>
+  <ol>
+    <li><a href="#agent-topology">§1. 7 grimoire-* agent 토폴로지 (Mermaid)</a></li>
+    <li><a href="#hook-flow">§2. Hook 13건 이벤트 흐름도 (Mermaid)</a></li>
+    <li><a href="#skill-matrix">§3. Skill 17 현역 + GRAY 9 책임 매트릭스 (표)</a></li>
+    <li><a href="#sensor-distribution">§4. Sensor 40 카테고리 분포 (도넛/표)</a></li>
+    <li><a href="#auto-enforcement">§5. 자동 강제 메커니즘 흐름 (PP-6 + PP-7)</a></li>
+    <li><a href="#edd-flow">§6. EDD + LLM-as-Judge 흐름 (Mermaid)</a></li>
+    <li><a href="#kpi">§7. 본 세션 자동 강제 즉시 효과 (KPI)</a></li>
+    <li><a href="#references">§8. 정본 참조 관계</a></li>
+  </ol>
+</div>
+
+<!-- ========== §1. Agent Topology ========== -->
+<h2 id="agent-topology">1. 7 grimoire-* agent 토폴로지</h2>
+<p class="desc">메인 Claude → 7개 서브 agent (병렬 위임 가능). 점선은 인터페이스 종속 (shared-contracts 정본). 책 Ch 16 멀티에이전트 설계 정합.</p>
+
+<div class="mermaid">
+graph TD
+  Main["메인 Claude<br/>(orchestrator)"]
+  Main --> Planner["grimoire-planner<br/>기획·Sprint 계약"]
+  Main --> Researcher["grimoire-researcher<br/>경쟁사·AI 가격 모니터"]
+  Main --> CostAcct["grimoire-cost-accountant<br/>§0 마진 ≥3배 게이트"]
+  Main --> VCK["grimoire-visual-canon-keeper<br/>사슴악마 정본 수호"]
+  Main --> Server["grimoire-server<br/>NestJS Hexagonal"]
+  Main --> Web["grimoire-web<br/>Next.js FSD · 사슴악마"]
+  Main --> QA["grimoire-qa<br/>전수검사·배포 게이트"]
+
+  CostAcct -.cost-table.-> Planner
+  VCK -.visual-canon.-> Web
+  Planner -.PLANNER_REPORT.-> Server
+  Planner -.PLANNER_REPORT.-> Web
+  Server -.shared-contracts §1~13.-> Web
+  Web -.shared-contracts §1~13.-> Server
+  Server -.DEV_REPORT.-> QA
+  Web -.DEV_REPORT.-> QA
+  QA -.QA_REPORT (게이트).-> Main
+
+  classDef main fill:#1a1a2a,color:#fff,stroke:#5EEAD4,stroke-width:3px
+  classDef grimoireAgent fill:#1a1810,color:#c4a46a,stroke:#c4a46a,stroke-width:2px
+  classDef commonAgent fill:#10202a,color:#5EEAD4,stroke:#14B8A6,stroke-width:2px
+
+  class Main main
+  class CostAcct,VCK grimoireAgent
+  class Planner,Researcher,Server,Web,QA commonAgent
+</div>
+
+<div class="info-box">
+  <strong>Grimoire 고유 2개 agent:</strong>
+  <ul style="margin-top: 6px; padding-left: 20px;">
+    <li><strong>grimoire-cost-accountant</strong> — §0 크레딧-원가 철칙 전담. <code>ai-cost-table.md</code> 단독 관리. 새 AI 기능은 마진 ≥3배 검증 없이 기획 진행 불가.</li>
+    <li><strong>grimoire-visual-canon-keeper</strong> — 사슴악마(deerdevil) 시각 정본 수호. UI/테마/포맷 출력은 검수 없이 구현 불가.</li>
+  </ul>
+  Zenith/RoadRage 대비 copywriter 없음 (작가 본인 콘텐츠) · designer 는 visual-canon-keeper 가 겸직.
+</div>
+
+<!-- ========== §2. Hook Flow ========== -->
+<h2 id="hook-flow">2. Hook 13건 이벤트 흐름도</h2>
+<p class="desc"><code>.claude/settings.json</code> hooks 정의. 13개 이벤트 시점에 hook 스크립트가 자동 실행되어 메인 Claude의 행동을 강제·감시한다.</p>
+
+<div class="mermaid">
+flowchart TB
+  SessionStart(["SessionStart"]) --> CheckMem["check-memory-freshness"]
+  UserPrompt(["UserPromptSubmit"]) --> UPMem["user-prompt-memory-check"]
+  UserPrompt --> SkillInj["skill-injector"]
+
+  PreBash(["PreToolUse:Bash"]) --> BashGuard["pretooluse-bash-guard"]
+  PreBash --> RedteamGate["pretooluse-redteam-gate"]
+  PreEW(["PreToolUse:Edit/Write"]) --> EWGuard["pretooluse-edit-write-guard<br/>(PP-7)"]
+
+  PostEW(["PostToolUse:Edit/Write"]) --> PostTSC["post-edit-tsc"]
+  PostEW --> PostSpec["post-edit-spec-check"]
+  PostEW --> LoopTrack["loop-detection-tracker"]
+
+  PostAgent(["PostToolUse:Task/Agent"]) --> GenReport["generate-report-template"]
+  PostBatch(["PostToolBatch"]) --> PostBatchTSC["post-batch-tsc"]
+
+  PostFail(["PostToolUseFailure"]) --> FailHandler["posttooluse-failure-handler"]
+
+  Stop(["Stop"]) --> StopGuard["stop-memory-guard"]
+  Stop --> PostRespSkill["post-response-skill-injector<br/>(PP-6)"]
+
+  SubStop(["SubagentStop"]) --> SubHandler["subagent-stop-handler"]
+  PreCompact(["PreCompact"]) --> CompactGuard["pre-compact-memory-guard"]
+  InstrLoaded(["InstructionsLoaded"]) --> DriftCheck["instructions-drift-check"]
+
+  classDef event fill:#1a1810,color:#d4a853,stroke:#d4a853,stroke-width:1.5px
+  classDef script fill:#10202a,color:#5EEAD4,stroke:#14B8A6,stroke-width:1px
+  classDef recent fill:#2a1a3b,color:#a853d4,stroke:#a853d4,stroke-width:2px
+
+  class SessionStart,UserPrompt,PreBash,PreEW,PostEW,PostAgent,PostBatch,PostFail,Stop,SubStop,PreCompact,InstrLoaded event
+  class CheckMem,UPMem,SkillInj,BashGuard,RedteamGate,PostTSC,PostSpec,LoopTrack,GenReport,PostBatchTSC,FailHandler,StopGuard,SubHandler,CompactGuard,DriftCheck script
+  class EWGuard,PostRespSkill recent
+</div>
+
+<div class="info-box">
+  <strong>최근 신설 (2026-05-04~06):</strong>
+  <ul style="margin-top: 6px; padding-left: 20px;">
+    <li><span class="badge badge-warn">PP-7</span> <code>pretooluse-edit-write-guard</code> — agent 위임 영역 Edit/Write 자동 차단. 7일 3건 reject.</li>
+    <li><span class="badge badge-warn">PP-6</span> <code>post-response-skill-injector</code> — 메인 응답 "완료/끝/done" 매칭 시 skill 호출 박제. 7일 8건 매칭.</li>
+  </ul>
+</div>
+
+<!-- ========== §3. Skill Matrix ========== -->
+<h2 id="skill-matrix">3. Skill 17 현역 + GRAY 9 책임 매트릭스</h2>
+<p class="desc"><code>.claude/skills/</code>에 정의된 Skills. <span class="badge badge-active">ACTIVE</span> = 메인/agent에서 실시간 호출. <span class="badge badge-gray">GRAY</span> = owner agent 책임 명시 (PP-3 정합). <span class="badge badge-archived">ARCHIVED</span> = 비활성 참고용.</p>
+
+<table>
+  <tr>
+    <th>Skill</th>
+    <th>Owner Agent</th>
+    <th>Trigger Mode</th>
+    <th>Description 요약</th>
+  </tr>
+  <tr><td colspan="4" style="background:var(--panel-ink); color:var(--green); font-weight:600;">▼ ACTIVE 17건</td></tr>
+  <tr><td><code>production-bug-triage</code></td><td>main + qa</td><td>autonomous</td><td>운영 버그 트리아지 (실측 근거 강제, 추정 금지)</td></tr>
+  <tr><td><code>orchestration-decision</code></td><td>main</td><td>autonomous</td><td>5 오케스트레이션 패턴 (책 Ch 16) 선택 가이드</td></tr>
+  <tr><td><code>writing-plans</code></td><td>main + planner</td><td>explicit</td><td>Sprint 계약 + Initializer 책임 (책 Ch 16)</td></tr>
+  <tr><td><code>claude-in-chrome-recovery</code></td><td>main + qa</td><td>autonomous</td><td>Chrome MCP 미연결 복구</td></tr>
+  <tr><td><code>verification-before-completion</code></td><td>main + qa + server + web</td><td>autonomous</td><td>완료 전 Playwright/curl 실측 검증</td></tr>
+  <tr><td><code>consolidate-memory</code></td><td>main</td><td>explicit</td><td>메모리 정리 (96+ 파일 카테고리화)</td></tr>
+  <tr><td><code>systematic-debugging</code></td><td>main + qa</td><td>autonomous</td><td>obra/superpowers MIT 차용. 가설→실증</td></tr>
+  <tr><td><code>socratic-self-critique</code></td><td>main</td><td>autonomous</td><td>응답 직전 자기검증 (Q00/ouroboros)</td></tr>
+  <tr><td><code>ouroboros-pattern</code></td><td>main</td><td>autonomous</td><td>자기참조 루프 차단 (X 묶음 도입)</td></tr>
+  <tr><td><code>ng-loop-detection</code></td><td>main + sensor</td><td>autonomous</td><td>Bounded Retry max 2 (Y 묶음)</td></tr>
+  <tr><td><code>red-team-update-propose</code></td><td>main</td><td>explicit</td><td>적대적 검증 자율 학습 시범 (BB 묶음)</td></tr>
+  <tr><td><code>deploy-precheck</code></td><td>qa + server + web</td><td>autonomous</td><td>배포 직전 5종 게이트 (curl + npm test + sensor)</td></tr>
+  <tr><td><code>adversarial-review</code></td><td>main + qa</td><td>autonomous</td><td>OWASP LLM Top 10 통합 16→19 principles</td></tr>
+  <tr><td><code>cost-margin-verify</code></td><td>cost-accountant</td><td>autonomous</td><td>§0 ≥3배 마진 검증 (ai-cost-table.md)</td></tr>
+  <tr><td><code>visual-canon-verify</code></td><td>visual-canon-keeper</td><td>autonomous</td><td>사슴악마 정본 일치 검수</td></tr>
+  <tr><td><code>shared-contracts-check</code></td><td>main + agents</td><td>explicit</td><td>인터페이스 §1~13 정합 검증 (책 Ch 16)</td></tr>
+  <tr><td><code>eval-edd-mode</code></td><td>main + qa</td><td>explicit</td><td>EDD 모드 21/21 회귀 검증 (책 Ch 15)</td></tr>
+
+  <tr><td colspan="4" style="background:var(--panel-ink); color:var(--purple); font-weight:600;">▼ GRAY 9건 (책임 명시 — PP-3 정합)</td></tr>
+  <tr><td class="gray"><code>code-review-checklist</code></td><td class="gray">qa</td><td class="gray">explicit</td><td class="gray">코드 리뷰 체크리스트 (qa 위임)</td></tr>
+  <tr><td class="gray"><code>migration-pretest</code></td><td class="gray">server</td><td class="gray">explicit</td><td class="gray">Prisma 마이그레이션 사전 테스트</td></tr>
+  <tr><td class="gray"><code>parser-format-test</code></td><td class="gray">server</td><td class="gray">explicit</td><td class="gray">DOCX/HWPX 파서 출력 검증</td></tr>
+  <tr><td class="gray"><code>theme-render-test</code></td><td class="gray">web + visual-canon-keeper</td><td class="gray">explicit</td><td class="gray">테마 에디터 렌더링 검증</td></tr>
+  <tr><td class="gray"><code>i18n-keys-validate</code></td><td class="gray">web</td><td class="gray">explicit</td><td class="gray">i18n 키 누락 검증</td></tr>
+  <tr><td class="gray"><code>seed-data-policy</code></td><td class="gray">server</td><td class="gray">explicit</td><td class="gray">시드 1회 정책 (마이그레이션/API 우선)</td></tr>
+  <tr><td class="gray"><code>azure-env-check</code></td><td class="gray">qa + server</td><td class="gray">explicit</td><td class="gray">Azure 환경변수 정합</td></tr>
+  <tr><td class="gray"><code>polar-webhook-test</code></td><td class="gray">server</td><td class="gray">explicit</td><td class="gray">Polar 웹훅 멱등성 (PAY-P0-1)</td></tr>
+  <tr><td class="gray"><code>refund-flow-verify</code></td><td class="gray">server + qa</td><td class="gray">explicit</td><td class="gray">환불 3중 멱등성 검증</td></tr>
+
+  <tr><td colspan="4" style="background:var(--panel-ink); color:var(--dim); font-weight:600;">▼ _archive (참고용, 비활성)</td></tr>
+  <tr><td class="archived" colspan="4"><code>.claude/skills/_archive/</code> 내 9건 (이전 세션 흡수 완료)</td></tr>
+</table>
+
+<!-- ========== §4. Sensor Distribution ========== -->
+<h2 id="sensor-distribution">4. Sensor 40 카테고리 분포</h2>
+<p class="desc"><code>.claude/scripts/sensor-*.sh</code> — 자동 검증 sensor. 5 카테고리로 분류.</p>
+
+<div class="donut-grid">
+  <div class="donut-cat security">
+    <strong>🔐 보안 (8)</strong>
+    sensor-secret-leak<br>
+    sensor-redteam-gate<br>
+    sensor-adversarial-pre-commit<br>
+    sensor-prompt-injection<br>
+    sensor-pii-leak<br>
+    sensor-jwt-rotation<br>
+    sensor-cors-policy<br>
+    sensor-recaptcha-coverage
+  </div>
+  <div class="donut-cat domain">
+    <strong>📦 도메인 (10)</strong>
+    sensor-chat-domain<br>
+    sensor-payment-idempotency<br>
+    sensor-payment-reconciliation<br>
+    sensor-credit-atomicity<br>
+    sensor-refund-deficit<br>
+    sensor-theme-canon<br>
+    sensor-parser-format<br>
+    sensor-analysis-credit<br>
+    sensor-episode-numbering<br>
+    sensor-author-space
+  </div>
+  <div class="donut-cat meta">
+    <strong>🧠 메타 (8)</strong>
+    sensor-orchestration-ratio<br>
+    sensor-skill-invocation-rate<br>
+    sensor-hook-effectiveness<br>
+    sensor-instruction-degradation<br>
+    sensor-agent-priority-labels<br>
+    sensor-agent-interaction<br>
+    sensor-loop-detection<br>
+    sensor-harness-self-diagnose
+  </div>
+  <div class="donut-cat verify">
+    <strong>✅ 검증 (7)</strong>
+    sensor-eval-trend<br>
+    sensor-drift<br>
+    sensor-shared-contracts<br>
+    sensor-docs-sync<br>
+    sensor-feedback-promotion<br>
+    sensor-ng-detection<br>
+    sensor-context-budget
+  </div>
+  <div class="donut-cat ops">
+    <strong>⚙️ 운영 (7)</strong>
+    sensor-server<br>
+    sensor-web<br>
+    sensor-cost-margin<br>
+    sensor-cost-tracker<br>
+    sensor-security-gate<br>
+    sensor-llm-judge-cost<br>
+    sensor-deploy-readiness
+  </div>
+</div>
+
+<div class="info-box">
+  <strong>도입 시기:</strong>
+  <ul style="margin-top: 6px; padding-left: 20px;">
+    <li>4월 9일 ~ 5월 1일 (#9~#10): 12 → 17 sensor (보안/검증 위주)</li>
+    <li>5월 2일 (#10_6): 19 → 23 (자가발견 강화 묶음 R/S/T/V')</li>
+    <li>5월 3일 (#10_7): 25 → 28 (PAY-P0 결제 sensor 3건)</li>
+    <li>5월 4~6일 (PP 묶음): 28 → 40 (도메인 + 메타 sensor 12건 신설, OO + PP-3~PP-7)</li>
+  </ul>
+</div>
+
+<!-- ========== §5. Auto Enforcement ========== -->
+<h2 id="auto-enforcement">5. 자동 강제 메커니즘 흐름 (PP-6 + PP-7)</h2>
+<p class="desc">2026-05-06 PP 묶음 핵심 — agent 위임 영역 Edit/Write 자동 reject (PP-7) + 메인 응답 "완료" 단어 매칭 시 skill 호출 박제 (PP-6).</p>
+
+<div class="mermaid">
+sequenceDiagram
+  participant Main as 메인 Claude
+  participant Tool as Edit/Write Tool
+  participant PreHook as PreToolUse Hook<br/>(edit-write-guard)
+  participant Log as incident-log.jsonl
+  participant Stop as Stop Hook<br/>(post-response-skill-injector)
+  participant SkillLog as post-response-<br/>skill-trigger.jsonl
+
+  Main->>Tool: Edit/Write 호출
+  Tool->>PreHook: file_path 분류 요청
+  alt agent 위임 영역 + 명시 X
+    PreHook-->>Main: exit 2 reject (PP-7)
+    PreHook->>Log: edit-write-violation 박제
+  else 메타 영역 / isSidechain
+    PreHook-->>Tool: PASS
+  end
+
+  Note over Main,Stop: ─ Stop 이벤트 ─
+  Main->>Stop: "완료/끝/done" 단어 포함 응답
+  Stop->>Stop: 메인 응답 정규식 매칭
+  alt 매칭 성공
+    Stop->>SkillLog: post-response-skill-trigger 박제 (PP-6)
+  end
+</div>
+
+<div class="alert-box">
+  <strong>PP-7 (PreToolUse Edit/Write Guard) 작동 예:</strong>
+  <ul style="margin-top: 6px; padding-left: 20px;">
+    <li><strong>차단</strong>: <code>grimoire-server/src/**</code>, <code>grimoire-web/src/**</code> 메인이 직접 Edit 시 → reject (server/web agent 위임 강제)</li>
+    <li><strong>허용</strong>: <code>.claude/**</code>, <code>reports/**</code>, 메타 영역 PASS</li>
+    <li><strong>예외</strong>: <code>isSidechain=true</code> (agent 내부 호출) PASS</li>
+    <li><strong>박제</strong>: 7일 3건 reject 기록 (incident-log.jsonl)</li>
+  </ul>
+</div>
+
+<!-- ========== §6. EDD + LLM-as-Judge ========== -->
+<h2 id="edd-flow">6. EDD + LLM-as-Judge 흐름</h2>
+<p class="desc">책 Ch 15 EDD (Evaluation-Driven Development) + LLM-as-Judge 정합. 2026-04-30 #10 세션 도입.</p>
+
+<div class="mermaid">
+graph LR
+  CodeChange["코드 변경<br/>(commit 시도)"] --> EvalRun["eval/scripts/<br/>eval-precommit.sh"]
+  EvalRun --> Tasks["eval/tasks/ 67건<br/>(EDD + 회귀)"]
+
+  Tasks --> Quant["📊 정량<br/>deterministic_grep"]
+  Tasks --> Qual["🧠 정성<br/>LLM-as-Judge"]
+
+  Quant --> Baseline["eval/results/<br/>baseline.csv"]
+  Qual --> CostGuard["Cost Guard<br/>₩2K/일 ₩50K/월"]
+  CostGuard --> Baseline
+
+  Baseline --> Pass{"회귀 ≤0.05?"}
+  Pass -->|PASS| Commit["commit 통과"]
+  Pass -->|FAIL| Reject["pre-commit reject<br/>+ 알림"]
+
+  classDef change fill:#1a1810,color:#d4a853,stroke:#d4a853,stroke-width:1.5px
+  classDef eval fill:#102a20,color:#53d4a8,stroke:#53d4a8,stroke-width:1.5px
+  classDef gate fill:#2a1010,color:#d45353,stroke:#d45353,stroke-width:2px
+  classDef pass fill:#102a20,color:#53d4a8,stroke:#53d4a8,stroke-width:2px
+
+  class CodeChange,Tasks change
+  class EvalRun,Quant,Qual,Baseline,CostGuard eval
+  class Pass,Reject gate
+  class Commit pass
+</div>
+
+<div class="info-box">
+  <strong>Eval 도입 추이 (책 V1.1 정합):</strong>
+  <ul style="margin-top: 6px; padding-left: 20px;">
+    <li><strong>4월 26일 (#9)</strong>: 20 task baseline 17/20 = 85% (Verify 2.5/5 → 4/5)</li>
+    <li><strong>4월 30일 (#10)</strong>: 32 task (EDD 21 + 회귀 11) — LLM-as-Judge + Cost Guard 도입</li>
+    <li><strong>5월 1일 (#10_2)</strong>: 33 task</li>
+    <li><strong>5월 2일 (#10_6)</strong>: 47 task (자가발견 sensor 강화)</li>
+    <li><strong>5월 3일 (#10_7)</strong>: 51 → 55 task (PAY-P0~P1 결제 회귀)</li>
+    <li><strong>5월 6일 (PP)</strong>: 67 task (도메인 + 메타 sensor 회귀 + EDD R3)</li>
+  </ul>
+</div>
+
+<!-- ========== §7. KPI ========== -->
+<h2 id="kpi">7. 본 세션 자동 강제 즉시 효과 (KPI)</h2>
+<p class="desc">PP 묶음 (2026-05-04 ~ 06) 자동 강제 hook 신설 → 7일 즉시 효과. 추정 없이 실측 박제.</p>
+
+<div class="kpi-grid">
+  <div class="kpi-card">
+    <div class="kpi-label">PP-7 edit-write-violation</div>
+    <div class="kpi-value">3건 reject</div>
+    <div class="kpi-desc">7일간 메인 자동 차단 작동 (agent 위임 강제)</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-label">PP-6 post-response-skill-trigger</div>
+    <div class="kpi-value">8건 매칭</div>
+    <div class="kpi-desc">7일간 응답 "완료" 단어 매칭 박제</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-label">Top Skill 호출 (PP-6 박제)</div>
+    <div class="kpi-value">socratic 4건</div>
+    <div class="kpi-desc">socratic 4 / verification 3 / writing-plans 2 / 기타 1</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-label">sensor-skill-invocation-rate</div>
+    <div class="kpi-value">11.76% WARN</div>
+    <div class="kpi-desc">Sprint C1 ≥0.15 5/13 D-Day 진행 중</div>
+  </div>
+</div>
+
+<div class="alert-box">
+  <strong>Sprint C1 진행 (시각 자료):</strong>
+  <ul style="margin-top: 6px; padding-left: 20px;">
+    <li>목표: <code>sensor-skill-invocation-rate</code> ≥0.15 (15%) 달성</li>
+    <li>현재: 11.76% (WARN ACCEPTABLE 마크 박제, 5월 3일 AA 묶음 도입)</li>
+    <li>D-Day: 5월 13일 (5/13)</li>
+    <li>차단 시: PP 자율 강제 hook 추가 (PP-8/PP-10 검토)</li>
+  </ul>
+</div>
+
+<!-- ========== §8. References ========== -->
+<h2 id="references">8. 정본 참조 관계</h2>
+<p class="desc">HarnessMap이 참조하는 정본 + HarnessMap을 참조해야 하는 인계 문서.</p>
+
+<table>
+  <tr>
+    <th>참조 방향</th>
+    <th>문서</th>
+    <th>경로</th>
+    <th>관계</th>
+  </tr>
+  <tr><td colspan="4" style="background:var(--panel-ink); color:var(--mint); font-weight:600;">▼ HarnessMap → 정본 (위계 상위)</td></tr>
+  <tr>
+    <td><strong>HARNESS_ENGINEERING</strong></td>
+    <td>Ch 1~23 + 부록 학습 박제 (책 V1.1)</td>
+    <td><code>research/HARNESS_ENGINEERING.md</code></td>
+    <td>하네스 엔지니어링 정본</td>
+  </tr>
+  <tr>
+    <td><strong>.claude/AGENTS.md</strong></td>
+    <td>메인 Claude 운영 정본 (분할 정본 1 of 4)</td>
+    <td><code>.claude/AGENTS.md</code></td>
+    <td>하네스 레이어 정본</td>
+  </tr>
+  <tr>
+    <td><strong>shared-contracts.md</strong></td>
+    <td>10 인터페이스 (PLANNER_REPORT / COST_AUDIT / DEV_REPORT 형식 등)</td>
+    <td><code>.claude/shared-contracts.md</code></td>
+    <td>책 Ch 16 정본</td>
+  </tr>
+  <tr>
+    <td><strong>eval/results/baseline.csv</strong></td>
+    <td>회귀 검증 baseline (67 task)</td>
+    <td><code>eval/results/baseline.csv</code></td>
+    <td>EDD 정본</td>
+  </tr>
+
+  <tr><td colspan="4" style="background:var(--panel-ink); color:var(--gold); font-weight:600;">▼ 인계 문서 → HarnessMap (위계 하위)</td></tr>
+  <tr>
+    <td><strong>HANDOVER</strong></td>
+    <td>인수인계 (PP 묶음 핸드오버)</td>
+    <td><code>reports/HANDOVER-CRITICAL-2026-05-06-PP.md</code></td>
+    <td>본 HarnessMap 참조 의무</td>
+  </tr>
+  <tr>
+    <td><strong>SWEEP_REPORT</strong></td>
+    <td>researcher 일일 sweep</td>
+    <td><code>reports/SWEEP_REPORT.md</code></td>
+    <td>sensor 결과 박제</td>
+  </tr>
+  <tr>
+    <td><strong>QA_REPORT</strong></td>
+    <td>qa 배포 게이트</td>
+    <td><code>reports/QA_REPORT.md</code></td>
+    <td>hook + sensor PASS 인용</td>
+  </tr>
+  <tr>
+    <td><strong>incident-log</strong></td>
+    <td>PP-7 자동 차단 박제</td>
+    <td><code>.claude/state/incident-log.jsonl</code></td>
+    <td>edit-write-violation 추적</td>
+  </tr>
+</table>
+
+<div class="info-box">
+  <strong>HarnessMap 갱신 책임:</strong>
+  <ul style="margin-top: 6px; padding-left: 20px;">
+    <li>새 hook/sensor/skill 도입 시 → 메인 Claude 또는 grimoire-planner 가 본 HTML Edit</li>
+    <li>주요 KPI 변동 시 (Sprint C1 등) → §7 갱신</li>
+    <li>책 V2.0 출간 시 → §6 EDD 흐름 + §1 토폴로지 갱신</li>
+  </ul>
+</div>
+
+<footer>
+  ProjectGrimoire 하네스 관계도 · HARNESS_MAP v1.0 · 2026-05-06<br>
+  <code>research/HARNESS_ENGINEERING.md</code> + <code>.claude/AGENTS.md</code> + <code>.claude/shared-contracts.md</code> 정본 · 변경 시 이 파일 직접 수정<br>
+  도메인 정본 시각 자료는 <a href="DOC_MAP.html"><code>DOC_MAP.html</code></a> 참조
+</footer>
+
+<script>
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: 'dark',
+    themeVariables: {
+      fontFamily: 'SUIT Variable, Pretendard, -apple-system, sans-serif',
+      darkMode: true,
+      background: '#111320',
+      primaryColor: '#5EEAD4',
+      primaryTextColor: '#e0e0e0',
+      primaryBorderColor: '#14B8A6',
+      lineColor: '#888',
+      secondaryColor: '#141622',
+      tertiaryColor: '#0d0f1a',
+      textColor: '#e0e0e0',
+      mainBkg: '#141622',
+      clusterBkg: '#0a0c14',
+      clusterBorder: '#2a2a3a',
+      edgeLabelBackground: '#141622',
+      labelTextColor: '#e0e0e0',
+    },
+  });
+</script>
+</body>
+</html>

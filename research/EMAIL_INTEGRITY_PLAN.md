@@ -605,8 +605,8 @@ async request(authorId: string) {
 
 | # | 위험 | 현재 코드 | 마이그레이션 대응 |
 |---|---|---|---|
-| 1 | **OAuth 동일 이메일 자동 링크 (보안)** | `auth.usecase.ts:100` `findByEmail(payload.email)` 적중 시 자동 링크 | Phase 1 OUT — 별도 보안 sprint (이메일 + 검증 토큰 강제 또는 명시적 동의 추가) |
-| 2 | **SignupHistory 2회 제한 (정책)** | `auth.usecase.ts:38,58` providerId=email | Phase 1 유지 (email 기반 박제). slug 도입 후 정책 결정 필요 (email+slug 동시 박제 또는 IP/디바이스 추가 제한) |
+| 1 | **OAuth 동일 이메일 자동 링크 (보안)** | `auth.usecase.ts:112-122` 강화안 A 적용 (sprint #10_7 트랙 F) — `email_verified === false` 차단 게이트 | ✅ **1단계 해소** (2026-05-05 트랙 F 강화안 A). RFC 6819 §5.1.1 / OWASP A07:2021 부분 완화. shared-contracts §16 OAuthEmailVerification + sensor-oauth-email-verification + regression-60 박제. 강화안 B(명시 동의 UI) / C(이메일 인증 발송 — EMAIL-P1-1 의존)는 별도 sprint. |
+| 2 | **SignupHistory 2회 제한 (정책)** | `auth.usecase.ts:38,58` providerId=email | 📝 **검토 종료** (2026-05-05 트랙 G). slug 통합 제한(강화안 A) / IP fingerprint(B) / TTL unlock(C) 3안 박제. 정본: `reports/sprint-signup-history-slug-review-progress.md`. 채택은 사용자 결정 영역. |
 | 3 | **RefreshToken / SocialAccount FK** | `schema.prisma:347,107` authorId 기반 | 영향 0건 — 변경 불필요 |
 | 4 | **비밀번호 초기화 미구현** | (코드 0건) | EMAIL-P1-1 진입 시 신설 (외부 API 결정 후) |
 

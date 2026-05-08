@@ -16,9 +16,21 @@ triggers:
   - "self-critique"
   - "소크라테스"
   - "Socratic"
+  - "다시 생각"
+  - "한번 더"
+  - "비판"
+owner-agent: grimoire-qa
+owner-skill: ""
+responsibility-note: "자기 비판 검증 (qa 도메인 — verification 후속이 아님, 별도 절차)"
 ---
 
 # Socratic Self-Critique — 우로보로스 Two-diamond 자기-심문
+
+## 책임 영역 (2026-05-06 묶음 PP-3 박제)
+
+- **owner**: grimoire-qa agent (자기-비판 검증 도메인)
+- **trigger 패턴**: 완료 선언 키워드 매칭 시 본 skill의 additionalContext 주입 + grimoire-qa agent가 명시 호출
+- **메인 책임**: 본 skill을 직접 호출 X — grimoire-qa agent에 위임 후 qa agent가 본 skill 활용 (verification-before-completion 후속이 아닌 별도 절차)
 
 > **trigger-mode**: keyword (triggers field 완료 선언 키워드 + 사용자 명시 호출). paths 미적용 — 메타 검증, 모든 도메인 적용.
 > **신설**: 2026-05-02 #10_6 묶음 X (Phase β) — 사용자 지시 (우로보로스 정본 적용)

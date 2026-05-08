@@ -110,16 +110,18 @@ case "$INSTR_RESULT" in
 esac
 
 # Principle 8 — Sensor 모두 PASS/WARN (lenient: exit ≤2 PASS, exit ≥3 FAIL — 우리 컨벤션)
-# 2026-05-04 묶음 KK: PAY-P0 신규 sensor 3건 추가 (전수조사로 호출 누락 발견)
+# 2026-05-04 묶음 KK: PAY-P0 신규 sensor 3건 추가
+# 2026-05-06 묶음 OO-1: sensor-chat-domain 추가 (chat 회귀 차단)
 SENSOR_FAIL=0
 for s in sensor-server sensor-web sensor-docs-sync sensor-secret-leak sensor-credit-atomicity \
-         sensor-payment-idempotency sensor-payment-reconciliation sensor-admin-credit-ui; do
+         sensor-payment-idempotency sensor-payment-reconciliation sensor-admin-credit-ui \
+         sensor-chat-domain; do
   bash "$ROOT/.claude/scripts/$s.sh" >/dev/null 2>&1
   EC=$?
   [ "$EC" -gt 2 ] && SENSOR_FAIL=$((SENSOR_FAIL+1))
 done
 if [ "$SENSOR_FAIL" -eq 0 ]; then
-  check 8 "핵심 Sensor exit ≤2" "PASS" "8 핵심 sensor 모두 통과 (exit ≤2, PAY-P0 3건 포함)"
+  check 8 "핵심 Sensor exit ≤2" "PASS" "9 핵심 sensor 모두 통과 (PAY-P0 3건 + chat-domain 1건 포함)"
 else
   check 8 "핵심 Sensor exit ≤2" "FAIL" "$SENSOR_FAIL 핵심 sensor exit ≥3 (FAIL)"
 fi
@@ -237,10 +239,29 @@ else
   check 16 "결제 원자성 (transaction)" "FAIL" "sensor-credit-atomicity FAIL (exit=$EC)"
 fi
 
+# Principle 20 — incident-log 박제 의무 (2026-05-06 사용자 명시 — Mitchell Ghostty 패턴)
+# 오늘 commit이 있는데 incident 박제 0건이면 결함 박제 누락 가능성 WARN
+echo ""
+echo "── 박제 의무 규정 (Mitchell Ghostty + Cuneiform Chat 정합) ──"
+INCIDENT_LOG="$ROOT/.claude/state/incident-log.jsonl"
+TODAY=$(date -u +%Y-%m-%d)  # UTC — incident-log.sh가 UTC ts 박제하므로 정합 (2026-05-06 자기 결함 박제 후 수정)
+if [ -f "$INCIDENT_LOG" ]; then
+  TODAY_INCIDENTS=$(grep -c "\"ts\":\"${TODAY}T" "$INCIDENT_LOG" 2>/dev/null || echo 0)
+  TODAY_INCIDENTS=${TODAY_INCIDENTS:-0}
+  HAS_TODAY_COMMITS=$(git -C "$ROOT" log --since="$TODAY 00:00:00" --oneline 2>/dev/null | wc -l | tr -d ' ')
+  if [ "$HAS_TODAY_COMMITS" -gt 0 ] && [ "$TODAY_INCIDENTS" -eq 0 ]; then
+    check 20 "incident-log 박제 의무 (Mitchell Ghostty)" "WARN" "오늘 commit ${HAS_TODAY_COMMITS}건 있으나 incident 박제 0건"
+  else
+    check 20 "incident-log 박제 의무 (Mitchell Ghostty)" "PASS" "오늘 incident 박제 ${TODAY_INCIDENTS}건 (또는 commit 0건)"
+  fi
+else
+  check 20 "incident-log 박제 의무 (Mitchell Ghostty)" "FAIL" "incident-log.jsonl 자체 부재 — 박제 시스템 미도입"
+fi
+
 # 종합
 echo ""
-echo "── 종합 (19 Principles, OWASP LLM Top 10 통합) ──"
-echo "PASS: $PASS / WARN: $WARN / FAIL: $FAIL (총 19)"
+echo "── 종합 (20 Principles, OWASP LLM Top 10 + Mitchell Ghostty 통합) ──"
+echo "PASS: $PASS / WARN: $WARN / FAIL: $FAIL (총 20)"
 
 if [ "$FAIL" -gt 0 ]; then
   echo ""

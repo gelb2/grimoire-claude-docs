@@ -37,6 +37,8 @@ reports/VISUAL_CANON_REPORT.md
 # ──────────────── Claude Code — 사용자별 (공유 금지)
 .claude/settings.local.json
 .claude/state/
+# 예외: incident-log.jsonl은 시계열 박제 (Mitchell Ghostty 패턴, 2026-05-06 사용자 명시)
+!.claude/state/incident-log.jsonl
 
 # ──────────────── git worktree 격리 (worktree-isolation skill, HARNESS §8.10)
 .worktrees/

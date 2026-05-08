@@ -16,9 +16,21 @@ triggers:
   - "root cause"
   - "복잡한 버그"
   - "디버깅 막힘"
+  - "어디서 뭐가 잘못"
+  - "어떻게 풀어야"
+owner-agent: grimoire-qa
+owner-skill: production-bug-triage
+responsibility-note: "버그 진단 후속 절차 (qa + bug-triage skill 체인)"
 ---
 
 # Systematic Debugging — 다중 가설 + 변수 분리 + Root Cause 도달
+
+## 책임 영역 (2026-05-06 묶음 PP-3 박제)
+
+- **owner**: grimoire-qa agent (디버깅·버그 진단 도메인)
+- **owner-skill 체인**: production-bug-triage (1차 증상→실측) → systematic-debugging (다중 가설 분리)
+- **trigger 패턴**: 디버깅 키워드 매칭 시 본 skill의 additionalContext 주입 + grimoire-qa agent가 명시 호출
+- **메인 책임**: 본 skill을 직접 호출 X — grimoire-qa agent에 위임 후 qa agent가 production-bug-triage → systematic-debugging 순서로 활용
 
 > **trigger-mode**: keyword + user-invocation (disable-model-invocation:true). paths 미적용 — 디버깅 키워드 + 사용자 명시 호출.
 

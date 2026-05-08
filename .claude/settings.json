@@ -4,6 +4,7 @@
     "command": "/Users/sokol/Desktop/Git/ProjectGrimoire/.claude/scripts/statusline.sh",
     "padding": 0
   },
+  "_permissions_note": "2026-05-06 묶음 NN — deny 폐기. PreToolUse hook으로 레드팀 미통과 commit/push/인프라 변경 자동 reject (사용자 개입 없이 진행 가능, 단 레드팀 통과 강제).",
   "hooks": {
     "SessionStart": [
       {
@@ -16,6 +17,11 @@
       {
         "type": "command",
         "command": "bash /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/scripts/stop-memory-guard.sh",
+        "timeout": 10
+      },
+      {
+        "type": "command",
+        "command": "bash /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/scripts/post-response-skill-injector.sh",
         "timeout": 10
       }
     ],
@@ -63,12 +69,27 @@
     ],
     "PreToolUse": [
       {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/scripts/pretooluse-edit-write-guard.sh",
+            "timeout": 15
+          }
+        ]
+      },
+      {
         "matcher": "Bash",
         "hooks": [
           {
             "type": "command",
             "command": "bash /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/scripts/pretooluse-bash-guard.sh",
             "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "bash /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/scripts/pretooluse-redteam-gate.sh",
+            "timeout": 120
           }
         ]
       }

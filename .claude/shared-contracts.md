@@ -855,6 +855,435 @@ const payload = isEmail ? { email: trimmed, password } : { slug: trimmed, passwo
 
 ---
 
+## 16. OAuthEmailVerification (server 도메인 — OAuth 자동 링크 보안 강화 강화안 A)
+
+**위치**:
+- UseCase: `grimoire-server/src/application/auth/auth.usecase.ts` `googleLogin(googleToken)` 메서드 line 112-122 (email_verified 차단 게이트)
+- Spec: `grimoire-server/src/application/auth/auth.usecase.spec.ts` `describe('googleLogin (트랙 F email_verified 차단)')` 4 it 박제
+- Sensor: `.claude/scripts/sensor-oauth-email-verification.sh` (8 검증)
+- Regression task: `eval/tasks/regression-60-oauth-email-verification.json` (10 criteria)
+- 정본: `reports/sprint-oauth-email-verification-progress.md`
+
+**적용**: Google OAuth 로그인 시 `payload.email_verified === false`이면 즉시 `UnauthorizedException` 발생 — 자동 계정 링크(`findByEmail` → `linkSocialAccount`) 차단으로 victim 이메일의 미인증 OAuth 계정이 기존 일반 회원 계정을 인수하는 위험 차단 (RFC 6819 §5.1.1, OWASP A07:2021).
+
+### 시그니처
+
+```typescript
+async googleLogin(googleToken: string) {
+  const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID)
+  const ticket = await client.verifyIdToken({ idToken: googleToken, audience: process.env.GOOGLE_CLIENT_ID })
+  const payload = ticket.getPayload()
+  if (!payload?.email) throw new UnauthorizedException('Google 인증 실패')
+
+  // 트랙 F 강화안 A — RFC 6819 §5.1.1 / OWASP A07:2021 자동 링크 차단
+  if (payload.email_verified === false) {
+    throw new UnauthorizedException(
+      'Google 이메일이 아직 인증되지 않았습니다. Google 계정에서 이메일 인증 후 다시 시도해주세요.',
+    )
+  }
+
+  // 이후 findBySocialAccount → findByEmail → linkSocialAccount 순으로 진행 (위 게이트 통과 후)
+  let author = await this.authorRepo.findBySocialAccount('google', payload.sub!)
+  // ...
+}
+```
+
+### 정책
+
+- **`email_verified === false` → UnauthorizedException**: 명시 false만 차단. `undefined` (필드 미박제)는 통과 (Google 기본 verified=true 정합).
+- **차단 게이트 위치**: `findBySocialAccount` 호출 **앞에** 위치 강제 — 자동 링크 시도 자체 차단. sensor가 line 비교로 정합 검증.
+- **기존 사용자 영향 0**: Google은 기본 `email_verified=true` 반환 → 정상 사용자 회귀 0.
+- **외부 API 신규 의존 0건**: 절대 규정 0-1 정합 (이미 사용 중인 google-auth-library 내부 필드만 활용).
+- **사용자 메시지 한국어 존댓말**: Constitution P10 정합 — "Google 이메일이 아직 인증되지 않았습니다."
+- **향후 확장**: Kakao/Naver OAuth 도입 시 (EMAIL-P1-2) 각 provider의 verified 필드 확인 + 미존재 시 강화안 C(이메일 검증 발송) 강제 진입.
+
+### 처리 흐름 (Google ID token → 차단 / 통과)
+
+1. 클라이언트가 Google ID token + `POST /auth/google`
+2. `googleLogin(googleToken)` 진입 → `OAuth2Client.verifyIdToken` Google JWT 검증
+3. `payload = ticket.getPayload()` 추출 (email / email_verified / sub / name)
+4. `payload.email` 누락 → `UnauthorizedException('Google 인증 실패')`
+5. **`payload.email_verified === false` → `UnauthorizedException('Google 이메일이 아직 인증되지 않았습니다...')`**
+6. 통과 시 `findBySocialAccount('google', payload.sub)` → 기존 연결 author 검색
+7. 미존재 시 `findByEmail(payload.email)` → 자동 링크 후보 검색
+8. 미존재 시 신규 가입 (slug 자동 생성 + 가입 보너스 3 크레딧)
+9. `linkSocialAccount` 호출 + accessToken/refreshToken 발급
+
+### 변경 시 동시 갱신 대상
+
+- `grimoire-server/src/application/auth/auth.usecase.ts` (line 112-122 차단 게이트)
+- `grimoire-server/src/application/auth/auth.usecase.spec.ts` (`describe('googleLogin')` 4 it: payload.email 누락 / email_verified=false / email_verified=true 회귀 / email_verified undefined 통과)
+- `.claude/scripts/sensor-oauth-email-verification.sh` (8 검증)
+- `eval/tasks/regression-60-oauth-email-verification.json` (10 criteria)
+- `reports/sprint-oauth-email-verification-progress.md` (정본)
+- `research/EMAIL_INTEGRITY_PLAN.md` §13-5 #1 상태 표 (해소됨 박제)
+- `grimoire-server/SECURITY.md` (향후 §2 OAuth 검증 정책 추가)
+
+### 변경 이력
+- 2026-05-05 #10_7 트랙 F 강화안 A: 신설 — OAuth 자동 링크 보안 강화 1단계. `email_verified === false` 차단 게이트 + spec 4 it (16/16 PASS) + sensor (8/8 PASS) + regression-60. 외부 API 신규 의존 0건 (절대 규정 0-1 정합). 강화안 B(명시 동의) / C(이메일 인증 발송)는 EMAIL-P1-1 후 별도 sprint.
+
+---
+
+## 17. PartialRefund (server 도메인 — PAY-P2-1 부분 환불 비율 계산)
+
+**위치**:
+- Port: `grimoire-server/src/domain/port/outbound/payment-repository.port.ts:79-100` (반환 타입 4 필드 확장)
+- Repository: `grimoire-server/src/adapter/outbound/persistence/prisma-payment.repository.ts:117-220` (`refundPaymentAtomically` 비율 계산 보강)
+- UseCase: `grimoire-server/src/application/payment/refund-payment.usecase.ts:40-130` (4 action 매트릭스)
+- Spec: `grimoire-server/src/application/payment/refund-payment.usecase.spec.ts` (`describe('부분 환불 (PAY-P2-1)')` 6 it 추가, 16/16 PASS)
+- Sensor: `.claude/scripts/sensor-partial-refund.sh` (10 검증)
+- Regression: `eval/tasks/regression-61-partial-refund.json` (10 criteria)
+- 정본: `reports/sprint-pay-p2-1-partial-refund-progress.md` + `reports/PAY-P2-MASTER-PLAN.md` §3
+
+**적용**: Polar 환불 webhook (`order.refunded`) 또는 운영자 수동 부분 환불 시 `refundedAmount` 비율에 따라 크레딧을 비례 차감. PAY-P1-1 전액 환불 회귀 보존 + 부분 환불 신규 수용. RefundLog 호환성은 PAY-P1-1 박제 시점부터 이미 확보 (UNIQUE 미부여, amount/credits 분리 설계).
+
+### 시그니처
+
+```typescript
+// PaymentRepositoryPort (반환 타입 확장)
+refundPaymentAtomically(input: {
+  paymentId: string
+  authorId: string
+  credits: number          // 원래 결제 적립 크레딧 (양수 — 비율로 비례 차감)
+  refundedAmount: number   // 전액 시 payment.amount, 부분 시 그 미만
+  reason: string
+  source: 'webhook' | 'manual'
+}): Promise<{
+  actualDeducted: number       // 실제 차감 크레딧 (deficit 시 잔액)
+  deficitCredits: number       // 잔액 부족분
+  proportionalCredits: number  // ★ 신규 — 비율 적용 후 차감 목표
+  isPartial: boolean           // ★ 신규 — 부분 환불 여부 (ratio < 1.0)
+}>
+
+// RefundPaymentUseCase.execute (반환 타입 확장 + action 4 매트릭스)
+async execute(input): Promise<{
+  actualDeducted: number
+  deficitCredits: number
+  proportionalCredits: number
+  isPartial: boolean
+}>
+```
+
+### 정책
+
+- **비율 계산 (트랜잭션 내부)**: `ratio = refundedAmount / payment.amount` (`prisma-payment.repository.ts`)
+- **비례 크레딧**: `proportionalCredits = isPartial ? Math.floor(credits * ratio) : credits`
+- **반올림 정책**: `Math.floor` 고정 (사용자 우호 — 차감 ↓ 소수점 버림)
+- **isPartial 분기**: `ratio < 1.0` (전액 환불은 PAY-P1-1 회귀 보존)
+- **Payment.status 분기**: 부분 환불 시 `'partial_refunded'`, 전액 시 `'refunded'`
+- **Validation**:
+  - `refundedAmount <= 0` → `BadRequestException` (usecase)
+  - `payment.amount <= 0` → throw (free 결제 환불 무의미)
+  - `refundedAmount > payment.amount` → throw (validation)
+- **AuditLog action 4 매트릭스** (isPartial × deficitCredits):
+  - `refund_normal` (전액 + 정상)
+  - `refund_deficit` (전액 + deficit)
+  - `refund_partial` (부분 + 정상)
+  - `refund_partial_deficit` (부분 + deficit)
+- **CreditLog reason 접미사**: 부분 환불 시 `_partial` 추가 (`refund_<paymentId>_<source>_partial`)
+- **deficit 분기**: 부분 환불 시 proportionalCredits 기준으로 deficit 계산 (잔액 < proportionalCredits)
+
+### 처리 흐름 (Polar order.refunded → 비율 계산 → 차감)
+
+1. Polar webhook → `polar.adapter.verifyAndParseWebhook` → `NormalizedWebhookEvent { type:'order.refunded', amount, ... }`
+2. `payment.usecase.processWebhook` → `event.status === 'cancel'` 분기 → `refundPaymentUseCase.execute`
+3. `refundPaymentUseCase.execute` → `paymentRepo.refundPaymentAtomically` 호출
+4. `prisma-payment.repository.refundPaymentAtomically` $transaction:
+   - tx.payment.findUnique → amount 조회
+   - validation (refundedAmount > 0, payment.amount > 0, refundedAmount ≤ payment.amount)
+   - ratio = refundedAmount / payment.amount
+   - isPartial = ratio < 1.0
+   - proportionalCredits = isPartial ? Math.floor(credits * ratio) : credits
+   - tx.payment.update → status='partial_refunded'|'refunded'
+   - tx.author.findUnique → currentBalance 조회
+   - actualDeducted = Math.min(currentBalance, proportionalCredits)
+   - deficitCredits = Math.max(0, proportionalCredits - currentBalance)
+   - tx.author.update → credits decrement (actualDeducted > 0 시만)
+   - tx.creditLog.create → amount=-actualDeducted (대칭, `_partial` 접미사)
+   - tx.refundLog.create → amount=refundedAmount + credits=actualDeducted + deficitCredits
+5. UseCase 반환 후 AuditLog 후행 (4 action 매트릭스 분기)
+
+### 변경 시 동시 갱신 대상
+
+- `grimoire-server/src/domain/port/outbound/payment-repository.port.ts` (시그니처)
+- `grimoire-server/src/adapter/outbound/persistence/prisma-payment.repository.ts` (구현)
+- `grimoire-server/src/application/payment/refund-payment.usecase.ts` (action 매트릭스)
+- `grimoire-server/src/application/payment/refund-payment.usecase.spec.ts` (부분 환불 6 it + 기존 7 it 시그니처 갱신)
+- `.claude/scripts/sensor-partial-refund.sh` (10 검증)
+- `eval/tasks/regression-61-partial-refund.json` (10 criteria)
+- `reports/sprint-pay-p2-1-partial-refund-progress.md` (정본)
+
+### 변경 이력
+- 2026-05-05 #10_7 PAY-P2-1: 신설 — 부분 환불 비율 계산 sprint. 외부 API 신규 의존 0건 (Polar webhook 내부 amount 필드만 활용). RefundLog 호환성은 PAY-P1-1 박제 시점부터 이미 확보. 회귀: PAY-P1-1 전액 환불 spec 7건 모두 PASS (16/16 jest + 10/10 sensor + 10/10 regression-61). 정본: PAY-P2 마스터 플랜 §3.
+
+---
+
+## 18. WebhookDLQ (server 도메인 — PAY-P2-2 Postgres 기반 webhook 재시도 큐)
+
+**위치**:
+- Schema: `grimoire-server/prisma/schema.prisma` (`model WebhookRetryQueue`)
+- Migration: `grimoire-server/prisma/migrations/20260505020000_add_webhook_retry_queue/migration.sql`
+- Port: `grimoire-server/src/domain/port/outbound/webhook-retry-queue-repository.port.ts` (5 메서드)
+- Repository: `grimoire-server/src/adapter/outbound/persistence/prisma-webhook-retry-queue.repository.ts` (P2002 race 안전)
+- Job: `grimoire-server/src/application/payment/webhook-retry.job.ts` (`@Cron('0 */5 * * * *')` 5분 주기)
+- Spec: `grimoire-server/src/application/payment/webhook-retry.job.spec.ts` (8 it, 8/8 PASS)
+- Sensor: `.claude/scripts/sensor-webhook-dlq.sh` (12 검증)
+- Regression: `eval/tasks/regression-62-webhook-dlq.json` (12 criteria)
+- 정본: `reports/sprint-pay-p2-2-webhook-dlq-progress.md` + `reports/PAY-P2-MASTER-PLAN.md` §4
+
+**적용**: `payment.usecase.processWebhook` 실패 분기(success 트랜잭션 실패 + cancel/refund 실패)에서 `webhook_retry_queues` 테이블에 멱등 박제(eventId @unique). `WebhookRetryJob` @Cron 5분이 `nextRetryAt <= now()` row를 재처리. 외부 인프라 의존 0건 (Postgres만, 절대 규정 0-1 정합).
+
+### 시그니처
+
+```typescript
+// Schema
+model WebhookRetryQueue {
+  id          String   @id @default(uuid())
+  eventId     String   @unique @map("event_id")
+  payload     Json
+  retryCount  Int      @default(0) @map("retry_count")
+  lastError   String?  @map("last_error")
+  nextRetryAt DateTime @map("next_retry_at") @db.Timestamptz(3)
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  @@index([nextRetryAt])
+  @@map("webhook_retry_queues")
+}
+
+// Port (5 메서드)
+interface WebhookRetryQueueRepositoryPort {
+  upsert(input: { eventId; payload; nextRetryAt }): Promise<Record | null>  // P2002 시 null
+  findDue(now: Date, limit?: number): Promise<Record[]>                     // ORDER BY nextRetryAt LIMIT N
+  deleteById(id: string): Promise<void>
+  markRetry(id: string, error: string, nextRetryAt: Date): Promise<void>    // retryCount++
+  findByEventId(eventId: string): Promise<Record | null>
+}
+
+// Job (@Cron 5분)
+@Cron('0 */5 * * * *')
+async retryDueWebhooks(): Promise<void>
+
+// PaymentUseCase 신규 메서드
+async processNormalizedWebhook(event: NormalizedWebhookEvent): Promise<{
+  processed: boolean
+  credits?: number
+  deficitCredits?: number
+  reason?: string
+}>
+```
+
+### 정책
+
+- **멱등성 키**: `eventId @unique` (webhook_events.eventId와 정합 — 같은 webhook은 한 큐 row만)
+- **race 안전**: `upsert` P2002 시 null 반환 (기존 row 보존, retryCount는 markRetry로만 증가)
+- **백오프 매트릭스 (분 단위)**:
+  - retryCount=1 → 1분
+  - retryCount=2 → 5분
+  - retryCount=3 → 30분
+  - retryCount=4 → 120분 (2h)
+  - retryCount=5 → 720분 (12h)
+  - retryCount=6+ → 1440분 (24h)
+- **MAX_RETRY=10**: 초과 시 webhook_events status='failed' 갱신 + AuditLog operator='system_dlq' + queue row 삭제
+- **isRunning lock**: 같은 process 내 동시 실행 차단 (replicas ≥2 시 advisory_lock 보강 보류)
+- **비활성화 게이트**: `WEBHOOK_RETRY_DISABLED=1` env 시 즉시 return
+- **BATCH_SIZE=100**: 한 cron tick 최대 처리 row 수
+- **Optional 의존**: payment.usecase는 `@Optional()` 주입으로 retryQueueRepo 미주입 시 회귀 보존 (기존 동작 유지)
+- **payment.usecase 분리**: `processWebhook(rawBody, headers)` (verify) + `processNormalizedWebhook(event)` (DB 처리). retry 시점에는 verify 우회.
+
+### 처리 흐름 (실패 → 재시도 → 성공/permanent_failed)
+
+1. Polar webhook → `payment.usecase.processWebhook(rawBody, headers)` 진입
+2. `verifyAndParseWebhook` → `processNormalizedWebhook(event)` 호출
+3. `completePaymentAtomically` (success) 또는 `refundPaymentUseCase.execute` (cancel) 트랜잭션 실패
+4. catch 블록: `webhook_events.createIfAbsent(status='failed')` + `enqueueWebhookRetry(event, eventId)`
+5. `webhook_retry_queues.upsert({ eventId, payload, nextRetryAt: now+1m })` (P2002 시 null 반환, race 안전)
+6. throw → caller가 webhook 응답 500 → Polar 자체 재전송 + 본 큐의 자체 cron 재시도 (이중 보호)
+7. `WebhookRetryJob` 5분 주기 진입:
+   - `findDue(now)` → due row 100건 조회
+   - 각 row → `processNormalizedWebhook(event)` 호출
+   - 성공 → `deleteById(id)` (큐 row 제거)
+   - 실패 (retryCount+1 < 10) → `markRetry(id, error, calcNextRetry(retryCount+1))`
+   - 실패 (retryCount+1 ≥ 10) → `webhookEventRepo.markStatus('failed')` + `auditLog.log('system_dlq', 'webhook_permanent_failed')` + `deleteById(id)`
+
+### 변경 시 동시 갱신 대상
+
+- `grimoire-server/prisma/schema.prisma` (model)
+- `grimoire-server/prisma/migrations/20260505020000_add_webhook_retry_queue/migration.sql`
+- `grimoire-server/src/domain/port/outbound/webhook-retry-queue-repository.port.ts`
+- `grimoire-server/src/adapter/outbound/persistence/prisma-webhook-retry-queue.repository.ts`
+- `grimoire-server/src/application/payment/webhook-retry.job.ts`
+- `grimoire-server/src/application/payment/webhook-retry.job.spec.ts`
+- `grimoire-server/src/application/payment/payment.usecase.ts` (Optional 주입 + processNormalizedWebhook 분리 + enqueueWebhookRetry)
+- `grimoire-server/src/app.module.ts` (WebhookRetryJob + WebhookRetryQueueRepositoryPort 등록)
+- `.claude/scripts/sensor-webhook-dlq.sh`
+- `eval/tasks/regression-62-webhook-dlq.json`
+- `reports/sprint-pay-p2-2-webhook-dlq-progress.md`
+
+### 변경 이력
+- 2026-05-05 #10_7 PAY-P2-2: 신설 — Postgres 기반 webhook DLQ. 외부 인프라 의존 0건 (Redis/ServiceBus/Kafka 미사용). schema +1 모델 + migration 1건. payment.usecase processWebhook → processNormalizedWebhook 분리 (retry 시점 verify 우회). spec 8/8 + sensor 12/12 + jest server 583→591. 정본: PAY-P2 마스터 플랜 §4 + reports/sprint-pay-p2-2-webhook-dlq-progress.md.
+
+---
+
+## 19. SmsServicePort (server 도메인 — PAY-P2-3 사전 작업: SMS Hexagonal 캡슐화)
+
+**위치**:
+- Port: `grimoire-server/src/domain/port/outbound/sms-service.port.ts` (4 메서드 — sendPaymentNotification/sendVerificationCode/isEnabled/getProviderName)
+- Adapter (default): `grimoire-server/src/adapter/outbound/sms/null-sms.adapter.ts` (외부 API 0건, PII 마스킹)
+- Spec: `grimoire-server/src/adapter/outbound/sms/null-sms.adapter.spec.ts` (10/10 PASS)
+- Sensor: `.claude/scripts/sensor-sms-service-port.sh` (8 검증)
+- Regression: `eval/tasks/regression-63-sms-service-port.json` (10 criteria)
+- 정본: `reports/sprint-pay-p2-3-sms-service-port-progress.md` + `reports/PAY-P2-MASTER-PLAN.md` §5
+
+**적용**: SMS provider 캡슐화 (Hexagonal) — UseCase는 본 인터페이스만 의존. 절대 규정 0-1 (외부 API 신규 의존) **사용자 명시 해제 전까지 NullSmsAdapter default**. 결정 후 KakaoBizmessageAdapter / NhnCloudAdapter / TwilioAdapter 어댑터만 추가. EmailServicePort §12와 동일 패턴 정합.
+
+### 시그니처
+
+```typescript
+// Port 인터페이스
+export type SmsProvider = 'null' | 'kakao' | 'nhn' | 'twilio'
+export type PaymentSmsType = 'payment_success' | 'payment_failed' | 'payment_refunded'
+
+export interface SmsSendResult {
+  messageId: string | null
+  provider: SmsProvider
+}
+
+export interface SmsServicePort {
+  sendPaymentNotification(input: {
+    to: string
+    type: PaymentSmsType
+    displayName?: string
+    payload: Record<string, unknown>
+  }): Promise<SmsSendResult>
+
+  sendVerificationCode(input: {
+    to: string
+    code: string
+    displayName?: string
+    expireAt: Date
+  }): Promise<SmsSendResult>
+
+  isEnabled(): boolean
+  getProviderName(): SmsProvider
+}
+```
+
+### 정책
+
+- **default Provider = 'null'**: env 미박제 시 NullSmsAdapter — `isEnabled()=false` 반환, 실 발송 0건, logger.warn만.
+- **PII 마스킹 강제**: 전화번호 (`+821****5678`), 인증코드 (`1***`) — 평문 박제 차단 (PIPA / GDPR 정합).
+- **외부 SDK import 0건**: 절대 규정 0-1 정합. provider 결정 시 별도 sprint에서 어댑터만 추가.
+- **EmailServicePort 패턴 정합**:
+  - PaymentSmsType ↔ PaymentNotificationType 동일 3 타입 (success/failed/refunded)
+  - sendPaymentNotification 시그니처 동일 형태 (`to + type + displayName + payload`)
+- **결제 트리거 미연동 (의도된 OUT)**: payment.usecase에 sendPaymentNotification 호출 박제 0건. EMAIL-P1-3 / PAY-P2-3 진입 시 한 번에 통합 (Email + SMS 동시 알림).
+- **app.module DI 미등록 (의도된 OUT)**: EmailServicePort와 동일 패턴 — 캡슐화 + spec만 박제. provider 결정 후 별도 sprint에서 등록.
+- **payload 키 매트릭스** (EmailServicePort 정합):
+  - `payment_success`: { paymentId, amount, credits, productName }
+  - `payment_failed`: { paymentId, amount, productName }
+  - `payment_refunded`: { paymentId, refundedAmount, credits, deficitCredits, reason, isPartial }
+
+### 처리 흐름 (provider 결정 후 + 트리거 진입 시 예상)
+
+```
+PAY 트랜잭션 (success / refund) commit 후
+  → EmailServicePort.sendPaymentNotification (이미 캡슐화)
+  → SmsServicePort.sendPaymentNotification (본 캡슐화)
+  → 둘 다 NullAdapter면 noop (logger.warn만)
+  → 사용자가 "이메일 SaaS 진입" + "SMS 진입" 명시 후
+    → ResendEmailAdapter / KakaoBizmessageAdapter 등으로 교체
+    → UseCase 코드 변경 0건 (인터페이스만 의존)
+```
+
+### 변경 시 동시 갱신 대상
+
+- `grimoire-server/src/domain/port/outbound/sms-service.port.ts` (Port 인터페이스)
+- `grimoire-server/src/adapter/outbound/sms/null-sms.adapter.ts` (default 어댑터)
+- `grimoire-server/src/adapter/outbound/sms/null-sms.adapter.spec.ts` (10 it)
+- `.claude/scripts/sensor-sms-service-port.sh` (8 검증)
+- `eval/tasks/regression-63-sms-service-port.json` (10 criteria)
+- `reports/sprint-pay-p2-3-sms-service-port-progress.md` (정본)
+- 향후 진입 시 추가:
+  - `grimoire-server/src/adapter/outbound/sms/kakao-bizmessage.adapter.ts` (사용자 결정 후)
+  - `grimoire-server/src/app.module.ts` (DI factory + env 분기)
+  - `grimoire-server/src/application/payment/payment.usecase.ts` (트리거 호출)
+
+### 변경 이력
+- 2026-05-05 #10_7 PAY-P2-3 사전 작업: 신설 — SMS Hexagonal Port 캡슐화. 외부 API 신규 의존 0건 (NullSmsAdapter default + 외부 SDK import 0건). 절대 규정 0-1 정합. EmailServicePort 패턴 차용. spec 10/10 + sensor 8/8 + regression-63. 결제 트리거 + app.module DI 등록은 SMS provider 사용자 결정 후 별도 sprint 진입.
+
+---
+
+## 20. AdminAuditLog beforeState/afterState Convention (server 도메인 — PAY-P2-4 정밀화)
+
+**위치**:
+- Service: `grimoire-server/src/application/admin/audit-log.service.ts` (`log()` 시그니처 6-arg BACKWARD COMPATIBLE 확장, line 22-49)
+- Spec: `grimoire-server/src/application/admin/audit-log.service.spec.ts` (신설 10 it)
+- 호출처:
+  - `application/admin/admin.usecase.ts` (grantCredits + deductCredits, line 93-129)
+  - `application/payment/payment.usecase.ts` (processWebhook 'success' 'payment_completed', line 188-247)
+  - `application/payment/refund-payment.usecase.ts` (4 action: refund_normal/deficit/partial/partial_deficit, line 75-170)
+
+**적용**: 모든 audit log 호출 시 detail JSON에 표준 키 `beforeState` + `afterState` 박제. 감사 추적 시 변경 전/후 값 명시적 박제로 회귀/부정행위 식별 가능. DB schema 변경 0건 (AdminAuditLog.detail JSON 컬럼 활용).
+
+### 시그니처 (BACKWARD COMPATIBLE)
+
+```typescript
+async log(
+  operator: string,           // 'admin:{id}' | 'system_payment' | 'system_refund' | 'system_cleanup' | 'system_reconciliation'
+  action: string,             // 'credit_grant' | 'credit_deduct' | 'payment_completed' | 'refund_normal' | ...
+  targetId: string,
+  detail?: Record<string, unknown>,
+  beforeState?: Record<string, unknown>,  // PAY-P2-4 신규 — optional, BACKWARD COMPATIBLE
+  afterState?: Record<string, unknown>,   // PAY-P2-4 신규 — optional, BACKWARD COMPATIBLE
+): Promise<void>
+
+// 4-arg 호출 — 기존 패턴 유지 (회귀 0)
+auditLog.log('system_refund', 'refund_normal', paymentId, { reason })
+
+// 6-arg 호출 — PAY-P2-4 신규 패턴
+auditLog.log(
+  'admin:admin-1', 'credit_grant', authorId,
+  { reason: 'manual grant' },
+  { credits: 100 }, { credits: 150 },
+)
+```
+
+### 정책 (action별 표준 매트릭스)
+
+| action | operator | beforeState | afterState |
+|---|---|---|---|
+| `credit_grant` | `admin:{id}` | `{ credits: oldBalance }` | `{ credits: newBalance }` |
+| `credit_deduct` | `admin:{id}` | `{ credits: oldBalance }` | `{ credits: newBalance }` |
+| `payment_completed` | `system_payment` | `{ credits: balanceBefore }` | `{ credits: balanceAfter, paymentId, addedCredits }` |
+| `refund_normal` | `system_refund` | `{ credits, paymentStatus: 'completed' }` | `{ credits, paymentStatus: 'refunded', deficitCredits: 0, creditsActuallyDeducted }` |
+| `refund_deficit` | `system_refund` | `{ credits, paymentStatus: 'completed' }` | `{ credits: 0, paymentStatus: 'refunded', deficitCredits, creditsActuallyDeducted }` |
+| `refund_partial` | `system_refund` | `{ credits, paymentStatus: 'completed' }` | `{ credits, paymentStatus: 'partial_refunded', deficitCredits: 0, creditsActuallyDeducted }` |
+| `refund_partial_deficit` | `system_refund` | `{ credits, paymentStatus: 'completed' }` | `{ credits: 0, paymentStatus: 'partial_refunded', deficitCredits, creditsActuallyDeducted }` |
+| `payment_expire` | `system_cleanup` | (생략 — pending row 만료, 잔액 변경 0) | (생략) |
+
+### 처리 흐름
+
+1. `log()` 진입
+2. `hasBefore = beforeState !== undefined` / `hasAfter = afterState !== undefined`
+3. detail JSON 빌드: `detail` spread + `hasBefore` true → `beforeState` 키 추가 + `hasAfter` true → `afterState` 키 추가
+4. 둘 다 undefined → detail JSON에 키 미박제 (4-arg 호출 회귀 0)
+5. AdminAuditLog DB INSERT (detail JSON 컬럼 활용)
+
+### 변경 시 동시 갱신 대상
+
+- `audit-log.service.ts` (시그니처)
+- `audit-log.service.spec.ts` (신설 ≥6 it)
+- `admin.usecase.ts` (grantCredits + deductCredits)
+- `payment.usecase.ts` (processWebhook 'success')
+- `refund-payment.usecase.ts` (4 action)
+- 위 4개 spec 파일 (회귀 보존 + 검증 강화)
+- `eval/tasks/regression-64-audit-log-before-after.json`
+- `.claude/scripts/sensor-audit-log-before-after.sh`
+
+### 변경 이력
+- 2026-05-06 #10_8 (다른 세션 + 본 세션 공동) PAY-P2-4: 신설 — AuditLogService.log() 6-arg BACKWARD COMPATIBLE 확장 + admin.usecase + payment.usecase + refund-payment.usecase 호출처 갱신 + audit-log.service.spec 신설 10 it. PAY-P1-1 refund spec 16 it 회귀 0건 보존. DB schema 변경 0건. 정본: `reports/sprint-pay-p2-4-audit-strengthening-progress.md` + `.claude/shared-contracts.md §20`. 검증: jest server 604→625 (+21), sensor 10/10 PASS, 의미 있는 assertion 19건.
+
+---
+
 ## 변경 시 절차 (책 Ch 16 충돌 2번 해결책)
 
 agent A가 인터페이스 변경 시:
