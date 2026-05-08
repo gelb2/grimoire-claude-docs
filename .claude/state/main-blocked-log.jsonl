@@ -8,3 +8,12 @@
 {"ts":"2026-05-08T13:45:16Z","tool":"Edit","type":"main_whitelist_violation","file":"/Users/sokol/Desktop/Git/ProjectGrimoire/.claude/scripts/pretooluse-main-whitelist.sh"}
 {"ts":"2026-05-08T13:46:54Z","tool":"Bash","type":"main_whitelist_violation","command":"bash -n /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/scripts/pretooluse-main-whitelist.sh && echo \\"syntax PASS\\" && echo \\"=== 시뮬 1: Read 통과 ===\\" && echo '{\\"tool_name\\":\\"Read\\",\\"tool_input\\":{\\""}
 {"ts":"2026-05-08T13:47:21Z","tool":"Bash","type":"main_whitelist_violation","command":"git -C /Users/sokol/Desktop/Git/ProjectGrimoire add .claude/scripts/pretooluse-main-whitelist.sh"}
+{"ts":"2026-05-08T14:10:45Z","tool":"Write","type":"main_whitelist_violation","file":"/Users/sokol/Desktop/Git/ProjectGrimoire/reports/sprint-pay-p3-master-plan.md"}
+{"ts":"2026-05-08T14:14:07Z","tool":"Write","type":"main_whitelist_violation","file":"/Users/sokol/Desktop/Git/ProjectGrimoire/reports/sprint-pay-p3-master-plan.md"}
+{"ts":"2026-05-08T14:27:55Z","tool":"Edit","type":"main_whitelist_violation","file":"/Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/src/application/payment/payment.usecase.ts"}
+{"ts":"2026-05-08T14:28:56Z","tool":"Bash","type":"main_whitelist_violation","command":"JSONL_DIR=\\"$HOME/.claude/projects/-Users-sokol-Desktop-Git-ProjectGrimoire\\" && LATEST=$(ls -t \\"$JSONL_DIR\\"/*.jsonl 2>/dev/null | head -1) && python3 -c \\"
+import json,os
+jsonl='$LATEST'
+last_user=''
+wi"}
+{"ts":"2026-05-08T15:09:24Z","tool":"Write","type":"main_whitelist_violation","file":"/Users/sokol/Desktop/Git/ProjectGrimoire/.claude/agents/grimoire-harness.md"}

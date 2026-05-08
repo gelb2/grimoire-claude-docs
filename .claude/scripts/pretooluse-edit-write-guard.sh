@@ -51,7 +51,13 @@ try:
     print(d.get('isSidechain', False))
 except: print('False')" 2>/dev/null || echo "False")
 
-if [ "$SIDECHAIN" = "True" ]; then
+# 디버깅: INPUT JSON sidechain 검출 raw 박제 (5/9 PP-13 isSidechain 결함 디버깅)
+SIDECHAIN_DEBUG_LOG="$ROOT/.claude/state/sidechain-debug.jsonl"
+TS_DEBUG=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+echo "{\"ts\":\"$TS_DEBUG\",\"sidechain_value\":\"$SIDECHAIN\",\"input_size\":${#INPUT},\"file_path\":\"$FILE_PATH\",\"tool\":\"$TOOL_NAME\"}" >> "$SIDECHAIN_DEBUG_LOG" 2>/dev/null || true
+
+# isSidechain 다양 값 처리 (Python True/true/1 + JSON true 모두 통과)
+if [ "$SIDECHAIN" = "True" ] || [ "$SIDECHAIN" = "true" ] || [ "$SIDECHAIN" = "1" ]; then
   exit 0  # agent 안에서는 통과
 fi
 
@@ -67,24 +73,29 @@ case "$FILE_PATH" in
   *grimoire-web/src/*) EXPECTED_AGENT="grimoire-web" ;;
   *grimoire-web/docs/*) EXPECTED_AGENT="grimoire-web" ;;
   *grimoire-web/app/*) EXPECTED_AGENT="grimoire-web" ;;
-  # .claude/ 하네스 영역 — grimoire-infrastructure (사용자 명시 2026-05-08)
-  *.claude/skills/*) EXPECTED_AGENT="grimoire-infrastructure" ;;
-  *.claude/scripts/sensor-*) EXPECTED_AGENT="grimoire-infrastructure" ;;
-  *.claude/scripts/pretooluse-*) EXPECTED_AGENT="grimoire-infrastructure" ;;
-  *.claude/scripts/incident-log*) EXPECTED_AGENT="grimoire-infrastructure" ;;
-  *.claude/scripts/stop-*) EXPECTED_AGENT="grimoire-infrastructure" ;;
-  *.claude/scripts/check-*) EXPECTED_AGENT="grimoire-infrastructure" ;;
-  *.claude/scripts/skill-*) EXPECTED_AGENT="grimoire-infrastructure" ;;
-  *.claude/scripts/post-*) EXPECTED_AGENT="grimoire-infrastructure" ;;
-  *.claude/scripts/user-*) EXPECTED_AGENT="grimoire-infrastructure" ;;
-  *.claude/scripts/pre-*) EXPECTED_AGENT="grimoire-infrastructure" ;;
-  *.claude/scripts/loop-detection-tracker*) EXPECTED_AGENT="grimoire-infrastructure" ;;
-  *.claude/scripts/posttooluse-*) EXPECTED_AGENT="grimoire-infrastructure" ;;
-  *.claude/scripts/subagent-*) EXPECTED_AGENT="grimoire-infrastructure" ;;
-  *.claude/scripts/instructions-*) EXPECTED_AGENT="grimoire-infrastructure" ;;
-  *.claude/scripts/generate-*) EXPECTED_AGENT="grimoire-infrastructure" ;;
-  *.claude/scripts/statusline*) EXPECTED_AGENT="grimoire-infrastructure" ;;
-  *.claude/settings.json*) EXPECTED_AGENT="grimoire-infrastructure" ;;
+  # .claude/ 하네스 영역 — grimoire-harness (사용자 명시 2026-05-09 PP-13 정정)
+  # 이전 박제 (5/8 PP-12): grimoire-infrastructure 라우팅 → agent 정직 거부 입증
+  # → grimoire-harness agent 신설 (5/9) + 라우팅 매트릭스 ↔ agent 정의 정합화
+  *.claude/skills/*) EXPECTED_AGENT="grimoire-harness" ;;
+  *.claude/scripts/sensor-*) EXPECTED_AGENT="grimoire-harness" ;;
+  *.claude/scripts/pretooluse-*) EXPECTED_AGENT="grimoire-harness" ;;
+  *.claude/scripts/incident-log*) EXPECTED_AGENT="grimoire-harness" ;;
+  *.claude/scripts/stop-*) EXPECTED_AGENT="grimoire-harness" ;;
+  *.claude/scripts/check-*) EXPECTED_AGENT="grimoire-harness" ;;
+  *.claude/scripts/skill-*) EXPECTED_AGENT="grimoire-harness" ;;
+  *.claude/scripts/post-*) EXPECTED_AGENT="grimoire-harness" ;;
+  *.claude/scripts/user-*) EXPECTED_AGENT="grimoire-harness" ;;
+  *.claude/scripts/pre-*) EXPECTED_AGENT="grimoire-harness" ;;
+  *.claude/scripts/loop-detection-tracker*) EXPECTED_AGENT="grimoire-harness" ;;
+  *.claude/scripts/posttooluse-*) EXPECTED_AGENT="grimoire-harness" ;;
+  *.claude/scripts/subagent-*) EXPECTED_AGENT="grimoire-harness" ;;
+  *.claude/scripts/instructions-*) EXPECTED_AGENT="grimoire-harness" ;;
+  *.claude/scripts/generate-*) EXPECTED_AGENT="grimoire-harness" ;;
+  *.claude/scripts/statusline*) EXPECTED_AGENT="grimoire-harness" ;;
+  *.claude/scripts/update-harness-inventory*) EXPECTED_AGENT="grimoire-harness" ;;
+  *.claude/settings.json*) EXPECTED_AGENT="grimoire-harness" ;;
+  *.claude/state/*) EXPECTED_AGENT="grimoire-harness" ;;
+  *.claude/knowledge/*) EXPECTED_AGENT="grimoire-harness" ;;
   *eval/tasks*) EXPECTED_AGENT="grimoire-qa" ;;
   *eval/scripts/*) EXPECTED_AGENT="grimoire-qa" ;;
   *reports/QA_REPORT*) EXPECTED_AGENT="grimoire-qa" ;;
@@ -155,7 +166,8 @@ except Exception:
 print(last_user[:1000])
 PYEOF
 )
-  if echo "$LAST_USER_MSG" | grep -qE "agent로|위임|처리해|진행해|메인 직접|직접 Edit|직접 작업|박아|박아버려|박제해"; then
+  # 우회 키워드 매트릭스 (사용자 발화 정합 — 2026-05-09 PP-13 확장)
+  if echo "$LAST_USER_MSG" | grep -qE "agent로|위임|처리해|진행해|진행|시작|해봐|편집|적용|메인 직접|직접 Edit|직접 작업|박아|박아버려|박제해|틀어 막|화이트리스트|whitelist|맘대로해|알아서해"; then
     USER_DELEGATION_OK=1
   fi
 fi
