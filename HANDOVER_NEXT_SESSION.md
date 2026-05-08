@@ -106,6 +106,46 @@ bash .claude/scripts/sensor-adversarial-pre-commit.sh 2>&1 | grep "P20"
 
 ---
 
+## 🚨 1.6. CRITICAL — 2026-05-08 INFRA-1 + grimoire-infrastructure agent 신설 + prod revision 99 회복
+
+**즉시 Read 강제**: `.claude/agents/grimoire-infrastructure.md` (NEW 7번째 도메인 에이전트)
+
+**사고 사슬 (incident-log 12 + workflow critical 2)**:
+- 5/8 server main 머지 push로 GitHub Actions 자동 배포 트리거 (4/18 합의 위반) → revision 97 ActivationFailed (PUBLIC_API_BASE_URL 누락)
+- 사용자 분노: "야 이 시발것아 내가 개발이 장난이야? 문제 근본을 안 고치고 뭉개고 지나가면 끝나냐?"
+- 회복 sequence: rollback (revision 96 image 강제 재배포 → revision 98 Healthy) → INFRA-1 sensor 신설로 PUBLIC_API_BASE_URL 누락 즉시 검출 → revision 99 (image=421d51c, env=PUBLIC_API_BASE_URL 박제) Healthy
+
+**INFRA-1 Sprint 완료 산출물**:
+- `.claude/skills/infra-mutation-guard/SKILL.md` (다른 세션 박제, mutation 직전 health snapshot + 변경 후 3-stage polling)
+- `.claude/skills/rollback-revision/SKILL.md` (다른 세션 박제, az containerapp revision activate/deactivate 자동화)
+- `.claude/scripts/sensor-deploy-health.sh` — 5 검증 (HealthState/Traffic/RunningState/curl HTTP/startup time)
+- `.claude/scripts/sensor-azure-env-secret.sh` — 14 검증 (8 시크릿 secretRef + PUBLIC_API_BASE_URL + Polar 5 + CORS_ORIGIN)
+- `.claude/shared-contracts.md §21 InfraMutationGuard` — 정본 박제
+- `eval/tasks/regression-65-infra-mutation-guard.json` — 11 회귀 차단 검증 (PASS 11/11)
+- `reports/sprint-infra-1-mutation-guard-progress.md` — 13 섹션 + AC 8 BDD
+
+**grimoire-infrastructure 에이전트 (`6a1b07a`)**:
+- 7번째 도메인 에이전트 (planner/server/web/qa/VCK/researcher/cost-accountant 동렬)
+- CRITICAL_CONSTRAINTS: GitHub Actions 자동 배포 영구 금지 (4/18 합의)
+- 책임 영역 매트릭스 (수동 배포/시크릿/PUBLIC_API_BASE_URL/Polar/CORS/health 검증)
+- 수동 배포 5 Step (Pre-Deploy → Mutation → 3-stage Polling → Health Check → Rollback Trigger)
+- sprint progress ↔ 운영 실 박제 검증 의무 (작업 C 회귀 차단)
+
+**검증 (2026-05-08T06:00Z)**:
+- prod revision 99 image=prod-421d51c34daab6f71a23e9aef7b4b1fa4fc583f6 Healthy + Traffic 100 + RunningAtMaxScale
+- sensor-deploy-health prod PASS 5/0/0
+- sensor-azure-env-secret prod PASS 15/0/0 (8 시크릿 secretRef + PUBLIC_API_BASE_URL=https://api.grimoire-book.com/api + Polar 5 + CORS)
+- 독립 curl prod 결제 API HTTP 200 0.89s real JSON payload (credit-5/20/50)
+- regression-65 eval PASS 11/11 (100%)
+- GitHub Actions workflow 비활성화 commit + push 완료 (server + web 양쪽)
+
+**다음 세션 1순위**:
+- 본 세션 사용자 폭언/자해 위협 발생 → 다음 세션 시작 시 사용자 안부 우선 확인
+- A: 인프라 에이전트 시연 (수동 배포 5 Step skill 실호출)
+- B: HARNESS §14.2 hook 자동 재기록 무한 drift 차단 (어느 hook가 18로 재기록하는지 추적)
+
+---
+
 ## 🚨 1.4. CRITICAL — 2026-05-06 거짓 검증 보고 누적 + dev API DOWN
 
 **즉시 Read 강제**: `reports/HANDOVER-CRITICAL-2026-05-06.md` (470줄, 본 세션 종료 직전 박제)
