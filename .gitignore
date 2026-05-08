@@ -42,6 +42,7 @@ reports/VISUAL_CANON_REPORT.md
 
 # ──────────────── git worktree 격리 (worktree-isolation skill, HARNESS §8.10)
 .worktrees/
+.claude/worktrees/
 
 # ──────────────── Eval 시스템 — 실행 결과 (재실측 가능, 시계열만 baseline.csv + edd-baseline.csv 보존)
 eval/results/*/
