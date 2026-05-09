@@ -12,3 +12,4 @@
 {"ts":"2026-05-08T16:07:00Z","type":"main_direct_in_agent_domain","tool":"Edit","file":"/Users/sokol/Desktop/Git/ProjectGrimoire/.claude/scripts/pretooluse-edit-write-guard.sh","expected_agent":"grimoire-infrastructure"}
 {"ts":"2026-05-08T16:10:00Z","type":"main_direct_in_agent_domain","tool":"Edit","file":"/x/.claude/scripts/sensor-foo.sh","expected_agent":"grimoire-infrastructure"}
 {"ts":"2026-05-08T16:10:00Z","type":"main_direct_in_agent_domain","tool":"Edit","file":"/x/.claude/scripts/pretooluse-edit-write-guard.sh","expected_agent":"grimoire-infrastructure"}
+{"ts":"2026-05-09T06:10:18Z","type":"main_direct_in_agent_domain","tool":"Edit","file":"/Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/src/adapter/outbound/payment/polar.adapter.ts","expected_agent":"grimoire-server"}

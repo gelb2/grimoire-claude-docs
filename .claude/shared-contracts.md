@@ -1614,6 +1614,186 @@ this.logger.log(
 
 ---
 
+## 24. PolarSDKTimeoutPolicy (server 도메인 — Polar SDK timeout 명시 + exception 분기)
+
+**위치**:
+- Adapter: `grimoire-server/src/adapter/outbound/payment/polar.adapter.ts` (`new Polar({ timeoutMs })` + `classifyPolarError` + catch 분류 적용)
+- UseCase: `grimoire-server/src/application/payment/payment.usecase.ts` (`processNormalizedWebhook` success/cancel 분기 catch + `classifyAndRouteWebhookError` helper)
+- Port: `grimoire-server/src/domain/port/outbound/payment-gateway.port.ts` (`PolarErrorClass` + `PolarErrorClassification` + `classifyPolarError?` Optional 메서드)
+- Sensor: `.claude/scripts/sensor-polar-timeout-policy.sh` (5 검증)
+- Env: `POLAR_SDK_TIMEOUT_MS` (기본값 30000, dev/prod 동일)
+- Eval: `eval/tasks/regression-68-polar-timeout.json` (8 checks)
+
+**적용**: PAYMENT_AUDIT §1 구멍-C (Polar SDK exception type 미매핑 + timeout 정책 미명시) 차단. DB schema 변경 0건. 외부 API 추가 호출 0건 (기존 SDK 옵션만 변경). PAY-P2-2 DLQ retry 정합 (timeout/network/5xx만 retry, 4xx 즉시 permanent_failed).
+
+### 시그니처 — Polar SDK timeout 옵션 (옵션 A 채택)
+
+```typescript
+// polar.adapter.ts constructor
+constructor() {
+  const accessToken = process.env.POLAR_ACCESS_TOKEN ?? ''
+  const server = (process.env.POLAR_SERVER ?? 'production') as 'sandbox' | 'production'
+  this.webhookSecret = process.env.POLAR_WEBHOOK_SECRET ?? ''
+
+  // PAY-P3-B: 옵션 A 채택 — Polar SDK v0.47.0 SDKOptions.timeoutMs 내장 옵션 사용
+  // (config.d.ts L38 검증 — "timeoutMs?: number" 직접 지원).
+  // env POLAR_SDK_TIMEOUT_MS 미설정 시 기본 30s. parseInt 실패 시(NaN) 30s fallback.
+  const parsed = parseInt(process.env.POLAR_SDK_TIMEOUT_MS ?? '', 10)
+  this.timeoutMs = Number.isFinite(parsed) && parsed > 0 ? parsed : 30000
+
+  this.polar = new Polar({
+    accessToken,
+    server,
+    timeoutMs: this.timeoutMs,
+  })
+}
+```
+
+### 시그니처 — PolarErrorClassification (도메인 포트 정본)
+
+```typescript
+// payment-gateway.port.ts
+export type PolarErrorClass =
+  | 'timeout'      // AbortError, TimeoutError, RequestTimeoutError, RequestAbortedError, message 'timeout'
+  | 'network'      // ECONNRESET, ENOTFOUND, ETIMEDOUT, EPIPE, ECONNREFUSED, ConnectionError
+  | 'server_5xx'   // HTTP 500/502/503/504 등 (PolarError.statusCode 추출)
+  | 'client_4xx'   // HTTP 400/401/403/404/422 등 (retry 무의미 → permanent_failed)
+  | 'unknown'      // 분류 실패 시 안전 측면 fallback (retry 가능 영역)
+
+export interface PolarErrorClassification {
+  errorClass: PolarErrorClass
+  httpStatus?: number  // server_5xx / client_4xx 분류 시 필수
+  message: string      // 원본 에러 메시지 (500자 이내 truncate 권장)
+}
+
+export interface PaymentGatewayPort {
+  initiatePayment(...): Promise<PaymentInitResponse>
+  verifyAndParseWebhook(...): NormalizedWebhookEvent | null
+  listRecentCheckouts(...): Promise<NormalizedCheckout[]>
+  /** PAY-P3-B Optional 메서드 — 미구현 adapter는 'unknown' fallback (회귀 보존) */
+  classifyPolarError?(e: unknown): PolarErrorClassification
+}
+```
+
+### 시그니처 — classifyPolarError helper (PolarAdapter 구현)
+
+```typescript
+// polar.adapter.ts — public method (port 인터페이스 정합 + duck typing)
+classifyPolarError(e: unknown): PolarErrorClassification {
+  const message = e instanceof Error ? e.message : String(e)
+  const errorName = e instanceof Error ? e.name : ''
+
+  // 1. timeout 분류 (AbortError, TimeoutError, RequestTimeoutError, RequestAbortedError, /timeout/i, /aborted?/i)
+  if (errorName === 'AbortError' || errorName === 'TimeoutError' ||
+      errorName === 'RequestTimeoutError' || errorName === 'RequestAbortedError' ||
+      /\btimeout\b/i.test(message) || /\baborted?\b/i.test(message)) {
+    return { errorClass: 'timeout', message }
+  }
+
+  // 2. network 분류 (ConnectionError + Node.js system error prefixes)
+  if (errorName === 'ConnectionError' ||
+      /^(ECONNRESET|ENOTFOUND|ETIMEDOUT|EPIPE|ECONNREFUSED)/.test(message) ||
+      /\b(ECONNRESET|ENOTFOUND|ETIMEDOUT|EPIPE|ECONNREFUSED)\b/.test(message)) {
+    return { errorClass: 'network', message }
+  }
+
+  // 3. HTTP 응답 분류 — duck typing (PolarError.statusCode + legacy fetch + axios-like)
+  const httpStatus = this.extractHttpStatus(e)
+  if (httpStatus !== undefined) {
+    if (httpStatus >= 500 && httpStatus < 600) return { errorClass: 'server_5xx', httpStatus, message }
+    if (httpStatus >= 400 && httpStatus < 500) return { errorClass: 'client_4xx', httpStatus, message }
+  }
+
+  // 4. fallback (retry 가능 영역)
+  return { errorClass: 'unknown', message }
+}
+```
+
+### 시그니처 — payment.usecase 분기 처리 (classifyAndRouteWebhookError)
+
+```typescript
+// payment.usecase.ts — private helper
+private async classifyAndRouteWebhookError(
+  e: unknown,
+  event: NormalizedWebhookEvent,
+  paymentId: string,
+  branch: 'success' | 'cancel',
+): Promise<PolarErrorClassification> {
+  const polarError = this.paymentGateway.classifyPolarError?.(e) ??
+    { errorClass: 'unknown', message: e instanceof Error ? e.message : String(e) }
+
+  if (polarError.errorClass === 'client_4xx') {
+    // 4xx — retry 무의미, 즉시 permanent_failed 박제
+    this.logger.error(`[PolarSDK] client_4xx eventId=${event.eventId} branch=${branch} httpStatus=${polarError.httpStatus} → permanent_failed (retry 0건)`)
+    if (this.auditLog) {
+      await this.auditLog.log('system_dlq', 'webhook_permanent_failed', event.eventId, {
+        reason: 'polar_4xx_no_retry',
+        errorClass: polarError.errorClass,
+        httpStatus: polarError.httpStatus,
+        paymentId,
+        branch,
+        originalMessage: polarError.message.slice(0, 500),
+      })
+    }
+    await this.enqueueWebhookRetry(event as object, event.eventId, 'permanent_failed')
+  } else {
+    // timeout / network / server_5xx / unknown — retry 의미 있음
+    this.logger.warn(`[PolarSDK] ${polarError.errorClass} eventId=${event.eventId} branch=${branch} → retry`)
+    await this.enqueueWebhookRetry(event as object, event.eventId, 'retry')
+  }
+  return polarError
+}
+```
+
+### 정책
+
+- **5분류 매트릭스**:
+  - `timeout` → retry (AbortError, TimeoutError, message에 'timeout'/'aborted' 포함)
+  - `network` → retry (ECONNRESET, ENOTFOUND, ETIMEDOUT, EPIPE, ECONNREFUSED, ConnectionError)
+  - `server_5xx` → retry (HTTP 500/502/503/504 등)
+  - `client_4xx` → **permanent_failed 즉시 박제** (HTTP 400/401/403/404/422 등 — retry 무의미)
+  - `unknown` → retry (안전 측면 — 분류 실패 시 retry 가능 영역으로 fallback)
+- **timeout 정책**: SDK 호출별 30초 (env `POLAR_SDK_TIMEOUT_MS` 오버라이드). dev/prod 동일.
+- **AuditLog 식별자**: 4xx 즉시 permanent → `operator='system_dlq' action='webhook_permanent_failed'` (기존 PAY-P2-2 MAX_RETRY 누적 후 동일 action 박제와 정합).
+- **PAY-P2-2 DLQ 정합**: timeout/network/5xx → 기존 enqueueWebhookRetry 흐름 보존 (회귀 0). 4xx만 retry queue 박제 0건 (`enqueueWebhookRetry(event, eventId, 'permanent_failed')` 명시).
+- **PAY-P3-A 정합 (영역 분리)**: PAY-P3-A는 webhook 사전 게이트 (refunded 상태 차단), 본 sprint는 catch 분기 처리 — 영역 분리 (정합 회귀 0).
+- **PAY-P3-C 정합 (영역 분리)**: PAY-P3-C는 webhook-retry.job 사전 dedup, 본 sprint는 catch 분기 처리 — 영역 분리 (정합 회귀 0).
+- **DB schema 변경 0건**: 본 sprint = SDK 옵션 + helper + catch 분기만.
+
+### PaymentGatewayPort 시그니처 변경 영역 (옵션 B 채택)
+
+- **옵션 B 채택**: `PaymentGatewayPort.classifyPolarError?` Optional 메서드 (회귀 0 보장)
+- 다른 adapter (예: 향후 PayApp) 미구현 영역 정합 (Optional → 호출자가 'unknown' fallback)
+- 옵션 A (PolarAdapter private 메서드만) 보류 사유: usecase가 직접 폴리모픽 호출 불가
+- 옵션 C (별도 PaymentErrorClassifierPort 신설) 보류 사유: ~2h 초과 영역
+
+### 검증 게이트
+
+- jest server: `polar.adapter.spec.ts` PAY-P3-B describe (≥ 4 it) + `payment.usecase.spec.ts` (≥ 2 it)
+- sensor: `sensor-polar-timeout-policy.sh` (5 검증)
+- eval: `regression-68-polar-timeout.json` (8 checks)
+
+### 변경 시 동시 갱신 대상
+
+- `grimoire-server/src/adapter/outbound/payment/polar.adapter.ts` (timeout 옵션 + classifyPolarError + catch 분류)
+- `grimoire-server/src/adapter/outbound/payment/polar.adapter.spec.ts` (≥ 4 it)
+- `grimoire-server/src/application/payment/payment.usecase.ts` (catch 분기 처리)
+- `grimoire-server/src/application/payment/payment.usecase.spec.ts` (≥ 2 it)
+- `grimoire-server/src/domain/port/outbound/payment-gateway.port.ts` (`PolarErrorClass` + `PolarErrorClassification` + `classifyPolarError?` Optional)
+- `grimoire-server/docs/api-contract.md` (webhook 처리 상태 표 webhook_permanent_failed_4xx 박제)
+- `grimoire-server/docs/data-model.md` (AuditLog action 표 — webhook_permanent_failed 추가)
+- `grimoire-server/docs/environments.md` (POLAR_SDK_TIMEOUT_MS env 추가)
+- `grimoire-server/SECURITY.md §3` (결제 원자성 영역 본 sprint timeout 정책 박제)
+- `grimoire-server/ADR.md` (Polar SDK timeout 결정 박제 — 옵션 A 채택 사유)
+- `eval/tasks/regression-68-polar-timeout.json`
+- `.claude/scripts/sensor-polar-timeout-policy.sh`
+- `reports/sprint-pay-p3-b-polar-timeout-progress.md` (Generator 산출 정본)
+
+### 변경 이력
+- 2026-05-09 #10_8 PAY-P3-B: 신설 — PAYMENT_AUDIT §1 구멍-C (Polar SDK exception type 미매핑 + timeout 정책 미명시) 차단. polar.adapter `new Polar({ timeoutMs })` 옵션 A 채택 (Polar SDK v0.47.0 SDKOptions.timeoutMs 내장 옵션 직접 지원, config.d.ts L38 검증) + `classifyPolarError` public method (5분류 timeout/network/server_5xx/client_4xx/unknown, duck typing) + payment.usecase `classifyAndRouteWebhookError` private helper (success/cancel 분기 catch에서 호출, 4xx → permanent_failed 즉시 박제 + AuditLog `webhook_permanent_failed`, 외 4분류 → retry queue 박제). PaymentGatewayPort `classifyPolarError?` Optional 메서드 추가 (옵션 B 채택, 회귀 0 보장). DB schema 변경 0건. PAY-P2-2 DLQ 정합 (timeout/network/5xx만 retry). 정본: `reports/sprint-pay-p3-b-polar-timeout-progress.md`.
+
+---
+
 ## 변경 시 절차 (책 Ch 16 충돌 2번 해결책)
 
 agent A가 인터페이스 변경 시:
