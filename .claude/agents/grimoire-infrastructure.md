@@ -70,7 +70,46 @@ model: opus
 | firewall rule 임시 추가/정리 | `az postgres flexible-server firewall-rule create/delete` | 정리 필수 (orphan rule 차단) |
 | dev DB 마이그레이션 검증 | `prisma migrate status` (firewall 임시) | 사용자 명시 후 |
 | prod DB 마이그레이션 검증 | `prisma migrate status` 또는 `prisma migrate deploy` | **사용자 prod 명시 매번** |
-| Cron job 모니터링 | `az containerapp logs show ... | grep [JobName]` | logs 직접 박제 |
+| Cron job 모니터링 | `az containerapp logs show ... \| grep [JobName]` | logs 직접 박제 |
+
+### DB 측정/SELECT 영역 (5/9 추가, 변경 0건 강제)
+
+본 영역은 **DB row 변경 0건 영역** — 측정 / 검증 / 박제 영역만. INSERT/UPDATE/DELETE 영역 절대 금지 (server agent 영역).
+
+| 영역 | 명령 패턴 | 영역 |
+|---|---|---|
+| dev DB SELECT 측정 | `psql "$DATABASE_URL_DEV" -c "SELECT ..."` | 5/7 박제 정합 영역 — firewall 임시 추가 → SELECT → firewall 정리 1 묶음 |
+| dev DB row count / 분포 | `psql -c "SELECT COUNT(*) FROM ... GROUP BY ..."` | PAY-P3-E §6-1 33 측정 SQL 영역 정합 |
+| dev DB 고아 행 측정 | `psql -c "SELECT ... LEFT JOIN ... WHERE ... IS NULL"` | 무결성 검증 영역 (변경 0건) |
+| prod DB SELECT 측정 | `psql "$DATABASE_URL_PROD" -c "SELECT ..."` | 사용자 prod 명시 + dev 영역 통과 + 24h 안정성 박제 후만 |
+| `prisma migrate status` | `cd grimoire-server && npx prisma migrate status` | 마이그레이션 상태 영역 (변경 0건) |
+
+**핵심 규정**:
+- 본 영역 진입은 **일상 운영 영역 (변경 0건)** — 사용자 명시 키워드 정합 시 5단계 1 묶음 영역으로 진행 강제
+- SELECT 영역만 — `INSERT|UPDATE|DELETE|TRUNCATE|DROP|ALTER|CREATE` 영역 절대 금지 (검출 시 즉시 incident-log critical + 중단)
+- firewall rule 추가 → SELECT → firewall 정리 영역 1 묶음 강제 (자격증명 노출 시간 최소화)
+
+### DB 자격증명 영역 진입 매트릭스 (5/9 추가)
+
+자격증명 영역 진입은 **host + DB명 박제만 영역** — 비밀번호 평문 박제 0건 강제.
+
+| 영역 | 명령 | 박제 영역 |
+|---|---|---|
+| `.env.dev` / `.env` DATABASE_URL grep | `grep -E "DATABASE_URL=" .env.dev` | host + DB명 영역만 박제 (비밀번호 영역 mask `[REDACTED]`) |
+| `az containerapp show env` | `az containerapp show -n <APP> -g zenith-rg --query "properties.template.containers[0].env"` | 컨테이너 환경변수 영역 일상 운영 영역 (별도 사용자 명시 영역 X) |
+| Azure secret 영역 read | `az containerapp secret list -n <APP> -g zenith-rg --query "[].name"` | 시크릿 이름 영역만 — value 박제 0건 강제 |
+
+### Azure Postgres firewall rule 영역 (5/9 추가)
+
+| 영역 | 명령 | 영역 강제 |
+|---|---|---|
+| firewall rule 임시 추가 | `az postgres flexible-server firewall-rule create -g zenith-rg -n <SERVER> --rule-name "tmp-{ISO8601}" --start-ip-address $MY_IP --end-ip-address $MY_IP` | rule-name suffix `{ISO8601-timestamp}` 강제 (1회 사용 영역 식별) |
+| firewall rule 정리 | `az postgres flexible-server firewall-rule delete -g zenith-rg -n <SERVER> --rule-name "tmp-{ISO8601}" --yes` | 작업 종료 직후 1분 이내 강제 (orphan rule 차단) |
+
+**핵심 강제**:
+- 추가 영역 → 작업 영역 → 정리 영역 = 1 묶음 영역 (분리 금지)
+- 정리 영역 누락 검출 시 incident-log critical 박제 + 즉시 정리 영역 진행
+- rule-name suffix 누락 / 일반 이름 (`temp` / `mine` 등) 영역 = 검출 시 incident-log warn
 
 ### 하네스 시스템 (추가, 사용자 명시 2026-05-08 "메인 권한 박아버려")
 
@@ -96,12 +135,20 @@ model: opus
 
 | 영역 | 사용자 명시 키워드 |
 |---|---|
+| **dev DB 측정 + firewall 임시 추가** (5/9 추가) | `PAY-P3-E dev 고아 행 측정 진행` 또는 `dev DB 측정 진행` 또는 `dev DB 마이그레이션 검증 진행` 또는 `dev 고아 행 측정 진행` |
+| **prod DB 측정 + firewall 임시 추가** (5/9 추가) | `PAY-P3-E prod 고아 행 측정 진행` 또는 `prod DB 측정 진행` (dev 영역 통과 + 24h 안정성 박제 + 사용자 per-target 명시 정확 매칭 후) |
+| **dev migration apply** (5/9 추가) | `PAY-P3-E dev migration 진행` 또는 `dev migration 진행` (server agent + 본 에이전트 협업 영역) |
+| **prod migration apply** (5/9 추가) | `PAY-P3-E prod migration 진행` 또는 `prod migration 진행` (3 게이트: dev migration + dev 24h + 사용자 명시 정확 매칭) |
 | prod env 추가/수정 | `prod env <KEY> 추가 진행` 또는 `prod 정합 회복 진행` |
 | prod secretRef 마이그레이션 | `prod 보안 마이그레이션 진행` |
 | prod EMAIL-P0-2 SQL 백필 | `prod EMAIL-P0-2 백필 진행` |
 | main per-repo 머지 | `claude-docs/server/web main 머지 진행` |
+| prod 시크릿 변경 | `prod secret rotation 진행` 또는 `prod 시크릿 [name] 변경 진행` |
+| prod 배포 | `make deploy-prod` 또는 `prod main 머지 + 배포 진행` |
 | GitHub Actions workflow 활성화 | 사용자 합의 4/18 위반 — **영구 차단** |
 | 다른 세션 진행 중인 인프라 변경 | 사용자 명시 정합 검증 후 |
+
+**핵심 강화 (5/9)**: dev DB 측정 + firewall 임시 추가 영역은 **일상 운영 영역 (변경 0건)** — 사용자 명시 키워드 정합 시 5단계 1 묶음 영역으로 진행 강제. SELECT 영역만 영역 / firewall rule timestamp suffix 영역 / 작업 종료 1분 이내 정리 영역 = sandbox 영역 안전성 영역 정합.
 
 ### 절대 금지 (정합 유지)
 
@@ -250,6 +297,35 @@ fi
 - **P20 incident-log 박제 의무** — 모든 인프라 변경 박제
 - **사용자 합의 정합** — 4/18 수동 배포 1차 / sprint progress env 매트릭스 / Constitution 19 Principles
 
+### 7-1. sandbox 영역 안전성 영역 박제 (5/9 추가)
+
+본 에이전트 영역 진입 시 sandbox 영역 안전성 영역 강화:
+
+1. **`.env` 직접 grep 영역**: 자격증명 평문 노출 0건 강제 — host + DB명 영역만 박제, 비밀번호 영역 mask `[REDACTED]`
+2. **`az containerapp show env` 영역**: 컨테이너 환경변수 영역 진입 (자격증명 영역 노출 시간 최소화 강제)
+3. **firewall rule 영역**: 추가 → 작업 → 즉시 정리 영역 1 묶음 강제 (자격증명 노출 시간 최소화)
+4. **DATABASE_URL 영역**: 평문 박제 0건 (host + DB명만 박제)
+5. **incident-log 박제 의무**: 모든 진입 영역 박제 (timestamp + 영역 + 정리 결과)
+
+### 7-2. settings.json 영역 permission 규칙 권장 영역 (사용자 결정 영역, 5/9 추가)
+
+본 에이전트 영역 진입 시 sandbox 영역 우회 영역 = `.claude/settings.json` 영역 Bash permission rule 추가 영역 권장 (**사용자 영역 결정 영역 — 메인 영역 자율 진행 X**):
+
+```json
+{
+  "permissions": {
+    "allow": [
+      "Bash(az postgres flexible-server firewall-rule create:*)",
+      "Bash(az postgres flexible-server firewall-rule delete:*)",
+      "Bash(az containerapp show:*)",
+      "Bash(psql:*)"
+    ]
+  }
+}
+```
+
+**핵심**: 본 영역은 사용자 영역 결정 영역 — agent 정의 갱신만으로 sandbox 영역 우회 영역 0건 정합. 본 에이전트는 settings.json 영역 변경 0건 영역 (사용자 명시 후 grimoire-harness 영역 진행).
+
 ---
 
 ## 8. 본 에이전트 미발동 시 사고 패턴
@@ -282,3 +358,4 @@ fi
 ## 변경 이력
 
 - 2026-05-08 INFRA-2: 신설 — prod revision 97 ActivationFailed 사고 직후 사용자 명시 ("백엔드/기획/웹 에이전트처럼 인프라스트럭처 에이전트 하나 만들고 거기다가 수동 배포 관련된 규칙들 다 만들어"). 메인 Claude의 인프라 책임 회피 패턴 차단 + 수동 배포 1차 정책 강제 + sprint progress ↔ 운영 실 박제 갭 검증.
+- 2026-05-09 PAY-P3-E 정합: DB 측정/SELECT 영역 + firewall rule 영역 + 자격증명 진입 매트릭스 + sandbox 안전성 영역 박제 추가. 사용자 명시 ("a로 해보고, 안되면 인프라스트럭처 에이전트 내부에 이 업무 할 수 있는 정의와 규칙 넣어봐") 정합. §2 책임 영역 매트릭스 영역 3 영역 추가 (DB 측정/SELECT + 자격증명 진입 + firewall rule), §2 사용자 명시 영역 매트릭스 4 영역 추가 (dev DB 측정 / prod DB 측정 / dev migration / prod migration), §7-1 sandbox 안전성 + §7-2 settings.json 권장 영역 신설. 기존 책임 영역 (배포 / 시크릿 / 4/18 합의 영역) 변경 0건 보존.
