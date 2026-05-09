@@ -1451,6 +1451,169 @@ if (actualDeducted > 0) {
 
 ---
 
+## 23. RetryDeduplication (server 도메인 — webhook-retry.job 사전 dedup 게이트)
+
+**위치**:
+- Job: `grimoire-server/src/application/payment/webhook-retry.job.ts` (`retryDueWebhooks` for-loop 진입 직전 + `applyDedupGate` 헬퍼)
+- Port: `grimoire-server/src/domain/port/outbound/payment-repository.port.ts` (`findByExternalTransactionId` 시그니처 — 기존 보존, 시그니처 변경 0건)
+- Sensor: `.claude/scripts/sensor-retry-dedup.sh` (8 검증)
+
+**적용**: PAYMENT_AUDIT §1 모순-D (WebhookRetryJob 5분 cron ↔ PaymentReconciliationJob 10분 cron 커버리지 겹침) 차단. S1 boost 또는 별도 cron으로 status가 이미 종료된 payment의 retry 진입 자체를 차단 — `processNormalizedWebhook` 호출 0건 + queue row 즉시 deleteById + AuditLog `retry_skip_dedup` 박제. DB schema 변경 0건. 외부 인프라 의존 0건. PAY-P3-A 사전 게이트와 이중 방어 정합 (retry 진입 차단 → payment.usecase 사전 게이트 호출 0건).
+
+### 시그니처 — 사전 dedup 게이트
+
+```typescript
+// webhook-retry.job.ts retryDueWebhooks for-loop 진입 직전 (각 due item 처리 시작점)
+for (const item of due) {
+  const event = item.payload as NormalizedWebhookEvent
+
+  // PAY-P3-C 모순-D 차단: payment.status 사전 dedup 게이트
+  // (S1 boost 후 또는 별도 cron으로 status가 이미 완료/환불된 payment의 retry 시도 차단)
+  // 정본: shared-contracts §23 RetryDeduplication
+  const dedupResult = await this.applyDedupGate(item.id, item.eventId, item.retryCount, event)
+  if (dedupResult.skipped) {
+    skipDedupCount += 1
+    continue
+  }
+
+  // 기존 흐름 — pending/failed/expired 상태일 때만 processNormalizedWebhook 호출
+  try {
+    await this.paymentUseCase.processNormalizedWebhook(event)
+    await this.retryQueueRepo.deleteById(item.id)
+    succeededCount += 1
+    // ...
+  } catch (e) {
+    // 기존 markRetry / markPermanentFailed 흐름 보존
+    // ...
+  }
+}
+```
+
+### 시그니처 — applyDedupGate 헬퍼
+
+```typescript
+private static readonly DEDUP_ACTION = 'retry_skip_dedup'
+private static readonly FINALIZED_STATUSES = new Set([
+  'completed',
+  'refunded',
+  'partial_refunded',
+])
+
+private async applyDedupGate(
+  queueId: string,
+  eventId: string,
+  retryCount: number,
+  event: NormalizedWebhookEvent,
+): Promise<{ skipped: boolean }> {
+  let payment
+  try {
+    payment = await this.paymentRepo.findByExternalTransactionId(event.tradeNo)
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : String(e)
+    this.logger.warn(
+      `[retry] eventId=${eventId} retryCount=${retryCount} → dedup 게이트 조회 실패 (${msg.slice(0, 100)}) — 기존 흐름 유지`,
+    )
+    return { skipped: false }
+  }
+
+  if (!payment) return { skipped: false }
+  if (!WebhookRetryJob.FINALIZED_STATUSES.has(payment.status)) return { skipped: false }
+
+  // 사전 dedup 차단 발동 — queue row 즉시 삭제 + AuditLog 박제
+  await this.retryQueueRepo.deleteById(queueId)
+
+  try {
+    await this.auditLog.log(
+      WebhookRetryJob.DLQ_OPERATOR,
+      WebhookRetryJob.DEDUP_ACTION,
+      eventId,
+      {
+        reason: 'payment_already_finalized',
+        paymentStatus: payment.status,
+        retryCount,
+        paymentId: payment.id,
+      },
+    )
+  } catch (e: unknown) {
+    // AuditLog 박제 실패는 트랜잭션 진행을 막지 않음 (logger.warn 박제 후 skipped=true 보존)
+    const msg = e instanceof Error ? e.message : String(e)
+    this.logger.warn(
+      `AuditLog ${WebhookRetryJob.DEDUP_ACTION} 박제 실패 (eventId=${eventId}): ${msg}`,
+    )
+  }
+
+  this.logger.log(
+    `[retry] eventId=${eventId} retryCount=${retryCount} → SKIP_DEDUP (payment.status=${payment.status})`,
+  )
+  return { skipped: true }
+}
+```
+
+### DI 주입 변경 (`webhook-retry.job.ts` constructor)
+
+```typescript
+constructor(
+  @Inject('WebhookRetryQueueRepositoryPort')
+  private readonly retryQueueRepo: WebhookRetryQueueRepositoryPort,
+  @Inject('WebhookEventRepositoryPort')
+  private readonly webhookEventRepo: WebhookEventRepositoryPort,
+  // PAY-P3-C 신설 — 사전 dedup 게이트용 PaymentRepositoryPort 주입
+  @Inject('PaymentRepositoryPort')
+  private readonly paymentRepo: PaymentRepositoryPort,
+  private readonly paymentUseCase: PaymentUseCase,
+  private readonly auditLog: AuditLogService,
+) {}
+```
+
+### logger.log 통계 박제 변경
+
+기존:
+```typescript
+this.logger.log(
+  `WebhookRetryJob 완료 — due=${due.length} success=${succeededCount} retry=${retryCount} permanent=${permanentFailedCount}`,
+)
+```
+
+변경 후:
+```typescript
+this.logger.log(
+  `WebhookRetryJob 완료 — due=${due.length} success=${succeededCount} retry=${retryCount} permanent=${permanentFailedCount} dedup=${skipDedupCount}`,
+)
+```
+
+### 정책
+
+- **사전 dedup 게이트 발동**: payment.status ∈ {'completed', 'refunded', 'partial_refunded'} → 즉시 deleteById + AuditLog `retry_skip_dedup`
+- **payment.status='pending' 상태**: 기존 흐름 유지 (`processNormalizedWebhook` 호출)
+- **payment 미존재 (findByExternalTransactionId null)**: 기존 흐름 유지 (`processNormalizedWebhook` 호출 → 내부에서 `unknown_trade` 게이트 발동)
+- **payment.status='failed' OR 'expired'**: 기존 흐름 유지 (이 시나리오는 retry 의미 X 영역, 별도 sprint에서 결정 — PAY-P3-D status enum 또는 PAY-P2-5 retention)
+- **AuditLog action 식별자**: `retry_skip_dedup` (operator='system_dlq', resourceId=eventId, meta: {reason, paymentStatus, retryCount, paymentId})
+- **paymentRepo 조회 실패 시**: logger.warn 박제 + 기존 흐름 유지 (false negative 회피 — 조회 실패가 retry 차단으로 이어지지 않도록 보호)
+- **AuditLog 박제 실패 시**: logger.warn 박제 + skipped=true 보존 (queue row 삭제는 이미 commit, AuditLog noise만 있으면 운영자 추적 가능)
+- **incident-log 박제 의무**: dedup 차단 시 logger.log 동반 (sensor-adversarial-pre-commit P20)
+- **DB schema 변경 0건**: 본 sprint = 의존성 1건 추가 (PaymentRepositoryPort) + 로직 1건 추가만
+- **PAY-P3-A 정합 (이중 방어)**: PAY-P3-A는 `processNormalizedWebhook` 내부 사전 게이트 (line 187-204) — 본 sprint는 retry 진입 자체를 차단 → payment.usecase 사전 게이트는 0건 호출 → 이중 방어 정합
+
+### 검증 게이트
+
+- jest server: `webhook-retry.job.spec.ts` PAY-P3-C describe (6 it: AC-1, AC-2, AC-3, AC-4, AC-6, AC-7)
+- sensor: `sensor-retry-dedup.sh` (8 검증)
+- eval: `regression-67-retry-dedup.json`
+
+### 변경 시 동시 갱신 대상
+
+- `grimoire-server/src/application/payment/webhook-retry.job.ts` (DI + 사전 게이트 + 통계)
+- `grimoire-server/src/application/payment/webhook-retry.job.spec.ts` (PAY-P3-C describe — 6 it)
+- `grimoire-server/src/app.module.ts` (PaymentRepositoryPort 주입 정합 검증 — 기존 박제됨, WebhookRetryJob provider 영역만 정합 검증)
+- `eval/tasks/regression-67-retry-dedup.json`
+- `.claude/scripts/sensor-retry-dedup.sh`
+- `reports/sprint-pay-p3-c-retry-dedup-progress.md` (Generator 진입 후 박제)
+
+### 변경 이력
+- 2026-05-09 #10_8 PAY-P3-C: 신설 — PAYMENT_AUDIT §1 모순-D (WebhookRetryJob ↔ ReconciliationJob 커버리지 겹침) 차단. webhook-retry.job 사전 dedup 게이트 (PaymentRepositoryPort 주입 + payment.status='completed'/'refunded'/'partial_refunded' 체크 + AuditLog `retry_skip_dedup` + skipDedupCount 통계). DB schema 변경 0건. PAY-P3-A 정합 (이중 방어). jest server 634 → 640 (+6 it). sensor 40 → 41 신설. eval regression 66 → 67 신설. 정본: `reports/sprint-pay-p3-c-retry-dedup-progress.md`.
+
+---
+
 ## 변경 시 절차 (책 Ch 16 충돌 2번 해결책)
 
 agent A가 인터페이스 변경 시:
