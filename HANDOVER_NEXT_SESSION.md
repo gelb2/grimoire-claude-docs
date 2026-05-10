@@ -54,16 +54,26 @@
    - `"Bash(gh run:*)"`
 4. **`pretooluse-main-whitelist.sh` 영구 비활성/공동화 검증** — size 0 영역 영역 (5/8 사용자 직접) 영역 영역 영역 영역 영역 영역 영역 영역 사용자 결정
 
-### 1.9-5. 다음 세션 진입 영역 (사용자 1~6 순서 정합)
+### 1.9-5. 다음 세션 진입 영역 (사용자 5/10 명시 영역 정합)
+
+> **사용자 명시 (5/10 verbatim)**: "PAY-P2-5 ... PAY-P3-H ... PAY-P3-D ... USER-SOFT-DELETE ... PAY-P3-E 단계 7~12 ... 이건 순서대로 하고 / 이메일은 인터페이스 구현 해놓으면 되잖아"
 
 | 순서 | 작업 | 시간 | 외부 API | 비고 |
 |---:|---|---:|---:|---|
-| 1 | (종료) PAY-P3-E §7-1 단계 1~6 | — | 0 | 5/10 종료 |
-| 2 | **PAY-P2-5 audit retention** | ~3h | 0 | **다음 세션 1순위** |
-| 3 | PAY-P3-H Circuit breaker | ~4h | 0 | |
-| 4 | PAY-P3-D Status enum | ~2h | 0 | |
-| 5 | USER-SOFT-DELETE | ~3~5h | 0 | PAY-P3-E 영역 영역 영역 분리 박제 |
-| 6 | PAY-P3-E 단계 7~12 (prod) | ~3h | 0 | dev 24h 후 사용자 명시 |
+| 0 | (종료) PAY-P3-E §7-1 단계 1~6 (dev) | — | 0 | 5/10 종료 박제 |
+| **1** | **PAY-P2-5 audit retention** | **~3h** | **0** | **다음 1순위 — 사용자 보존 기간 결정 영역 (90/180/365/영구)** |
+| 2 | PAY-P3-H Circuit breaker | ~4h | 0 | dev 24h 누적 후 진입 |
+| 3 | PAY-P3-D Status enum | ~2h | 0 | DB schema 변경 0 |
+| 4 | USER-SOFT-DELETE | ~3~5h | 0 | PAY-P3-E 분리 박제 5/10 결정 A 정합 |
+| 5 | PAY-P3-E 단계 7~12 (prod) | ~3h | 0 | dev 24h 후 + 명시 키워드 `PAY-P3-E prod migration 진행` |
+
+### 1.9-5b. EMAIL 영역 영역 영역 (사용자 명시 5/10 정합)
+
+> **사용자 명시 (5/10 verbatim)**: "이메일은 인터페이스 구현 해놓으면 되잖아"
+
+- **EmailServicePort 인터페이스 구현 = 5/5 종료 박제** (server `b49b6ba` + claude-docs `004a825`, NullEmailAdapter + spec 8/8, 외부 API 0)
+- **추가 영역 진입 영역** (EMAIL-P1-1 — Author.emailVerified + EmailVerification 모델 + Verification token + dev NullEmailAdapter 영역) = SaaS 결정 차단 X 영역 영역 (사용자 명시 정합 영역 영역 영역 진입 영역 영역)
+- **SaaS 영역 SDK 어댑터** (AwsSesEmailAdapter / ResendEmailAdapter 영역) = 사용자 SaaS 결정 후 영역 영역 영역
 
 ### 1.9-6. 본 세션 commit 사슬 누적 (5/10)
 

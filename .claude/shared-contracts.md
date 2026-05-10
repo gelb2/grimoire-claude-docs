@@ -1899,6 +1899,77 @@ ALTER TABLE "credit_logs" ADD CONSTRAINT "credit_logs_author_id_fkey"
 
 ---
 
+## 26. AuditRetentionPolicy (server 도메인 — PAY-P2-5 audit 영구 보존 + 90일 PII 마스킹)
+
+### 위치
+- helper: `grimoire-server/src/adapter/outbound/persistence/audit-mask-helper.ts`
+- scheduler: `grimoire-server/src/application/admin/audit-mask.job.ts`
+- migration: `grimoire-server/prisma/migrations/20260510_pay_p2_5_audit_retention_policy/migration.sql`
+- ADR: `grimoire-server/ADR.md ADR-008`
+
+### 사용자 결정 박제 (5/10 verbatim "d로 하고")
+- **영구 보존**: DELETE 0건 강제 (audit gap 0)
+- **90일 후 PII 마스킹**: 매일 03:00 KST cron
+- **PII 7 키 자동 검출**: email / phone / ipAddress / userAgent / passwordHash / token / secret
+- **보존 키 매트릭스**: id / userId / authorId / adminId / action / createdAt / amount / credits 등 audit 본질 보존
+
+### 4 모델 컬럼 매트릭스
+
+| 모델 | 신설 컬럼 | 마스킹 영역 (90일 후) | 영구 보존 영역 |
+|---|---|---|---|
+| AdminAuditLog | `maskedAt DateTime?` + `retentionTier String @default("active")` | detail JSON deep masking | id/adminId/action/targetId/createdAt 보존 |
+| WebhookEvent | 동일 | payload JSON deep masking + errorMessage='***' | id/eventId/source/eventType/status/processedAt 보존 |
+| WebhookRetryQueue | 동일 | payload JSON deep masking + lastError='***' | id/eventId/retryCount/nextRetryAt/createdAt 보존 |
+| AccessLog | 동일 | email/ip/userAgent (detail string 자유 형식 보존) | id/action/authorId/createdAt 보존 |
+
+### PII 마스킹 패턴
+
+| PII 키 | 마스킹 패턴 | 예시 |
+|---|---|---|
+| email | `<first>***@<domain>` | `john@example.com` → `j***@example.com` |
+| phone | `010-****-****` | `010-1234-5678` → `010-****-****` |
+| ipAddress | `<a>.<b>.***.**` | `192.168.1.100` → `192.168.***.**` |
+| userAgent | `<browser> (***)` | 전체 UA → `Mozilla/5.0 (***)` |
+| passwordHash / token / secret | `***` | 전체 → `***` |
+
+### 시그니처 (TypeScript)
+
+```typescript
+export interface AuditRetentionPolicy {
+  /** 4 모델 마스킹 1회 수행. 직접 호출 가능 (단계 7 dev cron 직접 호출 검증용). */
+  runMaskingPass(cutoff: Date): Promise<MaskingResult>;
+}
+
+export interface MaskingResult {
+  modelsProcessed: string[];
+  rowsMasked: number;
+  rowsSkipped: number;
+  errors: { rowId: string; error: string }[];
+}
+```
+
+### 멱등성 강제
+
+- `WHERE retentionTier='active' AND created_at < cutoff` 검색만 → 재마스킹 0건
+- 마스킹 성공 시 `retentionTier='masked'` + `maskedAt=NOW()` 갱신
+- 다음 cron에서 동일 row 재선택 0건
+
+### 비활성화 게이트
+
+- `process.env.AUDIT_MASK_DISABLED === '1'` 즉시 return (운영자 수동 차단용)
+
+### 회귀 차단 정합
+
+- jest server `audit-mask-helper.spec.ts` (≥18 it: PII_KEYS 1 + PRESERVED_KEYS 2 + maskEmail 4 + maskPhone 4 + maskIpAddress 3 + maskUserAgent 2 + maskSecret 1 + maskValueByKey 12 + maskJsonDeep 5 + maskAccessLogRow 2)
+- jest server `audit-mask.job.spec.ts` (≥6 it: 시나리오 A noop + AdminAuditLog detail + AccessLog 4 컬럼 + 멱등성 WHERE + 단일 row 실패 + 비활성화 게이트)
+- `eval/tasks/regression-70-audit-retention-policy.json` (11 criteria)
+- `sensor-audit-retention-policy.sh` (12 검증)
+
+### 변경 이력
+- 2026-05-10 #10_8 PAY-P2-5: 신설 — audit retention 정책 미정의 (PAYMENT_AUDIT §3 L84-85) 차단. 사용자 결정 옵션 D (영구 보존 + 90일 후 PII 마스킹). 4 모델 (admin_audit_logs / webhook_events / webhook_retry_queues / access_logs) `maskedAt DateTime?` + `retentionTier String @default("active")` 컬럼 추가. PII 7 키 자동 검출 helper + JSON deep masking + AccessLog 4 컬럼 마스킹. @Cron('0 0 3 * * *') 매일 03:00 KST scheduler. dev 측정 결과 (5/10): 22 row / 90일 경과 0건 (시나리오 A 정합). 정본: `migration.sql` + `audit-mask-helper.ts` + `audit-mask.job.ts` + `ADR.md ADR-008`.
+
+---
+
 ## 변경 시 절차 (책 Ch 16 충돌 2번 해결책)
 
 agent A가 인터페이스 변경 시:
