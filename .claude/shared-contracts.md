@@ -1794,6 +1794,111 @@ private async classifyAndRouteWebhookError(
 
 ---
 
+## 25. FKCascadePolicy (server 도메인 — PAY-P3-E 모순-F 차단, 33 FK 영역 onDelete 정책)
+
+### 위치
+- Schema: `grimoire-server/prisma/schema.prisma` (33 FK 영역 onDelete directive 명시 + 25 raw FK @relation 박제)
+- Migration: `grimoire-server/prisma/migrations/20260510_pay_p3_e_fk_cascade_policy/migration.sql` (ALTER TABLE 33 + DROP NOT NULL 2 영역)
+- Spec: `grimoire-server/src/adapter/outbound/persistence/prisma-fk-cascade.spec.ts` (8 it 박제)
+- ADR: `grimoire-server/ADR.md ADR-007` (4 전략 결정 사유)
+- Sprint Initializer: `.claude/state/sprint-pay-p3-e-fk-cascade-draft.md` (1233 lines, 13 섹션)
+- 단계 1 raw: `.claude/state/pay-p3-e-fk-measure-raw.md` (33 FK 측정)
+- 단계 2 raw: `.claude/state/pay-p3-e-fk-backfill-raw.md` (옵션 C archive 강제 박제 + 시나리오 A 회복)
+- 단계 3 진입 audit: `.claude/state/pay-p3-e-pre-migration-audit-draft.md` (PASS)
+- 단계 3+4 raw: `.claude/state/pay-p3-e-dev-migration-raw.md` (본 작업 영역)
+
+### 적용
+PAYMENT_AUDIT §1 모순-F (FK cascade 미정의 — Author 삭제 시 22 테이블 고아 행 위험) 차단. EMAIL-P0-2 백필 영역 정합 (UPDATE 전략 vs DELETE 전략 결정 영역). DB schema 변경 1건 (마이그레이션 1건). 외부 API 추가 호출 0건.
+
+### 4 전략 매트릭스 (33 FK 정합)
+
+#### Cascade 16건 (사용자 종속 + Work/Episode 종속 + 통계)
+
+`refresh_tokens.authorId` / `chat_sessions.authorId` / `chat_sessions.workId` / `bookmarks.authorId` / `bookmarks.episodeId` / `reading_progress.authorId` / `reading_progress.episodeId` / `social_accounts.authorId` / `subscriptions.subscriberId` / `subscriptions.targetAuthorId` / `daily_views.workId` / `featured_works.workId` / `comments.episodeId` / `likes.episodeId` / `episodes.workId` / `chat_messages.sessionId` (이미 박제, 변경 0)
+
+#### Restrict 8건 (회계/세무/감사 영구 보존, **Author hard delete 차단 강제**)
+
+`payments.authorId` / `credit_logs.authorId` / `works.authorId` / `user_sanctions.authorId` / `analysis_reports.authorId` / `admin_audit_logs.adminId` / `refund_logs.paymentId`
+
+**핵심 사용자 결정 A 정합 (5/9 박제)**: Author hard delete 자체 차단 영역 = USER-SOFT-DELETE sprint 영역 분리 (본 sprint = FK 제약만 + 회계 8건 Restrict).
+
+#### SetNull 9건 (익명화 + 운영자 변경 보존 + 기본값 유지)
+
+`themes.authorId` / `works.themeId` / `likes.authorId` / `comments.authorId` / `comments.parentId` / `reports.reporterId` / `reports.resolvedBy` / `access_logs.authorId` / `featured_works.adminId` / `user_sanctions.adminId`
+
+#### NoAction 0건 (PG default와 동일, 명시 0건)
+
+### 시그니처 — Prisma schema onDelete directive
+
+```prisma
+// 예: payments.authorId Restrict 박제 (회계 영구 보존)
+model Payment {
+  authorId String @map("author_id")
+  author   Author @relation(fields: [authorId], references: [id], onDelete: Restrict)
+}
+
+// 예: episodes.workId Cascade 박제 (Work 삭제 시 episode 자동 삭제)
+model Episode {
+  workId String @map("work_id")
+  work   Work   @relation(fields: [workId], references: [id], onDelete: Cascade)
+}
+
+// 예: comments.authorId SetNull 박제 (익명화)
+model Comment {
+  authorId String? @map("author_id")
+  author   Author? @relation(fields: [authorId], references: [id], onDelete: SetNull)
+}
+
+// self-ref @relation name 영역 (다중 FK 충돌 차단)
+model Subscription {
+  subscriberId   String @map("subscriber_id")
+  subscriber     Author @relation("Subscriber",   fields: [subscriberId],   references: [id], onDelete: Cascade)
+  targetAuthorId String @map("target_author_id")
+  targetAuthor   Author @relation("TargetAuthor", fields: [targetAuthorId], references: [id], onDelete: Cascade)
+}
+```
+
+### 시그니처 — migration SQL 영역 (ALTER TABLE 33 + DROP NOT NULL 2)
+
+```sql
+-- (a) Optional 변경 영역 (FeaturedWork.adminId / UserSanction.adminId Required → Optional)
+ALTER TABLE "featured_works" ALTER COLUMN "admin_id" DROP NOT NULL;
+ALTER TABLE "user_sanctions" ALTER COLUMN "admin_id" DROP NOT NULL;
+
+-- (b) 6 박제 영역 onDelete directive 영역 (DROP + ADD CONSTRAINT)
+ALTER TABLE "themes" DROP CONSTRAINT "themes_author_id_fkey";
+ALTER TABLE "themes" ADD CONSTRAINT "themes_author_id_fkey"
+  FOREIGN KEY ("author_id") REFERENCES "authors"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+-- ... (5 추가 영역)
+
+-- (c) 25 raw FK 영역 ADD CONSTRAINT 영역
+ALTER TABLE "credit_logs" ADD CONSTRAINT "credit_logs_author_id_fkey"
+  FOREIGN KEY ("author_id") REFERENCES "authors"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+-- ... (24 추가 영역)
+```
+
+### 단계 1+2 raw 박제 영역 정합
+
+**단계 1 (33 FK 측정, 2026-05-10)**:
+- 31 / 33 = 시나리오 A (orphan=0)
+- 2 / 33 = 시나리오 B (`credit_logs.author_id` 1 + `admin_audit_logs.admin_id` 2)
+
+**단계 2 (옵션 C archive 강제, 2026-05-10)**:
+- archive 테이블 신설 (LIKE INCLUDING ALL clone): `credit_logs_archive_pay_p3_e` + `admin_audit_logs_archive_pay_p3_e`
+- INSERT 3 row → DELETE 3 row → 33/33 시나리오 A 회복 강제
+- 회계/감사 영구 보존 정합 (옵션 B 직접 삭제 절대 금지 영역)
+
+### 회귀 차단 정합
+
+- jest server 661 → **669 PASS** (+8 it 신설, `prisma-fk-cascade.spec.ts`)
+- shared-contracts §1~24 → **§1~25** (본 §25 신설)
+- 기존 12 sprint (PAY-P0-1/0-2/0-3/P1-1/P1-3/P2-1/P2-2/P2-3/P2-4/P3-A/P3-B/P3-C) + EMAIL-P0-2 회귀 0건 정합
+
+### 변경 이력
+- 2026-05-10 #10_8 PAY-P3-E: 신설 — PAYMENT_AUDIT §1 모순-F (FK cascade 미정의 — Author 삭제 시 22 테이블 고아 행 위험) 차단. 33 FK 영역 onDelete directive 명시 (Cascade 16 + Restrict 8 + SetNull 9). 25 raw FK 영역 @relation directive 신설. 마이그레이션 SQL 신설 (ALTER TABLE 33 + DROP NOT NULL 2). 8 it 신설 spec 박제. dev 영역 단계 1+2 사용자 결정 A 정합 (회계 8건 Restrict 강제) — credit_logs 1 + admin_audit_logs 2 archive 영구 보존 + 33/33 시나리오 A 회복. USER-SOFT-DELETE sprint 영역 분리 정합 박제. 정본: `prisma/schema.prisma` + `prisma/migrations/20260510_pay_p3_e_fk_cascade_policy/migration.sql` + `ADR.md ADR-007`.
+
+---
+
 ## 변경 시 절차 (책 Ch 16 충돌 2번 해결책)
 
 agent A가 인터페이스 변경 시:
