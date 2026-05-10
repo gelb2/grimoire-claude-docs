@@ -14,3 +14,7 @@
 {"ts":"2026-05-08T16:10:00Z","type":"main_direct_in_agent_domain","tool":"Edit","file":"/x/.claude/scripts/pretooluse-edit-write-guard.sh","expected_agent":"grimoire-infrastructure"}
 {"ts":"2026-05-09T06:10:18Z","type":"main_direct_in_agent_domain","tool":"Edit","file":"/Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/src/adapter/outbound/payment/polar.adapter.ts","expected_agent":"grimoire-server"}
 {"ts":"2026-05-09T12:14:22Z","type":"main_direct_in_agent_domain","tool":"Edit","file":"/Users/sokol/Desktop/Git/ProjectGrimoire/.claude/settings.json","expected_agent":"grimoire-harness"}
+{"ts":"2026-05-10T08:31:02Z","type":"main_direct_in_agent_domain","tool":"Edit","file":"/Users/sokol/Desktop/Git/ProjectGrimoire/.claude/settings.json","expected_agent":"grimoire-harness"}
+{"ts":"2026-05-10T09:56:38Z","type":"main_direct_in_agent_domain","tool":"Edit","file":"/Users/sokol/Desktop/Git/ProjectGrimoire/.claude/state/pay-p3-e-dev-apply-raw.md","expected_agent":"grimoire-harness"}
+{"ts":"2026-05-10T10:39:55Z","type":"main_direct_in_agent_domain","tool":"Write","file":"/Users/sokol/Desktop/Git/ProjectGrimoire/.claude/state/main-work-migration-audit-draft.md","expected_agent":"grimoire-harness"}
+{"ts":"2026-05-10T10:43:42Z","type":"main_direct_in_agent_domain","tool":"Write","file":"/Users/sokol/Desktop/Git/ProjectGrimoire/reports/PLANNER_REPORT_main_work_migration_audit.md","expected_agent":"grimoire-planner"}

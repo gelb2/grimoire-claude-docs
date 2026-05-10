@@ -769,7 +769,7 @@ v2 추가 제안:
 | **PostToolBatch** (2026-04-25 #7 신설) | - (전체) | post-batch-tsc.sh | parallel batch 완료 후 server+web tsc 일괄 (debounce 60s, 빌드 중복 60% ↓ 목표) |
 | **PostToolUseFailure** (2026-04-27 #9 F2 신설) | - (전체) | posttooluse-failure-handler.sh | 도구 실패 시 적재 + Chrome MCP 한정 정책 처리 (1회 재시도 신호 / reCAPTCHA 즉시 차단 / prod 도메인 자동 재시도 안 함). additionalContext로 Claude에게 재시도 신호만 전달, 실제 재시도는 Claude 판단 |
 
-### 14.4 Sensors 46개 (`.claude/scripts/sensor-*.sh`)
+### 14.4 Sensors 47개 (`.claude/scripts/sensor-*.sh`)
 
 | Sensor | 용도 |
 |---|---|
@@ -787,6 +787,7 @@ v2 추가 제안:
 | **sensor-cost-margin.sh (2026-04-26 #9 신설, C)** | ai-cost-table.md 안전배수 ≥3.0× 자동 검증 (PLANNING §0 강제). 12 항목 마크다운 표 파싱 + 갱신일 stale 검사. 첫 실측: 안전배수 12건 / FAIL 0 / WARN 5 (3.0~3.5×) / 최소 3.14× / 평균 3.73× / 최대 5.39×. |
 | **sensor-admin-credit-ui.sh (2026-05-03 #10_7 PAY-P0-3 신설)** | 운영자 수동 크레딧 지급/차감 web UI 가드 — 10 항목 (CreditsTab 별도 파일 / adminListAuthors 호출 / grant+deduct 둘 다 / page.tsx import + 라우팅 + Tab union 'credits' / spec 파일 / g-* 토큰 0건 / confirm() 멀티콘펌 / sonner toast / dangerouslySetInnerHTML 0건). VCK 정본(admin = neutral-* 영역) 보호 + Constitution P14(BFF) + P16(결제 원자성) 정합. 첫 실측: PASS 10/10. |
 | **sensor-refund-atomicity.sh (2026-05-03 #10_7 PAY-P1-1 신설)** | Polar 환불 webhook 시 크레딧 환수 트랜잭션 가드 — 10 항목 (RefundLog 모델 / deficitCredits 컬럼 / @@index([paymentId]) / RefundPaymentUseCase 파일 / refundPaymentAtomically 시그니처 / payment.usecase 'cancel' 분기 호출 / system_refund operator / 2 action(refund_normal+refund_deficit) / spec 파일 / 마이그레이션 파일). Constitution P16(결제 원자성) + 잔액 부족 시 0 fix + deficitCredits 박제. 첫 실측: PASS 10/10. |
+| **sensor-fk-cascade-policy.sh (2026-05-10 #10_8 PAY-P3-E 신설)** | PAYMENT_AUDIT §1 모순-F (FK cascade 미정의 — Author 삭제 시 22 테이블 고아 행 위험) 차단 — 10 항목 (schema.prisma onDelete directive ≥ 33건 + Cascade ≥ 16 + Restrict ≥ 7 + SetNull ≥ 9 + self-ref @relation name 7건 / migration.sql ALTER TABLE ≥ 33 + DROP NOT NULL ≥ 2 / prisma-fk-cascade.spec.ts ≥ 6 it / shared-contracts §25 / data-model.md / ADR.md ADR-007). 첫 실측: PASS 10/10. |
 
 ### 14.5 Knowledge 9개 (`.claude/knowledge/`)
 - README.md · agent-system.md · sensors.md · **agent-interaction-matrix.md (2026-04-26 #9 신설 — 7×7 핸드오프 매트릭스 + 산출물 정합 + 트리거 규칙 + 금지 조합)** · book-harness-engineering-completion.md (2026-04-30 #10) · researcher-scope.md (2026-04-30 #10) · visual-canon-inventory.md (2026-04-30 #10) · **red-team-constitution.md (2026-05-02 #10_6 묶음 W — Constitutional AI 16 principles + ProjectGrimoire 정책)** · **build-to-delete-policy.md (2026-05-03 #10_6 묶음 II — 책 부록 B + Mitchell Ghostty 패턴, Skills/Sensors/Hooks 3 카테고리)**
