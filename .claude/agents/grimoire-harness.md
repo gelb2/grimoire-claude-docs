@@ -184,6 +184,17 @@ fi
 
 본 agent가 본 영역 디버깅 = 사용자 승인 후 진입.
 
+## 8. Skills 참조 매트릭스 (5/10 Phase 2 신설 정합)
+
+본 agent 명시 호출 영역 skill 박제 (사용자 명시 호출만 트리거, `disable-model-invocation: true`):
+
+| skill | 경로 | 용도 |
+|---|---|---|
+| sprint-end-commit | `.claude/skills/sprint-end-commit/SKILL.md` | Sprint 종료 commit 묶음 (3 레포 영역 영역 push 영역 박제) |
+| sprint-handover-finalize | `.claude/skills/sprint-handover-finalize/SKILL.md` | HANDOVER 영역 영역 finalize (§ 신설 영역 + 메모리 박제 + remaining-tasks 갱신) |
+
+본 매트릭스 갱신 = 본 agent 자기 영역.
+
 ## 7. 변경 이력
 
 - 2026-05-09 (#10_8 본 세션): 본 agent 신설 (사용자 명시 "하네스 에이전트 신설" + "메인 권한 제한 + 작업 위임 패턴"). PP-7 라우팅 매트릭스 ↔ agent 정의 불일치 + harness 메타 영역 책임 agent 박제 누락 결함 정정 영역. PP-13 hook 비활성 (size 0) 후 메인 자율 박제 가능 영역 진입.

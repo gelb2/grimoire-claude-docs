@@ -355,6 +355,22 @@ fi
 
 ---
 
+## 10. Skills 참조 매트릭스 (5/10 Phase 2 신설 정합)
+
+본 agent 명시 호출 영역 skill 박제 (사용자 명시 호출만 트리거, `disable-model-invocation: true`):
+
+| skill | 경로 | 용도 |
+|---|---|---|
+| dev-migration-apply | `.claude/skills/dev-migration-apply/SKILL.md` | dev DB schema migration apply (firewall + psql + prisma 영역 박제) |
+| prod-deploy | `.claude/skills/prod-deploy/SKILL.md` | prod 영역 배포 명령 묶음 (수동 1차 + revision 검증) |
+| dev-health-check | `.claude/skills/dev-health-check/SKILL.md` | dev 환경 health snapshot (5/5 sensor + curl 200 영역) |
+| cron-job-verify | `.claude/skills/cron-job-verify/SKILL.md` | cron 작업 동작 검증 (PG↔DB cron 영역 박제) |
+| dev-db-measure | `.claude/skills/dev-db-measure/SKILL.md` | dev DB SELECT 측정 (FK 매트릭스 영역 박제) |
+
+본 매트릭스 갱신 = grimoire-harness agent 영역만.
+
+---
+
 ## 변경 이력
 
 - 2026-05-08 INFRA-2: 신설 — prod revision 97 ActivationFailed 사고 직후 사용자 명시 ("백엔드/기획/웹 에이전트처럼 인프라스트럭처 에이전트 하나 만들고 거기다가 수동 배포 관련된 규칙들 다 만들어"). 메인 Claude의 인프라 책임 회피 패턴 차단 + 수동 배포 1차 정책 강제 + sprint progress ↔ 운영 실 박제 갭 검증.

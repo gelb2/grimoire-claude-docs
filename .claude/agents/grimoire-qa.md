@@ -281,3 +281,11 @@ QA는 실측·검증 전문이라 3개 Skill 모두 자주 해당합니다. 아�
 - 변경 이력 1줄 박제 (date — agent — 변경 요약)
 
 본 파일 미갱신 시 다른 agent가 통합 단계에서 인터페이스 불일치로 깨짐.
+
+## N. Skills 참조 매트릭스 (5/10 Phase 2 활성화 정합)
+
+| skill | 경로 | 용도 |
+|---|---|---|
+| eval-run | `.claude/skills/eval-run/SKILL.md` | Eval 시스템 회귀 측정 (`eval/results/baseline.csv` 영역 갱신, 본 세션 활성화 5/10) |
+
+본 매트릭스 갱신 = grimoire-harness agent 영역.
