@@ -1,0 +1,22 @@
+{
+  "id": "regression-069",
+  "name": "api_contract — PAY-P3-E FK Cascade 정책 (모순-F 차단, 33 FK onDelete + 25 raw FK @relation + migration + 8 it spec + §25)",
+  "category": "api_contract",
+  "source_session": "20260510 sprint-pay-p3-e-fk-cascade — Generator grimoire-server (단계 3+4 종료) + grimoire-harness (단계 5 sensor + eval 신설)",
+  "prompt": "PAY-P3-E: PAYMENT_AUDIT §1 모순-F (FK cascade 미정의 — Author 삭제 시 22 테이블 고아 행 위험) 차단. (a) schema.prisma 33 FK 영역 onDelete directive 명시 (Cascade 16 + Restrict 7~8 + SetNull 9~10) (b) 25 raw FK 영역 @relation directive 신설 (Author 모델 27 역참조 + 4 self-ref @relation name) (c) Optional 변경 영역 2 (FeaturedWork.adminId + UserSanction.adminId) (d) migration.sql 신설 (ALTER TABLE 33 + DROP NOT NULL 2) (e) prisma-fk-cascade.spec.ts 신설 (≥ 6 it, 4 전략 정합 + archive + self-ref + Optional) (f) shared-contracts §25 FKCascadePolicy 신설 (g) data-model.md 관계 다이어그램 영역 갱신 (h) ADR.md ADR-007 신설 (4 전략 결정 사유). 회귀 시 모순-F 차단 패턴 누락 즉시 FAIL.",
+  "eval_criteria": [
+    {"type": "command", "command": "test $(grep -cE 'onDelete:' /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/prisma/schema.prisma) -ge 33", "desc": "schema.prisma onDelete directive 33건 박제 (PAYMENT_AUDIT §1 모순-F 차단)"},
+    {"type": "command", "command": "test $(grep -cE 'onDelete: Cascade' /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/prisma/schema.prisma) -ge 16", "desc": "schema.prisma onDelete Cascade 16건 박제 (사용자 종속 + Work/Episode 종속 + 통계)"},
+    {"type": "command", "command": "test $(grep -cE 'onDelete: Restrict' /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/prisma/schema.prisma) -ge 7", "desc": "schema.prisma onDelete Restrict ≥ 7 박제 (회계/세무/감사 영구 보존)"},
+    {"type": "command", "command": "test $(grep -cE 'onDelete: SetNull' /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/prisma/schema.prisma) -ge 9", "desc": "schema.prisma onDelete SetNull ≥ 9 박제 (익명화 + 운영자 변경 보존)"},
+    {"type": "command", "command": "for n in Subscriber TargetAuthor SanctionedAuthor SanctioningAdmin Reporter Resolver FeaturedWorkAdmin; do grep -qE \"@relation\\(\\\"${n}\\\"\" /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/prisma/schema.prisma || exit 1; done", "desc": "schema.prisma self-ref @relation name 7건 박제 (Subscriber/TargetAuthor/SanctionedAuthor/SanctioningAdmin/Reporter/Resolver/FeaturedWorkAdmin)"},
+    {"type": "command", "command": "test -f /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/prisma/migrations/20260510_pay_p3_e_fk_cascade_policy/migration.sql && test $(grep -cE '^ALTER TABLE' /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/prisma/migrations/20260510_pay_p3_e_fk_cascade_policy/migration.sql) -ge 33 && test $(grep -cE 'DROP NOT NULL' /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/prisma/migrations/20260510_pay_p3_e_fk_cascade_policy/migration.sql) -ge 2", "desc": "migration.sql 신설 (ALTER TABLE ≥ 33 + DROP NOT NULL ≥ 2)"},
+    {"type": "command", "command": "test -f /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/src/adapter/outbound/persistence/prisma-fk-cascade.spec.ts && test $(grep -cE '^\\s*it\\(' /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/src/adapter/outbound/persistence/prisma-fk-cascade.spec.ts) -ge 6", "desc": "prisma-fk-cascade.spec.ts ≥ 6 it 박제 (Sprint §5-1 정합)"},
+    {"type": "command", "command": "grep -qE '## 25\\. FKCascadePolicy' /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/shared-contracts.md", "desc": "shared-contracts §25 FKCascadePolicy 박제"},
+    {"type": "command", "command": "test -x /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/scripts/sensor-fk-cascade-policy.sh", "desc": "sensor-fk-cascade-policy.sh 실행 권한 + 박제"},
+    {"type": "command", "command": "grep -qE 'onDelete|FK Cascade|PAY-P3-E|fk_cascade' /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/docs/data-model.md", "desc": "data-model.md onDelete 정책 박제 영역 (관계 다이어그램 정합)"},
+    {"type": "command", "command": "grep -qE 'ADR-007|FK Cascade|PAY-P3-E' /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/ADR.md", "desc": "ADR.md ADR-007 박제 (4 전략 결정 사유)"}
+  ],
+  "threshold": 1.0,
+  "runs": 1
+}
