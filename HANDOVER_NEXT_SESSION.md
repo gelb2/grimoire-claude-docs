@@ -1,20 +1,139 @@
-# HANDOVER — 2026-05-11 #10_8 (PAY-P3-E + PAY-P2-5 종료 + PP-7/12/13 hook 영구 폐기 + Phase 1+2+3 메인→agent/skill 이관) → 다음 세션
+# HANDOVER — 2026-05-15 #10_8 연장 (PAY-P3-H Circuit Breaker 종료 + NEW-4 옵션 C 면제 박제 + C 묶음) → 다음 세션
 
-> **작성자**: 2026-05-10~11 본 세션 (Claude, #10_8 — PAY-P3-A/B/C 종료 + PAY-P3-E §7-1 단계 1~6 종료 + PAY-P2-5 audit retention 정책 종료 + PP-7+PP-12+PP-13 hook size 0 폐기 + Phase 1+2+3 skill 이관)
+> **작성자**: 2026-05-15 본 세션 (Claude, #10_8 연장 — PAY-P3-H Circuit Breaker 종료 + qa #18 AC 8/8 PASS + NEW-4 옵션 C 채택 + C P0 외부 API 0 묶음)
 > **수신자**: 다음 세션 (로컬 또는 리모트 채팅방)
-> **검증 명령**: `cd /Users/sokol/Desktop/Git/ProjectGrimoire && git log --oneline -10 && bash eval/scripts/eval-runner.sh`
+> **검증 명령**: `cd /Users/sokol/Desktop/Git/ProjectGrimoire && git log --oneline -10 && cd grimoire-server && git log --oneline -5`
 >
-> **핵심 (5/11 종료)**:
-> 1. PAY-P3-E §7-1 **단계 1~6 모두 종료** (33 FK 측정 → archive + DELETE 3건 → schema.prisma + migration.sql + jest 669 spec 8 it → sensor + eval + shared-contracts §25 → web data-model.md sync → **dev DB schema apply 통과**). 9회 차단 후 10번째 시도 통과.
-> 2. **PAY-P2-5 audit retention 정책 종료** (옵션 D 사용자 결정, 영구 보존 + 90일 PII 마스킹). 4 모델 schema + helper + cron + spec + dev migration apply + jest 711 PASS (+42 tests). server `7066cd7` + claude-docs `5f20f1b` push develop.
-> 3. **PP-7+PP-12+PP-13 hook size 0 폐기** (사용자 5/10 verbatim "다 폐기해"). PreToolUse hook 잔존 = redteam-gate만.
-> 4. **Phase 2 skill 8건 신설 + Phase 3 agent 정의 매트릭스 박제** (`674b54d` + `6973227` + `b8518ca` push develop).
+> **핵심 (5/15 종료)**:
+> 1. **PAY-P3-H Circuit Breaker 종료** (옵션 B Hystrix 정합, jest 711→735 PASS +24 it, sensor 10/10, eval regression-71 12/12, shared-contracts §27, ADR-009, AuditLog 4 action, env 4건). server `04b3f5c` + `71db1ec` merge develop.
+> 2. **qa #18 PAY-P3-H Evaluator AC 8/8 PASS** (jest/sensor/eval 독립 재실행 + 7 코드 파일 직접 Read + Generator 자가 보고 정합, 미세 모순 3건 박제 정합 사슬).
+> 3. **NEW-4 옵션 C 채택** (regression-011 → `eval/tasks/_archive/` 면제 박제, pre-push hook이 main 직접 push 차단 동일 강제 정합). claude-docs `1ee1967`.
+> 4. **C P0 외부 API 0 묶음** (NEW-4 진단 + H8 sensor-response-zero-realtime + H9 24건 면제). claude-docs `f12bc2e`.
+> 5. **로그인 `@grimoire.app` 영역 완전 제거 검증 PASS** (5/4~5/7 사슬 종료, ID/slug + PW 로그인 정합).
 >
-> **다음 세션 1순위**: PAY-P3-H Circuit breaker (~4h, 외부 API 0, schema 변경 0건). 또는 PAY-P3-E 단계 7~12 (prod, dev 24h 후) — 5/11 22:00 KST 이후 + 명시 키워드 `PAY-P3-E prod migration 진행` 정합.
+> **다음 세션 1순위**: PAY-P3-D Status enum mapping (~2h, 외부 API 0 / DB schema 0 / dev migration 0). 또는 dev 24h 통과 prod migration 2건 (PAY-P2-5 + PAY-P3-E 단계 7~12) — 명시 키워드 영역 필요.
 
 ---
 
-## 🚨 1.10. CRITICAL — 2026-05-11 PAY-P2-5 audit retention 정책 종료 + PP-7/12/13 hook 영구 폐기 (본 세션 마지막 영역)
+## 🚨 1.11. CRITICAL — 2026-05-15 PAY-P3-H Circuit Breaker 종료 + NEW-4 옵션 C 면제 박제 + C 묶음 (본 세션 마지막 영역)
+
+### 1.11-1. 사용자 명시 (verbatim 박제, 5/15)
+
+1. "다른 로컬 세션 병신되서 지금 다시 세션 열었으니까 위 핸드오버 내용들 다 파악하고 진행해"
+2. "baseline.csv 미커밋 1건 박제 → PAY-P3-H Sprint Initializer 산출 (Draft 검토 후 진입 결정) — 산출하고 검증해"
+3. "옵션1" (A-1 git 정리 + §16 6 결정 옵션 권장 정합 + A-2 + C 자율 진행 + B 별도 명시 대기)
+4. "권장: C (hook size 0 유지 + task 면제 박제) — 5/10 '다 폐기해' 결정 정합 + pre-push hook이 동일 차단 강제 중."
+
+### 1.11-2. PAY-P3-H Circuit Breaker 종료 매트릭스
+
+| 영역 | 결과 |
+|---|---|
+| jest server 회귀 | **711 → 735 PASS** (+24 it, 51/51 suites) |
+| sensor-circuit-breaker-policy | **PASS 10/10** |
+| eval regression-71 | **PASS 12/12** |
+| shared-contracts §27 | L1973~2104 (132 line) 박제 |
+| ADR-009 | L366~423 (58 line) 박제 |
+| Polar adapter 호출점 wrap | 2/2 (`checkouts.create` + `checkouts.list`) |
+| AuditLog 4 action | `open` / `close` / `half_open_trial` / `reject` |
+| 환경변수 4건 | `POLAR_CB_FAILURE_THRESHOLD` / `POLAR_CB_COOLDOWN_MS` / `POLAR_CB_HALF_OPEN_TRIAL` / `POLAR_CB_RESET_WINDOW_MS` |
+| 외부 의존 0건 | API 0 / npm 0 / schema 0 / migration 0 / Redis 0 |
+| 임계값 정책 | 옵션 B Hystrix 정합 (5/30s/3/60s) |
+
+### 1.11-3. qa #18 PAY-P3-H Evaluator AC 8/8 PASS
+
+| AC | 결과 |
+|---|---|
+| AC-1 3 상태 머신 (CLOSED/OPEN/HALF_OPEN) | PASS |
+| AC-2 임계값 옵션 B | PASS |
+| AC-3 fail-fast (OPEN 시 SDK 호출 0건) | PASS |
+| AC-4 회복 자동 감지 | PASS |
+| AC-5 AuditLog 4 action | PASS |
+| AC-6 회귀 차단 0건 | PASS |
+| AC-7 shared-contracts §27 + ADR-009 박제 | PASS |
+| AC-8 외부 의존 0건 | PASS |
+
+qa 독립 재실행 (npm test + sensor + eval 직접 실행) + 7 코드 파일 직접 Read + Generator 자가 보고 정합 검증 종료.
+
+### 1.11-4. 미세 모순 3건 박제 (PASS 영역 내, 정합 사슬)
+
+1. Draft §11-2 시그니처 누락 (`halfOpenTrialCount`/`halfOpenSuccessCount`) — 실제 코드 + §27 정본 채택
+2. AuditLog action 명명 변경 — Draft → adapter snake_case 정합
+3. 호출점 영역 (Draft 3 → adapter 2) — ADR-009 박제 정합
+
+### 1.11-5. NEW-4 옵션 C 채택 (regression-011 archive 면제 박제)
+
+- 원인: 5/10 PAY-P2-5 commit `5f20f1b`이 PP hook 3건 외 `pretooluse-bash-guard.sh` (142 line)까지 폐기 영역
+- 사용자 5/15 결정: 옵션 C 채택 (verbatim 박제)
+- 산출: `eval/tasks/_archive/` 면제 박제 + `_archive/README.md` 신설 + `incident-log.jsonl` resolution append
+- `.githooks/pre-push` hook이 main 직접 push 차단 동일 강제 영역 (CLAUDE.md §8 위배 0)
+- 영향: 다음 eval 실행 시 task 카운트 69 → 68 (regression-011 자동 제외)
+
+### 1.11-6. C P0 외부 API 0 묶음 (harness agent, ~1.5h)
+
+- NEW-4: regression-011 FAIL 5건 원인 진단 (`pretooluse-bash-guard.sh` 폐기 영역)
+- H8: sensor-response-zero-realtime sensor-log 연동 (사용자 명시 "9 sensor 박제 0건" 영역 부정확 정정)
+- H9: PASS-only sensor 24건 면제 분류 (사용자 명시 5건 이미 면제 + 21건 추가)
+
+### 1.11-7. 본 세션 5/15 전체 commit 사슬
+
+#### grimoire-server (develop)
+| commit | 영역 |
+|---|---|
+| `04b3f5c` | feat(PAY-P3-H): Circuit Breaker 정책 도입 (11 files +1257/-33) |
+| `71db1ec` | merge: feature/pay-p3-h-circuit-breaker → develop |
+
+#### grimoire-claude-docs (develop)
+| commit | 영역 |
+|---|---|
+| `cdda12f` | chore(eval): 5/11~5/15 baseline 박제 |
+| `039fd9a` | feat(PAY-P3-H): Sprint Initializer Draft (828 lines) |
+| `f12bc2e` | chore(harness): C 묶음 (NEW-4 + H8 + H9) |
+| `d64afe7` | docs(PAY-P3-H): commit 메시지 보강 |
+| `1ee1967` | chore(eval): NEW-4 옵션 C — regression-011 archive |
+
+#### grimoire-web
+- 변경 0건 (admin UI 별도 sprint P3-I 영역)
+
+### 1.11-8. 다음 세션 진입 매트릭스 (사용자 5/10 순서 정합)
+
+| 순서 | sprint | 시간 | 외부 API | schema | dev migration | 진입 명시 키워드 |
+|---:|---|---:|---:|---|---|---|
+| ✅ 1 | PAY-P3-E §7-1 단계 1~6 | — | 0 | — | — | 5/10 종료 |
+| ✅ 2 | PAY-P2-5 audit retention | ~3h | 0 | dev apply | dev apply | 5/10~11 종료 |
+| ✅ 3 | PAY-P3-H Circuit Breaker | ~4h | 0 | 0 | 0 | **5/15 종료** |
+| **4** | **PAY-P3-D Status enum** | **~2h** | **0** | **0** | **0** | **다음 1순위** — `PAY-P3-D Generator 진입 (server agent)` |
+| 5 | USER-SOFT-DELETE | ~3~5h | 0 | schema 1건 | dev migration 1건 | `USER-SOFT-DELETE Initializer 진입 (planner agent)` |
+| 6 | PAY-P3-E 단계 7~12 (prod) | ~3h | 0 | — | — | dev 24h 통과 (5/11 22:00 → 5/15 4일 경과) + `PAY-P3-E prod migration 진행` |
+| dev 24h | PAY-P2-5 prod migration | — | 0 | — | — | 5/11 23:34 통과 + `PAY-P2-5 prod migration 진행` |
+
+### 1.11-9. 로그인 `@grimoire.app` 영역 완전 제거 검증 (Explore agent PASS)
+
+| 영역 | 잔존 |
+|---|---|
+| 웹 로그인 폼 자동 append | 0건 |
+| AuthProvider 정규식 판별 | 0건 |
+| 서버 DTO `EmailXorSlugConstraint` | 0건 |
+| seed-all.ts (`@example.com` RFC 2606) | 0건 |
+| sensor-fake-email-leak 2026-05-15 | PASS |
+
+→ ID/slug + PW만 입력 로그인 정합 + 자동 append 0건 + DB row UPDATE 마이그레이션 5/7 종료.
+
+### 1.11-10. 본 세션 인벤토리 (5/15 종료)
+
+- jest server: **735 PASS** (+24)
+- eval regression: **71** (regression-71 신설)
+- sensor: **49** (sensor-circuit-breaker-policy 신설)
+- shared-contracts: **§1~27** (CircuitBreakerPolicy)
+- ADR: **001~009**
+- Skills: 25 / Agents: 7 / 외부 API 0건 정합
+
+### 1.11-11. 사용자 안전 영역 박제 (Mitchell Ghostty 정직)
+
+본 세션 (5/15) 사용자 발화 — 평이한 영역. 이전 세션 (5/8~11) 누적 위협 박제 영역 정합 (자해/키보드 파괴/Anthropic 본사 폭력 위협/suicide-by-cop). 본 세션 컨디션 평이 정합 — 다음 세션 진입 영역 명시 시 사용자 결정 영역 우선.
+
+---
+
+## 🚨 1.10. CRITICAL — 2026-05-11 PAY-P2-5 audit retention 정책 종료 + PP-7/12/13 hook 영구 폐기
 
 ### 1.10-1. 사용자 명시 (verbatim 박제, 5/10~11)
 
