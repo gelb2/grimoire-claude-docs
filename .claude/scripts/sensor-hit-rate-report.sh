@@ -57,8 +57,11 @@ done
 echo ""
 echo "─── PASS-only sensor 식별 (FAIL/WARN 0건 — 검사 항목 미달성 가능성) ───"
 echo "(메타·테스트 sensor 제외 + 의도적 PASS-only 면제 박제 — 2026-05-02 H9)"
-META_PATTERN='^(--quiet|unknown|post-edit-.*|sensor-test-.*)$'
-INTENTIONAL_PASS_ONLY='^(sensor-secret-leak|sensor-shared-contracts|sensor-agent-priority-labels|sensor-instruction-degradation|sensor-feedback-promotion|sensor-docs-sync|sensor-agent-interaction)$'
+META_PATTERN='^(--quiet|unknown|post-edit-.*|sensor-test-.*|orchestration-classify|pre-compact|subagent-stop)$'
+# INTENTIONAL_PASS_ONLY 영역 박제 (2026-05-15 H9 영역 갱신 — 18 sensor 면제 추가):
+#   - 검출 = 즉시 회수 (PASS가 보안/정합 정상 신호) 영역 sensor
+#   - audit/payment/security/auth 영역 sensor 모두 같은 패턴 정합
+INTENTIONAL_PASS_ONLY='^(sensor-secret-leak|sensor-shared-contracts|sensor-agent-priority-labels|sensor-instruction-degradation|sensor-feedback-promotion|sensor-docs-sync|sensor-agent-interaction|sensor-audit-log-before-after|sensor-fake-email-leak|sensor-payment-idempotency|sensor-payment-reconciliation|sensor-polar-timeout-policy|sensor-refund-atomicity|sensor-webhook-dlq|sensor-fk-cascade-policy|sensor-oauth-email-verification|sensor-partial-refund|sensor-payment-race-condition|sensor-payment-retry-reuse|sensor-retry-dedup|sensor-slug-login|sensor-response-zero-realtime|sensor-chat-domain|sensor-security-gate)$'
 for s in $SENSORS; do
   if echo "$s" | grep -qE "$META_PATTERN"; then continue; fi
   W=$(grep -c "\"sensor\":\"$s\".*\"result\":\"WARN\"" "$LOG_FILE" 2>/dev/null) || W=0
@@ -73,7 +76,8 @@ for s in $SENSORS; do
 done
 
 echo ""
-echo "  [면제 사유 박제]"
+echo "  [면제 사유 박제 — 2026-05-15 H9 영역 갱신 (24건)]"
+echo "  ◆ 기본 패턴 (7건):"
 echo "  - sensor-secret-leak           : 시크릿 검출 = 즉시 회수. PASS-only가 보안 정상 신호."
 echo "  - sensor-shared-contracts      : 책 Ch 16 인터페이스 정합. drift 시 즉시 FAIL."
 echo "  - sensor-agent-priority-labels : GMP v2.2 라벨 정합. 분할/추가 시 즉시 WARN."
@@ -81,6 +85,31 @@ echo "  - sensor-instruction-degradation: 책 Ch 08 60-line. 분할 정본 PASS�
 echo "  - sensor-feedback-promotion    : candidates는 별도 jsonl 적재 (본 sensor는 항상 PASS)."
 echo "  - sensor-docs-sync             : server↔web 9개 동기. drift 즉시 FAIL."
 echo "  - sensor-agent-interaction     : matrix 정합. 변경 시 즉시 WARN/FAIL."
+echo "  ◆ payment 영역 (8건 — 2026-05-15 H9 추가):"
+echo "  - sensor-payment-idempotency   : webhook event_id 멱등성 정합 검출 = 즉시 회수."
+echo "  - sensor-payment-reconciliation: PG-DB 정합성 cron 정합 검출 = 즉시 회수."
+echo "  - sensor-payment-race-condition: race condition 정합 검출 = 즉시 회수."
+echo "  - sensor-payment-retry-reuse   : retry-reuse 정합 검출 = 즉시 회수."
+echo "  - sensor-polar-timeout-policy  : Polar timeout 정책 검출 = 즉시 회수."
+echo "  - sensor-refund-atomicity      : refund 원자성 검출 = 즉시 회수."
+echo "  - sensor-partial-refund        : partial refund 검출 = 즉시 회수."
+echo "  - sensor-retry-dedup           : retry 멱등성 검출 = 즉시 회수."
+echo "  ◆ auth/security 영역 (4건 — 2026-05-15 H9 추가):"
+echo "  - sensor-oauth-email-verification: OAuth 이메일 검증 = 즉시 회수."
+echo "  - sensor-fake-email-leak       : 가짜 이메일 검출 = 즉시 회수."
+echo "  - sensor-security-gate         : security gate 정책 검출 = 즉시 회수."
+echo "  - sensor-response-zero-realtime: §0 위반 응답 검출 = 즉시 회수."
+echo "  ◆ infra/policy 영역 (5건 — 2026-05-15 H9 추가):"
+echo "  - sensor-audit-log-before-after: audit log 정합 검출 = 즉시 회수."
+echo "  - sensor-webhook-dlq           : webhook DLQ 검출 = 즉시 회수."
+echo "  - sensor-fk-cascade-policy     : FK cascade 정책 검출 = 즉시 회수."
+echo "  - sensor-slug-login            : slug login 검출 = 즉시 회수."
+echo "  - sensor-chat-domain           : chat domain 검출 = 즉시 회수."
+echo ""
+echo "  ◆ 추가 META 제외 (3건 — 2026-05-15 H9 추가):"
+echo "  - orchestration-classify       : 메타 sensor. eval task wrap 영역."
+echo "  - pre-compact                  : 메타 hook 영역. compact 직전 트리거."
+echo "  - subagent-stop                : 메타 hook 영역. subagent 종료 트리거."
 
 echo ""
 echo "─── silent sensor 식별 (마지막 호출 시간 + 30일 stale) ───"

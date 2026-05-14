@@ -1970,6 +1970,141 @@ export interface MaskingResult {
 
 ---
 
+## 27. CircuitBreakerPolicy (server 도메인 — Polar SDK 호출 경계 가용성 차단)
+
+### 위치
+- model: `grimoire-server/src/domain/model/circuit-breaker-state.ts` (3 상태 enum + Policy + Stats + CircuitOpenError)
+- port: `grimoire-server/src/domain/port/outbound/circuit-breaker.port.ts` (CircuitBreakerPort 인터페이스 정본)
+- adapter: `grimoire-server/src/adapter/outbound/circuit-breaker/in-memory-circuit-breaker.adapter.ts` (Map 기반 구현)
+- spec: `grimoire-server/src/adapter/outbound/circuit-breaker/in-memory-circuit-breaker.adapter.spec.ts` (18 it)
+- 적용: `grimoire-server/src/adapter/outbound/payment/polar.adapter.ts` (2 호출점 래핑: checkouts.create / checkouts.list)
+- 호출자 분기: `grimoire-server/src/application/payment/payment.usecase.ts` (CircuitOpenError → ServiceUnavailableException), `grimoire-server/src/application/payment/payment-reconciliation.job.ts` (cron skip)
+- DI: `grimoire-server/src/app.module.ts` (`'CircuitBreakerPort' → InMemoryCircuitBreakerAdapter`)
+- ADR: `grimoire-server/ADR.md ADR-009`
+- sensor: `.claude/scripts/sensor-circuit-breaker-policy.sh` (10 검증)
+- eval: `eval/tasks/regression-71-circuit-breaker-policy.json` (12 criteria)
+- env 4건: `POLAR_CB_FAILURE_THRESHOLD` (기본 5) / `POLAR_CB_COOLDOWN_MS` (기본 30_000) / `POLAR_CB_HALF_OPEN_TRIAL` (기본 3) / `POLAR_CB_RESET_WINDOW_MS` (기본 60_000)
+
+### 시그니처
+
+```typescript
+// circuit-breaker-state.ts
+export enum CircuitBreakerState {
+  CLOSED = 'closed',      // 정상 흐름 (모든 호출 통과)
+  OPEN = 'open',          // 차단 (모든 호출 즉시 fail-fast)
+  HALF_OPEN = 'half_open' // 회복 시도 (trial 횟수만큼 호출 허용)
+}
+
+export interface CircuitBreakerPolicy {
+  failureThreshold: number   // 기본 5 (옵션 B Hystrix 정합)
+  cooldownMs: number         // 기본 30_000
+  halfOpenTrial: number      // 기본 3
+  resetWindowMs: number      // 기본 60_000
+}
+
+export interface CircuitBreakerStats {
+  state: CircuitBreakerState
+  failureCount: number
+  openedAt?: Date
+  halfOpenAt?: Date
+  halfOpenTrialCount: number
+  halfOpenSuccessCount: number
+  lastSuccessAt?: Date
+  lastFailureAt?: Date
+}
+
+export class CircuitOpenError extends Error {
+  constructor(
+    public readonly circuitKey: string,
+    public readonly stats: CircuitBreakerStats,
+  ) {
+    super(`Circuit breaker OPEN — ${circuitKey} (failureCount=${stats.failureCount})`)
+    this.name = 'CircuitOpenError'
+  }
+}
+
+// circuit-breaker.port.ts
+export interface CircuitBreakerPort {
+  execute<T>(key: string, fn: () => Promise<T>): Promise<T>
+  getState(key: string): CircuitBreakerState
+  getStats(key: string): CircuitBreakerStats
+  forceOpen(key: string, reason: string): Promise<void>
+  forceClose(key: string, reason: string): Promise<void>
+}
+```
+
+### 정책 매트릭스 (사용자 5/15 결정 옵션 B Hystrix 정합)
+
+| 임계값 | 값 | 영역 |
+|---|---|---|
+| failureThreshold | 5회 연속 실패 | CLOSED → OPEN 전환 |
+| cooldownMs | 30_000 (30초) | OPEN 상태 지속 시간 |
+| halfOpenTrial | 3회 | HALF_OPEN trial 허용 횟수 (모두 성공 시 CLOSED 복귀) |
+| resetWindowMs | 60_000 (1분) | CLOSED 상태 failureCount 자연 리셋 윈도우 |
+
+### 상태 전환 매트릭스
+
+| 현재 상태 | 트리거 | 다음 상태 | 부작용 |
+|---|---|---|---|
+| CLOSED | 호출 성공 | CLOSED | lastSuccessAt 갱신 (failureCount 보존, reset window 정합) |
+| CLOSED | 호출 실패 | CLOSED | failureCount++ (임계값 미달) |
+| CLOSED | 실패 임계값 초과 | OPEN | openedAt=now, AuditLog `circuit_breaker.open` 박제 |
+| CLOSED | reset window 경과 + failureCount > 0 | CLOSED | failureCount=0 (자연 리셋) |
+| OPEN | 호출 요청 | OPEN | 즉시 CircuitOpenError throw + AuditLog `circuit_breaker.reject` 박제 |
+| OPEN | cooldown 경과 + 호출 요청 | HALF_OPEN | halfOpenAt=now, AuditLog `circuit_breaker.half_open_trial` 박제 |
+| HALF_OPEN | trial 호출 성공 | HALF_OPEN | halfOpenSuccessCount++ (trial 미달 시 유지) |
+| HALF_OPEN | trial halfOpenTrial 도달 + 모두 성공 | CLOSED | failureCount=0, AuditLog `circuit_breaker.close` 박제 |
+| HALF_OPEN | trial 호출 실패 | OPEN | openedAt=now (cooldown 재시작), AuditLog `circuit_breaker.open` 박제 |
+| HALF_OPEN | 추가 호출 요청 (trial 초과) | HALF_OPEN | 즉시 CircuitOpenError throw + AuditLog `circuit_breaker.reject` 박제 |
+
+### 호출점별 분리 매트릭스
+
+| 호출점 키 | 현재 적용 | 적용 위치 |
+|---|---|---|
+| `polar:checkouts:create` | ✅ 적용 | `polar.adapter.ts` initiatePayment |
+| `polar:checkouts:list` | ✅ 적용 | `polar.adapter.ts` listRecentCheckouts |
+| `polar:checkouts:get` | 향후 (코드 미존재) | (향후 추가 시 자동 적용 영역) |
+
+호출점별 독립 상태 — 한 호출점 OPEN 시 다른 호출점 영향 0 강제.
+
+### AuditLog 4 action 박제 매트릭스
+
+| action | 영역 | reason 매트릭스 |
+|---|---|---|
+| `circuit_breaker.open` | CLOSED→OPEN, HALF_OPEN→OPEN, forceOpen | `failure_threshold_exceeded` / `half_open_trial_failed` / `manual_force_open: <reason>` |
+| `circuit_breaker.close` | HALF_OPEN→CLOSED, forceClose | `half_open_trial_succeeded` / `manual_force_close: <reason>` |
+| `circuit_breaker.half_open_trial` | OPEN→HALF_OPEN | `cooldown_elapsed` |
+| `circuit_breaker.reject` | OPEN 호출 차단, HALF_OPEN trial 초과 | `circuit_open` / `half_open_trial_exhausted` |
+
+### 외부 의존 매트릭스 (사용자 5/10 정합 강제)
+
+| 영역 | 추가 의존 | 정합 |
+|---|---|---|
+| 외부 API (Anthropic / Polar / SaaS) | **0건** | 사용자 절대 규정 0-1 정합 |
+| 외부 npm 패키지 | **0건** | opossum / cockatiel 거부, 자체 구현 |
+| DB schema 변경 | **0건** | 사용자 5/10 명시 정합, in-memory |
+| dev migration | **0건** | 사용자 5/10 명시 정합 |
+| 인프라 변경 (Azure Container Apps / replicas) | **0건** | 단일 인스턴스 가정 |
+| Redis / 외부 인프라 | **0건** | in-memory 정합 |
+
+### 정합 매트릭스 (다른 sprint 회귀 차단)
+
+- §24 PolarSDKTimeoutPolicy 정합 — 4xx 분류 시 failureCount++ 영향 0 (요청 결함, SDK/Polar 장애 0)
+- §23 RetryDeduplication 정합 — circuit breaker는 DLQ 진입 전 차단, DLQ 흐름 0 영향
+- §22 PaymentRaceCondition 정합 — circuit breaker는 SDK 경계 영역, DB 트랜잭션 영역 0 영향
+- §20 AuditLog beforeState/afterState Convention 정합 — `circuit_breaker.*` 4 action 박제 (detail JSON에 reason + circuitKey + 통계 박제)
+
+### 잔존 영역
+
+- 다중 인스턴스 환경 — in-memory 상태 분리 (Redis 별도 sprint)
+- 정책 변경 시 Container Apps 재시작 필요 (in-memory 0 초기화)
+- 관리자 UI (forceOpen/forceClose) — P3-I 별도 sprint 분리 (port 인터페이스만 본 sprint 박제)
+
+### 변경 이력
+- 2026-05-15 #10_8 PAY-P3-H: 신설 — Polar SDK 호출 경계 가용성 차단 (PAY-P3-B 후속). Hystrix 3 상태 머신 자체 구현 + 사용자 5/15 결정 옵션 B 정합 (failureThreshold=5/cooldownMs=30_000/halfOpenTrial=3/resetWindowMs=60_000). 2 호출점 박제 (checkouts.create + checkouts.list, checkouts.get는 향후). AuditLog 4 action 박제 (open/close/half_open_trial/reject). env 4건. CircuitOpenError 분기 (ServiceUnavailableException 변환 + cron skip). 외부 의존 0건 + DB schema 0건 + dev migration 0건 강제. jest 711 → 735 PASS (+24 it). 정본: `circuit-breaker-state.ts` + `circuit-breaker.port.ts` + `in-memory-circuit-breaker.adapter.ts` + `ADR.md ADR-009`.
+
+---
+
 ## 변경 시 절차 (책 Ch 16 충돌 2번 해결책)
 
 agent A가 인터페이스 변경 시:
