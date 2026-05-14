@@ -34,18 +34,18 @@ FAIL=0
 echo "=== sensor-payment-race-condition ($(date '+%H:%M:%S')) ==="
 echo ""
 
-# 1. payment.status='refunded' 사전 게이트
-if grep -qE "payment\.status\s*===\s*'refunded'" "$PAYMENT_USECASE" 2>/dev/null; then
-  echo "  [PASS] payment.usecase: payment.status='refunded' 사전 게이트 박제"
+# 1. payment.status='refunded' 사전 게이트 (PAY-P3-D 영역 isPaymentAlreadyRefunded helper 영역 정합)
+if grep -qE "payment\.status\s*===\s*'refunded'|isPaymentAlreadyRefunded\(payment\.status\)" "$PAYMENT_USECASE" 2>/dev/null; then
+  echo "  [PASS] payment.usecase: payment.status='refunded' 사전 게이트 박제 (helper 영역 정합)"
   PASS=$((PASS + 1))
 else
   echo "  [FAIL] payment.usecase: payment.status='refunded' 사전 게이트 누락 — 구멍-A 회귀"
   FAIL=$((FAIL + 1))
 fi
 
-# 2. payment.status='partial_refunded' 사전 게이트
-if grep -qE "payment\.status\s*===\s*'partial_refunded'" "$PAYMENT_USECASE" 2>/dev/null; then
-  echo "  [PASS] payment.usecase: payment.status='partial_refunded' 사전 게이트 박제"
+# 2. payment.status='partial_refunded' 사전 게이트 (PAY-P3-D 영역 isPaymentAlreadyRefunded helper 영역 정합)
+if grep -qE "payment\.status\s*===\s*'partial_refunded'|isPaymentAlreadyRefunded\(payment\.status\)" "$PAYMENT_USECASE" 2>/dev/null; then
+  echo "  [PASS] payment.usecase: payment.status='partial_refunded' 사전 게이트 박제 (helper 영역 정합)"
   PASS=$((PASS + 1))
 else
   echo "  [FAIL] payment.usecase: payment.status='partial_refunded' 사전 게이트 누락 — 구멍-A 회귀"

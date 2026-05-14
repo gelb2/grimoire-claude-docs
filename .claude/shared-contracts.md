@@ -2105,6 +2105,123 @@ export interface CircuitBreakerPort {
 
 ---
 
+## 28. PaymentStatusMapping (server 도메인 — PAY-P3-D Status enum + Polar 매핑 정책)
+
+### 컨텍스트
+- 결제 도메인 영역 status literal 영역 분산 (5 영역):
+  - DB `payments.status` String (`pending` / `completed` / `failed` / `refunded` / `partial_refunded`)
+  - DB `webhook_events.status` String (`processed` / `skipped` / `failed`)
+  - Port `NormalizedWebhookEvent.status` literal (`success` / `fail` / `cancel`)
+  - Port `NormalizedCheckout.status` literal (`succeeded` / `refunded` / `failed` / `open`)
+  - DB `refund_logs.source` String (`webhook` / `manual`)
+- 매핑 함수 영역 polar.adapter.ts private 메서드 2개 (`mapOrderStatus` + `mapCheckoutStatus`) → 도메인 영역 분리 X (헥사고날 DIP 결함 — 어휘 통일 부재)
+- 사용자 5/15 결정 정합: schema 0 + dev migration 0 + 외부 API 0 강제
+- 도입 목표: 어휘 통일 + 매핑 함수 도메인 model 이전 + race condition 통합 helper 박제 (`isPaymentAlreadyRefunded`)
+
+### 결정
+- **도메인 enum 5건 박제** (`src/domain/model/payment-status.ts`):
+  - `PAYMENT_STATUS` (5 values): DB `payments.status` 어휘
+  - `WEBHOOK_EVENT_STATUS` (3 values): DB `webhook_events.status` 어휘
+  - `NORMALIZED_WEBHOOK_STATUS` (3 values): Port webhook 정규화 어휘
+  - `NORMALIZED_CHECKOUT_STATUS` (4 values): Port checkout 정규화 어휘 (PAY-P0-2 reconciliation 정합)
+  - `REFUND_SOURCE` (2 values): RefundLog source 어휘
+- **매핑 함수 2건 도메인 model 박제**:
+  - `mapPolarOrderStatus(status?: string): NormalizedWebhookStatus` — Polar order.status → 정규화 어휘
+  - `mapPolarCheckoutStatus(status?: string): NormalizedCheckoutStatus` — Polar checkout.status → 정규화 어휘
+- **helper 함수 3건 박제** (race condition 통합 + Polar status 판정):
+  - `isPaymentAlreadyRefunded(status: string): boolean` — `payment.status === 'refunded' || === 'partial_refunded'` 통합 (§22 정합)
+  - `isPolarRefundedStatus(status?: string): boolean` — Polar status='refunded' 판정
+  - `isPolarSuccessStatus(status?: string): boolean` — Polar status='paid' || 'succeeded' 판정
+- **호출자 통합 영역**:
+  - `polar.adapter.ts`: private `mapOrderStatus` / `mapCheckoutStatus` 메서드 도메인 helper 위임 (호출 패턴 보존 X 호출 시그니처 유지)
+  - `payment.usecase.ts`: `isPaymentAlreadyRefunded(payment.status)` 통합 + `event.status === NORMALIZED_WEBHOOK_STATUS.*` 어휘 통합 + `status: WEBHOOK_EVENT_STATUS.PROCESSED` 어휘 1회 통합 (이외 영역은 보존 — 회귀 최소화)
+- **DB schema 변경 0건 강제**: Prisma `String` 컬럼 유지 (enum 변환 X, dev migration 0)
+- **외부 npm 라이브러리 0건 + 외부 API 0건** 정합
+
+### 매핑 매트릭스
+
+#### Polar order.status → NormalizedWebhookStatus (mapPolarOrderStatus)
+| Polar order.status | NormalizedWebhookStatus | 분기 |
+|---|---|---|
+| `paid` | `success` | order.paid webhook → completePaymentAtomically |
+| `succeeded` | `success` | order.updated webhook → completePaymentAtomically |
+| `refunded` | `cancel` | order.refunded webhook → refundPaymentAtomically |
+| (그 외 / undefined) | `fail` | 안전 측면 fallback (pending/canceled/unknown) |
+
+#### Polar checkout.status → NormalizedCheckoutStatus (mapPolarCheckoutStatus)
+| Polar checkout.status | NormalizedCheckoutStatus | 분기 |
+|---|---|---|
+| `succeeded` | `succeeded` | S1 boost 후보 (reconciliation match) |
+| `expired` | `failed` | 결제 결함 |
+| `failed` | `failed` | 결제 결함 |
+| `open` | `open` | 사용자 결제 진행 중 |
+| `confirmed` | `open` | 결제 확인 단계 (webhook 미발송 가능) |
+| (그 외 / undefined) | `open` | **기존 polar.adapter.ts:mapCheckoutStatus 동작 보존** (reconciliation false positive 차단) |
+
+#### DB Payment.status 어휘 (PAYMENT_STATUS)
+| value | 진입 시점 |
+|---|---|
+| `pending` | initiatePayment 직후 (Polar checkout 진입 전) |
+| `completed` | order.paid webhook + completePaymentAtomically 종료 |
+| `failed` | webhook fail 수신 또는 SDK 결함 permanent_failed 박제 |
+| `refunded` | 전액 환불 종료 (refundPaymentAtomically + RefundLog 박제) |
+| `partial_refunded` | 부분 환불 종료 (PAY-P2-1 PartialRefund §17 정합) |
+
+#### DB WebhookEvent.status 어휘 (WEBHOOK_EVENT_STATUS)
+| value | 진입 시점 |
+|---|---|
+| `processed` | completePaymentAtomically 또는 refundPaymentAtomically 종료 |
+| `skipped` | 중복 / unknown_trade / already_completed / already_refunded |
+| `failed` | SDK 결함 또는 트랜잭션 결함 박제 |
+
+### 대안
+- (A) DB enum 변환 — Prisma `enum` 영역 schema 마이그레이션 (사용자 5/10 정합 X, 거부 — dev migration 0 강제)
+- (B) Branded type (`type PaymentStatus = string & { __brand: 'PaymentStatus' }`) — Runtime 검증 부재 (거부, enum 영역 박제가 명시적)
+- (C) zod schema 영역 정합화 — 외부 npm 의존 추가 (사용자 5/10 정합 X, 거부)
+- (D) `as const` 객체 + TypeScript literal type ← **채택** (zero runtime cost + IDE 자동완성 + Runtime 검증 — 외부 의존 0건)
+
+### 구현
+- **domain/model**: `src/domain/model/payment-status.ts` (5 enum + 2 mapping function + 3 helper)
+- **domain/model spec**: `src/domain/model/payment-status.spec.ts` (34 it — AC 매트릭스 정합)
+- **polar.adapter 통합**: `src/adapter/outbound/payment/polar.adapter.ts` (import + private 메서드 영역 도메인 helper 위임)
+- **payment.usecase 통합**: `src/application/payment/payment.usecase.ts` (import + `isPaymentAlreadyRefunded` + `NORMALIZED_WEBHOOK_STATUS.SUCCESS/CANCEL` + `PAYMENT_STATUS.COMPLETED` + `WEBHOOK_EVENT_STATUS.PROCESSED` 1회 영역)
+- **sensor**: `.claude/scripts/sensor-payment-status-mapping.sh` (10 검증)
+- **regression**: `eval/tasks/regression-72-payment-status-mapping.json` (10 criteria)
+
+### 결과
+- 도메인 매핑 함수 영역 헥사고날 DIP 정합 (polar.adapter.ts private 메서드 영역 도메인 helper 위임)
+- 어휘 통일 — TypeScript IDE 자동완성 + 오타 영역 컴파일 단계 차단
+- `isPaymentAlreadyRefunded` race condition 통합 게이트 — §22 PaymentRaceCondition 정합 강화
+- jest 735 → 769 PASS (+34 it — payment-status spec 영역)
+- sensor-payment-race-condition 패턴 영역 helper 호출 영역 정합화 (회귀 보존)
+- DB schema 0건 / dev migration 0건 / 외부 API 0건 정합 강제
+
+### 정합 매트릭스 (다른 sprint 회귀 차단)
+- §22 PaymentRaceCondition 정합 — `isPaymentAlreadyRefunded` 통합 helper 영역 sensor pattern 정합 보정
+- §11 WebhookEventIdempotency 정합 — `WEBHOOK_EVENT_STATUS` enum 어휘 통합 (DB String 컬럼 유지 + TypeScript 어휘 통일)
+- §12 PaymentReconciliation 정합 — `NORMALIZED_CHECKOUT_STATUS` enum 영역 어휘 통합 (default → 'open' 동작 보존)
+- §13 RefundPaymentAtomically 정합 — `REFUND_SOURCE` enum 영역 'webhook' / 'manual' 어휘 통합
+- §17 PartialRefund 정합 — `PAYMENT_STATUS.PARTIAL_REFUNDED` enum 영역 어휘 통합 (REFUNDED_STATES 정합)
+- §24 PolarSDKTimeoutPolicy 정합 — Polar SDK exception 분류 영역 0 영향 (status 매핑 영역만)
+- §27 CircuitBreakerPolicy 정합 — circuit breaker 영역 status 매핑 영역 0 영향
+
+### 잔존 영역
+- DB schema 영역 enum 변환 — Prisma `enum` 마이그레이션 (별도 sprint PAY-P4-x 영역 후보)
+- 4 status literal 위치 영역 통합 — payment.usecase.ts 영역 status: 'processed' 영역 추가 통합 (회귀 최소화 정합으로 1회만 박제, 향후 sprint 영역 후속)
+- 다른 사용 영역 (admin.usecase / refund-payment.usecase 등) — 어휘 통합 영역 후속 sprint 후보
+
+### 정본 영역
+- `grimoire-server/src/domain/model/payment-status.ts`
+- `grimoire-server/src/domain/model/payment-status.spec.ts`
+- `grimoire-server/ADR.md §ADR-010`
+- `.claude/scripts/sensor-payment-status-mapping.sh`
+- `eval/tasks/regression-72-payment-status-mapping.json`
+
+### 변경 이력
+- 2026-05-15 #10_8 PAY-P3-D: 신설 — Status enum + Polar 매핑 정책 박제 (사용자 5/15 verbatim 4번째 sprint). 5 enum (PAYMENT_STATUS / WEBHOOK_EVENT_STATUS / NORMALIZED_WEBHOOK_STATUS / NORMALIZED_CHECKOUT_STATUS / REFUND_SOURCE) + 2 매핑 함수 (mapPolarOrderStatus / mapPolarCheckoutStatus) + 3 helper (isPaymentAlreadyRefunded / isPolarRefundedStatus / isPolarSuccessStatus). 헥사고날 DIP 정합 강화. DB schema 0 / dev migration 0 / 외부 API 0 강제. jest 735 → 769 PASS (+34 it). 정본: `payment-status.ts` + `payment-status.spec.ts` + `ADR.md ADR-010`.
+
+---
+
 ## 변경 시 절차 (책 Ch 16 충돌 2번 해결책)
 
 agent A가 인터페이스 변경 시:
