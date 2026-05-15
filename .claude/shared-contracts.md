@@ -2222,6 +2222,153 @@ export interface CircuitBreakerPort {
 
 ---
 
+## 29. UserSoftDeletePolicy (server 도메인 — Author Soft Delete + 본인 탈퇴 + 운영자 강제 삭제 + GDPR 익명화 + 30일 cron hard delete)
+
+> Sprint USER-SOFT-DELETE (2026-05-15 #10_8) — 사용자 5/15 verbatim "B + A 모두 진행" 정합. PAY-P3-E sprint 단계 1~6 종료 직후 5번째 sprint.
+
+### 위치 (Hexagonal 정합 박제)
+
+- **model**: `grimoire-server/src/domain/model/author.ts` (deletedAt 필드 + isAuthorDeleted 검증 함수)
+- **enum**: `grimoire-server/src/domain/model/user-soft-delete-state.ts` (SoftDeleteState + SoftDeletedBy)
+- **policy**: `grimoire-server/src/domain/policy/user-soft-delete-policy.ts` (30일 정책 + GDPR 익명화 정책 + 환경변수 로드 + computeHardDeleteCutoff)
+- **port**: `grimoire-server/src/domain/port/outbound/user-anonymizer.port.ts` (UserAnonymizerPort 인터페이스)
+- **port 확장**: `grimoire-server/src/domain/port/outbound/author-repository.port.ts` (softDelete / restore / hardDeleteOlderThan / findDeletedById / findDeletedOlderThan 메서드)
+- **adapter (middleware)**: `grimoire-server/src/adapter/outbound/persistence/prisma-soft-delete.middleware.ts` (Prisma `$use` 영역 자동 변환)
+- **adapter (anonymizer)**: `grimoire-server/src/adapter/outbound/persistence/default-user-anonymizer.adapter.ts` (basic 옵션 A)
+- **usecase**: `grimoire-server/src/application/author/user-soft-delete.usecase.ts` (본인 탈퇴 + 운영자 강제 삭제)
+- **cron**: `grimoire-server/src/application/author/user-hard-delete.job.ts` (`@Cron('0 0 4 * * *')` 매일 새벽 4시)
+- **controller (self)**: `grimoire-server/src/adapter/inbound/http/controller/author.controller.ts` (`@Delete('me')`)
+- **controller (admin)**: `grimoire-server/src/adapter/inbound/http/controller/admin.controller.ts` (`@Post('authors/:authorId/force-delete')`)
+- **migration**: `grimoire-server/prisma/migrations/20260515_user_soft_delete_policy/migration.sql` (ALTER TABLE authors ADD COLUMN deleted_at + CREATE INDEX)
+- **spec**: 4 spec (user-soft-delete.usecase.spec / user-hard-delete.job.spec / prisma-soft-delete.middleware.spec / default-user-anonymizer.adapter.spec — total ≥ 20 it)
+- **ADR**: `grimoire-server/ADR.md ADR-011`
+- **env**: `USER_SOFT_DELETE_RETENTION_DAYS` (기본 30) / `USER_SOFT_DELETE_CRON_TIME` (기본 '0 4 * * *') / `GDPR_ANONYMIZE_SCOPE` (기본 'basic') / `USER_HARD_DELETE_DISABLED` (게이트)
+- **sensor**: `.claude/scripts/sensor-user-soft-delete-policy.sh` (12 검증)
+- **eval**: `eval/tasks/regression-73-user-soft-delete-policy.json`
+
+### 시그니처
+
+```typescript
+// 4 상태 enum (user-soft-delete-state.ts)
+export enum SoftDeleteState {
+  ACTIVE = 'ACTIVE',
+  SOFT_DELETED = 'SOFT_DELETED',
+  ANONYMIZED = 'ANONYMIZED',
+  HARD_DELETED = 'HARD_DELETED',
+}
+export type SoftDeletedBy = 'self' | 'admin'
+
+// 정책 (user-soft-delete-policy.ts)
+export interface UserSoftDeletePolicy {
+  retentionDays: number          // 기본 30
+  cronTime: string               // 기본 '0 4 * * *'
+  anonymizeScope: 'basic' | 'strong' | 'strongest'  // 기본 'basic'
+}
+
+// Port (user-anonymizer.port.ts)
+export interface UserAnonymizerPort {
+  anonymize(authorId: string, scope?: 'basic' | 'strong' | 'strongest'): Promise<void>
+}
+
+// Repository port 확장 (author-repository.port.ts)
+softDelete(id: string): Promise<void>
+restore(id: string): Promise<void>
+hardDeleteOlderThan(cutoff: Date): Promise<{ deletedIds: string[]; blockedIds: string[] }>
+findDeletedById(id: string): Promise<Author | null>
+findDeletedOlderThan(cutoff: Date): Promise<Author[]>
+
+// UseCase (user-soft-delete.usecase.ts)
+async execute(
+  authorId: string,
+  deletedBy: SoftDeletedBy,
+  adminId?: string,   // admin 영역 필수
+  reason?: string,    // admin 영역 필수
+): Promise<void>
+```
+
+### 적용 매트릭스 (사용자 5/15 결정 옵션 A 5건 정합)
+
+| 결정 영역 | 옵션 | 채택 |
+|---|---|---|
+| User soft delete | A (User.deletedAt DateTime?) | ✅ |
+| 작품/episode cascade | A (PAY-P3-E Restrict 정합, archive 0건) | ✅ |
+| GDPR 익명화 범위 | A (basic — email + name + passwordHash + bio) | ✅ |
+| 30일 hard delete | A (자동 cron + 회계 차단 시 보류) | ✅ |
+| cron 시간 | A (`0 4 * * *` 매일 새벽 4시) | ✅ |
+
+### Hexagonal 흐름 매트릭스
+
+```
+[Author 본인 탈퇴]
+  HTTP DELETE /api/v1/authors/me (JWT 인증)
+    → AuthorController.deleteMyAccount(authorId)
+    → UserSoftDeleteUseCase.execute(authorId, 'self')
+      → AuthorRepositoryPort.softDelete (middleware 자동 변환 정합)
+      → UserAnonymizerPort.anonymize (basic 옵션 A)
+      → AuthTokenRepositoryPort.revokeAllByAuthorId (PAY-P3-E Cascade 정합 강화)
+      → AuditLog.log('self', 'self_account_delete', ...)
+      → AuditLog.log('self', 'gdpr_anonymize', ...)
+
+[운영자 강제 Author 삭제]
+  HTTP POST /api/v1/admin/authors/:id/force-delete (AdminGuard + 사유 영역 필수)
+    → AdminController.forceDeleteAuthor(authorId, body.reason)
+    → UserSoftDeleteUseCase.execute(authorId, 'admin', adminId, reason)
+      → ... (위와 동일) +
+      → AuditLog.log(adminId, 'admin_force_delete', authorId, { reason, ... })
+
+[30일 후 cron hard delete]
+  @Cron('0 0 4 * * *') 매일 새벽 4시 KST
+    → UserHardDeleteJob.hardDeleteExpiredUsers
+      → AuthorRepositoryPort.hardDeleteOlderThan (raw query 영역 영역 회피 + try-catch P2003)
+      → deletedIds[] → AuditLog '30d_hard_delete'
+      → blockedIds[] → AuditLog '30d_hard_delete_blocked' (회계 8건 Restrict)
+```
+
+### Prisma middleware 자동 변환 매트릭스 (Author 모델 영역만)
+
+| Prisma 작업 | 자동 변환 |
+|---|---|
+| `findUnique` | → `findFirst` + WHERE deletedAt: null |
+| `findFirst` / `findFirstOrThrow` | + WHERE deletedAt: null |
+| `findMany` / `count` | + WHERE deletedAt: null |
+| `delete` | → `update { deletedAt: NOW() }` |
+| `deleteMany` | → `updateMany { deletedAt: NOW() }` |
+| `args.where.includeDeleted: true` | 우회 (flag 제거 + middleware skip) |
+
+### AdminAuditLog 4 action 박제 (PAY-P2-4 6-arg 정합)
+
+- `self_account_delete` — 사용자 본인 탈퇴 (DELETE /me 영역)
+- `admin_force_delete` — 운영자 강제 삭제 (사유 필수, AdminGuard 영역)
+- `gdpr_anonymize` — GDPR 익명화 (별도 audit log 박제)
+- `30d_hard_delete` — 30일 cron 영역 hard delete 성공
+- `30d_hard_delete_blocked` — 30일 cron 영역 회계 Restrict P2003 차단 영역 보류
+
+### 회계 8건 Restrict 정합 박제 (PAY-P3-E 정합 강제)
+
+PAY-P3-E 단계 1~6 종료 박제 정합 — Author hard delete 시 PG 자동 차단:
+- payments (onDelete=Restrict)
+- credit_logs (onDelete=Restrict)
+- analysis_reports (onDelete=Restrict)
+- user_sanctions (onDelete=Restrict)
+- refund_logs (Payment Cascade 영역 정합)
+- admin_audit_logs (onDelete=Restrict, adminId)
+- works (onDelete=Restrict, authorId)
+- webhook_events / webhook_retry_queues (Payment Cascade 영역 정합)
+
+cron 30일 hard delete 영역 영역 — 회계 row 영역 영역 영역 P2003 catch → 보류 (영구 soft delete 상태 유지 + audit log 박제).
+
+### 정합 매트릭스
+
+- PAY-P3-E (§25 FKCascadePolicy) 강화 — 33 FK + 회계 8건 Restrict 정합 박제
+- PAY-P3-E RefreshToken Cascade 정합 강화 — soft delete 시점에 별도 revokeAll 호출
+- PAY-P2-4 (§20 AdminAuditLog beforeState/afterState) 정합 — 6-arg 시그니처 + 4 action 신설
+- PAY-P2-5 (§26 AuditRetentionPolicy) 정합 — soft delete 영역 audit log 영구 보존 + 90일 PII 마스킹
+
+### 변경 이력
+- 2026-05-15 #10_8 USER-SOFT-DELETE: 신설 — Author soft delete + 본인 탈퇴 + 운영자 강제 삭제 + GDPR 익명화 + 30일 cron hard delete 정합 박제 (5번째 sprint, 사용자 5/15 verbatim "B + A 모두 진행" 정합). DB schema 1 (User.deletedAt + @@index) + dev migration 1 (NULL ALLOW + INDEX) + 외부 API 0. jest 769 → 797 PASS (+28 it). 정본: `prisma/schema.prisma` Author + `user-soft-delete-policy.ts` + `user-soft-delete.usecase.ts` + `user-hard-delete.job.ts` + `prisma-soft-delete.middleware.ts` + `default-user-anonymizer.adapter.ts` + `ADR.md ADR-011`.
+
+---
+
 ## 변경 시 절차 (책 Ch 16 충돌 2번 해결책)
 
 agent A가 인터페이스 변경 시:
