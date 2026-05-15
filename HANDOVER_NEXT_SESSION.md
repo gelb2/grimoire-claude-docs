@@ -12,10 +12,13 @@
 > 5. **main 머지** (server `afee631` + claude-docs `440bc4a`) + **server prod 배포** (revision 100 Healthy + warm 0.72s, sensor-azure-env-secret 15/15)
 > 6. **USER-SOFT-DELETE 풀스택** (Initializer + server Generator `c72803f`+`492dae2` jest +28 it + web Generator `d33a0fb`+`62e6f6a` vitest +9 it + qa #20 CONDITIONAL PASS CRITICAL 1건 + **anonymize 보강** `8566c01`+`d3811b2`+`d1b585d`+`6ec56b5`+`b663d72`+`224e73f` jest +8 it AdminController @Post anonymize + UseCase anonymizeOnly 분기 + GDPR 정합)
 > 7. **C P0 외부 API 0 묶음** + **옵션 C** (regression-011 archive) + **로그인 `@grimoire.app` 완전 제거 검증**
+> 8. **USER-SOFT-DELETE dev+prod 풀 배포 종료** (옵션 A 24h 생략 일괄) — dev 배포 1차 **revision 159 ActivationFailed** (Prisma `$use` 6.x 제거 → `$extends` hotfix `85393b6`) → dev 재배포 revision 160 Healthy → main 머지 3 레포 (server `34e37e0`/web `1b3b03f`/claude-docs `1681ae0`) → prod migration (`deleted_at` 컬럼) → **prod 배포 server-prod revision 101 + web-prod revision 119 Healthy**.
 >
-> **인벤토리**: jest 711→**805** (+94 it) / vitest +9 it / sensor 48→50 / shared-contracts §1~29 / ADR-001~011 / 외부 API 0
+> **인벤토리**: jest 711→**813** (+102 it) / vitest +9 it / sensor 48→50 / shared-contracts §1~29 / ADR-001~011 / 외부 API 0 / prod migration 3건 (PAY-P3-E + PAY-P2-5 + USER-SOFT-DELETE) / prod 배포 server revision 101 + web 119
 >
-> **다음 세션 1순위**: **USER-SOFT-DELETE dev migration apply (~10분) + server+web prod 배포 (~30분)** — `npx prisma migrate dev --name user_soft_delete_policy` + `make deploy-prod`. dev 24h 후 prod migration 명시 키워드 `USER-SOFT-DELETE prod migration 진행`.
+> **본 세션 학습 (CRITICAL)**: 배포 검증에 **실제 부팅(`node dist`) 단계 필수** — `jest`(unit) + `nest build`(컴파일) 둘 다 NestJS `onModuleInit` 미실행 → revision 159 ActivationFailed 못 잡음. "dev 24h 안정성"은 planner agent 임의 박제 (docs 정본/INFRA-1 회고 0건) — 능동 검증으로 대체 가능.
+>
+> **다음 세션 후보**: ① USER-SOFT-DELETE Playwright E2E (탈퇴/force delete/anonymize) ② sensor-deploy-health jq 결함 수정 ③ deploy 스크립트 Healthcheck revision-aware 보강 (revision 159 fallback 200 오보고 결함) ④ PAY-P3-I / EMAIL-P1-1 등.
 
 ---
 
