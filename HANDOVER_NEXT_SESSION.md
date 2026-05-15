@@ -1,17 +1,18 @@
-# HANDOVER — 2026-05-15 #10_8 연장 (PAY-P3-H Circuit Breaker 종료 + NEW-4 옵션 C 면제 박제 + C 묶음) → 다음 세션
+# HANDOVER — 2026-05-15 #10_8 연장 (사용자 5/10 명시 1~6 순서 6건 모두 종료 + USER-SOFT-DELETE Initializer Draft) → 다음 세션
 
-> **작성자**: 2026-05-15 본 세션 (Claude, #10_8 연장 — PAY-P3-H Circuit Breaker 종료 + qa #18 AC 8/8 PASS + NEW-4 옵션 C 채택 + C P0 외부 API 0 묶음)
+> **작성자**: 2026-05-15 본 세션 (Claude, #10_8 연장 — PAY-P3-H + PAY-P3-D + PAY-P3-E prod migration + PAY-P2-5 prod migration + USER-SOFT-DELETE Initializer + C 묶음 + 옵션 C 면제)
 > **수신자**: 다음 세션 (로컬 또는 리모트 채팅방)
 > **검증 명령**: `cd /Users/sokol/Desktop/Git/ProjectGrimoire && git log --oneline -10 && cd grimoire-server && git log --oneline -5`
 >
-> **핵심 (5/15 종료)**:
-> 1. **PAY-P3-H Circuit Breaker 종료** (옵션 B Hystrix 정합, jest 711→735 PASS +24 it, sensor 10/10, eval regression-71 12/12, shared-contracts §27, ADR-009, AuditLog 4 action, env 4건). server `04b3f5c` + `71db1ec` merge develop.
-> 2. **qa #18 PAY-P3-H Evaluator AC 8/8 PASS** (jest/sensor/eval 독립 재실행 + 7 코드 파일 직접 Read + Generator 자가 보고 정합, 미세 모순 3건 박제 정합 사슬).
-> 3. **NEW-4 옵션 C 채택** (regression-011 → `eval/tasks/_archive/` 면제 박제, pre-push hook이 main 직접 push 차단 동일 강제 정합). claude-docs `1ee1967`.
-> 4. **C P0 외부 API 0 묶음** (NEW-4 진단 + H8 sensor-response-zero-realtime + H9 24건 면제). claude-docs `f12bc2e`.
-> 5. **로그인 `@grimoire.app` 영역 완전 제거 검증 PASS** (5/4~5/7 사슬 종료, ID/slug + PW 로그인 정합).
+> **핵심 (5/15 종료, 6 sprint + 보조 묶음)**:
+> 1. **PAY-P3-H Circuit Breaker 종료** (jest 711→735, sensor 10/10, eval 71 12/12, §27, ADR-009, qa #18 AC 8/8 PASS). server `04b3f5c`+`71db1ec`.
+> 2. **PAY-P3-D Status enum mapping 종료** (jest 735→769 +34 it, sensor 10/10 + 8/8 회귀, eval 72 + 전체 70/70, §28, ADR-010, qa #19 AC 8/8 PASS 거짓 보고 0건). server `d47359d`+`e05009c` + claude-docs `82cf753`+`f96e95d`.
+> 3. **PAY-P3-E §7-1 단계 7~12 prod migration 종료** (A1' 메인 직접, 시나리오 B 발동 → 단순화 system_reconciliation row 신설 + credit_logs UPDATE → 33 FK 재측정 0건 → prisma migrate deploy 2건 적용 PAY-P3-E + PAY-P2-5 동시 → FK 33 + prod health warm 0.905s). pg_dump backup 14M /tmp.
+> 4. **PAY-P2-5 prod migration 동시 적용 종료** (dev 24h 통과 5/11 23:34 → 5/15 4일 경과 정합).
+> 5. **USER-SOFT-DELETE Initializer Draft 산출** (`.claude/state/sprint-user-soft-delete-draft.md`, 17 섹션, §16 6 결정 영역). claude-docs `35237f3`.
+> 6. **C P0 외부 API 0 묶음** (NEW-4 + H8 + H9, claude-docs `f12bc2e`) + **NEW-4 옵션 C** (regression-011 archive, claude-docs `1ee1967`) + **로그인 `@grimoire.app` 완전 제거 검증** PASS.
 >
-> **다음 세션 1순위**: PAY-P3-D Status enum mapping (~2h, 외부 API 0 / DB schema 0 / dev migration 0). 또는 dev 24h 통과 prod migration 2건 (PAY-P2-5 + PAY-P3-E 단계 7~12) — 명시 키워드 영역 필요.
+> **다음 세션 1순위**: **USER-SOFT-DELETE Generator** (~3~5h, schema 1건 + dev migration 1건, 사용자 §16 6 결정 명시 후 진입) — 명시 키워드 `USER-SOFT-DELETE Generator 진입`.
 
 ---
 
