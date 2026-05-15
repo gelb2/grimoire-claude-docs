@@ -2238,12 +2238,12 @@ export interface CircuitBreakerPort {
 - **usecase**: `grimoire-server/src/application/author/user-soft-delete.usecase.ts` (본인 탈퇴 + 운영자 강제 삭제)
 - **cron**: `grimoire-server/src/application/author/user-hard-delete.job.ts` (`@Cron('0 0 4 * * *')` 매일 새벽 4시)
 - **controller (self)**: `grimoire-server/src/adapter/inbound/http/controller/author.controller.ts` (`@Delete('me')`)
-- **controller (admin)**: `grimoire-server/src/adapter/inbound/http/controller/admin.controller.ts` (`@Post('authors/:authorId/force-delete')`)
+- **controller (admin)**: `grimoire-server/src/adapter/inbound/http/controller/admin.controller.ts` (`@Post('authors/:authorId/force-delete')` + `@Post('authors/:authorId/anonymize')` qa #20 보강)
 - **migration**: `grimoire-server/prisma/migrations/20260515_user_soft_delete_policy/migration.sql` (ALTER TABLE authors ADD COLUMN deleted_at + CREATE INDEX)
-- **spec**: 4 spec (user-soft-delete.usecase.spec / user-hard-delete.job.spec / prisma-soft-delete.middleware.spec / default-user-anonymizer.adapter.spec — total ≥ 20 it)
+- **spec**: 4 spec (user-soft-delete.usecase.spec / user-hard-delete.job.spec / prisma-soft-delete.middleware.spec / default-user-anonymizer.adapter.spec — total ≥ 20 it) + admin.controller.spec.ts (anonymize 엔드포인트 영역 spec ≥ 1 it, qa #20 보강)
 - **ADR**: `grimoire-server/ADR.md ADR-011`
 - **env**: `USER_SOFT_DELETE_RETENTION_DAYS` (기본 30) / `USER_SOFT_DELETE_CRON_TIME` (기본 '0 4 * * *') / `GDPR_ANONYMIZE_SCOPE` (기본 'basic') / `USER_HARD_DELETE_DISABLED` (게이트)
-- **sensor**: `.claude/scripts/sensor-user-soft-delete-policy.sh` (12 검증)
+- **sensor**: `.claude/scripts/sensor-user-soft-delete-policy.sh` (13 검증 — qa #20 보강 영역 anonymize 엔드포인트 박제 +1)
 - **eval**: `eval/tasks/regression-73-user-soft-delete-policy.json`
 
 ### 시그니처
@@ -2284,6 +2284,14 @@ async execute(
   adminId?: string,   // admin 영역 필수
   reason?: string,    // admin 영역 필수
 ): Promise<void>
+
+// UseCase anonymize-only 분기 (qa #20 server-web 정합 보강 — 2026-05-15)
+// GDPR Article 17 only — 계정 유지 + email/name/passwordHash/bio 4 필드 익명화
+async anonymizeOnly(
+  authorId: string,
+  adminId: string,    // 필수
+  reason: string,     // 필수
+): Promise<{ anonymizedAt: string }>
 ```
 
 ### 적용 매트릭스 (사용자 5/15 결정 옵션 A 5건 정합)
@@ -2315,6 +2323,15 @@ async execute(
     → UserSoftDeleteUseCase.execute(authorId, 'admin', adminId, reason)
       → ... (위와 동일) +
       → AuditLog.log(adminId, 'admin_force_delete', authorId, { reason, ... })
+
+[운영자 GDPR 익명화 only — qa #20 server-web 정합 보강 (2026-05-15)]
+  HTTP POST /api/v1/admin/authors/:id/anonymize (AdminGuard + 사유 영역 필수)
+    → AdminController.anonymizeAuthor(authorId, body.reason)
+    → UserSoftDeleteUseCase.anonymizeOnly(authorId, adminId, reason)
+      → UserAnonymizerPort.anonymize (basic — email + name + passwordHash + bio)
+      → AuditLog.log(adminId, 'gdpr_anonymize', authorId, { reason, scope, mode: 'anonymize_only', beforeState, afterState })
+      → soft delete X (계정 유지)
+      → RefreshToken revoke X (탈퇴 영역 영역 영역)
 
 [30일 후 cron hard delete]
   @Cron('0 0 4 * * *') 매일 새벽 4시 KST
@@ -2366,6 +2383,7 @@ cron 30일 hard delete 영역 영역 — 회계 row 영역 영역 영역 P2003 c
 
 ### 변경 이력
 - 2026-05-15 #10_8 USER-SOFT-DELETE: 신설 — Author soft delete + 본인 탈퇴 + 운영자 강제 삭제 + GDPR 익명화 + 30일 cron hard delete 정합 박제 (5번째 sprint, 사용자 5/15 verbatim "B + A 모두 진행" 정합). DB schema 1 (User.deletedAt + @@index) + dev migration 1 (NULL ALLOW + INDEX) + 외부 API 0. jest 769 → 797 PASS (+28 it). 정본: `prisma/schema.prisma` Author + `user-soft-delete-policy.ts` + `user-soft-delete.usecase.ts` + `user-hard-delete.job.ts` + `prisma-soft-delete.middleware.ts` + `default-user-anonymizer.adapter.ts` + `ADR.md ADR-011`.
+- 2026-05-15 #10_8 USER-SOFT-DELETE anonymize 엔드포인트 보강 (qa #20 server-web 정합 CRITICAL 해소): `@Post('authors/:authorId/anonymize')` 신설 (admin.controller.ts) + `anonymizeOnly` UseCase 분기 신설 (user-soft-delete.usecase.ts) + admin.controller.spec.ts 신규 (2 it) + user-soft-delete.usecase.spec 6 it 추가 + sensor 12→13 검증 + eval regression-73 12→13 criteria. jest 797 → 805 PASS (+8 it). DB schema 0 + dev migration 0 + 외부 API 0. 응답 시그니처 `{ anonymizedAt: string }` — web `adminAnonymizeAuthor` 호출 정합.
 
 ---
 
