@@ -45,7 +45,7 @@ echo "정본: $HARNESS"
 echo ""
 
 # 실측 카운트
-SKILLS_ACTUAL=$(ls -d "$ROOT"/.claude/skills/*/ 2>/dev/null | wc -l | tr -d ' ')
+SKILLS_ACTUAL=$(ls -d "$ROOT"/.claude/skills/*/ 2>/dev/null | grep -v "_archive" | wc -l | tr -d ' ')
 SENSORS_ACTUAL=$(ls "$ROOT"/.claude/scripts/sensor-*.sh 2>/dev/null | wc -l | tr -d ' ')
 KNOWLEDGE_ACTUAL=$(ls "$ROOT"/.claude/knowledge/*.md 2>/dev/null | grep -v "README" | wc -l | tr -d ' ')
 

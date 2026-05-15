@@ -1284,6 +1284,944 @@ auditLog.log(
 
 ---
 
+## 21. InfraMutationGuard (.claude 도메인 — 인프라 변경 안전망)
+
+**위치**:
+- Skill: `.claude/skills/infra-mutation-guard/SKILL.md` (다른 세션 5/6 박제, disable-model-invocation:true)
+- Skill: `.claude/skills/rollback-revision/SKILL.md` (다른 세션 5/6 박제, destructive infra)
+- Sensor: `.claude/scripts/sensor-deploy-health.sh` (INFRA-1 신설, 5 검증)
+- Sensor: `.claude/scripts/sensor-azure-env-secret.sh` (INFRA-1 신설, 8 시크릿 + PUBLIC_API_BASE_URL + Polar env 14건 검증)
+
+**적용**: Azure Container Apps 인프라 변경 (image / env / secret / revision activate-deactivate) 직전·직후 health 자동 검증 + 운영 환경 미검증 패턴 차단. PAY-P1-1+P1-3+EMAIL-P0-3+다른 세션 #10_8 §0 거짓 검증 매트릭스 회고 정합.
+
+### 트리거 (skill)
+
+```yaml
+triggers:
+  - "az containerapp update"
+  - "az containerapp set-env-vars"
+  - "az containerapp secret set"
+  - "az containerapp revision activate"
+  - "main 머지 진행"
+  - "prod 배포"
+  - "Container Apps 변경"
+  - "rollback"
+  - "revision 회복"
+```
+
+### sensor-deploy-health 검증 영역 (5건)
+
+1. 신규 revision HealthState=Healthy
+2. Traffic=100%
+3. RunningState (RunningAtMaxScale / Running / ScaledToZero / Activating 분기)
+4. curl public endpoint HTTP 200/307
+5. startup time ≤120s (Cloudflare 524 회피)
+
+Exit codes: 0 PASS / 1 WARN (Activating/ScaledToZero) / 2 FAIL (Healthy != true 또는 Failed)
+
+### sensor-azure-env-secret 검증 영역 (14건)
+
+8 시크릿 secretRef 매트릭스:
+- DATABASE_URL / JWT_SECRET / RECAPTCHA_SECRET_KEY / ANTHROPIC_API_KEY / OPENAI_API_KEY / POLAR_ACCESS_TOKEN / POLAR_WEBHOOK_SECRET / AZURE_STORAGE_ACCOUNT_KEY
+
+추가 env 박제 검증:
+- **PUBLIC_API_BASE_URL** (dev 153 ActivationFailed 회귀 차단 핵심)
+- POLAR_SERVER + POLAR_ORGANIZATION_ID + POLAR_PRODUCT_BASIC/POPULAR/BEST (Polar 정합)
+- CORS_ORIGIN (BFF 정합)
+
+### 정책
+
+- **인프라 변경 직전 health snapshot 강제** (infra-mutation-guard skill Step 1)
+- **변경 후 3-stage polling** (10s/30s/60s)
+- **Failure 검출 시 자동 rollback 권고** (rollback-revision skill 호출)
+- **운영 환경 검증 필수** (코드 spec PASS만으로 "검증 완료" 보고 차단)
+- **PUBLIC_API_BASE_URL 누락 = startup fail** — sensor 강제 검증
+
+### 처리 흐름 (배포 직전 → 직후)
+
+1. `infra-mutation-guard` skill Step 1: pre-mutation health snapshot 박제 + last_healthy_revision 식별
+2. mutation 실행 (사용자 명시 명령)
+3. Step 3 polling 3-stage: 10s/30s/60s 후 신규 revision health 검증
+4. `sensor-deploy-health` 자동 호출 (5 검증)
+5. `sensor-azure-env-secret` 자동 호출 (14 검증)
+6. Failure 시 `rollback-revision` skill 즉시 호출 권고
+
+### 변경 시 동시 갱신 대상
+
+- `.claude/skills/infra-mutation-guard/SKILL.md` (이미 박제)
+- `.claude/skills/rollback-revision/SKILL.md` (이미 박제)
+- `.claude/scripts/sensor-deploy-health.sh` (INFRA-1 신설)
+- `.claude/scripts/sensor-azure-env-secret.sh` (INFRA-1 신설)
+- `eval/tasks/regression-65-infra-mutation-guard.json` (INFRA-1 신설)
+- `reports/sprint-infra-1-mutation-guard-progress.md` (Sprint progress)
+
+### 변경 이력
+- 2026-05-08 INFRA-1: 신설 — prod revision 97 ActivationFailed 사고 직후 사용자 분노 정합 ("다 고쳐놔"). sensor-deploy-health + sensor-azure-env-secret 신설. **즉시 가치 입증**: sprint 신설 30초 후 prod PUBLIC_API_BASE_URL 누락 정확 검출 (revision 97 Failed 사유 정확 진단). 정본: `reports/sprint-infra-1-mutation-guard-progress.md`.
+
+---
+
+## 22. PaymentRaceCondition (server 도메인 — 결제 race condition 차단)
+
+**위치**:
+- UseCase: `grimoire-server/src/application/payment/payment.usecase.ts` (`processNormalizedWebhook` 사전 게이트)
+- UseCase: `grimoire-server/src/application/payment/refund-payment.usecase.ts` (호출자 정합)
+- Repository: `grimoire-server/src/adapter/outbound/persistence/prisma-payment.repository.ts` (`refundPaymentAtomically` CAS)
+- Sensor: `.claude/scripts/sensor-payment-race-condition.sh` (8 검증)
+
+**적용**: PAYMENT_AUDIT §1 구멍-A (eventId 다른 type 동시 처리 누락) + 구멍-B (transaction race — `Author.findUnique → update decrement` READ COMMITTED 격리 race window) 동시 차단. DB schema 변경 0건. 외부 인프라 의존 0건. PAY-P2-2 DLQ retry 패턴 정합.
+
+### 시그니처 — 사전 게이트 (구멍-A 차단)
+
+```typescript
+// payment.usecase.ts processNormalizedWebhook 진입 직후 (already_completed 게이트 다음)
+if (payment.status === 'refunded' || payment.status === 'partial_refunded') {
+  const reasonKey = `already_${payment.status}` as 'already_refunded' | 'already_partial_refunded'
+  this.logger.warn(
+    `[PaymentRaceCondition] ${reasonKey} eventId=${event.eventId} paymentId=${payment.id}`,
+  )
+  await this.webhookEventRepo.createIfAbsent({
+    eventId: event.eventId,
+    source: 'polar',
+    eventType: event.type,
+    payload: event as unknown as object,
+    status: 'skipped',
+    errorMessage: reasonKey,
+  })
+  return { processed: false, reason: reasonKey }
+}
+```
+
+### 시그니처 — CAS 패턴 (구멍-B 차단)
+
+```typescript
+// prisma-payment.repository.ts refundPaymentAtomically $transaction 내부
+const author = await tx.author.findUniqueOrThrow({
+  where: { id: authorId },
+  select: { credits: true },
+})
+const currentBalance = author.credits
+const actualDeducted = Math.min(currentBalance, proportionalCredits)
+const deficitCredits = Math.max(0, proportionalCredits - currentBalance)
+
+if (actualDeducted > 0) {
+  // CAS 패턴 — Postgres atomic check-and-set (race window 차단)
+  const updateResult = await tx.author.updateMany({
+    where: {
+      id: authorId,
+      credits: { gte: actualDeducted },
+    },
+    data: { credits: { decrement: actualDeducted } },
+  })
+  if (updateResult.count === 0) {
+    throw new Error(
+      `CAS_MISMATCH — race condition detected on author.credits (authorId=${authorId}, expected_min=${actualDeducted})`,
+    )
+  }
+}
+```
+
+### 정책
+
+- **사전 게이트 (구멍-A)**: payment.status='refunded' OR 'partial_refunded' → skip (이미 환불 완료된 payment에 대한 재처리 방어 — 환불 후 재차감 0건 보장)
+- **CAS 패턴 (구멍-B)**: `updateMany WHERE credits >= actualDeducted` (Postgres atomic CAS) → 0 row 시 throw 'CAS_MISMATCH' → 호출자 retry 위임 (PAY-P2-2 DLQ)
+- **격리 수준**: $transaction은 READ COMMITTED (Postgres 기본). CAS 패턴이 격리 부족분을 보강.
+- **재시도 위임**: CAS_MISMATCH throw → refund-payment.usecase 또는 payment.usecase catch → webhookEventRepo 'failed' + DLQ enqueue → WebhookRetryJob @Cron 5분 재처리 (정본: §18 WebhookDLQ)
+- **incident-log 박제 의무**: race condition 시도 차단 시 logger.warn `[PaymentRaceCondition] ...` 동반 (sensor-adversarial-pre-commit P20 정합)
+- **DB schema 변경 0건**: advisory_lock + partial unique index는 P2 보류 (replicas ≥2 시점)
+
+### 검증 게이트
+
+- jest server: `payment.usecase.spec.ts` PAY-P3-A describe (4 it) + `prisma-payment.repository.spec.ts` PAY-P3-A describe (5 it)
+- sensor: `sensor-payment-race-condition.sh` (8 검증)
+- eval: `regression-66-payment-race-condition.json`
+
+### 변경 시 동시 갱신 대상
+
+- `grimoire-server/src/application/payment/payment.usecase.ts` (사전 게이트)
+- `grimoire-server/src/application/payment/payment.usecase.spec.ts` (PAY-P3-A describe — 4 it: AC-1, AC-2, AC-3 시뮬, AC-6)
+- `grimoire-server/src/application/payment/refund-payment.usecase.ts` (호출자 정합)
+- `grimoire-server/src/adapter/outbound/persistence/prisma-payment.repository.ts` (CAS 패턴)
+- `grimoire-server/src/adapter/outbound/persistence/prisma-payment.repository.spec.ts` (PAY-P3-A CAS describe — 5 it)
+- `eval/tasks/regression-66-payment-race-condition.json`
+- `.claude/scripts/sensor-payment-race-condition.sh`
+- `reports/sprint-pay-p3-a-race-condition-progress.md` (Generator 진입 후 박제)
+
+### 변경 이력
+- 2026-05-09 #10_8 PAY-P3-A: 신설 — PAYMENT_AUDIT §1 구멍-A + 구멍-B 동시 차단. payment.status 사전 게이트 (refunded + partial_refunded) + refundPaymentAtomically CAS 패턴 (`findUniqueOrThrow + updateMany WHERE credits >= actualDeducted`). DB schema 변경 0건. PAY-P2-2 DLQ retry 패턴 정합. jest server 625 → 634 (+9 it). sensor 39 → 40 신설. eval regression 65 → 66 신설. 정본: `reports/sprint-pay-p3-a-race-condition-progress.md`.
+
+---
+
+## 23. RetryDeduplication (server 도메인 — webhook-retry.job 사전 dedup 게이트)
+
+**위치**:
+- Job: `grimoire-server/src/application/payment/webhook-retry.job.ts` (`retryDueWebhooks` for-loop 진입 직전 + `applyDedupGate` 헬퍼)
+- Port: `grimoire-server/src/domain/port/outbound/payment-repository.port.ts` (`findByExternalTransactionId` 시그니처 — 기존 보존, 시그니처 변경 0건)
+- Sensor: `.claude/scripts/sensor-retry-dedup.sh` (8 검증)
+
+**적용**: PAYMENT_AUDIT §1 모순-D (WebhookRetryJob 5분 cron ↔ PaymentReconciliationJob 10분 cron 커버리지 겹침) 차단. S1 boost 또는 별도 cron으로 status가 이미 종료된 payment의 retry 진입 자체를 차단 — `processNormalizedWebhook` 호출 0건 + queue row 즉시 deleteById + AuditLog `retry_skip_dedup` 박제. DB schema 변경 0건. 외부 인프라 의존 0건. PAY-P3-A 사전 게이트와 이중 방어 정합 (retry 진입 차단 → payment.usecase 사전 게이트 호출 0건).
+
+### 시그니처 — 사전 dedup 게이트
+
+```typescript
+// webhook-retry.job.ts retryDueWebhooks for-loop 진입 직전 (각 due item 처리 시작점)
+for (const item of due) {
+  const event = item.payload as NormalizedWebhookEvent
+
+  // PAY-P3-C 모순-D 차단: payment.status 사전 dedup 게이트
+  // (S1 boost 후 또는 별도 cron으로 status가 이미 완료/환불된 payment의 retry 시도 차단)
+  // 정본: shared-contracts §23 RetryDeduplication
+  const dedupResult = await this.applyDedupGate(item.id, item.eventId, item.retryCount, event)
+  if (dedupResult.skipped) {
+    skipDedupCount += 1
+    continue
+  }
+
+  // 기존 흐름 — pending/failed/expired 상태일 때만 processNormalizedWebhook 호출
+  try {
+    await this.paymentUseCase.processNormalizedWebhook(event)
+    await this.retryQueueRepo.deleteById(item.id)
+    succeededCount += 1
+    // ...
+  } catch (e) {
+    // 기존 markRetry / markPermanentFailed 흐름 보존
+    // ...
+  }
+}
+```
+
+### 시그니처 — applyDedupGate 헬퍼
+
+```typescript
+private static readonly DEDUP_ACTION = 'retry_skip_dedup'
+private static readonly FINALIZED_STATUSES = new Set([
+  'completed',
+  'refunded',
+  'partial_refunded',
+])
+
+private async applyDedupGate(
+  queueId: string,
+  eventId: string,
+  retryCount: number,
+  event: NormalizedWebhookEvent,
+): Promise<{ skipped: boolean }> {
+  let payment
+  try {
+    payment = await this.paymentRepo.findByExternalTransactionId(event.tradeNo)
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : String(e)
+    this.logger.warn(
+      `[retry] eventId=${eventId} retryCount=${retryCount} → dedup 게이트 조회 실패 (${msg.slice(0, 100)}) — 기존 흐름 유지`,
+    )
+    return { skipped: false }
+  }
+
+  if (!payment) return { skipped: false }
+  if (!WebhookRetryJob.FINALIZED_STATUSES.has(payment.status)) return { skipped: false }
+
+  // 사전 dedup 차단 발동 — queue row 즉시 삭제 + AuditLog 박제
+  await this.retryQueueRepo.deleteById(queueId)
+
+  try {
+    await this.auditLog.log(
+      WebhookRetryJob.DLQ_OPERATOR,
+      WebhookRetryJob.DEDUP_ACTION,
+      eventId,
+      {
+        reason: 'payment_already_finalized',
+        paymentStatus: payment.status,
+        retryCount,
+        paymentId: payment.id,
+      },
+    )
+  } catch (e: unknown) {
+    // AuditLog 박제 실패는 트랜잭션 진행을 막지 않음 (logger.warn 박제 후 skipped=true 보존)
+    const msg = e instanceof Error ? e.message : String(e)
+    this.logger.warn(
+      `AuditLog ${WebhookRetryJob.DEDUP_ACTION} 박제 실패 (eventId=${eventId}): ${msg}`,
+    )
+  }
+
+  this.logger.log(
+    `[retry] eventId=${eventId} retryCount=${retryCount} → SKIP_DEDUP (payment.status=${payment.status})`,
+  )
+  return { skipped: true }
+}
+```
+
+### DI 주입 변경 (`webhook-retry.job.ts` constructor)
+
+```typescript
+constructor(
+  @Inject('WebhookRetryQueueRepositoryPort')
+  private readonly retryQueueRepo: WebhookRetryQueueRepositoryPort,
+  @Inject('WebhookEventRepositoryPort')
+  private readonly webhookEventRepo: WebhookEventRepositoryPort,
+  // PAY-P3-C 신설 — 사전 dedup 게이트용 PaymentRepositoryPort 주입
+  @Inject('PaymentRepositoryPort')
+  private readonly paymentRepo: PaymentRepositoryPort,
+  private readonly paymentUseCase: PaymentUseCase,
+  private readonly auditLog: AuditLogService,
+) {}
+```
+
+### logger.log 통계 박제 변경
+
+기존:
+```typescript
+this.logger.log(
+  `WebhookRetryJob 완료 — due=${due.length} success=${succeededCount} retry=${retryCount} permanent=${permanentFailedCount}`,
+)
+```
+
+변경 후:
+```typescript
+this.logger.log(
+  `WebhookRetryJob 완료 — due=${due.length} success=${succeededCount} retry=${retryCount} permanent=${permanentFailedCount} dedup=${skipDedupCount}`,
+)
+```
+
+### 정책
+
+- **사전 dedup 게이트 발동**: payment.status ∈ {'completed', 'refunded', 'partial_refunded'} → 즉시 deleteById + AuditLog `retry_skip_dedup`
+- **payment.status='pending' 상태**: 기존 흐름 유지 (`processNormalizedWebhook` 호출)
+- **payment 미존재 (findByExternalTransactionId null)**: 기존 흐름 유지 (`processNormalizedWebhook` 호출 → 내부에서 `unknown_trade` 게이트 발동)
+- **payment.status='failed' OR 'expired'**: 기존 흐름 유지 (이 시나리오는 retry 의미 X 영역, 별도 sprint에서 결정 — PAY-P3-D status enum 또는 PAY-P2-5 retention)
+- **AuditLog action 식별자**: `retry_skip_dedup` (operator='system_dlq', resourceId=eventId, meta: {reason, paymentStatus, retryCount, paymentId})
+- **paymentRepo 조회 실패 시**: logger.warn 박제 + 기존 흐름 유지 (false negative 회피 — 조회 실패가 retry 차단으로 이어지지 않도록 보호)
+- **AuditLog 박제 실패 시**: logger.warn 박제 + skipped=true 보존 (queue row 삭제는 이미 commit, AuditLog noise만 있으면 운영자 추적 가능)
+- **incident-log 박제 의무**: dedup 차단 시 logger.log 동반 (sensor-adversarial-pre-commit P20)
+- **DB schema 변경 0건**: 본 sprint = 의존성 1건 추가 (PaymentRepositoryPort) + 로직 1건 추가만
+- **PAY-P3-A 정합 (이중 방어)**: PAY-P3-A는 `processNormalizedWebhook` 내부 사전 게이트 (line 187-204) — 본 sprint는 retry 진입 자체를 차단 → payment.usecase 사전 게이트는 0건 호출 → 이중 방어 정합
+
+### 검증 게이트
+
+- jest server: `webhook-retry.job.spec.ts` PAY-P3-C describe (6 it: AC-1, AC-2, AC-3, AC-4, AC-6, AC-7)
+- sensor: `sensor-retry-dedup.sh` (8 검증)
+- eval: `regression-67-retry-dedup.json`
+
+### 변경 시 동시 갱신 대상
+
+- `grimoire-server/src/application/payment/webhook-retry.job.ts` (DI + 사전 게이트 + 통계)
+- `grimoire-server/src/application/payment/webhook-retry.job.spec.ts` (PAY-P3-C describe — 6 it)
+- `grimoire-server/src/app.module.ts` (PaymentRepositoryPort 주입 정합 검증 — 기존 박제됨, WebhookRetryJob provider 영역만 정합 검증)
+- `eval/tasks/regression-67-retry-dedup.json`
+- `.claude/scripts/sensor-retry-dedup.sh`
+- `reports/sprint-pay-p3-c-retry-dedup-progress.md` (Generator 진입 후 박제)
+
+### 변경 이력
+- 2026-05-09 #10_8 PAY-P3-C: 신설 — PAYMENT_AUDIT §1 모순-D (WebhookRetryJob ↔ ReconciliationJob 커버리지 겹침) 차단. webhook-retry.job 사전 dedup 게이트 (PaymentRepositoryPort 주입 + payment.status='completed'/'refunded'/'partial_refunded' 체크 + AuditLog `retry_skip_dedup` + skipDedupCount 통계). DB schema 변경 0건. PAY-P3-A 정합 (이중 방어). jest server 634 → 640 (+6 it). sensor 40 → 41 신설. eval regression 66 → 67 신설. 정본: `reports/sprint-pay-p3-c-retry-dedup-progress.md`.
+
+---
+
+## 24. PolarSDKTimeoutPolicy (server 도메인 — Polar SDK timeout 명시 + exception 분기)
+
+**위치**:
+- Adapter: `grimoire-server/src/adapter/outbound/payment/polar.adapter.ts` (`new Polar({ timeoutMs })` + `classifyPolarError` + catch 분류 적용)
+- UseCase: `grimoire-server/src/application/payment/payment.usecase.ts` (`processNormalizedWebhook` success/cancel 분기 catch + `classifyAndRouteWebhookError` helper)
+- Port: `grimoire-server/src/domain/port/outbound/payment-gateway.port.ts` (`PolarErrorClass` + `PolarErrorClassification` + `classifyPolarError?` Optional 메서드)
+- Sensor: `.claude/scripts/sensor-polar-timeout-policy.sh` (5 검증)
+- Env: `POLAR_SDK_TIMEOUT_MS` (기본값 30000, dev/prod 동일)
+- Eval: `eval/tasks/regression-68-polar-timeout.json` (8 checks)
+
+**적용**: PAYMENT_AUDIT §1 구멍-C (Polar SDK exception type 미매핑 + timeout 정책 미명시) 차단. DB schema 변경 0건. 외부 API 추가 호출 0건 (기존 SDK 옵션만 변경). PAY-P2-2 DLQ retry 정합 (timeout/network/5xx만 retry, 4xx 즉시 permanent_failed).
+
+### 시그니처 — Polar SDK timeout 옵션 (옵션 A 채택)
+
+```typescript
+// polar.adapter.ts constructor
+constructor() {
+  const accessToken = process.env.POLAR_ACCESS_TOKEN ?? ''
+  const server = (process.env.POLAR_SERVER ?? 'production') as 'sandbox' | 'production'
+  this.webhookSecret = process.env.POLAR_WEBHOOK_SECRET ?? ''
+
+  // PAY-P3-B: 옵션 A 채택 — Polar SDK v0.47.0 SDKOptions.timeoutMs 내장 옵션 사용
+  // (config.d.ts L38 검증 — "timeoutMs?: number" 직접 지원).
+  // env POLAR_SDK_TIMEOUT_MS 미설정 시 기본 30s. parseInt 실패 시(NaN) 30s fallback.
+  const parsed = parseInt(process.env.POLAR_SDK_TIMEOUT_MS ?? '', 10)
+  this.timeoutMs = Number.isFinite(parsed) && parsed > 0 ? parsed : 30000
+
+  this.polar = new Polar({
+    accessToken,
+    server,
+    timeoutMs: this.timeoutMs,
+  })
+}
+```
+
+### 시그니처 — PolarErrorClassification (도메인 포트 정본)
+
+```typescript
+// payment-gateway.port.ts
+export type PolarErrorClass =
+  | 'timeout'      // AbortError, TimeoutError, RequestTimeoutError, RequestAbortedError, message 'timeout'
+  | 'network'      // ECONNRESET, ENOTFOUND, ETIMEDOUT, EPIPE, ECONNREFUSED, ConnectionError
+  | 'server_5xx'   // HTTP 500/502/503/504 등 (PolarError.statusCode 추출)
+  | 'client_4xx'   // HTTP 400/401/403/404/422 등 (retry 무의미 → permanent_failed)
+  | 'unknown'      // 분류 실패 시 안전 측면 fallback (retry 가능 영역)
+
+export interface PolarErrorClassification {
+  errorClass: PolarErrorClass
+  httpStatus?: number  // server_5xx / client_4xx 분류 시 필수
+  message: string      // 원본 에러 메시지 (500자 이내 truncate 권장)
+}
+
+export interface PaymentGatewayPort {
+  initiatePayment(...): Promise<PaymentInitResponse>
+  verifyAndParseWebhook(...): NormalizedWebhookEvent | null
+  listRecentCheckouts(...): Promise<NormalizedCheckout[]>
+  /** PAY-P3-B Optional 메서드 — 미구현 adapter는 'unknown' fallback (회귀 보존) */
+  classifyPolarError?(e: unknown): PolarErrorClassification
+}
+```
+
+### 시그니처 — classifyPolarError helper (PolarAdapter 구현)
+
+```typescript
+// polar.adapter.ts — public method (port 인터페이스 정합 + duck typing)
+classifyPolarError(e: unknown): PolarErrorClassification {
+  const message = e instanceof Error ? e.message : String(e)
+  const errorName = e instanceof Error ? e.name : ''
+
+  // 1. timeout 분류 (AbortError, TimeoutError, RequestTimeoutError, RequestAbortedError, /timeout/i, /aborted?/i)
+  if (errorName === 'AbortError' || errorName === 'TimeoutError' ||
+      errorName === 'RequestTimeoutError' || errorName === 'RequestAbortedError' ||
+      /\btimeout\b/i.test(message) || /\baborted?\b/i.test(message)) {
+    return { errorClass: 'timeout', message }
+  }
+
+  // 2. network 분류 (ConnectionError + Node.js system error prefixes)
+  if (errorName === 'ConnectionError' ||
+      /^(ECONNRESET|ENOTFOUND|ETIMEDOUT|EPIPE|ECONNREFUSED)/.test(message) ||
+      /\b(ECONNRESET|ENOTFOUND|ETIMEDOUT|EPIPE|ECONNREFUSED)\b/.test(message)) {
+    return { errorClass: 'network', message }
+  }
+
+  // 3. HTTP 응답 분류 — duck typing (PolarError.statusCode + legacy fetch + axios-like)
+  const httpStatus = this.extractHttpStatus(e)
+  if (httpStatus !== undefined) {
+    if (httpStatus >= 500 && httpStatus < 600) return { errorClass: 'server_5xx', httpStatus, message }
+    if (httpStatus >= 400 && httpStatus < 500) return { errorClass: 'client_4xx', httpStatus, message }
+  }
+
+  // 4. fallback (retry 가능 영역)
+  return { errorClass: 'unknown', message }
+}
+```
+
+### 시그니처 — payment.usecase 분기 처리 (classifyAndRouteWebhookError)
+
+```typescript
+// payment.usecase.ts — private helper
+private async classifyAndRouteWebhookError(
+  e: unknown,
+  event: NormalizedWebhookEvent,
+  paymentId: string,
+  branch: 'success' | 'cancel',
+): Promise<PolarErrorClassification> {
+  const polarError = this.paymentGateway.classifyPolarError?.(e) ??
+    { errorClass: 'unknown', message: e instanceof Error ? e.message : String(e) }
+
+  if (polarError.errorClass === 'client_4xx') {
+    // 4xx — retry 무의미, 즉시 permanent_failed 박제
+    this.logger.error(`[PolarSDK] client_4xx eventId=${event.eventId} branch=${branch} httpStatus=${polarError.httpStatus} → permanent_failed (retry 0건)`)
+    if (this.auditLog) {
+      await this.auditLog.log('system_dlq', 'webhook_permanent_failed', event.eventId, {
+        reason: 'polar_4xx_no_retry',
+        errorClass: polarError.errorClass,
+        httpStatus: polarError.httpStatus,
+        paymentId,
+        branch,
+        originalMessage: polarError.message.slice(0, 500),
+      })
+    }
+    await this.enqueueWebhookRetry(event as object, event.eventId, 'permanent_failed')
+  } else {
+    // timeout / network / server_5xx / unknown — retry 의미 있음
+    this.logger.warn(`[PolarSDK] ${polarError.errorClass} eventId=${event.eventId} branch=${branch} → retry`)
+    await this.enqueueWebhookRetry(event as object, event.eventId, 'retry')
+  }
+  return polarError
+}
+```
+
+### 정책
+
+- **5분류 매트릭스**:
+  - `timeout` → retry (AbortError, TimeoutError, message에 'timeout'/'aborted' 포함)
+  - `network` → retry (ECONNRESET, ENOTFOUND, ETIMEDOUT, EPIPE, ECONNREFUSED, ConnectionError)
+  - `server_5xx` → retry (HTTP 500/502/503/504 등)
+  - `client_4xx` → **permanent_failed 즉시 박제** (HTTP 400/401/403/404/422 등 — retry 무의미)
+  - `unknown` → retry (안전 측면 — 분류 실패 시 retry 가능 영역으로 fallback)
+- **timeout 정책**: SDK 호출별 30초 (env `POLAR_SDK_TIMEOUT_MS` 오버라이드). dev/prod 동일.
+- **AuditLog 식별자**: 4xx 즉시 permanent → `operator='system_dlq' action='webhook_permanent_failed'` (기존 PAY-P2-2 MAX_RETRY 누적 후 동일 action 박제와 정합).
+- **PAY-P2-2 DLQ 정합**: timeout/network/5xx → 기존 enqueueWebhookRetry 흐름 보존 (회귀 0). 4xx만 retry queue 박제 0건 (`enqueueWebhookRetry(event, eventId, 'permanent_failed')` 명시).
+- **PAY-P3-A 정합 (영역 분리)**: PAY-P3-A는 webhook 사전 게이트 (refunded 상태 차단), 본 sprint는 catch 분기 처리 — 영역 분리 (정합 회귀 0).
+- **PAY-P3-C 정합 (영역 분리)**: PAY-P3-C는 webhook-retry.job 사전 dedup, 본 sprint는 catch 분기 처리 — 영역 분리 (정합 회귀 0).
+- **DB schema 변경 0건**: 본 sprint = SDK 옵션 + helper + catch 분기만.
+
+### PaymentGatewayPort 시그니처 변경 영역 (옵션 B 채택)
+
+- **옵션 B 채택**: `PaymentGatewayPort.classifyPolarError?` Optional 메서드 (회귀 0 보장)
+- 다른 adapter (예: 향후 PayApp) 미구현 영역 정합 (Optional → 호출자가 'unknown' fallback)
+- 옵션 A (PolarAdapter private 메서드만) 보류 사유: usecase가 직접 폴리모픽 호출 불가
+- 옵션 C (별도 PaymentErrorClassifierPort 신설) 보류 사유: ~2h 초과 영역
+
+### 검증 게이트
+
+- jest server: `polar.adapter.spec.ts` PAY-P3-B describe (≥ 4 it) + `payment.usecase.spec.ts` (≥ 2 it)
+- sensor: `sensor-polar-timeout-policy.sh` (5 검증)
+- eval: `regression-68-polar-timeout.json` (8 checks)
+
+### 변경 시 동시 갱신 대상
+
+- `grimoire-server/src/adapter/outbound/payment/polar.adapter.ts` (timeout 옵션 + classifyPolarError + catch 분류)
+- `grimoire-server/src/adapter/outbound/payment/polar.adapter.spec.ts` (≥ 4 it)
+- `grimoire-server/src/application/payment/payment.usecase.ts` (catch 분기 처리)
+- `grimoire-server/src/application/payment/payment.usecase.spec.ts` (≥ 2 it)
+- `grimoire-server/src/domain/port/outbound/payment-gateway.port.ts` (`PolarErrorClass` + `PolarErrorClassification` + `classifyPolarError?` Optional)
+- `grimoire-server/docs/api-contract.md` (webhook 처리 상태 표 webhook_permanent_failed_4xx 박제)
+- `grimoire-server/docs/data-model.md` (AuditLog action 표 — webhook_permanent_failed 추가)
+- `grimoire-server/docs/environments.md` (POLAR_SDK_TIMEOUT_MS env 추가)
+- `grimoire-server/SECURITY.md §3` (결제 원자성 영역 본 sprint timeout 정책 박제)
+- `grimoire-server/ADR.md` (Polar SDK timeout 결정 박제 — 옵션 A 채택 사유)
+- `eval/tasks/regression-68-polar-timeout.json`
+- `.claude/scripts/sensor-polar-timeout-policy.sh`
+- `reports/sprint-pay-p3-b-polar-timeout-progress.md` (Generator 산출 정본)
+
+### 변경 이력
+- 2026-05-09 #10_8 PAY-P3-B: 신설 — PAYMENT_AUDIT §1 구멍-C (Polar SDK exception type 미매핑 + timeout 정책 미명시) 차단. polar.adapter `new Polar({ timeoutMs })` 옵션 A 채택 (Polar SDK v0.47.0 SDKOptions.timeoutMs 내장 옵션 직접 지원, config.d.ts L38 검증) + `classifyPolarError` public method (5분류 timeout/network/server_5xx/client_4xx/unknown, duck typing) + payment.usecase `classifyAndRouteWebhookError` private helper (success/cancel 분기 catch에서 호출, 4xx → permanent_failed 즉시 박제 + AuditLog `webhook_permanent_failed`, 외 4분류 → retry queue 박제). PaymentGatewayPort `classifyPolarError?` Optional 메서드 추가 (옵션 B 채택, 회귀 0 보장). DB schema 변경 0건. PAY-P2-2 DLQ 정합 (timeout/network/5xx만 retry). 정본: `reports/sprint-pay-p3-b-polar-timeout-progress.md`.
+
+---
+
+## 25. FKCascadePolicy (server 도메인 — PAY-P3-E 모순-F 차단, 33 FK 영역 onDelete 정책)
+
+### 위치
+- Schema: `grimoire-server/prisma/schema.prisma` (33 FK 영역 onDelete directive 명시 + 25 raw FK @relation 박제)
+- Migration: `grimoire-server/prisma/migrations/20260510_pay_p3_e_fk_cascade_policy/migration.sql` (ALTER TABLE 33 + DROP NOT NULL 2 영역)
+- Spec: `grimoire-server/src/adapter/outbound/persistence/prisma-fk-cascade.spec.ts` (8 it 박제)
+- ADR: `grimoire-server/ADR.md ADR-007` (4 전략 결정 사유)
+- Sprint Initializer: `.claude/state/sprint-pay-p3-e-fk-cascade-draft.md` (1233 lines, 13 섹션)
+- 단계 1 raw: `.claude/state/pay-p3-e-fk-measure-raw.md` (33 FK 측정)
+- 단계 2 raw: `.claude/state/pay-p3-e-fk-backfill-raw.md` (옵션 C archive 강제 박제 + 시나리오 A 회복)
+- 단계 3 진입 audit: `.claude/state/pay-p3-e-pre-migration-audit-draft.md` (PASS)
+- 단계 3+4 raw: `.claude/state/pay-p3-e-dev-migration-raw.md` (본 작업 영역)
+
+### 적용
+PAYMENT_AUDIT §1 모순-F (FK cascade 미정의 — Author 삭제 시 22 테이블 고아 행 위험) 차단. EMAIL-P0-2 백필 영역 정합 (UPDATE 전략 vs DELETE 전략 결정 영역). DB schema 변경 1건 (마이그레이션 1건). 외부 API 추가 호출 0건.
+
+### 4 전략 매트릭스 (33 FK 정합)
+
+#### Cascade 16건 (사용자 종속 + Work/Episode 종속 + 통계)
+
+`refresh_tokens.authorId` / `chat_sessions.authorId` / `chat_sessions.workId` / `bookmarks.authorId` / `bookmarks.episodeId` / `reading_progress.authorId` / `reading_progress.episodeId` / `social_accounts.authorId` / `subscriptions.subscriberId` / `subscriptions.targetAuthorId` / `daily_views.workId` / `featured_works.workId` / `comments.episodeId` / `likes.episodeId` / `episodes.workId` / `chat_messages.sessionId` (이미 박제, 변경 0)
+
+#### Restrict 8건 (회계/세무/감사 영구 보존, **Author hard delete 차단 강제**)
+
+`payments.authorId` / `credit_logs.authorId` / `works.authorId` / `user_sanctions.authorId` / `analysis_reports.authorId` / `admin_audit_logs.adminId` / `refund_logs.paymentId`
+
+**핵심 사용자 결정 A 정합 (5/9 박제)**: Author hard delete 자체 차단 영역 = USER-SOFT-DELETE sprint 영역 분리 (본 sprint = FK 제약만 + 회계 8건 Restrict).
+
+#### SetNull 9건 (익명화 + 운영자 변경 보존 + 기본값 유지)
+
+`themes.authorId` / `works.themeId` / `likes.authorId` / `comments.authorId` / `comments.parentId` / `reports.reporterId` / `reports.resolvedBy` / `access_logs.authorId` / `featured_works.adminId` / `user_sanctions.adminId`
+
+#### NoAction 0건 (PG default와 동일, 명시 0건)
+
+### 시그니처 — Prisma schema onDelete directive
+
+```prisma
+// 예: payments.authorId Restrict 박제 (회계 영구 보존)
+model Payment {
+  authorId String @map("author_id")
+  author   Author @relation(fields: [authorId], references: [id], onDelete: Restrict)
+}
+
+// 예: episodes.workId Cascade 박제 (Work 삭제 시 episode 자동 삭제)
+model Episode {
+  workId String @map("work_id")
+  work   Work   @relation(fields: [workId], references: [id], onDelete: Cascade)
+}
+
+// 예: comments.authorId SetNull 박제 (익명화)
+model Comment {
+  authorId String? @map("author_id")
+  author   Author? @relation(fields: [authorId], references: [id], onDelete: SetNull)
+}
+
+// self-ref @relation name 영역 (다중 FK 충돌 차단)
+model Subscription {
+  subscriberId   String @map("subscriber_id")
+  subscriber     Author @relation("Subscriber",   fields: [subscriberId],   references: [id], onDelete: Cascade)
+  targetAuthorId String @map("target_author_id")
+  targetAuthor   Author @relation("TargetAuthor", fields: [targetAuthorId], references: [id], onDelete: Cascade)
+}
+```
+
+### 시그니처 — migration SQL 영역 (ALTER TABLE 33 + DROP NOT NULL 2)
+
+```sql
+-- (a) Optional 변경 영역 (FeaturedWork.adminId / UserSanction.adminId Required → Optional)
+ALTER TABLE "featured_works" ALTER COLUMN "admin_id" DROP NOT NULL;
+ALTER TABLE "user_sanctions" ALTER COLUMN "admin_id" DROP NOT NULL;
+
+-- (b) 6 박제 영역 onDelete directive 영역 (DROP + ADD CONSTRAINT)
+ALTER TABLE "themes" DROP CONSTRAINT "themes_author_id_fkey";
+ALTER TABLE "themes" ADD CONSTRAINT "themes_author_id_fkey"
+  FOREIGN KEY ("author_id") REFERENCES "authors"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+-- ... (5 추가 영역)
+
+-- (c) 25 raw FK 영역 ADD CONSTRAINT 영역
+ALTER TABLE "credit_logs" ADD CONSTRAINT "credit_logs_author_id_fkey"
+  FOREIGN KEY ("author_id") REFERENCES "authors"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+-- ... (24 추가 영역)
+```
+
+### 단계 1+2 raw 박제 영역 정합
+
+**단계 1 (33 FK 측정, 2026-05-10)**:
+- 31 / 33 = 시나리오 A (orphan=0)
+- 2 / 33 = 시나리오 B (`credit_logs.author_id` 1 + `admin_audit_logs.admin_id` 2)
+
+**단계 2 (옵션 C archive 강제, 2026-05-10)**:
+- archive 테이블 신설 (LIKE INCLUDING ALL clone): `credit_logs_archive_pay_p3_e` + `admin_audit_logs_archive_pay_p3_e`
+- INSERT 3 row → DELETE 3 row → 33/33 시나리오 A 회복 강제
+- 회계/감사 영구 보존 정합 (옵션 B 직접 삭제 절대 금지 영역)
+
+### 회귀 차단 정합
+
+- jest server 661 → **669 PASS** (+8 it 신설, `prisma-fk-cascade.spec.ts`)
+- shared-contracts §1~24 → **§1~25** (본 §25 신설)
+- 기존 12 sprint (PAY-P0-1/0-2/0-3/P1-1/P1-3/P2-1/P2-2/P2-3/P2-4/P3-A/P3-B/P3-C) + EMAIL-P0-2 회귀 0건 정합
+
+### 변경 이력
+- 2026-05-10 #10_8 PAY-P3-E: 신설 — PAYMENT_AUDIT §1 모순-F (FK cascade 미정의 — Author 삭제 시 22 테이블 고아 행 위험) 차단. 33 FK 영역 onDelete directive 명시 (Cascade 16 + Restrict 8 + SetNull 9). 25 raw FK 영역 @relation directive 신설. 마이그레이션 SQL 신설 (ALTER TABLE 33 + DROP NOT NULL 2). 8 it 신설 spec 박제. dev 영역 단계 1+2 사용자 결정 A 정합 (회계 8건 Restrict 강제) — credit_logs 1 + admin_audit_logs 2 archive 영구 보존 + 33/33 시나리오 A 회복. USER-SOFT-DELETE sprint 영역 분리 정합 박제. 정본: `prisma/schema.prisma` + `prisma/migrations/20260510_pay_p3_e_fk_cascade_policy/migration.sql` + `ADR.md ADR-007`.
+
+---
+
+## 26. AuditRetentionPolicy (server 도메인 — PAY-P2-5 audit 영구 보존 + 90일 PII 마스킹)
+
+### 위치
+- helper: `grimoire-server/src/adapter/outbound/persistence/audit-mask-helper.ts`
+- scheduler: `grimoire-server/src/application/admin/audit-mask.job.ts`
+- migration: `grimoire-server/prisma/migrations/20260510_pay_p2_5_audit_retention_policy/migration.sql`
+- ADR: `grimoire-server/ADR.md ADR-008`
+
+### 사용자 결정 박제 (5/10 verbatim "d로 하고")
+- **영구 보존**: DELETE 0건 강제 (audit gap 0)
+- **90일 후 PII 마스킹**: 매일 03:00 KST cron
+- **PII 7 키 자동 검출**: email / phone / ipAddress / userAgent / passwordHash / token / secret
+- **보존 키 매트릭스**: id / userId / authorId / adminId / action / createdAt / amount / credits 등 audit 본질 보존
+
+### 4 모델 컬럼 매트릭스
+
+| 모델 | 신설 컬럼 | 마스킹 영역 (90일 후) | 영구 보존 영역 |
+|---|---|---|---|
+| AdminAuditLog | `maskedAt DateTime?` + `retentionTier String @default("active")` | detail JSON deep masking | id/adminId/action/targetId/createdAt 보존 |
+| WebhookEvent | 동일 | payload JSON deep masking + errorMessage='***' | id/eventId/source/eventType/status/processedAt 보존 |
+| WebhookRetryQueue | 동일 | payload JSON deep masking + lastError='***' | id/eventId/retryCount/nextRetryAt/createdAt 보존 |
+| AccessLog | 동일 | email/ip/userAgent (detail string 자유 형식 보존) | id/action/authorId/createdAt 보존 |
+
+### PII 마스킹 패턴
+
+| PII 키 | 마스킹 패턴 | 예시 |
+|---|---|---|
+| email | `<first>***@<domain>` | `john@example.com` → `j***@example.com` |
+| phone | `010-****-****` | `010-1234-5678` → `010-****-****` |
+| ipAddress | `<a>.<b>.***.**` | `192.168.1.100` → `192.168.***.**` |
+| userAgent | `<browser> (***)` | 전체 UA → `Mozilla/5.0 (***)` |
+| passwordHash / token / secret | `***` | 전체 → `***` |
+
+### 시그니처 (TypeScript)
+
+```typescript
+export interface AuditRetentionPolicy {
+  /** 4 모델 마스킹 1회 수행. 직접 호출 가능 (단계 7 dev cron 직접 호출 검증용). */
+  runMaskingPass(cutoff: Date): Promise<MaskingResult>;
+}
+
+export interface MaskingResult {
+  modelsProcessed: string[];
+  rowsMasked: number;
+  rowsSkipped: number;
+  errors: { rowId: string; error: string }[];
+}
+```
+
+### 멱등성 강제
+
+- `WHERE retentionTier='active' AND created_at < cutoff` 검색만 → 재마스킹 0건
+- 마스킹 성공 시 `retentionTier='masked'` + `maskedAt=NOW()` 갱신
+- 다음 cron에서 동일 row 재선택 0건
+
+### 비활성화 게이트
+
+- `process.env.AUDIT_MASK_DISABLED === '1'` 즉시 return (운영자 수동 차단용)
+
+### 회귀 차단 정합
+
+- jest server `audit-mask-helper.spec.ts` (≥18 it: PII_KEYS 1 + PRESERVED_KEYS 2 + maskEmail 4 + maskPhone 4 + maskIpAddress 3 + maskUserAgent 2 + maskSecret 1 + maskValueByKey 12 + maskJsonDeep 5 + maskAccessLogRow 2)
+- jest server `audit-mask.job.spec.ts` (≥6 it: 시나리오 A noop + AdminAuditLog detail + AccessLog 4 컬럼 + 멱등성 WHERE + 단일 row 실패 + 비활성화 게이트)
+- `eval/tasks/regression-70-audit-retention-policy.json` (11 criteria)
+- `sensor-audit-retention-policy.sh` (12 검증)
+
+### 변경 이력
+- 2026-05-10 #10_8 PAY-P2-5: 신설 — audit retention 정책 미정의 (PAYMENT_AUDIT §3 L84-85) 차단. 사용자 결정 옵션 D (영구 보존 + 90일 후 PII 마스킹). 4 모델 (admin_audit_logs / webhook_events / webhook_retry_queues / access_logs) `maskedAt DateTime?` + `retentionTier String @default("active")` 컬럼 추가. PII 7 키 자동 검출 helper + JSON deep masking + AccessLog 4 컬럼 마스킹. @Cron('0 0 3 * * *') 매일 03:00 KST scheduler. dev 측정 결과 (5/10): 22 row / 90일 경과 0건 (시나리오 A 정합). 정본: `migration.sql` + `audit-mask-helper.ts` + `audit-mask.job.ts` + `ADR.md ADR-008`.
+
+---
+
+## 27. CircuitBreakerPolicy (server 도메인 — Polar SDK 호출 경계 가용성 차단)
+
+### 위치
+- model: `grimoire-server/src/domain/model/circuit-breaker-state.ts` (3 상태 enum + Policy + Stats + CircuitOpenError)
+- port: `grimoire-server/src/domain/port/outbound/circuit-breaker.port.ts` (CircuitBreakerPort 인터페이스 정본)
+- adapter: `grimoire-server/src/adapter/outbound/circuit-breaker/in-memory-circuit-breaker.adapter.ts` (Map 기반 구현)
+- spec: `grimoire-server/src/adapter/outbound/circuit-breaker/in-memory-circuit-breaker.adapter.spec.ts` (18 it)
+- 적용: `grimoire-server/src/adapter/outbound/payment/polar.adapter.ts` (2 호출점 래핑: checkouts.create / checkouts.list)
+- 호출자 분기: `grimoire-server/src/application/payment/payment.usecase.ts` (CircuitOpenError → ServiceUnavailableException), `grimoire-server/src/application/payment/payment-reconciliation.job.ts` (cron skip)
+- DI: `grimoire-server/src/app.module.ts` (`'CircuitBreakerPort' → InMemoryCircuitBreakerAdapter`)
+- ADR: `grimoire-server/ADR.md ADR-009`
+- sensor: `.claude/scripts/sensor-circuit-breaker-policy.sh` (10 검증)
+- eval: `eval/tasks/regression-71-circuit-breaker-policy.json` (12 criteria)
+- env 4건: `POLAR_CB_FAILURE_THRESHOLD` (기본 5) / `POLAR_CB_COOLDOWN_MS` (기본 30_000) / `POLAR_CB_HALF_OPEN_TRIAL` (기본 3) / `POLAR_CB_RESET_WINDOW_MS` (기본 60_000)
+
+### 시그니처
+
+```typescript
+// circuit-breaker-state.ts
+export enum CircuitBreakerState {
+  CLOSED = 'closed',      // 정상 흐름 (모든 호출 통과)
+  OPEN = 'open',          // 차단 (모든 호출 즉시 fail-fast)
+  HALF_OPEN = 'half_open' // 회복 시도 (trial 횟수만큼 호출 허용)
+}
+
+export interface CircuitBreakerPolicy {
+  failureThreshold: number   // 기본 5 (옵션 B Hystrix 정합)
+  cooldownMs: number         // 기본 30_000
+  halfOpenTrial: number      // 기본 3
+  resetWindowMs: number      // 기본 60_000
+}
+
+export interface CircuitBreakerStats {
+  state: CircuitBreakerState
+  failureCount: number
+  openedAt?: Date
+  halfOpenAt?: Date
+  halfOpenTrialCount: number
+  halfOpenSuccessCount: number
+  lastSuccessAt?: Date
+  lastFailureAt?: Date
+}
+
+export class CircuitOpenError extends Error {
+  constructor(
+    public readonly circuitKey: string,
+    public readonly stats: CircuitBreakerStats,
+  ) {
+    super(`Circuit breaker OPEN — ${circuitKey} (failureCount=${stats.failureCount})`)
+    this.name = 'CircuitOpenError'
+  }
+}
+
+// circuit-breaker.port.ts
+export interface CircuitBreakerPort {
+  execute<T>(key: string, fn: () => Promise<T>): Promise<T>
+  getState(key: string): CircuitBreakerState
+  getStats(key: string): CircuitBreakerStats
+  forceOpen(key: string, reason: string): Promise<void>
+  forceClose(key: string, reason: string): Promise<void>
+}
+```
+
+### 정책 매트릭스 (사용자 5/15 결정 옵션 B Hystrix 정합)
+
+| 임계값 | 값 | 영역 |
+|---|---|---|
+| failureThreshold | 5회 연속 실패 | CLOSED → OPEN 전환 |
+| cooldownMs | 30_000 (30초) | OPEN 상태 지속 시간 |
+| halfOpenTrial | 3회 | HALF_OPEN trial 허용 횟수 (모두 성공 시 CLOSED 복귀) |
+| resetWindowMs | 60_000 (1분) | CLOSED 상태 failureCount 자연 리셋 윈도우 |
+
+### 상태 전환 매트릭스
+
+| 현재 상태 | 트리거 | 다음 상태 | 부작용 |
+|---|---|---|---|
+| CLOSED | 호출 성공 | CLOSED | lastSuccessAt 갱신 (failureCount 보존, reset window 정합) |
+| CLOSED | 호출 실패 | CLOSED | failureCount++ (임계값 미달) |
+| CLOSED | 실패 임계값 초과 | OPEN | openedAt=now, AuditLog `circuit_breaker.open` 박제 |
+| CLOSED | reset window 경과 + failureCount > 0 | CLOSED | failureCount=0 (자연 리셋) |
+| OPEN | 호출 요청 | OPEN | 즉시 CircuitOpenError throw + AuditLog `circuit_breaker.reject` 박제 |
+| OPEN | cooldown 경과 + 호출 요청 | HALF_OPEN | halfOpenAt=now, AuditLog `circuit_breaker.half_open_trial` 박제 |
+| HALF_OPEN | trial 호출 성공 | HALF_OPEN | halfOpenSuccessCount++ (trial 미달 시 유지) |
+| HALF_OPEN | trial halfOpenTrial 도달 + 모두 성공 | CLOSED | failureCount=0, AuditLog `circuit_breaker.close` 박제 |
+| HALF_OPEN | trial 호출 실패 | OPEN | openedAt=now (cooldown 재시작), AuditLog `circuit_breaker.open` 박제 |
+| HALF_OPEN | 추가 호출 요청 (trial 초과) | HALF_OPEN | 즉시 CircuitOpenError throw + AuditLog `circuit_breaker.reject` 박제 |
+
+### 호출점별 분리 매트릭스
+
+| 호출점 키 | 현재 적용 | 적용 위치 |
+|---|---|---|
+| `polar:checkouts:create` | ✅ 적용 | `polar.adapter.ts` initiatePayment |
+| `polar:checkouts:list` | ✅ 적용 | `polar.adapter.ts` listRecentCheckouts |
+| `polar:checkouts:get` | 향후 (코드 미존재) | (향후 추가 시 자동 적용 영역) |
+
+호출점별 독립 상태 — 한 호출점 OPEN 시 다른 호출점 영향 0 강제.
+
+### AuditLog 4 action 박제 매트릭스
+
+| action | 영역 | reason 매트릭스 |
+|---|---|---|
+| `circuit_breaker.open` | CLOSED→OPEN, HALF_OPEN→OPEN, forceOpen | `failure_threshold_exceeded` / `half_open_trial_failed` / `manual_force_open: <reason>` |
+| `circuit_breaker.close` | HALF_OPEN→CLOSED, forceClose | `half_open_trial_succeeded` / `manual_force_close: <reason>` |
+| `circuit_breaker.half_open_trial` | OPEN→HALF_OPEN | `cooldown_elapsed` |
+| `circuit_breaker.reject` | OPEN 호출 차단, HALF_OPEN trial 초과 | `circuit_open` / `half_open_trial_exhausted` |
+
+### 외부 의존 매트릭스 (사용자 5/10 정합 강제)
+
+| 영역 | 추가 의존 | 정합 |
+|---|---|---|
+| 외부 API (Anthropic / Polar / SaaS) | **0건** | 사용자 절대 규정 0-1 정합 |
+| 외부 npm 패키지 | **0건** | opossum / cockatiel 거부, 자체 구현 |
+| DB schema 변경 | **0건** | 사용자 5/10 명시 정합, in-memory |
+| dev migration | **0건** | 사용자 5/10 명시 정합 |
+| 인프라 변경 (Azure Container Apps / replicas) | **0건** | 단일 인스턴스 가정 |
+| Redis / 외부 인프라 | **0건** | in-memory 정합 |
+
+### 정합 매트릭스 (다른 sprint 회귀 차단)
+
+- §24 PolarSDKTimeoutPolicy 정합 — 4xx 분류 시 failureCount++ 영향 0 (요청 결함, SDK/Polar 장애 0)
+- §23 RetryDeduplication 정합 — circuit breaker는 DLQ 진입 전 차단, DLQ 흐름 0 영향
+- §22 PaymentRaceCondition 정합 — circuit breaker는 SDK 경계 영역, DB 트랜잭션 영역 0 영향
+- §20 AuditLog beforeState/afterState Convention 정합 — `circuit_breaker.*` 4 action 박제 (detail JSON에 reason + circuitKey + 통계 박제)
+
+### 잔존 영역
+
+- 다중 인스턴스 환경 — in-memory 상태 분리 (Redis 별도 sprint)
+- 정책 변경 시 Container Apps 재시작 필요 (in-memory 0 초기화)
+- 관리자 UI (forceOpen/forceClose) — P3-I 별도 sprint 분리 (port 인터페이스만 본 sprint 박제)
+
+### 변경 이력
+- 2026-05-15 #10_8 PAY-P3-H: 신설 — Polar SDK 호출 경계 가용성 차단 (PAY-P3-B 후속). Hystrix 3 상태 머신 자체 구현 + 사용자 5/15 결정 옵션 B 정합 (failureThreshold=5/cooldownMs=30_000/halfOpenTrial=3/resetWindowMs=60_000). 2 호출점 박제 (checkouts.create + checkouts.list, checkouts.get는 향후). AuditLog 4 action 박제 (open/close/half_open_trial/reject). env 4건. CircuitOpenError 분기 (ServiceUnavailableException 변환 + cron skip). 외부 의존 0건 + DB schema 0건 + dev migration 0건 강제. jest 711 → 735 PASS (+24 it). 정본: `circuit-breaker-state.ts` + `circuit-breaker.port.ts` + `in-memory-circuit-breaker.adapter.ts` + `ADR.md ADR-009`.
+
+---
+
+## 28. PaymentStatusMapping (server 도메인 — PAY-P3-D Status enum + Polar 매핑 정책)
+
+### 컨텍스트
+- 결제 도메인 영역 status literal 영역 분산 (5 영역):
+  - DB `payments.status` String (`pending` / `completed` / `failed` / `refunded` / `partial_refunded`)
+  - DB `webhook_events.status` String (`processed` / `skipped` / `failed`)
+  - Port `NormalizedWebhookEvent.status` literal (`success` / `fail` / `cancel`)
+  - Port `NormalizedCheckout.status` literal (`succeeded` / `refunded` / `failed` / `open`)
+  - DB `refund_logs.source` String (`webhook` / `manual`)
+- 매핑 함수 영역 polar.adapter.ts private 메서드 2개 (`mapOrderStatus` + `mapCheckoutStatus`) → 도메인 영역 분리 X (헥사고날 DIP 결함 — 어휘 통일 부재)
+- 사용자 5/15 결정 정합: schema 0 + dev migration 0 + 외부 API 0 강제
+- 도입 목표: 어휘 통일 + 매핑 함수 도메인 model 이전 + race condition 통합 helper 박제 (`isPaymentAlreadyRefunded`)
+
+### 결정
+- **도메인 enum 5건 박제** (`src/domain/model/payment-status.ts`):
+  - `PAYMENT_STATUS` (5 values): DB `payments.status` 어휘
+  - `WEBHOOK_EVENT_STATUS` (3 values): DB `webhook_events.status` 어휘
+  - `NORMALIZED_WEBHOOK_STATUS` (3 values): Port webhook 정규화 어휘
+  - `NORMALIZED_CHECKOUT_STATUS` (4 values): Port checkout 정규화 어휘 (PAY-P0-2 reconciliation 정합)
+  - `REFUND_SOURCE` (2 values): RefundLog source 어휘
+- **매핑 함수 2건 도메인 model 박제**:
+  - `mapPolarOrderStatus(status?: string): NormalizedWebhookStatus` — Polar order.status → 정규화 어휘
+  - `mapPolarCheckoutStatus(status?: string): NormalizedCheckoutStatus` — Polar checkout.status → 정규화 어휘
+- **helper 함수 3건 박제** (race condition 통합 + Polar status 판정):
+  - `isPaymentAlreadyRefunded(status: string): boolean` — `payment.status === 'refunded' || === 'partial_refunded'` 통합 (§22 정합)
+  - `isPolarRefundedStatus(status?: string): boolean` — Polar status='refunded' 판정
+  - `isPolarSuccessStatus(status?: string): boolean` — Polar status='paid' || 'succeeded' 판정
+- **호출자 통합 영역**:
+  - `polar.adapter.ts`: private `mapOrderStatus` / `mapCheckoutStatus` 메서드 도메인 helper 위임 (호출 패턴 보존 X 호출 시그니처 유지)
+  - `payment.usecase.ts`: `isPaymentAlreadyRefunded(payment.status)` 통합 + `event.status === NORMALIZED_WEBHOOK_STATUS.*` 어휘 통합 + `status: WEBHOOK_EVENT_STATUS.PROCESSED` 어휘 1회 통합 (이외 영역은 보존 — 회귀 최소화)
+- **DB schema 변경 0건 강제**: Prisma `String` 컬럼 유지 (enum 변환 X, dev migration 0)
+- **외부 npm 라이브러리 0건 + 외부 API 0건** 정합
+
+### 매핑 매트릭스
+
+#### Polar order.status → NormalizedWebhookStatus (mapPolarOrderStatus)
+| Polar order.status | NormalizedWebhookStatus | 분기 |
+|---|---|---|
+| `paid` | `success` | order.paid webhook → completePaymentAtomically |
+| `succeeded` | `success` | order.updated webhook → completePaymentAtomically |
+| `refunded` | `cancel` | order.refunded webhook → refundPaymentAtomically |
+| (그 외 / undefined) | `fail` | 안전 측면 fallback (pending/canceled/unknown) |
+
+#### Polar checkout.status → NormalizedCheckoutStatus (mapPolarCheckoutStatus)
+| Polar checkout.status | NormalizedCheckoutStatus | 분기 |
+|---|---|---|
+| `succeeded` | `succeeded` | S1 boost 후보 (reconciliation match) |
+| `expired` | `failed` | 결제 결함 |
+| `failed` | `failed` | 결제 결함 |
+| `open` | `open` | 사용자 결제 진행 중 |
+| `confirmed` | `open` | 결제 확인 단계 (webhook 미발송 가능) |
+| (그 외 / undefined) | `open` | **기존 polar.adapter.ts:mapCheckoutStatus 동작 보존** (reconciliation false positive 차단) |
+
+#### DB Payment.status 어휘 (PAYMENT_STATUS)
+| value | 진입 시점 |
+|---|---|
+| `pending` | initiatePayment 직후 (Polar checkout 진입 전) |
+| `completed` | order.paid webhook + completePaymentAtomically 종료 |
+| `failed` | webhook fail 수신 또는 SDK 결함 permanent_failed 박제 |
+| `refunded` | 전액 환불 종료 (refundPaymentAtomically + RefundLog 박제) |
+| `partial_refunded` | 부분 환불 종료 (PAY-P2-1 PartialRefund §17 정합) |
+
+#### DB WebhookEvent.status 어휘 (WEBHOOK_EVENT_STATUS)
+| value | 진입 시점 |
+|---|---|
+| `processed` | completePaymentAtomically 또는 refundPaymentAtomically 종료 |
+| `skipped` | 중복 / unknown_trade / already_completed / already_refunded |
+| `failed` | SDK 결함 또는 트랜잭션 결함 박제 |
+
+### 대안
+- (A) DB enum 변환 — Prisma `enum` 영역 schema 마이그레이션 (사용자 5/10 정합 X, 거부 — dev migration 0 강제)
+- (B) Branded type (`type PaymentStatus = string & { __brand: 'PaymentStatus' }`) — Runtime 검증 부재 (거부, enum 영역 박제가 명시적)
+- (C) zod schema 영역 정합화 — 외부 npm 의존 추가 (사용자 5/10 정합 X, 거부)
+- (D) `as const` 객체 + TypeScript literal type ← **채택** (zero runtime cost + IDE 자동완성 + Runtime 검증 — 외부 의존 0건)
+
+### 구현
+- **domain/model**: `src/domain/model/payment-status.ts` (5 enum + 2 mapping function + 3 helper)
+- **domain/model spec**: `src/domain/model/payment-status.spec.ts` (34 it — AC 매트릭스 정합)
+- **polar.adapter 통합**: `src/adapter/outbound/payment/polar.adapter.ts` (import + private 메서드 영역 도메인 helper 위임)
+- **payment.usecase 통합**: `src/application/payment/payment.usecase.ts` (import + `isPaymentAlreadyRefunded` + `NORMALIZED_WEBHOOK_STATUS.SUCCESS/CANCEL` + `PAYMENT_STATUS.COMPLETED` + `WEBHOOK_EVENT_STATUS.PROCESSED` 1회 영역)
+- **sensor**: `.claude/scripts/sensor-payment-status-mapping.sh` (10 검증)
+- **regression**: `eval/tasks/regression-72-payment-status-mapping.json` (10 criteria)
+
+### 결과
+- 도메인 매핑 함수 영역 헥사고날 DIP 정합 (polar.adapter.ts private 메서드 영역 도메인 helper 위임)
+- 어휘 통일 — TypeScript IDE 자동완성 + 오타 영역 컴파일 단계 차단
+- `isPaymentAlreadyRefunded` race condition 통합 게이트 — §22 PaymentRaceCondition 정합 강화
+- jest 735 → 769 PASS (+34 it — payment-status spec 영역)
+- sensor-payment-race-condition 패턴 영역 helper 호출 영역 정합화 (회귀 보존)
+- DB schema 0건 / dev migration 0건 / 외부 API 0건 정합 강제
+
+### 정합 매트릭스 (다른 sprint 회귀 차단)
+- §22 PaymentRaceCondition 정합 — `isPaymentAlreadyRefunded` 통합 helper 영역 sensor pattern 정합 보정
+- §11 WebhookEventIdempotency 정합 — `WEBHOOK_EVENT_STATUS` enum 어휘 통합 (DB String 컬럼 유지 + TypeScript 어휘 통일)
+- §12 PaymentReconciliation 정합 — `NORMALIZED_CHECKOUT_STATUS` enum 영역 어휘 통합 (default → 'open' 동작 보존)
+- §13 RefundPaymentAtomically 정합 — `REFUND_SOURCE` enum 영역 'webhook' / 'manual' 어휘 통합
+- §17 PartialRefund 정합 — `PAYMENT_STATUS.PARTIAL_REFUNDED` enum 영역 어휘 통합 (REFUNDED_STATES 정합)
+- §24 PolarSDKTimeoutPolicy 정합 — Polar SDK exception 분류 영역 0 영향 (status 매핑 영역만)
+- §27 CircuitBreakerPolicy 정합 — circuit breaker 영역 status 매핑 영역 0 영향
+
+### 잔존 영역
+- DB schema 영역 enum 변환 — Prisma `enum` 마이그레이션 (별도 sprint PAY-P4-x 영역 후보)
+- 4 status literal 위치 영역 통합 — payment.usecase.ts 영역 status: 'processed' 영역 추가 통합 (회귀 최소화 정합으로 1회만 박제, 향후 sprint 영역 후속)
+- 다른 사용 영역 (admin.usecase / refund-payment.usecase 등) — 어휘 통합 영역 후속 sprint 후보
+
+### 정본 영역
+- `grimoire-server/src/domain/model/payment-status.ts`
+- `grimoire-server/src/domain/model/payment-status.spec.ts`
+- `grimoire-server/ADR.md §ADR-010`
+- `.claude/scripts/sensor-payment-status-mapping.sh`
+- `eval/tasks/regression-72-payment-status-mapping.json`
+
+### 변경 이력
+- 2026-05-15 #10_8 PAY-P3-D: 신설 — Status enum + Polar 매핑 정책 박제 (사용자 5/15 verbatim 4번째 sprint). 5 enum (PAYMENT_STATUS / WEBHOOK_EVENT_STATUS / NORMALIZED_WEBHOOK_STATUS / NORMALIZED_CHECKOUT_STATUS / REFUND_SOURCE) + 2 매핑 함수 (mapPolarOrderStatus / mapPolarCheckoutStatus) + 3 helper (isPaymentAlreadyRefunded / isPolarRefundedStatus / isPolarSuccessStatus). 헥사고날 DIP 정합 강화. DB schema 0 / dev migration 0 / 외부 API 0 강제. jest 735 → 769 PASS (+34 it). 정본: `payment-status.ts` + `payment-status.spec.ts` + `ADR.md ADR-010`.
+
+---
+
 ## 변경 시 절차 (책 Ch 16 충돌 2번 해결책)
 
 agent A가 인터페이스 변경 시:

@@ -69,11 +69,15 @@ if [ "$GUESS_COUNT" -gt 0 ] && [ "$EVIDENCE_COUNT" -eq 0 ]; then
     "응답 시점 §0 위반 검출: 추정 키워드 ${GUESS_COUNT}건, 직접 명령 출력 0건" \
     "응답 재작성 + 직접 명령 출력 동반 강제" 2>/dev/null || true
 
+  # sensor-log 박제 (2026-05-15 H8 영역 — sensor-hit-rate-report.sh never 영역 정정)
+  bash "$(dirname "$0")/sensor-log.sh" sensor-response-zero-realtime FAIL "guess=${GUESS_COUNT} evidence=${EVIDENCE_COUNT}" 2>/dev/null || true
   exit 2
 elif [ "$GUESS_COUNT" -gt 0 ]; then
   echo "⚠️ WARN — 추정 키워드 ${GUESS_COUNT}건 (직접 명령 출력 ${EVIDENCE_COUNT}건 동반, 정합)"
+  bash "$(dirname "$0")/sensor-log.sh" sensor-response-zero-realtime WARN "guess=${GUESS_COUNT} evidence=${EVIDENCE_COUNT}" 2>/dev/null || true
   exit 1
 else
   echo "✅ PASS — 추정 키워드 0건"
+  bash "$(dirname "$0")/sensor-log.sh" sensor-response-zero-realtime PASS "guess=0 evidence=${EVIDENCE_COUNT}" 2>/dev/null || true
   exit 0
 fi

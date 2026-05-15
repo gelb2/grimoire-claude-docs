@@ -36,12 +36,22 @@ reports/VISUAL_CANON_REPORT.md
 
 # ──────────────── Claude Code — 사용자별 (공유 금지)
 .claude/settings.local.json
-.claude/state/
+.claude/state/*
 # 예외: incident-log.jsonl은 시계열 박제 (Mitchell Ghostty 패턴, 2026-05-06 사용자 명시)
 !.claude/state/incident-log.jsonl
+# 예외: main-blocked-log.jsonl 시계열 박제 (사용자 명시 2026-05-08 "메인 권한 박아버려")
+!.claude/state/main-blocked-log.jsonl
+# 예외: sidechain-debug.jsonl 시계열 박제 (사용자 명시 2026-05-09 isSidechain 결함 디버깅)
+!.claude/state/sidechain-debug.jsonl
+# 예외: edit-write-violation.jsonl 시계열 박제 (PP-7 hook 차단 raw, 사용자 검증)
+!.claude/state/edit-write-violation.jsonl
+# 예외: Sprint 계약 Draft 영역 (PP-13 화이트리스트 통과 박제 위치, 사용자 명시 정합)
+!.claude/state/sprint-*-draft.md
+!.claude/state/grimoire-*-draft.md
 
 # ──────────────── git worktree 격리 (worktree-isolation skill, HARNESS §8.10)
 .worktrees/
+.claude/worktrees/
 
 # ──────────────── Eval 시스템 — 실행 결과 (재실측 가능, 시계열만 baseline.csv + edd-baseline.csv 보존)
 eval/results/*/

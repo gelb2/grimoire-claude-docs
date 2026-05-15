@@ -1,0 +1,21 @@
+{
+  "id": "regression-067",
+  "name": "api_contract — PAY-P3-C retry 중복 해소 (모순-D 차단, 사전 dedup 게이트)",
+  "category": "api_contract",
+  "source_session": "20260509 sprint-pay-p3-c-retry-dedup — Generator grimoire-server (PP-13 화이트리스트 통과 후 진입)",
+  "prompt": "PAY-P3-C: PAYMENT_AUDIT §1 모순-D (WebhookRetryJob 5분 cron ↔ ReconciliationJob 10분 cron 커버리지 겹침) 차단. (a) webhook-retry.job.ts에 PaymentRepositoryPort import + DI 주입 (b) retryDueWebhooks for-loop 진입 직전 사전 dedup 게이트 (c) payment.status='completed'/'refunded'/'partial_refunded' 시 즉시 deleteById + AuditLog action='retry_skip_dedup' (d) skipDedupCount + logger.log dedup=N 통계 (e) shared-contracts §23 RetryDeduplication 신설 (f) sensor-retry-dedup.sh 신설 (g) jest spec PAY-P3-C describe ≥6 it. 회귀 시 retry 중복 차단 누락 즉시 FAIL.",
+  "eval_criteria": [
+    {"type": "command", "command": "grep -qE \"import.*PaymentRepositoryPort.*from.*payment-repository\" /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/src/application/payment/webhook-retry.job.ts", "desc": "webhook-retry.job.ts PaymentRepositoryPort import 박제"},
+    {"type": "command", "command": "grep -qE \"@Inject\\(['\\\"]PaymentRepositoryPort['\\\"]\\)\" /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/src/application/payment/webhook-retry.job.ts", "desc": "webhook-retry.job.ts PaymentRepositoryPort DI 주입 박제"},
+    {"type": "command", "command": "grep -qE \"['\\\"]completed['\\\"]\" /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/src/application/payment/webhook-retry.job.ts && grep -qE \"FINALIZED_STATUSES|payment\\.status\" /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/src/application/payment/webhook-retry.job.ts", "desc": "webhook-retry.job.ts payment.status='completed' 사전 dedup 게이트 박제"},
+    {"type": "command", "command": "grep -qE \"['\\\"]refunded['\\\"]\" /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/src/application/payment/webhook-retry.job.ts", "desc": "webhook-retry.job.ts payment.status='refunded' 사전 dedup 게이트 박제"},
+    {"type": "command", "command": "grep -qE \"['\\\"]partial_refunded['\\\"]\" /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/src/application/payment/webhook-retry.job.ts", "desc": "webhook-retry.job.ts payment.status='partial_refunded' 사전 dedup 게이트 박제"},
+    {"type": "command", "command": "grep -qE \"retry_skip_dedup\" /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/src/application/payment/webhook-retry.job.ts", "desc": "webhook-retry.job.ts AuditLog action='retry_skip_dedup' 박제"},
+    {"type": "command", "command": "grep -qE \"dedup=\\$\\{skipDedupCount\\}|skipDedupCount\" /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/src/application/payment/webhook-retry.job.ts", "desc": "webhook-retry.job.ts logger.log dedup=N 통계 + skipDedupCount 박제"},
+    {"type": "command", "command": "grep -qE '## 23\\. RetryDeduplication' /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/shared-contracts.md", "desc": "shared-contracts §23 RetryDeduplication 박제"},
+    {"type": "command", "command": "test -x /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/scripts/sensor-retry-dedup.sh", "desc": "sensor-retry-dedup.sh 실행 권한 + 박제"},
+    {"type": "command", "command": "grep -qE 'PAY-P3-C' /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/src/application/payment/webhook-retry.job.spec.ts", "desc": "webhook-retry.job.spec.ts PAY-P3-C describe 박제"}
+  ],
+  "threshold": 1.0,
+  "runs": 1
+}
