@@ -1,18 +1,21 @@
-# HANDOVER — 2026-05-15 #10_8 연장 (사용자 5/10 명시 1~6 순서 6건 모두 종료 + USER-SOFT-DELETE Initializer Draft) → 다음 세션
+# HANDOVER — 2026-05-15 #10_8 연장 (7 sprint 종료: PAY-P3-H + PAY-P3-D + PAY-P3-E prod + PAY-P2-5 prod + main 머지 + prod 배포 + USER-SOFT-DELETE 풀스택 + anonymize 보강) → 다음 세션
 
-> **작성자**: 2026-05-15 본 세션 (Claude, #10_8 연장 — PAY-P3-H + PAY-P3-D + PAY-P3-E prod migration + PAY-P2-5 prod migration + USER-SOFT-DELETE Initializer + C 묶음 + 옵션 C 면제)
+> **작성자**: 2026-05-15 본 세션 (Claude, #10_8 연장 — 본 세션 30+ commit, jest 711→805, qa #18~#20 모두 PASS, prod migration 2건 + prod 배포 종료)
 > **수신자**: 다음 세션 (로컬 또는 리모트 채팅방)
 > **검증 명령**: `cd /Users/sokol/Desktop/Git/ProjectGrimoire && git log --oneline -10 && cd grimoire-server && git log --oneline -5`
 >
-> **핵심 (5/15 종료, 6 sprint + 보조 묶음)**:
-> 1. **PAY-P3-H Circuit Breaker 종료** (jest 711→735, sensor 10/10, eval 71 12/12, §27, ADR-009, qa #18 AC 8/8 PASS). server `04b3f5c`+`71db1ec`.
-> 2. **PAY-P3-D Status enum mapping 종료** (jest 735→769 +34 it, sensor 10/10 + 8/8 회귀, eval 72 + 전체 70/70, §28, ADR-010, qa #19 AC 8/8 PASS 거짓 보고 0건). server `d47359d`+`e05009c` + claude-docs `82cf753`+`f96e95d`.
-> 3. **PAY-P3-E §7-1 단계 7~12 prod migration 종료** (A1' 메인 직접, 시나리오 B 발동 → 단순화 system_reconciliation row 신설 + credit_logs UPDATE → 33 FK 재측정 0건 → prisma migrate deploy 2건 적용 PAY-P3-E + PAY-P2-5 동시 → FK 33 + prod health warm 0.905s). pg_dump backup 14M /tmp.
-> 4. **PAY-P2-5 prod migration 동시 적용 종료** (dev 24h 통과 5/11 23:34 → 5/15 4일 경과 정합).
-> 5. **USER-SOFT-DELETE Initializer Draft 산출** (`.claude/state/sprint-user-soft-delete-draft.md`, 17 섹션, §16 6 결정 영역). claude-docs `35237f3`.
-> 6. **C P0 외부 API 0 묶음** (NEW-4 + H8 + H9, claude-docs `f12bc2e`) + **NEW-4 옵션 C** (regression-011 archive, claude-docs `1ee1967`) + **로그인 `@grimoire.app` 완전 제거 검증** PASS.
+> **핵심 (5/15 종료, 7 sprint + 보조 묶음)**:
+> 1. **PAY-P3-H Circuit Breaker** (qa #18 AC 8/8 PASS, jest 711→735)
+> 2. **PAY-P3-D Status enum mapping** (qa #19 AC 8/8 PASS, jest 735→769)
+> 3. **PAY-P3-E §7-1 단계 7~12 prod migration** (A1' 메인 직접, system_reconciliation 단순화, 33 FK 0 + prisma migrate deploy 2건)
+> 4. **PAY-P2-5 prod migration** (PAY-P3-E와 동시 적용)
+> 5. **main 머지** (server `afee631` + claude-docs `440bc4a`) + **server prod 배포** (revision 100 Healthy + warm 0.72s, sensor-azure-env-secret 15/15)
+> 6. **USER-SOFT-DELETE 풀스택** (Initializer + server Generator `c72803f`+`492dae2` jest +28 it + web Generator `d33a0fb`+`62e6f6a` vitest +9 it + qa #20 CONDITIONAL PASS CRITICAL 1건 + **anonymize 보강** `8566c01`+`d3811b2`+`d1b585d`+`6ec56b5`+`b663d72`+`224e73f` jest +8 it AdminController @Post anonymize + UseCase anonymizeOnly 분기 + GDPR 정합)
+> 7. **C P0 외부 API 0 묶음** + **옵션 C** (regression-011 archive) + **로그인 `@grimoire.app` 완전 제거 검증**
 >
-> **다음 세션 1순위**: **USER-SOFT-DELETE Generator** (~3~5h, schema 1건 + dev migration 1건, 사용자 §16 6 결정 명시 후 진입) — 명시 키워드 `USER-SOFT-DELETE Generator 진입`.
+> **인벤토리**: jest 711→**805** (+94 it) / vitest +9 it / sensor 48→50 / shared-contracts §1~29 / ADR-001~011 / 외부 API 0
+>
+> **다음 세션 1순위**: **USER-SOFT-DELETE dev migration apply (~10분) + server+web prod 배포 (~30분)** — `npx prisma migrate dev --name user_soft_delete_policy` + `make deploy-prod`. dev 24h 후 prod migration 명시 키워드 `USER-SOFT-DELETE prod migration 진행`.
 
 ---
 
