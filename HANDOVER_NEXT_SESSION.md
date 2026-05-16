@@ -1,4 +1,46 @@
-# HANDOVER — 2026-05-15 #10_8 연장 (7 sprint 종료: PAY-P3-H + PAY-P3-D + PAY-P3-E prod + PAY-P2-5 prod + main 머지 + prod 배포 + USER-SOFT-DELETE 풀스택 + anonymize 보강) → 다음 세션
+# HANDOVER — 2026-05-16 (모두의 창업 신청서 제출 + 크레딧·구독·채팅 과금 개편 R+S Phase) → 다음 세션
+
+> **작성자**: 2026-05-16 본 세션 (Claude). 이전 PAY 스프린트와 무관한 **신규 영역 2건** — 외부 공모전 출품 + 과금 체계 기획.
+> **수신자**: 다음 세션
+> **검증 명령**: `cd /Users/sokol/Desktop/Git/ProjectGrimoire && git log --oneline -3 && head -12 research/CREDIT_PRICING_OVERHAUL_PLAN.md`
+> **이번 세션 커밋**: `dd0484a` (산출물 4파일) + 본 핸드오버 커밋(별도).
+
+## 0. 이번 세션 작업 2건
+
+### A. 모두의 창업 2026년 1기 신청서 — ✅ 제출 완료
+
+- **Grimoire 출품**(코드명 ProjectGrimoire, 외부 브랜드 Grimoire). 트랙: 일반/기술. 분야: 미디어/엔터테인먼트.
+- 박제: **`MODOO_APPLICATION_2026_1.md`** (루트). 메타·Q1~Q4 본문·변경이력 전부 포함.
+- 흐름: 메인이 4-agent 전수조사로 Q1~Q4 본문 작성 → Chrome MCP로 사이트 입력/임시저장 → **사용자가 직접 Q9 서약서 동의 + 지원지역(서울) + 멘토기관(광운대학교) 선택 + 최종 제출**.
+- **제출 시각 2026-05-15 10:27**. 2026-05-16 재점검에서 제출본(`/apply/preview`)이 박제 v4 본문과 일치 확인 — 본문 손실 0건.
+- **다음 세션 할 일 없음**. 수정 원하면 사이트 "수정하기" 버튼(사용자 영역).
+
+### B. 크레딧·구독·채팅 과금 전면 개편 — R Phase + S Phase 수치 산출 완료
+
+- **정본: `research/CREDIT_PRICING_OVERHAUL_PLAN.md` (v6)** — §8이 골격·수치 정본.
+- 보조 산출물: `research/CREDIT_OVERHAUL_RESEARCH_COMPETITORS.md`(경쟁사), `research/CREDIT_OVERHAUL_COST_SIM.md`(v1/v2/v3 마진 시뮬), `reports/AI_COST_MONITOR.md`(2026-05-16 재스윕 — 모델가 0% 변동, 환율 ₩1,497.08).
+- **문제**: 크레딧이 `Author.credits Int` 정수 — 채팅처럼 토큰 가변 비용을 못 담음.
+- **확정 골격**(§8): 디노미네이션 1크레딧=1,000pt 단일통화 / 1pt 표면 ₩0.12(§0 최악 순단가 ₩0.09856) / 구독 = 테마슬롯 + 월 포인트풀(채팅·테마·분석 공용, 매월 리셋) Pro ₩9,900·93,000pt / Premium ₩19,900·191,500pt / 채팅 **4구간 정액**(짧음190·보통810·긺3,390·초장문5,520 pt) / 테마 590pt·분석 2,440pt / 패키지 4종 단일단가+보너스(입문~베스트) / 포인트 출처 4종 분리 회계(무료적립→구독풀→응원선물→충전 소진순).
+
+## 1. 다음 세션 1순위 — 크레딧 개편 S Phase 스키마 설계
+
+- 계획서 **§8-7 S Phase 선행 과제 8건**부터. 특히:
+  - `ChatMessage`에 `inputTokens`/`outputTokens`/`model` 필드 추가 (없으면 차감액 전부 추측 — CRITICAL).
+  - 포인트 출처 4종 분리 회계 스키마 (`Author.credits` 단일 Int → 출처별 분리 필드 vs ledger 테이블).
+- **CRITICAL §8-8 5건**: ①비스트레스 원가로 차감 N 산출 금지 ②구독 풀 이월 금지(§0 0.14× 붕괴) ③토큰 실측 필드 선행 ④채팅 초장문 4구간 분리 필수(3구간 시 P99 2.40× §0 위반) ⑤경계선 운영(쿠션 거의 0) — 재산정 트리거 sensor 연동.
+- **모든 채팅 수치는 토큰 실측 0건 기반 가정값** — 구현 후 운영 1~2주 실측으로 구간 경계·차감 N 재확정 전제.
+- 스키마 설계는 `grimoire-server` 도메인 → grimoire-server 에이전트 위임 대상.
+
+## 2. git 상태 (2026-05-16 실측)
+
+- **이번 세션 산출물 4파일 커밋 완료** — `dd0484a` "docs: 모두의 창업 신청서 제출 박제 + 크레딧·구독·채팅 과금 개편 R+S Phase 계획서" (`MODOO_APPLICATION_2026_1.md` + `research/CREDIT_PRICING_OVERHAUL_PLAN.md` + `research/CREDIT_OVERHAUL_COST_SIM.md` + `research/CREDIT_OVERHAUL_RESEARCH_COMPETITORS.md`). 본 핸드오버는 별도 커밋.
+- `reports/AI_COST_MONITOR.md`는 갱신했으나 **git 미추적**(파일 정책 "Git 추적 ❌ 루트 전용", `reports/` 제외) — 커밋 대상 아님.
+- **이전 세션 잔여 미커밋**(이번 세션 무관): `eval/results/baseline.csv`, `research/HARNESS_ENGINEERING.md` 가 `M` 상태로 남아 있음 — 직전 #10_8 핸드오버 참조.
+- `ai-cost-table.md`는 **미수정**(계획 단계 — S Phase에서 cost-accountant 승인 절차로 개정 예정).
+
+---
+
+# (직전 세션) HANDOVER — 2026-05-15 #10_8 연장 (7 sprint 종료: PAY-P3-H + PAY-P3-D + PAY-P3-E prod + PAY-P2-5 prod + main 머지 + prod 배포 + USER-SOFT-DELETE 풀스택 + anonymize 보강) → 다음 세션
 
 > **작성자**: 2026-05-15 본 세션 (Claude, #10_8 연장 — 본 세션 30+ commit, jest 711→805, qa #18~#20 모두 PASS, prod migration 2건 + prod 배포 종료)
 > **수신자**: 다음 세션 (로컬 또는 리모트 채팅방)
