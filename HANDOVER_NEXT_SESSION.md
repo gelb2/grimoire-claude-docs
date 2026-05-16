@@ -22,8 +22,24 @@
 - **문제**: 크레딧이 `Author.credits Int` 정수 — 채팅처럼 토큰 가변 비용을 못 담음.
 - **확정 골격**(§8): 디노미네이션 1크레딧=1,000pt 단일통화 / 1pt 표면 ₩0.12(§0 최악 순단가 ₩0.09856) / 구독 = 테마슬롯 + 월 포인트풀(채팅·테마·분석 공용, 매월 리셋) Pro ₩9,900·93,000pt / Premium ₩19,900·191,500pt / 채팅 **4구간 정액**(짧음190·보통810·긺3,390·초장문5,520 pt) / 테마 590pt·분석 2,440pt / 패키지 4종 단일단가+보너스(입문~베스트) / 포인트 출처 4종 분리 회계(무료적립→구독풀→응원선물→충전 소진순).
 
-## 1. 다음 세션 1순위 — 크레딧 개편 S Phase 스키마 설계
+## 0-C. (2026-05-16 후반 세션) Tier 0 deploy 안전망 종료 + 작업 순서 재산출
 
+> 정본: `memory/project_session_20260516.md`. 본 세션 = 크레딧 개편 컨텍스트 파악(참고만) + 전체 작업 순서 재산출 + Tier 0.
+
+- **전체 작업 순서 재산출** (8 카테고리 Tier 0~8): 크레딧 개편이 결제 백본 — AI 채팅 차감(P1#8)·PAY-P1-4 구독·시맨틱 캐시(P1#9)·PAY-P1-2 결제알림 4건 종속. 상세 `memory/project_remaining_tasks.md` "작업 순서 재산출 (2026-05-16)".
+- **Tier 0 종료**:
+  - F git 정리 — `dcc2060`(#10_8 잔여 baseline+HARNESS) + `dd0484a`+`be99c07`(5/16 크레딧 세션) origin push 종료
+  - B-1 — `sensor-deploy-health` jq 결함 = **결함 아님 (transient 확정)** / baseline FAIL 1건 = `regression-73` eval task criteria stale (`eb5d931` `$use`→`$extends` rename 미반영) → sensor `4324099` + eval task `b0bfa81` 교정
+  - B-2 — deploy 스크립트 **revision-aware 보강** (`action_post_deploy_revision_check` 신설 — 신규 revision `runningState` 직접 검증, ActivationFailed → 비0 exit, polling 30s×5) — server `cd961b2` + web `366b699`
+  - 전체 eval **71/71 PASS** / 3 레포 develop SYNC 0/0
+- **agent 신뢰도 주의**: infrastructure agent stall/파싱 실패 누적 (#10_8 + 본 세션) — agent 위임 결과는 메인이 직접 검증(diff + bash -n + git rev-list SYNC) 강제.
+
+## 1. 다음 세션 1순위 — Tier 1 (USER-SOFT-DELETE Playwright E2E) 또는 Tier 2 (크레딧 개편 S Phase 스키마 설계)
+
+### Tier 1 — USER-SOFT-DELETE Playwright E2E (~1h)
+- 본인 탈퇴 + 어드민 force delete + GDPR anonymize 시나리오. 5/15 검증 미완 마무리.
+
+### Tier 2 — 크레딧 개편 S Phase 스키마 설계 (백본)
 - 계획서 **§8-7 S Phase 선행 과제 8건**부터. 특히:
   - `ChatMessage`에 `inputTokens`/`outputTokens`/`model` 필드 추가 (없으면 차감액 전부 추측 — CRITICAL).
   - 포인트 출처 4종 분리 회계 스키마 (`Author.credits` 단일 Int → 출처별 분리 필드 vs ledger 테이블).
