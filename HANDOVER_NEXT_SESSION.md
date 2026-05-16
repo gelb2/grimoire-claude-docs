@@ -36,8 +36,12 @@
 
 ## 1. 다음 세션 1순위 — Tier 1 (USER-SOFT-DELETE Playwright E2E) 또는 Tier 2 (크레딧 개편 S Phase 스키마 설계)
 
-### Tier 1 — USER-SOFT-DELETE Playwright E2E (~1h)
-- 본인 탈퇴 + 어드민 force delete + GDPR anonymize 시나리오. 5/15 검증 미완 마무리.
+### Tier 1 — USER-SOFT-DELETE Playwright E2E ⚠️ 부분 종료 (5/17)
+- `e2e/account-delete.spec.ts` 5 it 신설 (web `6b95534`+`9c2137a`+머지). dev 대상 **3 PASS / 2 SKIP**:
+  - ✅ 본인 탈퇴 (프로필 "위험 영역" → 모달 → slug 검증) dev 실제 PASS + 비인증 리다이렉트 2 PASS
+  - ⚠️ 어드민 force delete / GDPR anonymize 2건 **SKIP** — dev admin 자격증명 불명
+- **dev admin incident (pending)**: dev DB admin 계정 존재(slug `grimoireadmin`)하나 email db-sync 마스킹(`author-4@masked.local`) + 비번 ACCOUNTS.md 공통 비번 불일치. **해소**: dev DB 접근 환경 `SEED_ADMIN_PASSWORD=<비번> npx tsx grimoire-server/scripts/seed-admin.ts` → `E2E_ADMIN_PASSWORD` 박제 → 어드민 2 it 재실행 5/5 PASS (코드 검증 완료). incident-log 박제.
+- E2E 버그 2건 수정: reCAPTCHA v3 빈 토큰(`waitForRecaptchaReady` 헬퍼) + `"로그인"` strict mode(`exact:true`).
 
 ### Tier 2 — 크레딧 개편 S Phase 스키마 설계 (백본)
 - 계획서 **§8-7 S Phase 선행 과제 8건**부터. 특히:
