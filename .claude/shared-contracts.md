@@ -2441,6 +2441,13 @@ export interface CreditBalance {
   available: number;  // total - deficit
 }
 
+// HTTP 응답 DTO — GET /credits/balance · GET /payments/credits (adapter/inbound/http/dto/credit.dto.ts)
+//   도메인 CreditBalance(flat) → web point-balance.ts normalizePointBalance 가 받는 bySource 중첩 형태
+export interface CreditBalanceResponseDto {
+  available: number; total: number; deficit: number;
+  bySource: { free: number; subscription: number; gift: number; charged: number };
+}
+
 // MembershipPlanPort (domain/port/outbound/membership-plan.port.ts)
 export interface MembershipPlanPort {
   getPlan(authorId: string): Promise<MembershipPlanState | null>;
@@ -2478,6 +2485,8 @@ askWithUsage(systemPrompt: string, userMessage: string, options?: AskOptions): P
 ### 변경 이력
 
 - 2026-05-17 #크레딧개편 I Phase: 신설 — grimoire-server. 디노미네이션 1:1,000 + 포인트 출처 4종 분리 회계(1-C 하이브리드: Author 4 필드 캐시 + CreditLedger 원장) + 구독 월 풀(MembershipPlan, 4-C 이월 금지) + 채팅 4구간 사후 차감(190/810/3,390/5,520pt) + 분석 2,440pt / 테마 590pt. DB schema 변경(CreditLedger/MembershipPlan 신설 + Author 5 필드 + ChatMessage 5 필드) + migration 파일 작성(apply 0건). jest 805 → 967 PASS (+162 it). cost-accountant 승인 `786b0f3`. 정본: ADR-012 + S Phase Draft. sensor 5종 신설(credit-overhaul-recalc / credit-denomination / credit-source-accounting / subscription-pool-no-rollover / chat-charge-tier).
+- 2026-05-17 #크레딧개편 I Phase web Generator: grimoire-web — §30 인터페이스 미변경(소비만). `src/features/credits/` 슬라이스 신설(credit-overhaul.ts §30 상수 미러 + point-balance.ts `/credits/balance` 응답 정규화 + CreditBalanceCard / ChatChargeGuide / MembershipPlans + 채팅 ChatChargeBadge). `/dashboard/credits` 디노미 개편 + `/dashboard/membership` 신설 + `/dashboard/chat` 4구간 차감 배지. **server I Phase backward-compatible 확인**: `/credits/balance`·`/auth/me`·`/payments/products` HTTP 응답 미변경(정수 크레딧 / 구 3 패키지), `CreditLedger.getBalance`(4 출처)·`MembershipPlan`은 HTTP 미연동 — web 은 server 실제 반환값에만 의존(없는 출처값 추정 금지, 잔액 정수 크레딧 ×1,000 환산). `ChatMessage.chargedPoints`/`chargeTier`만 실제 응답 포함. vitest 160→210 PASS (+50 it). 후속(별도 sprint): `MembershipPlanPort` HTTP 노출 시 멤버십 결제 UI / `CreditLedger.getBalance` HTTP 노출 시 4 출처 분해 자동 활성 / `CREDIT_PRODUCTS` #7 4종 갱신 시 패키지 자동 반영.
+- 2026-05-17 #크레딧개편 I Phase HTTP follow-up: grimoire-server — `GET /credits/balance` + `GET /payments/credits` 를 4 출처 `CreditBalanceResponseDto`(available/total/deficit/bySource)로 노출(기존 `{credits:number}` → 새 모델). `CreditUseCase.getPointBalance()` 신설 — `CreditLedgerPort.getBalance` 위임. web `point-balance.ts normalizePointBalance` 가 `bySource` 자동 분해 → 4 출처 표시 활성. jest 967→971 PASS (+4 it). 커밋 `1ba8c9f`→`9d0d2b7`. web Generator §0 검증으로 발견된 HTTP 미연동 갭(draft §5) 해소. 잔여(별도 sprint): `CREDIT_PRODUCTS` #7 4종(Polar 상품 등록 종속) / `MembershipPlanPort` HTTP 노출.
 
 ---
 
