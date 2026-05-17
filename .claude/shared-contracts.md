@@ -2387,6 +2387,100 @@ cron 30일 hard delete 영역 영역 — 회계 row 영역 영역 영역 P2003 c
 
 ---
 
+## 30. CreditOverhaul (server 도메인 — 크레딧 디노미네이션 + 출처 회계 + 채팅 4구간 차감)
+
+**위치**: `grimoire-server/src/domain/model/credit-point.ts`, `credit-source.ts`, `chat-charge-tier.ts`, `membership-tier.ts`
+**적용**: charge-points.usecase.ts / grant-points.usecase.ts / reset-monthly-pool.job.ts / chat.usecase.ts / novel-analysis.usecase.ts
+
+크레딧 개편 I Phase (2026-05-17) — 디노미네이션 1:1,000 + 포인트 출처 4종 분리 회계 + 채팅 4구간 사후 차감.
+정본: `research/CREDIT_PRICING_OVERHAUL_PLAN.md` §8 (v6) + `.claude/state/sprint-credit-overhaul-s-phase-draft.md` + ADR-012.
+
+### 인터페이스 (TypeScript)
+
+```typescript
+// 디노미네이션 상수 — 1 크레딧 = 1,000pt (§8-1)
+export const CREDIT_TO_POINT = 1000;
+
+// 포인트 출처 4종 (§8-2 분리 회계)
+export type CreditSource = 'free' | 'subscription' | 'gift' | 'charged';
+
+// ledger 엔트리 타입
+export type CreditLedgerType = 'earn' | 'spend' | 'deficit_incur' | 'deficit_settle' | 'expire';
+
+// 소진 우선순위 (§8-2) — 인덱스 0이 최우선 소진
+export const CREDIT_CONSUMPTION_ORDER: readonly CreditSource[] = ['free', 'subscription', 'gift', 'charged'];
+
+// 채팅 4구간 차감 (§8-4 — 경계값은 SystemSetting 동적, 아래는 §8 기본값)
+//   short ≤500tok=190pt / normal 501~4,000=810pt / long 4,001~12,000=3,390pt / xlong >12,000=5,520pt
+
+// 분석·테마 정액 차감 (§8-4)
+export const ANALYSIS_POINT_COST = 2440;  // 구 ANALYSIS_CREDIT_COST=4 디노미 환산
+export const THEME_POINT_COST = 590;      // 구 1 크레딧 디노미 환산
+
+// 멤버십 등급 + 월 포인트 풀 (§8-3)
+export type MembershipTier = 'free' | 'pro' | 'premium';
+export const MEMBERSHIP_MONTHLY_POOL: Record<MembershipTier, number> = { free: 0, pro: 93000, premium: 191500 };
+
+// CreditLedgerPort (domain/port/outbound/credit-ledger.port.ts)
+export interface CreditLedgerPort {
+  earn(input: EarnInput): Promise<CreditLedgerEntry>;            // 적립 (가입/충전/응원선물/구독풀)
+  spend(input: SpendInput): Promise<SpendResult>;                // 소진 (우선순위 적용 + 잔액 부족 시 deficit)
+  getBalance(authorId: string): Promise<CreditBalance>;          // 출처별 잔액 + deficit
+  settleDeficit(authorId: string, fromAmount: number): Promise<number>;  // 충전 시 deficit 우선 상계
+  findByAuthor(authorId: string, limit: number): Promise<CreditLedgerEntry[]>;
+}
+export interface SpendResult {
+  spentBySource: Record<CreditSource, number>;  // 출처별 차감액
+  deficitIncurred: number;                       // 외상 발생분 (잔액 부족, 정상 시 0)
+  balanceAfter: number;
+}
+export interface CreditBalance {
+  free: number; subscription: number; gift: number; charged: number;
+  total: number;      // 4 출처 합
+  deficit: number;    // Author.deficitPoints (외상)
+  available: number;  // total - deficit
+}
+
+// MembershipPlanPort (domain/port/outbound/membership-plan.port.ts)
+export interface MembershipPlanPort {
+  getPlan(authorId: string): Promise<MembershipPlanState | null>;
+  resetMonthlyPool(authorId: string, now: Date): Promise<void>;  // 월간 리셋 (이월 금지 — §8-8 #2)
+  findPlansToReset(now: Date): Promise<MembershipPlanState[]>;
+  changeTier(authorId: string, tier: MembershipTier, now: Date): Promise<MembershipPlanState>;
+}
+
+// ClaudeApiPort 확장 — 채팅 사후 차감용 토큰 usage 노출
+askWithUsage(systemPrompt: string, userMessage: string, options?: AskOptions): Promise<ClaudeAskResult>;
+// ClaudeAskResult: { text, inputTokens, outputTokens, model }
+```
+
+### DB 모델 (Prisma)
+
+- **CreditLedger** (신설) — `authorId` FK Restrict / `source` / `type` / `amount`(부호 有) / `balanceAfter` / `expiresAt?`(구독풀 만료) / `reason` / `relatedId?`. 인덱스 `[authorId,createdAt]` `[authorId,source]` `[expiresAt]`.
+- **MembershipPlan** (신설) — `authorId` FK Restrict / `tier` / `monthlyPoolPoints` / `poolBalance` / `poolResetAt` / `polarSubscriptionId?` / `status`. 인덱스 `[authorId]` `[poolResetAt]` `[status]`.
+- **Author** — 4 필드 추가 (`pointsFree`/`pointsSubscription`/`pointsGift`/`pointsCharged` 잔액 캐시) + `deficitPoints`. `credits` 는 `[DEPRECATED]` (1 sprint 유예 후 DROP).
+- **ChatMessage** — 5 필드 추가 (`inputTokens?`/`outputTokens?`/`model?`/`chargedPoints?`/`chargeTier?`, 전부 nullable).
+
+### 변경 시 동시 갱신 대상
+
+- `grimoire-server/src/domain/model/credit-point.ts` / `credit-source.ts` / `chat-charge-tier.ts` / `membership-tier.ts` / `credit-system-setting.ts`
+- `grimoire-server/docs/ai-cost-table.md` §0·§2·§3 (cost-accountant 단독 관리 — 차감 N 변경 시 §0 재검증)
+- `grimoire-server/docs/ai-analysis-spec.md` (분석 차감 pt)
+- `grimoire-server/docs/data-model.md` + `SCHEMA.md` (CreditLedger / MembershipPlan / Author / ChatMessage)
+- `grimoire-web` 잔액 표시 + 채팅 차감 안내 + 구독 플랜 + 충전 패키지 UI (web Generator — I Phase)
+- `eval/tasks/regression-74~77-*.json` + `.claude/scripts/sensor-credit-*.sh` (5종)
+
+### §7 `ANALYSIS_CREDIT_COST` 이행 관계
+
+기존 §7 `ANALYSIS_CREDIT_COST = 4` (정수 크레딧)는 본 §30 `ANALYSIS_POINT_COST = 2440` (디노미 pt)로 이행.
+`novel-analysis.usecase.ts` 가 `ChargePointsUseCase` 주입 시 디노미 차감, 미주입 시 구 경로(BACKWARD COMPATIBLE).
+
+### 변경 이력
+
+- 2026-05-17 #크레딧개편 I Phase: 신설 — grimoire-server. 디노미네이션 1:1,000 + 포인트 출처 4종 분리 회계(1-C 하이브리드: Author 4 필드 캐시 + CreditLedger 원장) + 구독 월 풀(MembershipPlan, 4-C 이월 금지) + 채팅 4구간 사후 차감(190/810/3,390/5,520pt) + 분석 2,440pt / 테마 590pt. DB schema 변경(CreditLedger/MembershipPlan 신설 + Author 5 필드 + ChatMessage 5 필드) + migration 파일 작성(apply 0건). jest 805 → 967 PASS (+162 it). cost-accountant 승인 `786b0f3`. 정본: ADR-012 + S Phase Draft. sensor 5종 신설(credit-overhaul-recalc / credit-denomination / credit-source-accounting / subscription-pool-no-rollover / chat-charge-tier).
+
+---
+
 ## 변경 시 절차 (책 Ch 16 충돌 2번 해결책)
 
 agent A가 인터페이스 변경 시:

@@ -69,7 +69,9 @@
 | 3 | ~~읽기 기능 UI 연결~~ | ✅ 좋아요/북마크/댓글 전부 연결 완료 |
 | 4 | ~~RAG 일관성 체크 UI~~ | ✅ `/dashboard/analysis` 연결 완료 |
 | 5 | 작품별 테마 배정 UI | api.ts 메서드 있음, 대시보드 UI 미구현 |
-| 6 | AI 채팅 1턴 크레딧 차감 연동 | 현재 무료 사용 — Polar payout 후 P1 (cost-accountant 검증 필요) |
+| 6 | AI 채팅 1턴 크레딧 차감 연동 | **server 측 코드 구현 완료 (2026-05-17 크레딧 개편 I Phase, ADR-012)** — 채팅 4구간 사후 차감 + 디노미네이션 1,000pt. dev migration apply 대기(§7 단계6 키워드 게이트) + web UI(잔액 4출처 표시 + 차감 안내 + 구독 플랜 + 충전 패키지)는 grimoire-web Generator 영역 |
+
+> **크레딧 개편 I Phase (2026-05-17)**: server 측 디노미네이션 + 포인트 출처 4종 회계 + 채팅 4구간 사후 차감 + 구독 월 풀 코드 구현 완료 (`feature/credit-overhaul-i-phase`). schema.prisma 변경 + migration 파일 작성(어떤 DB에도 apply 0건). web UI 연결은 grimoire-web Generator 단계에서 진행 — 그 시점 본 표 갱신.
 
 ---
 
