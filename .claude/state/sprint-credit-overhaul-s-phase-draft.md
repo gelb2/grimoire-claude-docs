@@ -581,10 +581,10 @@ export interface MembershipPlanState {
 5. 게이트 5 — 채팅 차감: deficit 저장 **`Author.deficitPoints`(권장)** / 경계값·N **`SystemSetting` 동적(권장)** / deficit 상한 **-10,000pt(권장)**
 6. 게이트 6 — 재산정 트리거: 6-A / **6-B(권장)**
 
-### §16-2. §8 잔여 미확정 (정본 §8-5·§8-6 "가정" 표기)
+### §16-2. §8 잔여 — ✅ 사용자 확정 (2026-05-17)
 
-7. **패키지 충전액 4종 + 보너스율** — §8-5 cost-accountant "가정"(입문 ₩3,000 / 기본 ₩5,000 / 인기 ₩10,000 +10% / 베스트 ₩30,000 +15%). planner/사용자 최종 확정 대상.
-8. **응원 선물 단위** — §8-6 "채팅 시대 단위 적정성 S Phase 재검토" — 현 1,000·3,000·5,000pt 유지 vs 조정.
+7. **패키지 충전액 4종 + 보너스율** — ✅ **확정**: 입문 ₩3,000 / 기본 ₩5,000 / 인기 ₩10,000 (+10%) / 베스트 ₩30,000 (+15%). cost-accountant §8-5 권장값 그대로 채택 — §0 마진 ≥3× 검증 완료.
+8. **응원 선물 단위** — ✅ **확정**: 현행 1,000·3,000·5,000pt 유지 (단위 변경 없음). §8-5 planner 권장 채택 — 표시 UX만 천단위 보완(web Generator).
 
 ### §16-3. I Phase 결정 항목 (S Phase 범위 외 — I Phase 착수 시)
 
@@ -596,14 +596,14 @@ export interface MembershipPlanState {
 
 ## §17. 진입 게이트 (I Phase 착수 전제)
 
-I Phase(server Generator 구현) 착수 전 **모두 충족 필수**:
+I Phase(server Generator 구현) 착수 전 **모두 충족 필수**. **현황(2026-05-17): ✅ 6/6 충족 — server Generator 착수 가능.**
 
-- [ ] §16-1 결정 게이트 6건 사용자 결정 완료 (각 옵션 택일).
-- [ ] §16-2 패키지 충전액/보너스율 + 응원 선물 단위 사용자 확정.
-- [ ] cost-accountant `ai-cost-table.md` 개정 완료 (§8 확정 수치 §2·§3 반영 + §0 재검증 PASS) — §8-7 #7.
-- [ ] 게이트 6-B 채택 시 researcher/cost-accountant 정의 트리거 명문화 완료.
-- [ ] 본 Draft §6 스키마 매트릭스를 사용자 결정값 기준으로 확정 (1-C/2-C/4-C 외 선택 시 §6 재산정).
-- [ ] §7 마이그레이션 단계 1(dev 측정) — server/infrastructure agent 산출.
+- [x] ① §16-1 결정 게이트 6건 사용자 결정 완료 (5/17 권장값 1-C/2-C/5필드/4-C/5/6-B 일괄 채택).
+- [x] ② §16-2 패키지 충전액/보너스율 + 응원 선물 단위 사용자 확정 (5/17 — #7 권장값 / #8 현행 유지).
+- [x] ③ cost-accountant `ai-cost-table.md` 개정 완료 (`786b0f3` — §8 확정 수치 §2·§3 반영 + §0 전항목 ≥3× PASS) — §8-7 #7.
+- [x] ④ 게이트 6-B 채택 → researcher §3-D + cost-accountant §4-4 트리거 명문화 완료 (5/17 grimoire-researcher 위임).
+- [x] ⑤ §6 스키마 매트릭스 — 사용자가 권장값(1-C/2-C/4-C 등) 전건 채택 → §6 가정 유지, 재산정 불요.
+- [x] ⑥ §7 단계1 dev 측정 완료 (5/17 — authors 12 / SUM credits 100 / credits>0 10 / chat_messages 22, `credit-overhaul-dev-measure-raw.md`).
 
 > **§8-8 CRITICAL 5건 위반 설계는 진입 게이트 자동 FAIL** — 비스트레스 차감 / 풀 이월 / 토큰 필드 누락 / 채팅 3구간 / 재산정 트리거 누락.
 

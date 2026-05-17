@@ -123,6 +123,22 @@ ProjectGrimoire는 **매일** Daily Discovery + Freshness Sweep 둘 다 수행.
 - **즉시** `reports/AI_COST_MONITOR.md` 갱신 + `reports/COST_ALERT.md` 생성 + cost-accountant에 알림
 - 통화/환율 변동으로 실질 원가 변경 시에도 알림
 
+### 3-D. 특수 임무 — 크레딧 개편 "차감 N 재산정" 트리거 핸드오프 (게이트 6-B)
+
+> 출처: `sprint-credit-overhaul-s-phase-draft.md` §4 게이트 6 / §15 #5. **§3-C 가격알림(`AI_COST_MONITOR.md §6`)과는 별개의 트리거** — §3-C는 일반 가격 변동 알림, 본 절은 **크레딧 개편 차감 N(채팅 4구간·분석·테마)의 코드변경 발의** 트리거.
+
+매일 AI 가격 모니터링 스윕 시, 다음 3 임계 중 하나라도 도달하면 **즉시 grimoire-cost-accountant에게 "차감 N 재산정" 핸드오프**한다.
+
+| # | 트리거 조건 | 핸드오프 동작 |
+|---|---|---|
+| ① | USD/KRW 환율 ≥ ₩1,624.33 도달 | cost-accountant에 "차감 N 재산정" 핸드오프 (스트레스 한계 도달) |
+| ② | Claude Sonnet input **또는** output 단가가 현재 대비 ±20% 도달 | cost-accountant에 "차감 N 재산정" 핸드오프 |
+| ③ | 합성 변동(환율 변동% + 모델가 변동%) 누적 ≥ +25% 도달 | cost-accountant에 "차감 N 재산정" 핸드오프 (스트레스 한계 +30.2% 직전 선제) |
+
+- 핸드오프 시 대상 차감 N 6종 명시: 채팅 4구간(190·810·3,390·5,520pt) + 분석(2,440pt) + 테마(590pt).
+- 본 트리거는 "차감 N 코드변경" 발의용 — `AI_COST_MONITOR.md §6` 가격알림 갱신과 **중복 수행**(별개 채널).
+- `sensor-credit-overhaul-recalc.sh`(harness)가 동일 임계를 기계 검증하나, 핸드오프 주체는 본 에이전트.
+
 ---
 
 ## 4. 리서치 범위
@@ -250,6 +266,7 @@ Grimoire는 금지어 목록이 Zenith/RoadRage보다 적지만, 작가 콘텐�
 - [ ] AI 가격 모니터링 수행 (3대 제공자)
 - [ ] Live 캐시 두 파일 갱신
 - [ ] AI 가격 변동 시 reports/COST_ALERT.md 생성 + cost-accountant 알림
+- [ ] §3-D 차감 N 재산정 트리거 3 임계(환율 ₩1,624.33 / Sonnet ±20% / 합성 +25%) 점검 — 도달 시 cost-accountant 핸드오프
 - [ ] reports/SWEEP_REPORT.md 덮어쓰기
 - [ ] ACCOUNTS.md 참조 없음
 
