@@ -1,9 +1,9 @@
-# HANDOVER — 2026-05-16 (모두의 창업 신청서 제출 + 크레딧·구독·채팅 과금 개편 R+S Phase) → 다음 세션
+# HANDOVER — 2026-05-17 (모두의 창업 제출 + 크레딧 개편 R+S Phase + Tier 0 deploy 안전망 + Tier 1 E2E + Tier 2 S Phase 스키마 설계) → 다음 세션
 
-> **작성자**: 2026-05-16 본 세션 (Claude). 이전 PAY 스프린트와 무관한 **신규 영역 2건** — 외부 공모전 출품 + 과금 체계 기획.
+> **작성자**: 2026-05-16 세션 신설 (모두의 창업 출품 + 과금 개편 R+S Phase) → 2026-05-17 세션 갱신 (Tier 0 deploy 안전망 + Tier 1 USER-SOFT-DELETE E2E + Tier 2 크레딧 개편 S Phase 스키마 설계).
 > **수신자**: 다음 세션
 > **검증 명령**: `cd /Users/sokol/Desktop/Git/ProjectGrimoire && git log --oneline -3 && head -12 research/CREDIT_PRICING_OVERHAUL_PLAN.md`
-> **이번 세션 커밋**: `dd0484a` (산출물 4파일) + 본 핸드오버 커밋(별도).
+> **최근 커밋**: 5/16 `dd0484a` → 5/17 `e6ee3b0` (Tier 2 S Phase 스키마 설계) → 본 핸드오버 커밋.
 
 ## 0. 이번 세션 작업 2건
 
@@ -34,7 +34,7 @@
   - 전체 eval **71/71 PASS** / 3 레포 develop SYNC 0/0
 - **agent 신뢰도 주의**: infrastructure agent stall/파싱 실패 누적 (#10_8 + 본 세션) — agent 위임 결과는 메인이 직접 검증(diff + bash -n + git rev-list SYNC) 강제.
 
-## 1. 다음 세션 1순위 — Tier 1 (USER-SOFT-DELETE Playwright E2E) 또는 Tier 2 (크레딧 개편 S Phase 스키마 설계)
+## 1. 다음 세션 1순위 — 크레딧 개편 I Phase server Generator (본 세션 Tier 0+1+2 종료)
 
 ### Tier 1 — USER-SOFT-DELETE Playwright E2E ⚠️ 부분 종료 (5/17)
 - `e2e/account-delete.spec.ts` 5 it 신설 (web `6b95534`+`9c2137a`+머지). dev 대상 **3 PASS / 2 SKIP**:
@@ -43,13 +43,22 @@
 - **dev admin incident (pending)**: dev DB admin 계정 존재(slug `grimoireadmin`)하나 email db-sync 마스킹(`author-4@masked.local`) + 비번 ACCOUNTS.md 공통 비번 불일치. **해소**: dev DB 접근 환경 `SEED_ADMIN_PASSWORD=<비번> npx tsx grimoire-server/scripts/seed-admin.ts` → `E2E_ADMIN_PASSWORD` 박제 → 어드민 2 it 재실행 5/5 PASS (코드 검증 완료). incident-log 박제.
 - E2E 버그 2건 수정: reCAPTCHA v3 빈 토큰(`waitForRecaptchaReady` 헬퍼) + `"로그인"` strict mode(`exact:true`).
 
-### Tier 2 — 크레딧 개편 S Phase 스키마 설계 (백본)
-- 계획서 **§8-7 S Phase 선행 과제 8건**부터. 특히:
-  - `ChatMessage`에 `inputTokens`/`outputTokens`/`model` 필드 추가 (없으면 차감액 전부 추측 — CRITICAL).
-  - 포인트 출처 4종 분리 회계 스키마 (`Author.credits` 단일 Int → 출처별 분리 필드 vs ledger 테이블).
-- **CRITICAL §8-8 5건**: ①비스트레스 원가로 차감 N 산출 금지 ②구독 풀 이월 금지(§0 0.14× 붕괴) ③토큰 실측 필드 선행 ④채팅 초장문 4구간 분리 필수(3구간 시 P99 2.40× §0 위반) ⑤경계선 운영(쿠션 거의 0) — 재산정 트리거 sensor 연동.
-- **모든 채팅 수치는 토큰 실측 0건 기반 가정값** — 구현 후 운영 1~2주 실측으로 구간 경계·차감 N 재확정 전제.
-- 스키마 설계는 `grimoire-server` 도메인 → grimoire-server 에이전트 위임 대상.
+### Tier 2 — 크레딧 개편 S Phase 스키마 설계 ✅ 종료 (5/17)
+- planner Initializer Draft `.claude/state/sprint-credit-overhaul-s-phase-draft.md` (17 섹션 633 lines, claude-docs `e6ee3b0`)
+- **사용자 게이트 6건 권장값 채택**: 1-C 하이브리드 회계(Author 4필드+`CreditLedger`) / 2-C `credits` 폐기(1 sprint 유예) / ChatMessage 5필드 nullable / 4-C `MembershipPlan` 신설 / 사후차감+`deficitPoints`+`SystemSetting`+상한 -10,000pt / 6-B sensor+핸드오프
+- qa Draft 검증 **CONDITIONAL PASS** (설계 정합 전건 PASS — 게이트 6건↔§6 매트릭스 1:1 + §8-8 CRITICAL 5건 반영 + 정본 §8 13수치 일치)
+- cost-accountant `ai-cost-table.md` 개정 (server `786b0f3`, +264/-88) — 디노미 1,000pt + 채팅 4구간 + 구독 풀, **§0 전항목 ≥3× PASS** (경계선 3.00~3.05× ACCEPTABLE — §6 재산정 트리거 sensor가 안전장치)
+
+### 다음 1순위 — 크레딧 개편 I Phase server Generator
+
+**§16-2 잔여 2건 사용자 확정 = I Phase 진입 게이트** (§17):
+- #7 패키지 충전액/보너스율 — 권장 입문 ₩3,000 / 기본 ₩5,000 / 인기 ₩10,000(+10%) / 베스트 ₩30,000(+15%) (cost-accountant §0 PASS 검증 완료)
+- #8 응원 선물 단위 — 권장 1·3·5크레딧 → 1,000·3,000·5,000pt 환산
+
+§16-2 확정 → §17 진입 게이트 6항목 충족 → **server Generator**: `schema.prisma` 10 모델 변경 + migration + domain/port/adapter/usecase, jest ≥84 it, sensor 5종, `shared-contracts §30`, `ADR-012`. 대형 구현 — grimoire-server 위임.
+- **CRITICAL §8-8 5건** 준수: 비스트레스 원가 차감 금지 / 구독 풀 이월 금지 / `ChatMessage` 토큰 필드 선행 / 채팅 4구간 분리 / 재산정 트리거 sensor.
+- 채팅 수치는 실측 0 가정값 — 구현 후 운영 1~2주 실측 재확정 전제.
+- I Phase 후 → V Phase (검증+배포) → Tier 3~8 (PAY 잔여 / 하네스 BOOK-NEW / P2·P3).
 
 ## 2. git 상태 (2026-05-16 실측)
 
