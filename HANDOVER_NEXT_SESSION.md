@@ -1,4 +1,4 @@
-# HANDOVER — 2026-05-17 (모두의 창업 제출 + 크레딧 개편 R+S Phase + Tier 0 deploy 안전망 + Tier 1 E2E + Tier 2 S Phase 스키마 설계) → 다음 세션
+# HANDOVER — 2026-05-17 (크레딧 개편 I Phase 구현 종료 — §17 게이트 + server/web/HTTP follow-up, 3 레포 push) → 다음 세션
 
 > **작성자**: 2026-05-16 세션 신설 (모두의 창업 출품 + 과금 개편 R+S Phase) → 2026-05-17 세션 갱신 (Tier 0 deploy 안전망 + Tier 1 USER-SOFT-DELETE E2E + Tier 2 크레딧 개편 S Phase 스키마 설계).
 > **수신자**: 다음 세션
@@ -34,7 +34,7 @@
   - 전체 eval **71/71 PASS** / 3 레포 develop SYNC 0/0
 - **agent 신뢰도 주의**: infrastructure agent stall/파싱 실패 누적 (#10_8 + 본 세션) — agent 위임 결과는 메인이 직접 검증(diff + bash -n + git rev-list SYNC) 강제.
 
-## 1. 다음 세션 1순위 — 크레딧 개편 I Phase server Generator (본 세션 Tier 0+1+2 종료)
+## 1. 다음 세션 1순위 — 크레딧 개편 §7 단계6 dev migration (본 세션 I Phase 구현 종료)
 
 ### Tier 1 — USER-SOFT-DELETE Playwright E2E ⚠️ 부분 종료 (5/17)
 - `e2e/account-delete.spec.ts` 5 it 신설 (web `6b95534`+`9c2137a`+머지). dev 대상 **3 PASS / 2 SKIP**:
@@ -49,23 +49,30 @@
 - qa Draft 검증 **CONDITIONAL PASS** (설계 정합 전건 PASS — 게이트 6건↔§6 매트릭스 1:1 + §8-8 CRITICAL 5건 반영 + 정본 §8 13수치 일치)
 - cost-accountant `ai-cost-table.md` 개정 (server `786b0f3`, +264/-88) — 디노미 1,000pt + 채팅 4구간 + 구독 풀, **§0 전항목 ≥3× PASS** (경계선 3.00~3.05× ACCEPTABLE — §6 재산정 트리거 sensor가 안전장치)
 
-### 다음 1순위 — 크레딧 개편 I Phase server Generator
+### Tier 3 — 크레딧 개편 I Phase 구현 ✅ 종료 (5/17)
 
-**§16-2 잔여 2건 사용자 확정 = I Phase 진입 게이트** (§17):
-- #7 패키지 충전액/보너스율 — 권장 입문 ₩3,000 / 기본 ₩5,000 / 인기 ₩10,000(+10%) / 베스트 ₩30,000(+15%) (cost-accountant §0 PASS 검증 완료)
-- #8 응원 선물 단위 — 권장 1·3·5크레딧 → 1,000·3,000·5,000pt 환산
+§17 진입 게이트 6/6 충족 → server + web + HTTP follow-up 전건 구현·검증·push 완료.
+- §16-2 #7/#8 사용자 확정: 패키지 충전액 ₩3,000/5,000/10,000(+10%)/30,000(+15%), 응원선물 1,000·3,000·5,000pt 현행 유지.
+- server `1c99123`→`376ee04` (schema 10모델 + 차감/적립/구독, qa CONDITIONAL PASS) + HTTP 노출 follow-up `1ba8c9f`→`9d0d2b7` (`/credits/balance` 4-source).
+- web `3e9bb06`→`20ee379` (credits 슬라이스 + 잔액/차감/멤버십 UI, VCK PASS) + docs 동기화 `9c9adf4`(api-contract) + `47621e1`(data-model — `9c9adf4`가 빠뜨린 straggler 정리, server↔web 바이트 동일 복구).
+- claude-docs `0941118`/`ea7ed47`/`46105f4`/`0feb5ff` (shared-contracts §30 + sensor 5 + eval 4 + regression-026 교정).
+- jest 971 / vitest 210 / eval 75/75 / 3 레포 develop push 완료.
 
-§16-2 확정 → §17 진입 게이트 6항목 충족 → **server Generator**: `schema.prisma` 10 모델 변경 + migration + domain/port/adapter/usecase, jest ≥84 it, sensor 5종, `shared-contracts §30`, `ADR-012`. 대형 구현 — grimoire-server 위임.
-- **CRITICAL §8-8 5건** 준수: 비스트레스 원가 차감 금지 / 구독 풀 이월 금지 / `ChatMessage` 토큰 필드 선행 / 채팅 4구간 분리 / 재산정 트리거 sensor.
-- 채팅 수치는 실측 0 가정값 — 구현 후 운영 1~2주 실측 재확정 전제.
-- I Phase 후 → V Phase (검증+배포) → Tier 3~8 (PAY 잔여 / 하네스 BOOK-NEW / P2·P3).
+### 다음 1순위 — §7 단계6 dev migration (크레딧 개편 V Phase)
 
-## 2. git 상태 (2026-05-16 실측)
+I Phase **구현**은 완료. 다음은 마이그레이션 **적용** + 검증 + 배포:
+- **사용자 키워드 게이트** (§7): 단계2 `크레딧개편 dev 백업 박제 완료` → 단계6 `크레딧개편 dev migration 진행` → 단계7 `크레딧개편 dev 차감 검증 진행`.
+- 마이그레이션 `20260517_credit_overhaul_i_phase` (작성 완료, apply 0건). 검증 기준: `SUM(points_charged)=100,000` / `CreditLedger` 초기 row=10 (dev 측정 authors 12 / SUM credits 100 / credits>0 10).
+- ⚠️ migration.sql `WHERE credits>0` — dev 음수 크레딧 0건 확인 권장 (qa 경미 관찰).
+- **잔여 후속(별도)**: `CREDIT_PRODUCTS` #7 4종(Polar 상품 등록 종속) / `MembershipPlanPort` HTTP 노출(멤버십 페이지 실 플랜).
+- 이후 → prod 배포 → Tier 5~8 (PAY 잔여 / 하네스 BOOK-NEW / P2·P3).
 
-- **이번 세션 산출물 4파일 커밋 완료** — `dd0484a` "docs: 모두의 창업 신청서 제출 박제 + 크레딧·구독·채팅 과금 개편 R+S Phase 계획서" (`MODOO_APPLICATION_2026_1.md` + `research/CREDIT_PRICING_OVERHAUL_PLAN.md` + `research/CREDIT_OVERHAUL_COST_SIM.md` + `research/CREDIT_OVERHAUL_RESEARCH_COMPETITORS.md`). 본 핸드오버는 별도 커밋.
-- `reports/AI_COST_MONITOR.md`는 갱신했으나 **git 미추적**(파일 정책 "Git 추적 ❌ 루트 전용", `reports/` 제외) — 커밋 대상 아님.
-- **이전 세션 잔여 미커밋**(이번 세션 무관): `eval/results/baseline.csv`, `research/HARNESS_ENGINEERING.md` 가 `M` 상태로 남아 있음 — 직전 #10_8 핸드오버 참조.
-- `ai-cost-table.md`는 **미수정**(계획 단계 — S Phase에서 cost-accountant 승인 절차로 개정 예정).
+## 2. git 상태 (2026-05-17 I Phase 종료 실측)
+
+- 3 레포 develop 모두 origin push 완료 — server `9d0d2b7` / web `47621e1` / claude-docs `0feb5ff` (본 핸드오버 커밋은 직후 별도).
+- main 미머지 — I Phase는 develop 단계. main 머지·prod 배포는 dev migration + 검증 후 V Phase.
+- 검증 실측: jest 971 / vitest 210 / eval 75/75 / sensor 전건 PASS.
+- 다음 세션 검증 명령: `git -C grimoire-server log --oneline -3 && git -C grimoire-web log --oneline -3 && git log --oneline -3`.
 
 ---
 
