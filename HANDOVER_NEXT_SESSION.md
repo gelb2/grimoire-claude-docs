@@ -67,12 +67,19 @@ I Phase **구현**은 완료. 다음은 마이그레이션 **적용** + 검증 +
 - **잔여 후속(별도)**: `CREDIT_PRODUCTS` #7 4종(Polar 상품 등록 종속) / `MembershipPlanPort` HTTP 노출(멤버십 페이지 실 플랜).
 - 이후 → prod 배포 → Tier 5~8 (PAY 잔여 / 하네스 BOOK-NEW / P2·P3).
 
-## 2. git 상태 (2026-05-17 I Phase 종료 실측)
+## 2. git 상태 (2026-05-18 갱신)
 
-- 3 레포 develop 모두 origin push 완료 — server `9d0d2b7` / web `47621e1` / claude-docs `0feb5ff` (본 핸드오버 커밋은 직후 별도).
+- 3 레포 develop 모두 origin push 완료 — server `9d0d2b7` / web `47621e1` / claude-docs `6672d47`(직전 핸드오버) → 본 5/18 갱신 커밋은 직후 별도.
 - main 미머지 — I Phase는 develop 단계. main 머지·prod 배포는 dev migration + 검증 후 V Phase.
 - 검증 실측: jest 971 / vitest 210 / eval 75/75 / sensor 전건 PASS.
 - 다음 세션 검증 명령: `git -C grimoire-server log --oneline -3 && git -C grimoire-web log --oneline -3 && git log --oneline -3`.
+
+### 2-A. 2026-05-18 freeze 회복 세션 (프로젝트 작업 진척 0 — 하우스키핑만)
+
+- 데스크탑 앱 freeze로 5/17 세션 중단 → fresh 세션에서 잔여 마무리. 3 레포 push 확인 + web `docs/data-model.md` 동기화 straggler 정리(`47621e1` — 직전 `9c9adf4`가 api-contract만 동기화하고 data-model 누락).
+- 메모리 인덱스 consolidate — `MEMORY.md` 32KB→12KB (세션 엔트리 1줄 압축 + 중복 색인 3건 병합 + 누락 1건 색인). 메모리는 git 미추적.
+- **다음 1순위 불변** = 위 §1 §7 단계6 dev migration. 본 회복 세션은 코드/스키마 변경 0건.
+- ※ 사용자 iPad/원격 작업 희망 — Remote Control 기능 사용 시 `ANTHROPIC_API_KEY` env 제거 필요(claude.ai Pro/Max 로그인 전용, API 키 인증 불가). 버전 요구 2.1.51+ 충족(현재 2.1.140). 상세 `memory/project_session_20260517.md`.
 
 ---
 
