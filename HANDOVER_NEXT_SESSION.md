@@ -34,7 +34,7 @@
   - 전체 eval **71/71 PASS** / 3 레포 develop SYNC 0/0
 - **agent 신뢰도 주의**: infrastructure agent stall/파싱 실패 누적 (#10_8 + 본 세션) — agent 위임 결과는 메인이 직접 검증(diff + bash -n + git rev-list SYNC) 강제.
 
-## 1. 다음 세션 1순위 — 크레딧 개편 §7 단계6 dev migration (본 세션 I Phase 구현 종료)
+## 1. 다음 세션 1순위 — 크레딧 코어 복구 CC-1 (적립 연동) — ⚠️ V Phase 직행 금지 (5/19 정밀진단)
 
 ### Tier 1 — USER-SOFT-DELETE Playwright E2E ⚠️ 부분 종료 (5/17)
 - `e2e/account-delete.spec.ts` 5 it 신설 (web `6b95534`+`9c2137a`+머지). dev 대상 **3 PASS / 2 SKIP**:
@@ -49,7 +49,9 @@
 - qa Draft 검증 **CONDITIONAL PASS** (설계 정합 전건 PASS — 게이트 6건↔§6 매트릭스 1:1 + §8-8 CRITICAL 5건 반영 + 정본 §8 13수치 일치)
 - cost-accountant `ai-cost-table.md` 개정 (server `786b0f3`, +264/-88) — 디노미 1,000pt + 채팅 4구간 + 구독 풀, **§0 전항목 ≥3× PASS** (경계선 3.00~3.05× ACCEPTABLE — §6 재산정 트리거 sensor가 안전장치)
 
-### Tier 3 — 크레딧 개편 I Phase 구현 ✅ 종료 (5/17)
+### Tier 3 — 크레딧 개편 I Phase ⚠️ 코드 작성만 종료, 기능 미완결 (5/17 작성 / 5/19 정밀진단 정정)
+
+⚠️ **5/19 정밀진단 정정**: 아래 "구현·검증"은 코드 작성 + 유닛테스트 한정. 적립(earn) 경로가 신 4-출처 시스템에 미연동 — 기능 미완결. V Phase 직행 시 신규 가입자 AI 마비. 상세 = §1 "다음 1순위" + `reports/CREDIT_CORE_DIAGNOSIS.md`.
 
 §17 진입 게이트 6/6 충족 → server + web + HTTP follow-up 전건 구현·검증·push 완료.
 - §16-2 #7/#8 사용자 확정: 패키지 충전액 ₩3,000/5,000/10,000(+10%)/30,000(+15%), 응원선물 1,000·3,000·5,000pt 현행 유지.
@@ -58,14 +60,21 @@
 - claude-docs `0941118`/`ea7ed47`/`46105f4`/`0feb5ff` (shared-contracts §30 + sensor 5 + eval 4 + regression-026 교정).
 - jest 971 / vitest 210 / eval 75/75 / 3 레포 develop push 완료.
 
-### 다음 1순위 — §7 단계6 dev migration (크레딧 개편 V Phase)
+### 다음 1순위 — 크레딧 코어 복구 sprint (5/19 정밀진단 재추산)
 
-I Phase **구현**은 완료. 다음은 마이그레이션 **적용** + 검증 + 배포:
-- **사용자 키워드 게이트** (§7): 단계2 `크레딧개편 dev 백업 박제 완료` → 단계6 `크레딧개편 dev migration 진행` → 단계7 `크레딧개편 dev 차감 검증 진행`.
-- 마이그레이션 `20260517_credit_overhaul_i_phase` (작성 완료, apply 0건). 검증 기준: `SUM(points_charged)=100,000` / `CreditLedger` 초기 row=10 (dev 측정 authors 12 / SUM credits 100 / credits>0 10).
-- ⚠️ migration.sql `WHERE credits>0` — dev 음수 크레딧 0건 확인 권장 (qa 경미 관찰).
-- **잔여 후속(별도)**: `CREDIT_PRODUCTS` #7 4종(Polar 상품 등록 종속) / `MembershipPlanPort` HTTP 노출(멤버십 페이지 실 플랜).
-- 이후 → prod 배포 → Tier 5~8 (PAY 잔여 / 하네스 BOOK-NEW / P2·P3).
+⚠️ **직전 "다음 1순위 = §7 단계6 dev migration(V Phase)"은 무효.** 5/19 정밀진단(구독제 audit + server 2트랙 진단, 메인 직접 실측 검증)에서 I Phase가 **기능 미완결**로 확인 — V Phase 마이그레이션을 현 상태로 적용하면 신규 가입자부터 AI 기능(채팅·분석·테마) 마비.
+
+**근본 결함**:
+- 적립(earn) 경로 전체가 신 4-출처 `Author.points*`가 아니라 구 `Author.credits`로 감 (`GrantPointsUseCase` 호출처 0건). 차감도 채팅·분석만 연동 — 테마 차감(`chargeTheme`) 호출처 0건.
+- `getBalance`가 `CreditLedger.expiresAt` 미반영 → 구독 풀 이월 금지가 cron 단일 의존.
+
+**재추산 sprint** (상세 정본: `memory/project_remaining_tasks.md` "정밀진단 재추산 (2026-05-19)" + `reports/CREDIT_CORE_DIAGNOSIS.md` · `reports/PAYMENT_PIPELINE_DIAGNOSIS.md`):
+- 즉시: PAY-S1 로컬 DB 마이그레이션 동기화 (로컬 5건 미적용)
+- 트랙 A (크레딧 코어, 순차): CC-1 적립 비결제 연동(가입·첫작품·관리자·테마) → CC-2a 충전 연동+트랜잭션 패턴 → CC-2b 선물·환불 연동 → CC-3 이월 안전망+이중출처+원장 → CC-4 V Phase 마이그레이션 → CC-5 PAY-P1-4 Polar 구독
+- 트랙 B (결제 하드닝, 독립 병렬): PAY-S2 다중 부분환불 한도 / PAY-S3 Circuit Breaker admin UI / PAY-S5~7 후순위
+- 차단: PAY-P1-2 결제알림 Email+SMS (절대규정 0-1 + cost-accountant + EMAIL-P1-1 인증)
+- **다음 세션 진입 = PAY-S1(로컬 DB 동기화) + CC-1(적립 비결제 연동).** CC-4(V Phase)는 반드시 CC-1·2a·2b·3 이후.
+- ※ V Phase 마이그레이션 자체 잔여 결함: 검증 기준 `credit_ledgers row=10`이 (c-2) 구독 풀 행 미반영 / dev plan 분포 미측정 / (d) ×610 휴리스틱 → CC-4에서 해소.
 
 ## 2. git 상태 (2026-05-18 갱신)
 
