@@ -2459,6 +2459,32 @@ export interface MembershipPlanPort {
 // ClaudeApiPort 확장 — 채팅 사후 차감용 토큰 usage 노출
 askWithUsage(systemPrompt: string, userMessage: string, options?: AskOptions): Promise<ClaudeAskResult>;
 // ClaudeAskResult: { text, inputTokens, outputTokens, model }
+
+// CREDIT_PRODUCTS — 충전 패키지 4종 (CC-2a 디노미 — domain/model/config.ts)
+//   ai-cost-table §2 정본 (cost-accountant 승인 786b0f3 — 전 패키지 §0 PASS).
+//   구 3종(credit-5/20/50, credits Int=수량) → 신 4종(points Int=총 pt + bonusRate).
+export const CREDIT_PRODUCTS = [
+  { id: 'credit-starter', name: '입문 패키지', points: 25000,  bonusRate: 0,    price: 3000,  priceUsd: 299,  providerProductIdEnv: 'POLAR_PRODUCT_STARTER' },
+  { id: 'credit-basic',   name: '기본 패키지', points: 41667,  bonusRate: 0,    price: 5000,  priceUsd: 499,  providerProductIdEnv: 'POLAR_PRODUCT_BASIC' },
+  { id: 'credit-popular', name: '인기 패키지', points: 91667,  bonusRate: 0.10, price: 10000, priceUsd: 999,  providerProductIdEnv: 'POLAR_PRODUCT_POPULAR' },
+  { id: 'credit-best',    name: '베스트 패키지', points: 287500, bonusRate: 0.15, price: 30000, priceUsd: 2999, providerProductIdEnv: 'POLAR_PRODUCT_BEST' },
+] as const;
+// GET /payments/products 응답: { id, name, points, bonusRate, price, pricePerPoint }
+
+// PaymentRepositoryPort 확장 (CC-2a — domain/port/outbound/payment-repository.port.ts)
+//   충전 success 결제 적립 — 案 1 트랜잭션 통합 (헥사고날 DIP 보존, Prisma tx 미노출).
+//   CLAUDE.md §9 결제 원자성 — 단일 $transaction: Payment 완료 + deficit 우선 상계
+//   (CreditLedger deficit_settle) + 남은 충전액 적립 (CreditLedger source='charged' earn)
+//   + Author.pointsCharged/deficitPoints 캐시. 금액 계산은 computeChargeLedgerEntries 위임.
+completePaymentWithPoints(
+  paymentId: string, authorId: string, totalPoints: number, productId: string, relatedId?: string,
+): Promise<{ settledDeficit: number; chargedPoints: number }>;
+// 구 completePaymentAtomically(Author.credits Int + CreditLog) 는 @deprecated — CC-2b 후 제거.
+
+// computeChargeLedgerEntries (domain/policy/credit-consumption-policy.ts — 순수 함수)
+//   충전 적립 ledger 박제 계획 — settleDeficitOnCharge 재사용. PaymentRepository 가 호출.
+computeChargeLedgerEntries(chargeAmount: number, currentDeficit: number, currentChargedCache: number):
+  { settledDeficit: number; remainingCharge: number; remainingDeficit: number; newChargedCache: number };
 ```
 
 ### DB 모델 (Prisma)
@@ -2488,6 +2514,7 @@ askWithUsage(systemPrompt: string, userMessage: string, options?: AskOptions): P
 - 2026-05-17 #크레딧개편 I Phase web Generator: grimoire-web — §30 인터페이스 미변경(소비만). `src/features/credits/` 슬라이스 신설(credit-overhaul.ts §30 상수 미러 + point-balance.ts `/credits/balance` 응답 정규화 + CreditBalanceCard / ChatChargeGuide / MembershipPlans + 채팅 ChatChargeBadge). `/dashboard/credits` 디노미 개편 + `/dashboard/membership` 신설 + `/dashboard/chat` 4구간 차감 배지. **server I Phase backward-compatible 확인**: `/credits/balance`·`/auth/me`·`/payments/products` HTTP 응답 미변경(정수 크레딧 / 구 3 패키지), `CreditLedger.getBalance`(4 출처)·`MembershipPlan`은 HTTP 미연동 — web 은 server 실제 반환값에만 의존(없는 출처값 추정 금지, 잔액 정수 크레딧 ×1,000 환산). `ChatMessage.chargedPoints`/`chargeTier`만 실제 응답 포함. vitest 160→210 PASS (+50 it). 후속(별도 sprint): `MembershipPlanPort` HTTP 노출 시 멤버십 결제 UI / `CreditLedger.getBalance` HTTP 노출 시 4 출처 분해 자동 활성 / `CREDIT_PRODUCTS` #7 4종 갱신 시 패키지 자동 반영.
 - 2026-05-17 #크레딧개편 I Phase HTTP follow-up: grimoire-server — `GET /credits/balance` + `GET /payments/credits` 를 4 출처 `CreditBalanceResponseDto`(available/total/deficit/bySource)로 노출(기존 `{credits:number}` → 새 모델). `CreditUseCase.getPointBalance()` 신설 — `CreditLedgerPort.getBalance` 위임. web `point-balance.ts normalizePointBalance` 가 `bySource` 자동 분해 → 4 출처 표시 활성. jest 967→971 PASS (+4 it). 커밋 `1ba8c9f`→`9d0d2b7`. web Generator §0 검증으로 발견된 HTTP 미연동 갭(draft §5) 해소. 잔여(별도 sprint): `CREDIT_PRODUCTS` #7 4종(Polar 상품 등록 종속) / `MembershipPlanPort` HTTP 노출.
 - 2026-05-19 #크레딧개편 CC-1 적립 비결제 연동: grimoire-server — **CRITICAL-2 해소** (I Phase 의 `GrantPointsUseCase` 5메서드 호출처 0건 / 테마 차감 `chargeTheme` 미연동 = 적립 경로 런타임 미작동). 비결제 적립 5경로를 신 `CreditLedger` 원장으로 이행: ① T1 가입 보너스 (`AuthUseCase` email+Google 2 호출처 → `grantSignupBonus`) ② T2 첫 작품 보너스 (`WorkManagementUseCase` → `grantFirstWorkBonus`) ③ T5 관리자 지급 (`AdminUseCase.grantCredits` → `grantManual` + 출처 파라미터) ④ T6 관리자 차감 (`AdminUseCase.deductCredits` → `CreditLedgerPort.spend`, deficit 불가 모드 — 잔액 부족 시 throw) ⑤ 테마 차감 (`GenerateThemeUseCase` 구 `Author.credits -1` → `ChargePointsUseCase.chargeTheme` 590pt 교체 + 구 경로 제거). **인터페이스 변경**: `ChargePointsUseCase.chargeAnalysis` 반환 `void`→`SpendResult` (§5-D 출처별 환불 입력) / `refundAnalysis(authorId, relatedId?, spentBySource?)` 3번째 인자 추가 (출처별 복원, 미전달 시 charged 폴백) / `refundTheme(authorId, relatedId?)` 신설 / `POST /admin/credits/grant` body `source?` 추가. `AdminUseCase.grantCredits`/`deductCredits` 반환 `{credits,log}`→`{balance: CreditBalance}`. **통합 spec 신설** (`credit-grant-integration.spec.ts` — 실 `GrantPointsUseCase`/`ChargePointsUseCase` + 인메모리 `CreditLedgerPort` fake 로 호출 사슬 검증 — CRITICAL-2 가 unit mock 에 가려진 근본 원인 해결, RED 재현 실증). jest 971→991 PASS (+20 it). 커버리지 60.18%. 정본: `reports/CREDIT_CORE_DIAGNOSIS.md` §1·§2-2·§5-D·§8. 잔여(CC-2): T3 충전 / T4 선물 / T7 환불 적립 — 구 경로 잔존.
+- 2026-05-20 #크레딧개편 CC-2a 충전 결제 적립 연동: grimoire-server — **CRITICAL-2 충전분(T3) 해소 + C-6 해소**. ① `PaymentRepositoryPort.completePaymentWithPoints` 신설 (案 1 — 단일 `$transaction`: Payment 완료 + deficit 우선 상계 + 충전 적립 `CreditLedger` charged earn + `Author.pointsCharged`/`deficitPoints` 캐시. 案 2 CreditLedgerPort tx 오버로드는 헥사고날 DIP 위반이라 미채택). ② `payment.usecase` 충전 success 분기 재배선 — 구 `completePaymentAtomically` → `completePaymentWithPoints`. `settleDeficit` 가 실 충전 경로에 처음 연결돼 **C-6 해소** (deficit 10,000pt 상한 작가가 충전하면 외상 상계 → `isChatBlocked=false`). ③ 도메인 순수 함수 `computeChargeLedgerEntries` 추출 (案 1 로직 중복 0건). ④ `CREDIT_PRODUCTS` 디노미 4종 개편 (구 credit-5/20/50 `credits` Int=수량 → 신 입문/기본/인기/베스트 `points` Int=총 pt + `bonusRate`. `getProducts` `pricePerCredit`→`pricePerPoint`). ⑤ MEDIUM-4 — `Payment.credits` Int 의미 "수량"→"pt" 재해석 (컬럼 물리 rename 은 CC-2a 범위 외). **인터페이스 변경**: `PaymentRepositoryPort.completePaymentWithPoints` 신설 / `completePaymentAtomically` `@deprecated` / `GET /payments/products` 응답 3종→4종 (`credits`→`points`+`bonusRate`+`pricePerPoint`) / `Author` 도메인 모델에 `pointsFree`/`pointsSubscription`/`pointsGift`/`pointsCharged`/`deficitPoints` 5필드 추가. **통합 spec 신설** (`payment-charge-credit-integration.spec.ts` — 실 `PaymentUseCase` + `FakePaymentRepository`(도메인 헬퍼 실호출) 로 충전 webhook → CreditLedger charged earn + deficit 상계 사슬 검증. C7b RED 재현 실증 — 구 경로로 되돌리면 8건 FAIL). jest 1006→1012 PASS (+6 it 순증, payment.usecase.spec/polar.adapter.spec 디노미 정합 포함). 커버리지 60.37%. cost-accountant 재검증 불요 (`786b0f3` 기존 승인 소비). 정본: `reports/CREDIT_CORE_DIAGNOSIS.md` §1-A·§6·§8 + `.claude/state/sprint-cc2a-charge-wiring-plan-draft.md`. 잔여(CC-2b): T4 선물 / T7 환불 적립 — 구 경로 잔존. `Payment.credits` 컬럼 물리 rename / `completePaymentAtomically` 제거 = CC-2b 후.
 
 ---
 

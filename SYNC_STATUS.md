@@ -72,6 +72,8 @@
 | 6 | AI 채팅 1턴 크레딧 차감 연동 | **server 측 코드 구현 완료 (2026-05-17 크레딧 개편 I Phase, ADR-012)** — 채팅 4구간 사후 차감 + 디노미네이션 1,000pt. dev migration apply 대기(§7 단계6 키워드 게이트) + web UI(잔액 4출처 표시 + 차감 안내 + 구독 플랜 + 충전 패키지)는 grimoire-web Generator 영역 |
 
 > **크레딧 개편 I Phase (2026-05-17)**: server 측 디노미네이션 + 포인트 출처 4종 회계 + 채팅 4구간 사후 차감 + 구독 월 풀 코드 구현 완료 (`feature/credit-overhaul-i-phase`). schema.prisma 변경 + migration 파일 작성(어떤 DB에도 apply 0건). web UI 연결은 grimoire-web Generator 단계에서 진행 — 그 시점 본 표 갱신.
+>
+> **크레딧 개편 CC-2a (2026-05-20)**: server 측 충전 결제 적립 연동 — `payment.usecase` 충전 success 가 신 `CreditLedger` 원장으로 적립(`completePaymentWithPoints` 案 1 트랜잭션 통합). C-6 해소(충전 시 deficit 상계 → 채팅 차단 해제). **`GET /payments/products` 응답 3종→4종 변경** (`credits`→`points`+`bonusRate`+`pricePerPoint`) — web 충전 패키지 UI 가 4종을 받게 됨 → **web 핸드오프 1건** (별도 sprint — `docs/api-contract.md` 정본 동기화 완료). `feature/cc2a-charge-credit-wiring` → develop 로컬 머지(remote push 대기). 잔여: 선물(T4)/환불(T7) = CC-2b.
 
 ---
 
