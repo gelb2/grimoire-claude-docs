@@ -73,7 +73,7 @@
 - 트랙 A (크레딧 코어, 순차): CC-1 적립 비결제 연동(가입·첫작품·관리자·테마) → CC-2a 충전 연동+트랜잭션 패턴 → CC-2b 선물·환불 연동 → CC-3 이월 안전망+이중출처+원장 → CC-4 V Phase 마이그레이션 → CC-5 PAY-P1-4 Polar 구독
 - 트랙 B (결제 하드닝, 독립 병렬): PAY-S2 다중 부분환불 한도 / PAY-S3 Circuit Breaker admin UI / PAY-S5~7 후순위
 - 차단: PAY-P1-2 결제알림 Email+SMS (절대규정 0-1 + cost-accountant + EMAIL-P1-1 인증)
-- **다음 세션 진입 = PAY-S1(로컬 DB 동기화) + CC-1(적립 비결제 연동).** CC-4(V Phase)는 반드시 CC-1·2a·2b·3 이후.
+- **다음 세션 진입 = PAY-S1(로컬 DB 동기화) + CC-1(적립 비결제 연동).** 상세 실행 계획(writing-plans, PAY-S1 9 + CC-1 25 sub-task) = `.claude/state/sprint-cc1-pay-s1-plan-draft.md`. CC-4(V Phase)는 반드시 CC-1·2a·2b·3 이후.
 - ※ V Phase 마이그레이션 자체 잔여 결함: 검증 기준 `credit_ledgers row=10`이 (c-2) 구독 풀 행 미반영 / dev plan 분포 미측정 / (d) ×610 휴리스틱 → CC-4에서 해소.
 
 ## 2. git 상태 (2026-05-18 갱신)
