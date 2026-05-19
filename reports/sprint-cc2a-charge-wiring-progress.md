@@ -48,10 +48,11 @@ CC-1 커밋(`3e9bd3b`) 실측: `auth.usecase`/`work-management.usecase`는 `gran
 
 | # | sub-task | 상태 | 결과 |
 |---|---|---|---|
-| C4a | 충전 success 분기 교체 | ✅ | `completePaymentAtomically` → `completePaymentWithPoints` |
-| C4b | `balanceBefore`/`auditLog` 디노미 정합 | ✅ | pt 단위 + `settledDeficit`/`chargedPoints` 메타 |
-| C4c | `payment.usecase.spec.ts` 갱신 | ✅ | `completePaymentWithPoints` mock 검증 + 멱등성 회귀 |
+| C4a | 충전 success 분기 교체 | ✅ | `payment.usecase` `completePaymentAtomically` → `completePaymentWithPoints` |
+| C4b | `balanceBefore`/`auditLog` 디노미 정합 | ✅ | `pointsCharged` 베이스 + `settledDeficit`/`chargedPoints`/`totalPoints` 메타 |
+| C4c | `payment.usecase.spec.ts` 갱신 | ✅ | `completePaymentWithPoints` mock 검증 + 멱등성 회귀 보존 |
 | C4d | C-6 해소 단위 검증 | ✅ | 통합 spec C7d로 통합 검증 |
+| C4e | **reconciliation 보완** (S0 grep 발견 — 추가) | ✅ | `payment-reconciliation.job` `handleBoost`(webhook 누락 자동 보정)도 구 `completePaymentAtomically` 호출 중이었음. webhook 누락 보정은 충전 success 와 동일 충전 적립 경로 → `completePaymentWithPoints` 재배선. **application 레이어 `completePaymentAtomically` 실 호출 0건** 달성 (별도 커밋 `6107d0a`) |
 
 ---
 
@@ -95,7 +96,7 @@ CC-1 커밋(`3e9bd3b`) 실측: `auth.usecase`/`work-management.usecase`는 `gran
 - **Gate 1 (빌드)**: ✅ `npm run build` 무에러.
 - **Gate 2 (테스트)**: ✅ jest 1012 it 전체 PASS + 커버리지 60.37% ≥60%. 통합 spec C7 9 it PASS.
 - **Gate 3 (문서/sensor)**: ✅ shared-contracts §30 + TECH_STATUS + data-model + api-contract(4종) 갱신, drift/관련 sensor silent (atomicity WARN = CC-1 stale, 회귀 아님).
-- **CRITICAL-2 충전 해소 증명**: ✅ `grep "completePaymentWithPoints" src/application/payment` 호출처 1건(`payment.usecase.ts`) + 구 `completePaymentAtomically` 충전 success 분기 호출 0건 + 통합 spec C7b PASS (RED 재현: 구 경로로 되돌리면 8건 FAIL 실증).
+- **CRITICAL-2 충전 해소 증명**: ✅ `grep "\.completePaymentWithPoints(" src/application` 호출처 **2건**(`payment.usecase.ts` webhook success + `payment-reconciliation.job.ts` 누락 보정) + 구 `completePaymentAtomically` application 레이어 실 호출 **0건** + 통합 spec C7b PASS (RED 재현: 구 경로로 되돌리면 8건 FAIL 실증). 충전 적립 전 경로(webhook + 누락 보정) 신 시스템 이행 완료.
 - **C-6 해소 증명**: ✅ 통합 spec C7d PASS — deficit 10,000pt 작가 충전 → deficit_settle row + `deficitPoints=0` + `isChatBlocked=false`.
 
 ## CC-2b 이월 (CC-2a 범위 외)
@@ -107,5 +108,6 @@ CC-1 커밋(`3e9bd3b`) 실측: `auth.usecase`/`work-management.usecase`는 `gran
 ## git
 
 - 브랜치: `feature/cc2a-charge-credit-wiring` → `develop` `--no-ff` 로컬 머지 (CC-1 패턴).
-- server 레포 커밋 `d92fb97` (20 files, +1308/-169), 머지 커밋 `93b77cb`.
+- server 레포 커밋: `d92fb97`(CC-2a 본체, 20 files +1308/-169) + `6107d0a`(reconciliation 보완, 2 files +50/-25). 머지 `93b77cb` + `c444f44`.
+- 루트 레포 커밋 `c003ee3` — shared-contracts §30 + SYNC_STATUS + plan/progress 박제.
 - remote push 0건 — 메인이 qa 검증 후 일괄 처리.
