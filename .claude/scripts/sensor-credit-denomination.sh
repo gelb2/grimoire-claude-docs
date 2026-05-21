@@ -5,7 +5,7 @@
 # 검증 대상:
 #   1. credit-point.ts 디노미네이션 상수 CREDIT_TO_POINT=1000
 #   2. schema.prisma Author 4 필드 (pointsFree/pointsSubscription/pointsGift/pointsCharged)
-#   3. schema.prisma Author.credits [DEPRECATED] 표기 (즉시 DROP 안 함)
+#   3. schema.prisma Author.credits 부재 박제 (CC-4 Phase 3 — 2026-05-21 — DROP COLUMN 완료)
 #   4. schema.prisma Author.deficitPoints 컬럼
 #   5. migration.sql credits×1000 → points_charged 데이터 마이그레이션
 #   6. AnalysisReport.creditsCharged default 2440 (디노미 정정)
@@ -54,13 +54,15 @@ else
   FAIL=$((FAIL + 1))
 fi
 
-# 3. credits [DEPRECATED]
-if grep -qE 'DEPRECATED.*크레딧 개편|credits.*Int.*@default' "$SCHEMA" 2>/dev/null \
-  && grep -qE 'DEPRECATED' "$SCHEMA" 2>/dev/null; then
-  echo "  [PASS] schema.prisma Author.credits [DEPRECATED] 표기 (즉시 DROP 안 함)"
+# 3. CC-4 Phase 3 (2026-05-21) — Author.credits 컬럼 DROP 정합 박제
+#    `model Author { ... }` 본문(첫 `model Author {` 부터 첫 `}` 직전까지) 안에 `credits Int` 패턴 부재 검증.
+#    awk 로 model Author 블록만 추출 후 grep — RefundLog.credits / Payment(구) 등 다른 모델 영향 회피.
+AUTHOR_BLOCK=$(awk '/^model Author \{/{p=1} p; /^\}/{if(p){p=0; exit}}' "$SCHEMA" 2>/dev/null)
+if ! echo "$AUTHOR_BLOCK" | grep -qE '^[[:space:]]+credits[[:space:]]+Int'; then
+  echo "  [PASS] schema.prisma model Author 본문에 credits 필드 부재 박제 (CC-4 Phase 3 DROP COLUMN 완료)"
   PASS=$((PASS + 1))
 else
-  echo "  [FAIL] Author.credits DEPRECATED 표기 누락 — 롤백 안전망 부재"
+  echo "  [FAIL] model Author 안 credits 컬럼 잔존 — CC-4 Phase 3 마이그레이션 미적용 또는 schema.prisma 미갱신"
   FAIL=$((FAIL + 1))
 fi
 
