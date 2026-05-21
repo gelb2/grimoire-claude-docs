@@ -122,8 +122,7 @@ membership_plans tier 분포(참고): free=11, sum_pool=0  ((c) INSERT 전 작�
 
 ## 3. 범위 외 (미착수 — 명시)
 
-- **P7~P9 (dev/prod 마이그레이션)**: 본 작업 범위 밖. Azure firewall 개방 + 사용자 키워드
-  게이트 필요한 별도 단계. dev/prod DB 미접촉 — 추정 0건.
+- ~~**P7~P9 (dev/prod 마이그레이션)**~~ → **P7 (dev) 2026-05-21 완료** (§6 본문). **P8/P9 (prod)** 별도 키워드 게이트 (`크레딧개편 prod migration 진행`) 유지.
 - **CC-1 (S0/T1~T8/통합 spec)**: 별도 sprint. PAY-S1 로컬 동기화 완료가 그 DB 전제.
 
 ## 4. 코드 변경 점검
@@ -136,6 +135,104 @@ membership_plans tier 분포(참고): free=11, sum_pool=0  ((c) INSERT 전 작�
 
 - 2026-05-19: PAY-S1 P1~P6 (로컬 localhost:5432 한정) 실행 완료. 미적용 5건 `migrate deploy`
   순차 적용 + 데이터 마이그레이션 검증 PASS(§3-2-A 공식) + 부팅 smoke PASS.
+- 2026-05-21: **PAY-S1 P7 + CC-4 V Phase dev apply** (§6 본문). dev DB(`grimoire-db-dev.postgres.database.azure.com`)에 `20260517_credit_overhaul_i_phase` 1건 `migrate deploy` 적용 + 검증 SQL 4건 PASS + smoke 200. firewall rule `tmp-claude-20260521T053404Z` 추가→정리 1묶음.
+
+---
+
+## 6. PAY-S1 P7 + CC-4 V Phase — dev DB 마이그레이션 적용 (2026-05-21)
+
+> 사용자 명시 (5/20): "너 애저 권한 다 있잖아" → dev 마이그레이션 자율 진행.
+> prod 영역(P8/P9)은 별도 키워드 게이트 (`크레딧개편 prod migration 진행`) 유지.
+> 인프라 agent §2 `dev migration apply` 영역 + grimoire-server CLAUDE.md MIGRATION.md 정합.
+
+### P7-1 — 사전 환경 박제 ✅
+
+- dev DB host: `grimoire-db-dev.postgres.database.azure.com:5432` / DB `grimoire` (containerapp secret `database-url` 추출)
+- 본인 IP: `221.150.30.109`
+- firewall rule 추가: `tmp-claude-20260521T053404Z` (start=end=본인 IP)
+- 작업 종료 직후 정리 (1묶음) — 잔존 `tmp-*` rule 0건 확인
+
+### P7-2 — 사전 스냅샷 ✅
+
+| 메트릭 | 값 |
+|---|---|
+| `authors` 행 수 | 12 |
+| `SUM(authors.credits)` | 100 |
+| `credits > 0` 작가 수 | 10 |
+| `plan` 분포 | free 8 / pro 1 / premium 3 |
+| `analysis_reports.credits_charged` 분포 | `3` 값 2건만 (4 또는 기타 0건) |
+
+### P7-3 — `prisma migrate status` 사전 ✅
+
+```
+33 migrations found in prisma/migrations
+Following migration have not yet been applied:
+20260517_credit_overhaul_i_phase
+```
+
+- 미적용 **1건**: `20260517_credit_overhaul_i_phase` (V Phase / I Phase 데이터 마이그레이션)
+
+### P7-4 — 백업 ✅
+
+- `pg_dump` → `/tmp/grimoire_backup/backup_pre_devmigrate_20260520.sql`
+- 크기: **14,640,426 byte** (>0)
+- 헤더: `PostgreSQL database dump` / `Dumped from database version 16.13` 정합
+- 롤백 명령(필요 시): `psql "$DATABASE_URL" -f /tmp/grimoire_backup/backup_pre_devmigrate_20260520.sql`
+
+### P7-5 — `prisma migrate deploy` ✅
+
+```
+Applying migration `20260517_credit_overhaul_i_phase`
+
+The following migration(s) have been applied:
+  └─ 20260517_credit_overhaul_i_phase/
+    └─ migration.sql
+
+All migrations have been successfully applied.
+```
+
+- 인터랙티브 입력 / 리셋 요구 0건 (deploy 비대화식 정합).
+
+### P7-6 — `prisma migrate status` 재확인 ✅
+
+```
+33 migrations found in prisma/migrations
+Database schema is up to date!
+```
+
+- 미적용 0건.
+
+### P7-7 — 데이터 마이그레이션 [B] 검증 SQL 4건 ✅
+
+| ID | SQL | 결과 | 기대 | 판정 |
+|---|---|---|---|---|
+| V1 | `SELECT SUM(points_charged) FROM authors` | **100,000** | `SUM(credits)*1000` = 100×1000 = 100,000 | PASS |
+| V2 | `SELECT COUNT(*) FROM credit_ledgers` | **14** | (credits>0 작가 10) + (pro 1 + premium 3) = 14 (정밀진단 §3-2-A 정정 공식) | PASS |
+| V2 분해 | `source='charged'` 10 / `source='subscription'` 4 | 10 / 4 | 정합 | PASS |
+| V3 | `SELECT plan, COUNT(*) FROM authors GROUP BY plan` | free:8 / pro:1 / premium:3 | 사전 스냅샷 정합 (변경 없음) | PASS |
+| V4 | `SELECT DISTINCT credits_charged, COUNT(*) FROM analysis_reports GROUP BY credits_charged` | **1830:2** | 사전 3:2 → 마이그레이션 SQL `WHERE credits_charged = 3` 분기로 1830 환산 (CC-4 ×610 dead code 판정: **4·3 외 값 0건 — ×610 분기 실 row 변환 0건 확정**) | PASS |
+| 추가 V5 | `SUM(authors.points_subscription)` / `SUM(membership_plans.pool_balance)` | **667,500** / **667,500** | 1×93,000 + 3×191,500 = 667,500 (캐시-풀 정합) | PASS |
+| 추가 V6 | `COUNT(membership_plans)` / tier 분포 | 12 / free:8 + pro:1 + premium:3 | 전 작가 1건 + Author.plan == MembershipPlan.tier 1:1 정합 | PASS |
+
+**CC-4 입력값 박제**:
+- pro 1명 / premium 3명 → 구독 풀 활성 ledger 4건 (`source='subscription'` + `expires_at` 익월 1일)
+- `analysis_reports.credits_charged` 실 데이터에 `4` 또는 기타 외값 0건 → ×610 분기 dead code 확정 (CC-4 코드 제거 가능).
+
+### P7-8 — Smoke 검증 ✅
+
+- `curl https://dev-api.grimoire-book.com/api/health` → **HTTP 200** / `{"status":"ok","timestamp":"2026-05-21T05:45:08.903Z"}` (cold start 25s — dev 일반 패턴, 마이그레이션 영향 X)
+- dev container logs (`az containerapp logs show --tail 200`) — `credit_ledgers` / `membership_plans` / `webhook_retry_queues` / `relation .* does not exist` 관련 런타임 에러 **0건**
+- 컨테이너 재시작 불요 (코드 push 0건 / 신 스키마는 prisma client 차기 query 시점 즉시 접근 가능).
+
+### P7-9 — Cleanup ✅
+
+- firewall rule `tmp-claude-20260521T053404Z` 제거 완료
+- `az postgres flexible-server firewall-rule list --query "[?starts_with(name, 'tmp-')]"` → `[]` (orphan 0건)
+
+### P7 종합 게이트
+
+- **9 단계 전건 PASS** — 미적용 카운트 1 → 0 / 검증 SQL 6건(V1~V6) PASS / smoke 200 / firewall cleanup 정합.
+- **prod 영역(P8/P9) 미진입** — 별도 키워드 게이트 (`크레딧개편 prod migration 진행`) + 24h dev 안정성 박제 후 게이트.
 
 ---
 
