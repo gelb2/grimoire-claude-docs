@@ -257,3 +257,73 @@ All migrations have been successfully applied.
 **Phase 2 완료 선언**: `Payment.credits → Payment.points` 물리 rename + 코드 일괄 정합 + RefundLog 案 Y 보존 + 의미 박제 강화 = 컬럼 정합 100% 달성. 신규 개발자 혼선 위험 해소.
 
 **Phase 3 진입 조건**: Phase 2 머지 + 운영 박제 ≥1 sprint 후 별도 sprint 착수 직전 상세화.
+
+---
+
+## 11. 운영 배포 박제 (2026-05-21 grimoire-infrastructure agent)
+
+사용자 명시 키워드 게이트 통과 ("크레딧개편 Phase 2 prod migration + 배포 진행") 후 5단계 1 묶음 진행.
+
+### 11-1. push + main 머지
+
+| 작업 | 결과 |
+|---|---|
+| server develop push | `e6ea9bf..f9f85b4` (pre-push docs drift → web 동기화 후 재푸시) |
+| web develop push | `dfa8e5c..07515b1` (data-model.md server → web cp + commit) |
+| root develop push | `9f4a8a2..c0066f2` |
+| server develop → main 머지 + push | `e6ea9bf..f9f85b4` (`merge: develop → main (CC-4 Phase 1+2)`) |
+
+### 11-2. prod 배포
+
+| 항목 | 값 |
+|---|---|
+| pg_dump backup | `/tmp/grimoire_backup/backup_pre_phase2_20260521.sql` (14.66 MB, head valid) |
+| 명령 | `SKIP_INTERACTIVE=1 bash scripts/deploy-prod.sh` (사용자 키워드 게이트 통과 후) |
+| 이전 revision | `grimoire-server-prod--0000103` (`prod-e6ea9bfa...`, Healthy) |
+| 신규 revision | `grimoire-server-prod--0000104` (`prod-f9f85b43c183b27556ce4292658fd9a42ba40ade`) |
+| 헬스 상태 | `RunningAtMaxScale` + `Healthy` (5단계 검증 통과 2/5에서 안정화) |
+| 배포 종료코드 | 0 |
+| 마이그레이션 자동 적용 | `RUN_MIGRATION=true` → boot 시 `prisma migrate deploy` → `20260521_payment_credits_rename_phase2` apply (`finished_at=2026-05-21 11:21:04+00`) |
+
+### 11-3. prod 사후 검증 5건
+
+| 검증 | 결과 |
+|---|---|
+| `information_schema.columns WHERE table_name='payments' AND column_name IN ('credits','points')` | `points` (1행) — `credits` 부재 |
+| `SELECT COUNT(*) FROM payments` | 4 (사전 백업 카운트와 일치, 데이터 보존) |
+| `SELECT COUNT(*) FROM payments WHERE points > 0` | 4 (사전 `WHERE credits > 0` 4와 일치, 값 보존) |
+| `information_schema.columns WHERE table_name='refund_logs' AND column_name IN ('credits','deficit_credits')` | `credits` + `deficit_credits` (案 Y 보존 확인) |
+| `prisma migrate status` | "Database schema is up to date!" (DB 34건 == 로컬 34건) |
+
+### 11-4. prod-api smoke
+
+| 엔드포인트 | HTTP | 시간 | 메모 |
+|---|---|---|---|
+| `GET /api/health` | 200 | 23.9s (cold-start) | `{"status":"ok","timestamp":"2026-05-21T11:30:34.073Z"}` |
+| `GET /api/payments/products` | 200 | 1.03s | 4종 응답, `points` 필드 정합 (`credit-starter:25000`, `credit-basic:41667`, `credit-popular:91667`, `credit-best:287500`) |
+| 컨테이너 로그 runtime error | 0건 | — | `RouterExplorer`/`RoutesResolver` 정상 매핑만, `error\|exception\|fatal` 0건 |
+
+### 11-5. dev 배포 (Step 6 진행)
+
+| 항목 | 값 |
+|---|---|
+| 이전 revision | `grimoire-server-dev--0000161` (`dev-85393b6...` 5/15) |
+| 신규 revision | `grimoire-server-dev--0000162` (`dev-c1f94abb1dd88d2d1240df426660ad4ca0c7f947`) |
+| 헬스 상태 | `RunningAtMaxScale` + `Healthy` |
+| 마이그레이션 자동 적용 | dev DB `20260521_payment_credits_rename_phase2` apply 정합 — `payments.points` 컬럼 + 4 rows / 4 nonzero 보존 |
+| `/api/health` 엔드포인트 | 200 OK |
+
+### 11-6. firewall cleanup
+
+| Server | tmp rule | 처리 |
+|---|---|---|
+| `grimoire-db-prod` | `tmp-deploy-20260521T111511` | 삭제 PASS (post-cleanup 0 orphans) |
+| `grimoire-db-dev` | `tmp-deploy-20260521T113458` | 삭제 PASS (post-cleanup 0 orphans) |
+
+### 11-7. 발견 사항
+
+- prod cold-start 24s — Container Apps ScaledToZero 정합 (7일 트래픽 0 정합)
+- prisma `34 migrations found` 보고 — 디렉토리 34개 (migration_lock.toml 제외), DB `_prisma_migrations` 34건, 정합 100%
+- Phase 2 마이그레이션 1건은 메타데이터 락만 — pg_dump 14.66MB 대비 < 1초 적용
+- 작가 본문 접촉 0건 / 애플리케이션 코드 변경 0건 (deploy ops 한정)
+- `RefundLog.credits`/`deficit_credits` 案 Y 보존 양 환경 박제 — Phase 3 의미 정합 작업 시점까지 안전
