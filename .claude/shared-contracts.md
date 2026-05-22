@@ -969,15 +969,24 @@ async execute(input): Promise<{
 
 ### 정책
 
+> **메서드 정합 (CC-2b 이후)**: `refundPaymentAtomically` 는 CC-2b(2026-05-20)에서 `refundPaymentWithPoints` 로 전면 재작성됨 (4 출처 환수 + 이중 외상 통합). 본 §17 의 구 `refundPaymentAtomically` 시그니처/처리 흐름은 §13(CreditLedger) + 본 절 PAY-S2 박제로 갱신. `credits`→`refundPt`, `actualDeducted`→`actualRefunded`, `deficitCredits`→`deficitIncurred`(반환), `proportionalCredits`→`proportionalPt` 로 어휘 이행됨.
+
 - **비율 계산 (트랜잭션 내부)**: `ratio = refundedAmount / payment.amount` (`prisma-payment.repository.ts`)
-- **비례 크레딧**: `proportionalCredits = isPartial ? Math.floor(credits * ratio) : credits`
+- **비례 포인트**: `proportionalPt = isPartial ? Math.floor(refundPt * ratio) : refundPt`
 - **반올림 정책**: `Math.floor` 고정 (사용자 우호 — 차감 ↓ 소수점 버림)
 - **isPartial 분기**: `ratio < 1.0` (전액 환불은 PAY-P1-1 회귀 보존)
 - **Payment.status 분기**: 부분 환불 시 `'partial_refunded'`, 전액 시 `'refunded'`
-- **Validation**:
-  - `refundedAmount <= 0` → `BadRequestException` (usecase)
+- **Validation** (전부 `$transaction` 내부 — Payment 조회 + authors FOR UPDATE 와 같은 tx):
+  - `refundedAmount <= 0` → throw (메서드 진입부)
   - `payment.amount <= 0` → throw (free 결제 환불 무의미)
-  - `refundedAmount > payment.amount` → throw (validation)
+  - **누적 한도 검증 (PAY-S2 / HIGH-1 — 2026-05-22)**: `tx.refundLog.aggregate({ where: { paymentId }, _sum: { amount } })` 로 이 paymentId 에 이미 박제된 RefundLog 환불 누적 합계 조회 → `priorRefundedAmount + refundedAmount > payment.amount` 시 throw(`환불 누적 한도 초과`). **구 단건 검사(`refundedAmount > payment.amount`)를 흡수** — 기존 환불 누적이 0이면 단건 검사와 동치. `tx` 핸들 + authors FOR UPDATE 직렬화로 race 0건.
+
+### 누적 한도 검증 (PAY-S2 — HIGH-1 depth-in-defense)
+
+- **결함 (HIGH-1)**: CC-2b 가 `refundPaymentAtomically`→`refundPaymentWithPoints` 재작성 시 누적 검증 미이식. `RefundLog` 는 `paymentId` 1:N(PAY-P2-1 다중 부분환불 호환 설계)이나 런타임 검증은 단건뿐 — payment.amount=10,000 → 1차 부분환불 6,000 통과 → 2차 6,000 도 `6000 > 10000` false 라 통과 → 누적 12,000 적자.
+- **설계-런타임 정합 명문화**: `RefundLog` paymentId 1:N 은 다중 부분환불 호환 설계, **단** 현 런타임 정식 지원은 1회 부분환불까지(webhook 경로는 `isPaymentAlreadyRefunded` 게이트가 `partial_refunded` 2회차 차단). PAY-S2 누적 검증은 게이트 우회 경로(reconciliation 수동 환수 / 향후 admin 다회 부분환불)가 도입돼도 **적자가 물리적으로 불가**하도록 하는 repository 메서드 자체 방어선(depth-in-defense).
+- **案 A 채택 (정책 결정)**: `isPaymentAlreadyRefunded`(payment.usecase) **현행 게이트 유지** — webhook 2회차 차단, 회귀 0. 다중 부분환불 정식 지원(게이트 완화)은 PAY-S2 범위 밖(별도 PAY-P2 확장 — Polar webhook 다중 부분환불 송신 동작 확인 + reconciliation 정합 필요).
+- **이중 방어**: ① payment.usecase `isPaymentAlreadyRefunded` 사전 게이트(webhook) ② `refundPaymentWithPoints` `$transaction` 내부 누적 검증(모든 경로 — webhook/manual/reconciliation).
 - **AuditLog action 4 매트릭스** (isPartial × deficitCredits):
   - `refund_normal` (전액 + 정상)
   - `refund_deficit` (전액 + deficit)
@@ -991,19 +1000,18 @@ async execute(input): Promise<{
 1. Polar webhook → `polar.adapter.verifyAndParseWebhook` → `NormalizedWebhookEvent { type:'order.refunded', amount, ... }`
 2. `payment.usecase.processWebhook` → `event.status === 'cancel'` 분기 → `refundPaymentUseCase.execute`
 3. `refundPaymentUseCase.execute` → `paymentRepo.refundPaymentAtomically` 호출
-4. `prisma-payment.repository.refundPaymentAtomically` $transaction:
-   - tx.payment.findUnique → amount 조회
-   - validation (refundedAmount > 0, payment.amount > 0, refundedAmount ≤ payment.amount)
-   - ratio = refundedAmount / payment.amount
-   - isPartial = ratio < 1.0
-   - proportionalCredits = isPartial ? Math.floor(credits * ratio) : credits
+4. `prisma-payment.repository.refundPaymentWithPoints` $transaction (CC-2b 재작성 — 4 출처 + 이중 외상):
+   - authors row FOR UPDATE — 동시 차감/환수 직렬화
+   - tx.payment.findUnique → amount/points/status 조회
+   - validation (refundedAmount > 0 메서드 진입부, payment.amount > 0)
+   - **PAY-S2 누적 한도 검증**: tx.refundLog.aggregate `_sum.amount` → `priorRefundedAmount + refundedAmount > payment.amount` 시 throw (단건 검사 흡수)
+   - ratio = refundedAmount / payment.amount / isPartial = ratio < 1.0
+   - proportionalPt = isPartial ? Math.floor(refundPt * ratio) : refundPt
    - tx.payment.update → status='partial_refunded'|'refunded'
-   - tx.author.findUnique → currentBalance 조회
-   - actualDeducted = Math.min(currentBalance, proportionalCredits)
-   - deficitCredits = Math.max(0, proportionalCredits - currentBalance)
-   - tx.author.update → credits decrement (actualDeducted > 0 시만)
-   - tx.creditLog.create → amount=-actualDeducted (대칭, `_partial` 접미사)
-   - tx.refundLog.create → amount=refundedAmount + credits=actualDeducted + deficitCredits
+   - `computeRefundLedgerEntries` → 4 출처 환수액(charged→gift→subscription→free) + 부족분
+   - 출처별 CAS UPDATE(`updateMany WHERE 컬럼>=환수액 decrement`) + `CreditLedger source=출처 type='spend'` row
+   - 부족분 → `Author.deficitPoints += deficitIncurred` + `CreditLedger type='deficit_incur'` row
+   - tx.refundLog.create → amount=refundedAmount + credits=totalRecovered + deficitCredits=deficitIncurred
 5. UseCase 반환 후 AuditLog 후행 (4 action 매트릭스 분기)
 
 ### 변경 시 동시 갱신 대상
@@ -1018,6 +1026,7 @@ async execute(input): Promise<{
 
 ### 변경 이력
 - 2026-05-05 #10_7 PAY-P2-1: 신설 — 부분 환불 비율 계산 sprint. 외부 API 신규 의존 0건 (Polar webhook 내부 amount 필드만 활용). RefundLog 호환성은 PAY-P1-1 박제 시점부터 이미 확보. 회귀: PAY-P1-1 전액 환불 spec 7건 모두 PASS (16/16 jest + 10/10 sensor + 10/10 regression-61). 정본: PAY-P2 마스터 플랜 §3.
+- 2026-05-22 PAY-S2 server: 다중 부분환불 누적 한도 검증 추가 (HIGH-1 해소). `refundPaymentWithPoints` `$transaction` 내부에 `tx.refundLog.aggregate _sum.amount` 로 기존 환불 누적 합계 조회 → `누적 + refundedAmount > payment.amount` 시 throw(`환불 누적 한도 초과`). 구 단건 검사(`refundedAmount > payment.amount`)를 누적 검증으로 흡수(병행 제거 — 누적 0이면 동치). 案 A 채택 — `isPaymentAlreadyRefunded` webhook 게이트 유지, 누적 검증은 depth-in-defense(게이트 우회 경로 적자 차단). 다중 부분환불 정식 지원은 범위 밖(PAY-P2 이월). CC-2b 재작성 시 미이식된 누적 검증 복구 + §17 구 `refundPaymentAtomically` 시그니처 stale 보정. spec +3 it(prisma-payment.repository.spec.ts `PAY-S2 — 누적 환불 한도 검증` describe) + 통합 spec FakeRepo 누적 검증 정합. jest 1094→1097 PASS / 커버리지 61.94% stmts. 마이그레이션 0건(기존 RefundLog 테이블 재활용). 정본: `reports/sprint-pay-s2-refund-cap-progress.md`.
 
 ---
 
@@ -1396,37 +1405,28 @@ if (payment.status === 'refunded' || payment.status === 'partial_refunded') {
 
 ### 시그니처 — CAS 패턴 (구멍-B 차단)
 
-```typescript
-// prisma-payment.repository.ts refundPaymentAtomically $transaction 내부
-const author = await tx.author.findUniqueOrThrow({
-  where: { id: authorId },
-  select: { credits: true },
-})
-const currentBalance = author.credits
-const actualDeducted = Math.min(currentBalance, proportionalCredits)
-const deficitCredits = Math.max(0, proportionalCredits - currentBalance)
+> **메서드 정합 (CC-2b/CC-4 이후)**: `refundPaymentAtomically`(구 `Author.credits` 단일 컬럼) 는 CC-2b 에서 `refundPaymentWithPoints` 로 재작성됨 — 4 출처(charged/gift/subscription/free) 컬럼별 raw query CAS. 구 단일 `Author.credits` 컬럼은 CC-4 Phase 3 에서 DROP. 아래 CAS 는 출처별 컬럼(`points_charged` 등) 단위로 실행됨.
 
-if (actualDeducted > 0) {
-  // CAS 패턴 — Postgres atomic check-and-set (race window 차단)
-  const updateResult = await tx.author.updateMany({
-    where: {
-      id: authorId,
-      credits: { gte: actualDeducted },
-    },
-    data: { credits: { decrement: actualDeducted } },
-  })
-  if (updateResult.count === 0) {
-    throw new Error(
-      `CAS_MISMATCH — race condition detected on author.credits (authorId=${authorId}, expected_min=${actualDeducted})`,
-    )
-  }
+```typescript
+// prisma-payment.repository.ts refundPaymentWithPoints $transaction 내부 (출처별 반복)
+const column = sourceColumnSnake(source) // points_charged | points_gift | ...
+const updateResult = await tx.$executeRawUnsafe(
+  `UPDATE authors SET ${column} = ${column} - $1 WHERE id = $2 AND ${column} >= $1`,
+  recovered,
+  authorId,
+)
+if (updateResult === 0) {
+  throw new Error(
+    `CAS_MISMATCH — race condition detected on author.${column} ...`,
+  )
 }
 ```
 
 ### 정책
 
-- **사전 게이트 (구멍-A)**: payment.status='refunded' OR 'partial_refunded' → skip (이미 환불 완료된 payment에 대한 재처리 방어 — 환불 후 재차감 0건 보장)
-- **CAS 패턴 (구멍-B)**: `updateMany WHERE credits >= actualDeducted` (Postgres atomic CAS) → 0 row 시 throw 'CAS_MISMATCH' → 호출자 retry 위임 (PAY-P2-2 DLQ)
+- **사전 게이트 (구멍-A)**: payment.status='refunded' OR 'partial_refunded' → skip (이미 환불 완료된 payment에 대한 재처리 방어 — 환불 후 재차감 0건 보장). 도메인 helper `isPaymentAlreadyRefunded` 위임 (§28 PaymentStatusMapping). **PAY-S2 案 A — 본 게이트 현행 유지** (다중 부분환불 정식 지원 = 별도 PAY-P2 확장).
+- **CAS 패턴 (구멍-B)**: 출처별 `UPDATE ... WHERE 컬럼 >= 환수액` (Postgres atomic CAS) → 0 row 시 throw 'CAS_MISMATCH' → 호출자 retry 위임 (PAY-P2-2 DLQ)
+- **누적 한도 검증 (PAY-S2 / HIGH-1 — 구멍-D 차단)**: `refundPaymentWithPoints` `$transaction` 내부 — `tx.refundLog.aggregate _sum.amount` 로 이 paymentId 환불 누적 합계 조회 → `priorRefundedAmount + refundedAmount > payment.amount` 시 throw. **게이트 우회 경로(reconciliation 수동 환수 / 향후 admin 다회 부분환불)가 도입돼도 누적 적자 물리적 불가** 보장 (depth-in-defense). 단건 검사 흡수 — 누적 0이면 동치. authors FOR UPDATE + 동일 `tx` 핸들 → race 0건. 정본: §17 PartialRefund 「누적 한도 검증」.
 - **격리 수준**: $transaction은 READ COMMITTED (Postgres 기본). CAS 패턴이 격리 부족분을 보강.
 - **재시도 위임**: CAS_MISMATCH throw → refund-payment.usecase 또는 payment.usecase catch → webhookEventRepo 'failed' + DLQ enqueue → WebhookRetryJob @Cron 5분 재처리 (정본: §18 WebhookDLQ)
 - **incident-log 박제 의무**: race condition 시도 차단 시 logger.warn `[PaymentRaceCondition] ...` 동반 (sensor-adversarial-pre-commit P20 정합)
@@ -1451,6 +1451,7 @@ if (actualDeducted > 0) {
 
 ### 변경 이력
 - 2026-05-09 #10_8 PAY-P3-A: 신설 — PAYMENT_AUDIT §1 구멍-A + 구멍-B 동시 차단. payment.status 사전 게이트 (refunded + partial_refunded) + refundPaymentAtomically CAS 패턴 (`findUniqueOrThrow + updateMany WHERE credits >= actualDeducted`). DB schema 변경 0건. PAY-P2-2 DLQ retry 패턴 정합. jest server 625 → 634 (+9 it). sensor 39 → 40 신설. eval regression 65 → 66 신설. 정본: `reports/sprint-pay-p3-a-race-condition-progress.md`.
+- 2026-05-22 PAY-S2 server: 구멍-D(다중 부분환불 누적 한도 미검증 — HIGH-1) 추가 차단. `refundPaymentWithPoints` `$transaction` 내부 `tx.refundLog.aggregate` 누적 검증 — 게이트 우회 경로(reconciliation 수동 환수 / admin 다회 부분환불)도 적자 물리적 불가. 案 A — `isPaymentAlreadyRefunded` webhook 게이트 현행 유지(구멍-A 방어선 보존). 구 `refundPaymentAtomically`/`Author.credits` 단일 컬럼 CAS 시그니처 stale 보정(CC-2b 4 출처 raw query CAS + CC-4 Phase 3 `Author.credits` DROP 반영). jest 1094→1097(+3 it). 마이그레이션 0건. 정본: `reports/sprint-pay-s2-refund-cap-progress.md` + §17 PartialRefund.
 
 ---
 
