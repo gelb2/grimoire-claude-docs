@@ -52,6 +52,8 @@
 | **작품 분석 (조회수/좋아요/구독)** | ✅ | ✅ | `/dashboard/analytics` | ✅ |
 | **AI 채팅 (세션/메시지/RAG)** | ✅ | ✅ | `/dashboard/chat` | ✅ |
 | **구독 플랜 조회** | ✅ | ✅ | `/dashboard/theme` 배너 | ✅ |
+| **구독 정기결제 (CC-5 — `POST /subscriptions/checkout`)** | ✅ | ❌ | 미구현 | ⚠️ server 구현 완료 (2026-05-22), web 연결 + Polar 상품 등록 대기 |
+| **멤버십 조회 (CC-5 — `GET /membership`)** | ✅ | ❌ | 미구현 | ⚠️ server 구현 완료 (2026-05-22), web 연결 대기 |
 | **테마 슬롯 관리** | ✅ | ✅ | `/dashboard/theme` 활성/보관 | ✅ |
 | **AI 테마 생성** | ✅ | ✅ | `/dashboard/theme` AI 생성 버튼 | ✅ |
 | Analysis (RAG 일관성 체크) — **분석 4 크레딧/회 (2026-04-27 인상)** | ✅ | ✅ | `/dashboard/analysis` | ✅ |
@@ -74,6 +76,8 @@
 > **크레딧 개편 I Phase (2026-05-17)**: server 측 디노미네이션 + 포인트 출처 4종 회계 + 채팅 4구간 사후 차감 + 구독 월 풀 코드 구현 완료 (`feature/credit-overhaul-i-phase`). schema.prisma 변경 + migration 파일 작성(어떤 DB에도 apply 0건). web UI 연결은 grimoire-web Generator 단계에서 진행 — 그 시점 본 표 갱신.
 >
 > **크레딧 개편 CC-2a (2026-05-20)**: server 측 충전 결제 적립 연동 — `payment.usecase` 충전 success 가 신 `CreditLedger` 원장으로 적립(`completePaymentWithPoints` 案 1 트랜잭션 통합). C-6 해소(충전 시 deficit 상계 → 채팅 차단 해제). **`GET /payments/products` 응답 3종→4종 변경** (`credits`→`points`+`bonusRate`+`pricePerPoint`) — web 충전 패키지 UI 가 4종을 받게 됨 → **web 핸드오프 1건** (별도 sprint — `docs/api-contract.md` 정본 동기화 완료). `feature/cc2a-charge-credit-wiring` → develop 로컬 머지(remote push 대기). 잔여: 선물(T4)/환불(T7) = CC-2b.
+>
+> **크레딧 개편 CC-5 (2026-05-22)**: server 측 Polar 구독 정기결제 연동 — PAY-P1-4 종결 + HIGH-1 案 B. **신규 엔드포인트 2개** (`POST /subscriptions/checkout` + `GET /membership` — `docs/api-contract.md` 정본 동기화 완료) → **web 핸드오프** (별도 web sprint — 구독 페이지 실연결: checkout 버튼 + "현재 플랜" 배지). graceful 설계 — env(`POLAR_PRODUCT_SUBSCRIPTION_*`) 미설정 시 checkout 만 503, 나머지 정상. tier 정본을 `MembershipPlan.tier` 로 이행(`Author.plan` deprecated). `feature/cc5-subscription-polar` → develop 로컬 머지(remote push 대기). 메인 후속: Polar 구독 상품 dev/prod 등록 + env 입력 / priceUsd cost-accountant 게이트.
 
 ---
 
