@@ -1988,6 +1988,10 @@ export interface MaskingResult {
 - sensor: `.claude/scripts/sensor-circuit-breaker-policy.sh` (10 검증)
 - eval: `eval/tasks/regression-71-circuit-breaker-policy.json` (12 criteria)
 - env 4건: `POLAR_CB_FAILURE_THRESHOLD` (기본 5) / `POLAR_CB_COOLDOWN_MS` (기본 30_000) / `POLAR_CB_HALF_OPEN_TRIAL` (기본 3) / `POLAR_CB_RESET_WINDOW_MS` (기본 60_000)
+- **HTTP admin (PAY-S3, 2026-05-23 신설)**: `grimoire-server/src/adapter/inbound/http/controller/admin.controller.ts` 3 endpoint — `GET /admin/circuit-breaker/state` (분당 60) / `POST /admin/circuit-breaker/reset` (분당 5) / `POST /admin/circuit-breaker/trip` (분당 5). 모두 `@UseGuards(JwtAuthGuard, AdminGuard)` 강제
+- DTO (PAY-S3): `grimoire-server/src/adapter/inbound/http/dto/circuit-breaker.dto.ts` — `CircuitBreakerStateResponseDto`(8 필드 + policy 4값) / `CircuitBreakerActionDto`(key·reason) / `CircuitBreakerActionResponseDto`(success·beforeState·afterState) + `CIRCUIT_BREAKER_KEYS` 화이트리스트 + `toCircuitBreakerStateResponse` 매핑
+- admin 영역 spec (PAY-S3): `admin.controller.spec.ts` 신 3 endpoint 7 케이스 + `admin.usecase.spec.ts` 신 3 메서드 4 it
+- web (PAY-S3): `grimoire-web/src/app/admin/tabs/components/CircuitBreakerPanel.tsx` (SettingsTab "결제 인프라" sub-section) + `CircuitBreakerPanel.test.tsx` 6 케이스. BFF catchall(`/api/admin/circuit-breaker/*`) 경유, 신 라우트 0
 
 ### 시그니처
 
@@ -2071,7 +2075,7 @@ export interface CircuitBreakerPort {
 
 호출점별 독립 상태 — 한 호출점 OPEN 시 다른 호출점 영향 0 강제.
 
-### AuditLog 4 action 박제 매트릭스
+### AuditLog 6 action 박제 매트릭스 (PAY-S3 확장)
 
 | action | 영역 | reason 매트릭스 |
 |---|---|---|
@@ -2079,6 +2083,8 @@ export interface CircuitBreakerPort {
 | `circuit_breaker.close` | HALF_OPEN→CLOSED, forceClose | `half_open_trial_succeeded` / `manual_force_close: <reason>` |
 | `circuit_breaker.half_open_trial` | OPEN→HALF_OPEN | `cooldown_elapsed` |
 | `circuit_breaker.reject` | OPEN 호출 차단, HALF_OPEN trial 초과 | `circuit_open` / `half_open_trial_exhausted` |
+| **`circuit_breaker.manual_trip`** (PAY-S3) | `admin.controller` POST /trip — 운영자 수동 차단 | operator_id(adminId) + circuitKey + reason + beforeState/afterState (§20 정합) — adapter `open`과 dual박제 (operator 행위 별도 강조) |
+| **`circuit_breaker.manual_reset`** (PAY-S3) | `admin.controller` POST /reset — 운영자 수동 복구 | operator_id(adminId) + circuitKey + reason + beforeState/afterState — adapter `close`와 dual박제 |
 
 ### 외부 의존 매트릭스 (사용자 5/10 정합 강제)
 
@@ -2102,10 +2108,12 @@ export interface CircuitBreakerPort {
 
 - 다중 인스턴스 환경 — in-memory 상태 분리 (Redis 별도 sprint)
 - 정책 변경 시 Container Apps 재시작 필요 (in-memory 0 초기화)
-- 관리자 UI (forceOpen/forceClose) — P3-I 별도 sprint 분리 (port 인터페이스만 본 sprint 박제)
+- ~~관리자 UI (forceOpen/forceClose)~~ — **PAY-S3 종료 (2026-05-23)** — port 위에 HTTP admin 3 endpoint + web `CircuitBreakerPanel`(SettingsTab) + AuditLog 신 2 action(`manual_trip`/`manual_reset`) 박제 완료
+- 호출 빈도 인벤토리 박제 (운영 모니터링 영역, 잔존)
 
 ### 변경 이력
 - 2026-05-15 #10_8 PAY-P3-H: 신설 — Polar SDK 호출 경계 가용성 차단 (PAY-P3-B 후속). Hystrix 3 상태 머신 자체 구현 + 사용자 5/15 결정 옵션 B 정합 (failureThreshold=5/cooldownMs=30_000/halfOpenTrial=3/resetWindowMs=60_000). 2 호출점 박제 (checkouts.create + checkouts.list, checkouts.get는 향후). AuditLog 4 action 박제 (open/close/half_open_trial/reject). env 4건. CircuitOpenError 분기 (ServiceUnavailableException 변환 + cron skip). 외부 의존 0건 + DB schema 0건 + dev migration 0건 강제. jest 711 → 735 PASS (+24 it). 정본: `circuit-breaker-state.ts` + `circuit-breaker.port.ts` + `in-memory-circuit-breaker.adapter.ts` + `ADR.md ADR-009`.
+- **2026-05-23 PAY-S3: 관리자 UI 박제 — `GET /admin/circuit-breaker/state` + `POST /reset` + `POST /trip` 3 endpoint + DTO 3종 + `CIRCUIT_BREAKER_KEYS` 화이트리스트 + `CircuitBreakerPanel` web 컴포넌트(SettingsTab "결제 인프라" sub-section) + AuditLog 신 2 action(`manual_trip`/`manual_reset`, dual박제 — adapter auto open/close와 병행). 마이그레이션 0건 + env 신설 0건 + 새 시각 정본 신설 0건 + 새 admin 탭 신설 0건. sensor-circuit-breaker-policy 10/10 회귀 0. server jest 1097 → 1108 PASS (+11 it, coverage statements 62.3%) + web vitest 220 → 226 PASS (+6 it). server `5f07305` develop + web `258f3ac`(merge) develop. ADR-009 §"잔존 영역" 4번째 항목("관리자 UI") 단일 닫힘.**
 
 ---
 
