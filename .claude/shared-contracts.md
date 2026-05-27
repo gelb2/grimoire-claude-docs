@@ -669,6 +669,9 @@ await this.auditLogService.log(
 
 ### 변경 이력
 - 2026-05-04 #10_7 PAY-P1-1: 신설 — Polar 환불 webhook 시 크레딧 환수 트랜잭션 + RefundLog + AdminAuditLog. 적자 위험 차단(현재 webhook 'cancel'은 status='refunded' 마킹만, 크레딧 환수 부재). PAY-P0-2 'system_reconciliation' 패턴 정합 (operator='system_refund').
+- 2026-05-20 #크레딧개편 CC-2b 환불 신 경로 + 이중 외상 통합: grimoire-server — `PaymentRepositoryPort.refundPaymentWithPoints` 신설(CC-2a `completePaymentWithPoints` 대칭 案 R1). 단일 `$transaction` — authors FOR UPDATE + 비례 계산(PAY-P2-1) + 4 출처 환수(charged→gift→subscription→free 우선) + 부족분 `Author.deficitPoints` 가산 + `CreditLedger` `type='deficit_incur'` row(reason=`refund_deficit:..`) + `RefundLog` 박제. `$executeRawUnsafe` CAS race 차단 이식(PAY-P3-A). 도메인 헬퍼 `computeRefundLedgerEntries` + `REFUND_RECOVERY_ORDER` 추출. **이중 외상 통합**: 외상 정본을 `Author.deficitPoints` 단일화 — 다음 충전 시 CC-2a `completePaymentWithPoints` 가 자동 회수(구 시스템 `RefundLog.deficitCredits` 영구 외상 해소). `RefundLog.credits`/`deficitCredits` 컬럼 의미 재해석(pt 단위 + "이 환불 1건이 유발한 외상 pt 기여분") — 물리 rename 0건, CC-4 위임. **인터페이스 변경**: `refund-payment.usecase.execute` 입력 `credits→refundPt`, 반환 `{actualDeducted/deficitCredits/proportionalCredits→actualRefunded/deficitIncurred/proportionalPt}`. `RefundPaymentUseCase` 생성자에 `CreditLedgerPort` Optional 추가(beforeState 4 출처 디노미 정합). 구 `refundPaymentAtomically` `@deprecated` 보존(회귀 안전망 — CC-3/CC-4 후 제거). 정본: `reports/CREDIT_CORE_DIAGNOSIS.md` §1-C + `.claude/state/sprint-cc2b-gift-refund-wiring-plan-draft.md` §4-2/§5.
+- 2026-05-21 #크레딧개편 CC-4 Phase 1 구 메서드 제거: grimoire-server — `PaymentRepositoryPort.refundPaymentAtomically` + `completePaymentAtomically` 시그니처 + `PrismaPaymentRepository` 본문 완전 제거. 모든 충전·환불 경로는 `completePaymentWithPoints` / `refundPaymentWithPoints`(신 포인트 원장) 단일. PAY-P3-A CAS race 차단 + PAY-P2-1 부분 환불 비율 회귀 spec 은 신 메서드 describe 에 동등 박제 + `credit-rollover-source-ledger-integration.spec.ts` CC-4 P1 통합 describe 신설(admin·discovery 신·구 분열 해소 + ledger.sumSpendByAuthor 위임 박제). Phase 2(컬럼 rename) / Phase 3(`Author.credits` DROP / `CreditLog` 폐기) 별도 sprint. 정본: `.claude/state/sprint-cc4-postcleanup-plan-draft.md` §3-1/§3-2 P1d·P1e.
+- 2026-05-21 #크레딧개편 CC-4 Phase 2 Payment.credits → points 물리 rename + RefundLog 案 Y 보존: grimoire-server — ① `Payment.credits Int` → `Payment.points Int` 물리 rename (마이그레이션 `20260521_payment_credits_rename_phase2` — `ALTER TABLE "payments" RENAME COLUMN "credits" TO "points"`, Postgres native, 메타데이터 한정 락, 비파괴). Prisma schema + `PaymentRepositoryPort.PaymentRecord` + `create()` 입력 `credits→points` 정합. ② **RefundLog 案 Y 보존**: `RefundLog.credits` + `RefundLog.deficitCredits` 컬럼 DDL 변경 0건. 의미 박제 강화 (`schema.prisma:535-542` 주석 — `credits = 실 환수 pt(actualRefunded), Payment.points 와 단위 일관` / `deficitCredits = 이 환불 1건이 유발한 외상 pt 기여분(감사 추적용), 외상 잔액 정본은 Author.deficitPoints`). 보존 사유 = 명명 충돌 회피(Author.deficitPoints) + 회귀 범위 최소화(admin/audit 전용, HTTP 미노출). ③ 코드 일괄 rename 영향 — `payment.usecase.ts`(initiatePayment create / completePaymentWithPoints / refundPaymentUseCase.execute 호출 / processWebhook audit meta) / `payment-reconciliation.job.ts`(handleBoost / handleRefundMismatch audit meta `credits→points`) / `prisma-payment.repository.ts`(create 시그니처 + refundPaymentWithPoints 내부 `payment.points` select / 주석) / `refund-payment.usecase.ts`(JSDoc 1건) / `domain/model/config.ts`(주석 2줄) / spec 7 파일(`payment.usecase.spec`/`payment-charge-credit-integration.spec`/`credit-gift-refund-integration.spec`/`payment-reconciliation.job.spec`/`payment-cleanup.job.spec`/`webhook-retry.job.spec`/`prisma-payment.repository.spec`) PaymentRecord mock + tx.payment.findUnique mock 일괄 `credits→points`. ④ **응답 키 보존**: `processNormalizedWebhook` 반환 `{ processed, credits, deficitCredits? }` 키는 외부 호환성(payment.controller webhook 응답 + DLQ retry 결과) 위해 그대로 유지 — 내부 컬럼명만 변경. ⑤ HTTP 응답 영향 0 — `GET /payments/products` 응답 키는 이미 CC-2a 박제(`points`/`pricePerPoint`), `GET /payments/credits` 응답은 CC-3 박제(`bySource.charged`). jest 1063→1063 PASS (변동 0 — assertion 키만 변경, 신설 it 0). 커버리지 61.74%(stmts) / 63.33%(lines) — 게이트 ≥60% 충족. 빌드 + tsc 통과. 로컬 dev DB migration apply PASS — 사후 검증 SQL 4건 PASS(`payments.points` 컬럼 존재 / 구 `credits` 컬럼 0건 / row count 0 일치 / `refund_logs.credits`·`deficit_credits` 보존). cost-accountant/visual-canon-keeper 게이트 불요(신규 AI 0건, UI 영향 0건). **Payment.points 정합 종결 증명**: `grep "payment\.credits\|Payment\.credits" src --include="*.ts" --exclude="*.spec.ts"` = 주석 매치 2건만(rename 박제 이력 자체) — 코드 본문 호출 0건. Phase 3(`Author.credits` DROP + `CreditLog` 폐기 + `prisma-credit.repository` 잔존 메서드 제거 + `auth.controller:48`/`refund-payment.usecase:124-125`/`credit-migration.ts` 정리) 별도 sprint(≥1 sprint 운영 박제 후, Cursor 반면교사). HIGH-1 案 B = Case C 별도 sprint(사용자 결정 5/21). 정본: `.claude/state/sprint-cc4-phase2-rename-plan-draft.md` (案 Y RefundLog 보존 권고 채택).
 
 ---
 
@@ -966,15 +969,24 @@ async execute(input): Promise<{
 
 ### 정책
 
+> **메서드 정합 (CC-2b 이후)**: `refundPaymentAtomically` 는 CC-2b(2026-05-20)에서 `refundPaymentWithPoints` 로 전면 재작성됨 (4 출처 환수 + 이중 외상 통합). 본 §17 의 구 `refundPaymentAtomically` 시그니처/처리 흐름은 §13(CreditLedger) + 본 절 PAY-S2 박제로 갱신. `credits`→`refundPt`, `actualDeducted`→`actualRefunded`, `deficitCredits`→`deficitIncurred`(반환), `proportionalCredits`→`proportionalPt` 로 어휘 이행됨.
+
 - **비율 계산 (트랜잭션 내부)**: `ratio = refundedAmount / payment.amount` (`prisma-payment.repository.ts`)
-- **비례 크레딧**: `proportionalCredits = isPartial ? Math.floor(credits * ratio) : credits`
+- **비례 포인트**: `proportionalPt = isPartial ? Math.floor(refundPt * ratio) : refundPt`
 - **반올림 정책**: `Math.floor` 고정 (사용자 우호 — 차감 ↓ 소수점 버림)
 - **isPartial 분기**: `ratio < 1.0` (전액 환불은 PAY-P1-1 회귀 보존)
 - **Payment.status 분기**: 부분 환불 시 `'partial_refunded'`, 전액 시 `'refunded'`
-- **Validation**:
-  - `refundedAmount <= 0` → `BadRequestException` (usecase)
+- **Validation** (전부 `$transaction` 내부 — Payment 조회 + authors FOR UPDATE 와 같은 tx):
+  - `refundedAmount <= 0` → throw (메서드 진입부)
   - `payment.amount <= 0` → throw (free 결제 환불 무의미)
-  - `refundedAmount > payment.amount` → throw (validation)
+  - **누적 한도 검증 (PAY-S2 / HIGH-1 — 2026-05-22)**: `tx.refundLog.aggregate({ where: { paymentId }, _sum: { amount } })` 로 이 paymentId 에 이미 박제된 RefundLog 환불 누적 합계 조회 → `priorRefundedAmount + refundedAmount > payment.amount` 시 throw(`환불 누적 한도 초과`). **구 단건 검사(`refundedAmount > payment.amount`)를 흡수** — 기존 환불 누적이 0이면 단건 검사와 동치. `tx` 핸들 + authors FOR UPDATE 직렬화로 race 0건.
+
+### 누적 한도 검증 (PAY-S2 — HIGH-1 depth-in-defense)
+
+- **결함 (HIGH-1)**: CC-2b 가 `refundPaymentAtomically`→`refundPaymentWithPoints` 재작성 시 누적 검증 미이식. `RefundLog` 는 `paymentId` 1:N(PAY-P2-1 다중 부분환불 호환 설계)이나 런타임 검증은 단건뿐 — payment.amount=10,000 → 1차 부분환불 6,000 통과 → 2차 6,000 도 `6000 > 10000` false 라 통과 → 누적 12,000 적자.
+- **설계-런타임 정합 명문화**: `RefundLog` paymentId 1:N 은 다중 부분환불 호환 설계, **단** 현 런타임 정식 지원은 1회 부분환불까지(webhook 경로는 `isPaymentAlreadyRefunded` 게이트가 `partial_refunded` 2회차 차단). PAY-S2 누적 검증은 게이트 우회 경로(reconciliation 수동 환수 / 향후 admin 다회 부분환불)가 도입돼도 **적자가 물리적으로 불가**하도록 하는 repository 메서드 자체 방어선(depth-in-defense).
+- **案 A 채택 (정책 결정)**: `isPaymentAlreadyRefunded`(payment.usecase) **현행 게이트 유지** — webhook 2회차 차단, 회귀 0. 다중 부분환불 정식 지원(게이트 완화)은 PAY-S2 범위 밖(별도 PAY-P2 확장 — Polar webhook 다중 부분환불 송신 동작 확인 + reconciliation 정합 필요).
+- **이중 방어**: ① payment.usecase `isPaymentAlreadyRefunded` 사전 게이트(webhook) ② `refundPaymentWithPoints` `$transaction` 내부 누적 검증(모든 경로 — webhook/manual/reconciliation).
 - **AuditLog action 4 매트릭스** (isPartial × deficitCredits):
   - `refund_normal` (전액 + 정상)
   - `refund_deficit` (전액 + deficit)
@@ -988,19 +1000,18 @@ async execute(input): Promise<{
 1. Polar webhook → `polar.adapter.verifyAndParseWebhook` → `NormalizedWebhookEvent { type:'order.refunded', amount, ... }`
 2. `payment.usecase.processWebhook` → `event.status === 'cancel'` 분기 → `refundPaymentUseCase.execute`
 3. `refundPaymentUseCase.execute` → `paymentRepo.refundPaymentAtomically` 호출
-4. `prisma-payment.repository.refundPaymentAtomically` $transaction:
-   - tx.payment.findUnique → amount 조회
-   - validation (refundedAmount > 0, payment.amount > 0, refundedAmount ≤ payment.amount)
-   - ratio = refundedAmount / payment.amount
-   - isPartial = ratio < 1.0
-   - proportionalCredits = isPartial ? Math.floor(credits * ratio) : credits
+4. `prisma-payment.repository.refundPaymentWithPoints` $transaction (CC-2b 재작성 — 4 출처 + 이중 외상):
+   - authors row FOR UPDATE — 동시 차감/환수 직렬화
+   - tx.payment.findUnique → amount/points/status 조회
+   - validation (refundedAmount > 0 메서드 진입부, payment.amount > 0)
+   - **PAY-S2 누적 한도 검증**: tx.refundLog.aggregate `_sum.amount` → `priorRefundedAmount + refundedAmount > payment.amount` 시 throw (단건 검사 흡수)
+   - ratio = refundedAmount / payment.amount / isPartial = ratio < 1.0
+   - proportionalPt = isPartial ? Math.floor(refundPt * ratio) : refundPt
    - tx.payment.update → status='partial_refunded'|'refunded'
-   - tx.author.findUnique → currentBalance 조회
-   - actualDeducted = Math.min(currentBalance, proportionalCredits)
-   - deficitCredits = Math.max(0, proportionalCredits - currentBalance)
-   - tx.author.update → credits decrement (actualDeducted > 0 시만)
-   - tx.creditLog.create → amount=-actualDeducted (대칭, `_partial` 접미사)
-   - tx.refundLog.create → amount=refundedAmount + credits=actualDeducted + deficitCredits
+   - `computeRefundLedgerEntries` → 4 출처 환수액(charged→gift→subscription→free) + 부족분
+   - 출처별 CAS UPDATE(`updateMany WHERE 컬럼>=환수액 decrement`) + `CreditLedger source=출처 type='spend'` row
+   - 부족분 → `Author.deficitPoints += deficitIncurred` + `CreditLedger type='deficit_incur'` row
+   - tx.refundLog.create → amount=refundedAmount + credits=totalRecovered + deficitCredits=deficitIncurred
 5. UseCase 반환 후 AuditLog 후행 (4 action 매트릭스 분기)
 
 ### 변경 시 동시 갱신 대상
@@ -1015,6 +1026,7 @@ async execute(input): Promise<{
 
 ### 변경 이력
 - 2026-05-05 #10_7 PAY-P2-1: 신설 — 부분 환불 비율 계산 sprint. 외부 API 신규 의존 0건 (Polar webhook 내부 amount 필드만 활용). RefundLog 호환성은 PAY-P1-1 박제 시점부터 이미 확보. 회귀: PAY-P1-1 전액 환불 spec 7건 모두 PASS (16/16 jest + 10/10 sensor + 10/10 regression-61). 정본: PAY-P2 마스터 플랜 §3.
+- 2026-05-22 PAY-S2 server: 다중 부분환불 누적 한도 검증 추가 (HIGH-1 해소). `refundPaymentWithPoints` `$transaction` 내부에 `tx.refundLog.aggregate _sum.amount` 로 기존 환불 누적 합계 조회 → `누적 + refundedAmount > payment.amount` 시 throw(`환불 누적 한도 초과`). 구 단건 검사(`refundedAmount > payment.amount`)를 누적 검증으로 흡수(병행 제거 — 누적 0이면 동치). 案 A 채택 — `isPaymentAlreadyRefunded` webhook 게이트 유지, 누적 검증은 depth-in-defense(게이트 우회 경로 적자 차단). 다중 부분환불 정식 지원은 범위 밖(PAY-P2 이월). CC-2b 재작성 시 미이식된 누적 검증 복구 + §17 구 `refundPaymentAtomically` 시그니처 stale 보정. spec +3 it(prisma-payment.repository.spec.ts `PAY-S2 — 누적 환불 한도 검증` describe) + 통합 spec FakeRepo 누적 검증 정합. jest 1094→1097 PASS / 커버리지 61.94% stmts. 마이그레이션 0건(기존 RefundLog 테이블 재활용). 정본: `reports/sprint-pay-s2-refund-cap-progress.md`.
 
 ---
 
@@ -1393,37 +1405,28 @@ if (payment.status === 'refunded' || payment.status === 'partial_refunded') {
 
 ### 시그니처 — CAS 패턴 (구멍-B 차단)
 
-```typescript
-// prisma-payment.repository.ts refundPaymentAtomically $transaction 내부
-const author = await tx.author.findUniqueOrThrow({
-  where: { id: authorId },
-  select: { credits: true },
-})
-const currentBalance = author.credits
-const actualDeducted = Math.min(currentBalance, proportionalCredits)
-const deficitCredits = Math.max(0, proportionalCredits - currentBalance)
+> **메서드 정합 (CC-2b/CC-4 이후)**: `refundPaymentAtomically`(구 `Author.credits` 단일 컬럼) 는 CC-2b 에서 `refundPaymentWithPoints` 로 재작성됨 — 4 출처(charged/gift/subscription/free) 컬럼별 raw query CAS. 구 단일 `Author.credits` 컬럼은 CC-4 Phase 3 에서 DROP. 아래 CAS 는 출처별 컬럼(`points_charged` 등) 단위로 실행됨.
 
-if (actualDeducted > 0) {
-  // CAS 패턴 — Postgres atomic check-and-set (race window 차단)
-  const updateResult = await tx.author.updateMany({
-    where: {
-      id: authorId,
-      credits: { gte: actualDeducted },
-    },
-    data: { credits: { decrement: actualDeducted } },
-  })
-  if (updateResult.count === 0) {
-    throw new Error(
-      `CAS_MISMATCH — race condition detected on author.credits (authorId=${authorId}, expected_min=${actualDeducted})`,
-    )
-  }
+```typescript
+// prisma-payment.repository.ts refundPaymentWithPoints $transaction 내부 (출처별 반복)
+const column = sourceColumnSnake(source) // points_charged | points_gift | ...
+const updateResult = await tx.$executeRawUnsafe(
+  `UPDATE authors SET ${column} = ${column} - $1 WHERE id = $2 AND ${column} >= $1`,
+  recovered,
+  authorId,
+)
+if (updateResult === 0) {
+  throw new Error(
+    `CAS_MISMATCH — race condition detected on author.${column} ...`,
+  )
 }
 ```
 
 ### 정책
 
-- **사전 게이트 (구멍-A)**: payment.status='refunded' OR 'partial_refunded' → skip (이미 환불 완료된 payment에 대한 재처리 방어 — 환불 후 재차감 0건 보장)
-- **CAS 패턴 (구멍-B)**: `updateMany WHERE credits >= actualDeducted` (Postgres atomic CAS) → 0 row 시 throw 'CAS_MISMATCH' → 호출자 retry 위임 (PAY-P2-2 DLQ)
+- **사전 게이트 (구멍-A)**: payment.status='refunded' OR 'partial_refunded' → skip (이미 환불 완료된 payment에 대한 재처리 방어 — 환불 후 재차감 0건 보장). 도메인 helper `isPaymentAlreadyRefunded` 위임 (§28 PaymentStatusMapping). **PAY-S2 案 A — 본 게이트 현행 유지** (다중 부분환불 정식 지원 = 별도 PAY-P2 확장).
+- **CAS 패턴 (구멍-B)**: 출처별 `UPDATE ... WHERE 컬럼 >= 환수액` (Postgres atomic CAS) → 0 row 시 throw 'CAS_MISMATCH' → 호출자 retry 위임 (PAY-P2-2 DLQ)
+- **누적 한도 검증 (PAY-S2 / HIGH-1 — 구멍-D 차단)**: `refundPaymentWithPoints` `$transaction` 내부 — `tx.refundLog.aggregate _sum.amount` 로 이 paymentId 환불 누적 합계 조회 → `priorRefundedAmount + refundedAmount > payment.amount` 시 throw. **게이트 우회 경로(reconciliation 수동 환수 / 향후 admin 다회 부분환불)가 도입돼도 누적 적자 물리적 불가** 보장 (depth-in-defense). 단건 검사 흡수 — 누적 0이면 동치. authors FOR UPDATE + 동일 `tx` 핸들 → race 0건. 정본: §17 PartialRefund 「누적 한도 검증」.
 - **격리 수준**: $transaction은 READ COMMITTED (Postgres 기본). CAS 패턴이 격리 부족분을 보강.
 - **재시도 위임**: CAS_MISMATCH throw → refund-payment.usecase 또는 payment.usecase catch → webhookEventRepo 'failed' + DLQ enqueue → WebhookRetryJob @Cron 5분 재처리 (정본: §18 WebhookDLQ)
 - **incident-log 박제 의무**: race condition 시도 차단 시 logger.warn `[PaymentRaceCondition] ...` 동반 (sensor-adversarial-pre-commit P20 정합)
@@ -1448,6 +1451,7 @@ if (actualDeducted > 0) {
 
 ### 변경 이력
 - 2026-05-09 #10_8 PAY-P3-A: 신설 — PAYMENT_AUDIT §1 구멍-A + 구멍-B 동시 차단. payment.status 사전 게이트 (refunded + partial_refunded) + refundPaymentAtomically CAS 패턴 (`findUniqueOrThrow + updateMany WHERE credits >= actualDeducted`). DB schema 변경 0건. PAY-P2-2 DLQ retry 패턴 정합. jest server 625 → 634 (+9 it). sensor 39 → 40 신설. eval regression 65 → 66 신설. 정본: `reports/sprint-pay-p3-a-race-condition-progress.md`.
+- 2026-05-22 PAY-S2 server: 구멍-D(다중 부분환불 누적 한도 미검증 — HIGH-1) 추가 차단. `refundPaymentWithPoints` `$transaction` 내부 `tx.refundLog.aggregate` 누적 검증 — 게이트 우회 경로(reconciliation 수동 환수 / admin 다회 부분환불)도 적자 물리적 불가. 案 A — `isPaymentAlreadyRefunded` webhook 게이트 현행 유지(구멍-A 방어선 보존). 구 `refundPaymentAtomically`/`Author.credits` 단일 컬럼 CAS 시그니처 stale 보정(CC-2b 4 출처 raw query CAS + CC-4 Phase 3 `Author.credits` DROP 반영). jest 1094→1097(+3 it). 마이그레이션 0건. 정본: `reports/sprint-pay-s2-refund-cap-progress.md` + §17 PartialRefund.
 
 ---
 
@@ -1984,6 +1988,10 @@ export interface MaskingResult {
 - sensor: `.claude/scripts/sensor-circuit-breaker-policy.sh` (10 검증)
 - eval: `eval/tasks/regression-71-circuit-breaker-policy.json` (12 criteria)
 - env 4건: `POLAR_CB_FAILURE_THRESHOLD` (기본 5) / `POLAR_CB_COOLDOWN_MS` (기본 30_000) / `POLAR_CB_HALF_OPEN_TRIAL` (기본 3) / `POLAR_CB_RESET_WINDOW_MS` (기본 60_000)
+- **HTTP admin (PAY-S3, 2026-05-23 신설)**: `grimoire-server/src/adapter/inbound/http/controller/admin.controller.ts` 3 endpoint — `GET /admin/circuit-breaker/state` (분당 60) / `POST /admin/circuit-breaker/reset` (분당 5) / `POST /admin/circuit-breaker/trip` (분당 5). 모두 `@UseGuards(JwtAuthGuard, AdminGuard)` 강제
+- DTO (PAY-S3): `grimoire-server/src/adapter/inbound/http/dto/circuit-breaker.dto.ts` — `CircuitBreakerStateResponseDto`(8 필드 + policy 4값) / `CircuitBreakerActionDto`(key·reason) / `CircuitBreakerActionResponseDto`(success·beforeState·afterState) + `CIRCUIT_BREAKER_KEYS` 화이트리스트 + `toCircuitBreakerStateResponse` 매핑
+- admin 영역 spec (PAY-S3): `admin.controller.spec.ts` 신 3 endpoint 7 케이스 + `admin.usecase.spec.ts` 신 3 메서드 4 it
+- web (PAY-S3): `grimoire-web/src/app/admin/tabs/components/CircuitBreakerPanel.tsx` (SettingsTab "결제 인프라" sub-section) + `CircuitBreakerPanel.test.tsx` 6 케이스. BFF catchall(`/api/admin/circuit-breaker/*`) 경유, 신 라우트 0
 
 ### 시그니처
 
@@ -2067,7 +2075,7 @@ export interface CircuitBreakerPort {
 
 호출점별 독립 상태 — 한 호출점 OPEN 시 다른 호출점 영향 0 강제.
 
-### AuditLog 4 action 박제 매트릭스
+### AuditLog 6 action 박제 매트릭스 (PAY-S3 확장)
 
 | action | 영역 | reason 매트릭스 |
 |---|---|---|
@@ -2075,6 +2083,8 @@ export interface CircuitBreakerPort {
 | `circuit_breaker.close` | HALF_OPEN→CLOSED, forceClose | `half_open_trial_succeeded` / `manual_force_close: <reason>` |
 | `circuit_breaker.half_open_trial` | OPEN→HALF_OPEN | `cooldown_elapsed` |
 | `circuit_breaker.reject` | OPEN 호출 차단, HALF_OPEN trial 초과 | `circuit_open` / `half_open_trial_exhausted` |
+| **`circuit_breaker.manual_trip`** (PAY-S3) | `admin.controller` POST /trip — 운영자 수동 차단 | operator_id(adminId) + circuitKey + reason + beforeState/afterState (§20 정합) — adapter `open`과 dual박제 (operator 행위 별도 강조) |
+| **`circuit_breaker.manual_reset`** (PAY-S3) | `admin.controller` POST /reset — 운영자 수동 복구 | operator_id(adminId) + circuitKey + reason + beforeState/afterState — adapter `close`와 dual박제 |
 
 ### 외부 의존 매트릭스 (사용자 5/10 정합 강제)
 
@@ -2098,10 +2108,12 @@ export interface CircuitBreakerPort {
 
 - 다중 인스턴스 환경 — in-memory 상태 분리 (Redis 별도 sprint)
 - 정책 변경 시 Container Apps 재시작 필요 (in-memory 0 초기화)
-- 관리자 UI (forceOpen/forceClose) — P3-I 별도 sprint 분리 (port 인터페이스만 본 sprint 박제)
+- ~~관리자 UI (forceOpen/forceClose)~~ — **PAY-S3 종료 (2026-05-23)** — port 위에 HTTP admin 3 endpoint + web `CircuitBreakerPanel`(SettingsTab) + AuditLog 신 2 action(`manual_trip`/`manual_reset`) 박제 완료
+- 호출 빈도 인벤토리 박제 (운영 모니터링 영역, 잔존)
 
 ### 변경 이력
 - 2026-05-15 #10_8 PAY-P3-H: 신설 — Polar SDK 호출 경계 가용성 차단 (PAY-P3-B 후속). Hystrix 3 상태 머신 자체 구현 + 사용자 5/15 결정 옵션 B 정합 (failureThreshold=5/cooldownMs=30_000/halfOpenTrial=3/resetWindowMs=60_000). 2 호출점 박제 (checkouts.create + checkouts.list, checkouts.get는 향후). AuditLog 4 action 박제 (open/close/half_open_trial/reject). env 4건. CircuitOpenError 분기 (ServiceUnavailableException 변환 + cron skip). 외부 의존 0건 + DB schema 0건 + dev migration 0건 강제. jest 711 → 735 PASS (+24 it). 정본: `circuit-breaker-state.ts` + `circuit-breaker.port.ts` + `in-memory-circuit-breaker.adapter.ts` + `ADR.md ADR-009`.
+- **2026-05-23 PAY-S3: 관리자 UI 박제 — `GET /admin/circuit-breaker/state` + `POST /reset` + `POST /trip` 3 endpoint + DTO 3종 + `CIRCUIT_BREAKER_KEYS` 화이트리스트 + `CircuitBreakerPanel` web 컴포넌트(SettingsTab "결제 인프라" sub-section) + AuditLog 신 2 action(`manual_trip`/`manual_reset`, dual박제 — adapter auto open/close와 병행). 마이그레이션 0건 + env 신설 0건 + 새 시각 정본 신설 0건 + 새 admin 탭 신설 0건. sensor-circuit-breaker-policy 10/10 회귀 0. server jest 1097 → 1108 PASS (+11 it, coverage statements 62.3%) + web vitest 220 → 226 PASS (+6 it). server `5f07305` develop + web `258f3ac`(merge) develop. ADR-009 §"잔존 영역" 4번째 항목("관리자 UI") 단일 닫힘.**
 
 ---
 
@@ -2384,6 +2396,327 @@ cron 30일 hard delete 영역 영역 — 회계 row 영역 영역 영역 P2003 c
 ### 변경 이력
 - 2026-05-15 #10_8 USER-SOFT-DELETE: 신설 — Author soft delete + 본인 탈퇴 + 운영자 강제 삭제 + GDPR 익명화 + 30일 cron hard delete 정합 박제 (5번째 sprint, 사용자 5/15 verbatim "B + A 모두 진행" 정합). DB schema 1 (User.deletedAt + @@index) + dev migration 1 (NULL ALLOW + INDEX) + 외부 API 0. jest 769 → 797 PASS (+28 it). 정본: `prisma/schema.prisma` Author + `user-soft-delete-policy.ts` + `user-soft-delete.usecase.ts` + `user-hard-delete.job.ts` + `prisma-soft-delete.middleware.ts` + `default-user-anonymizer.adapter.ts` + `ADR.md ADR-011`.
 - 2026-05-15 #10_8 USER-SOFT-DELETE anonymize 엔드포인트 보강 (qa #20 server-web 정합 CRITICAL 해소): `@Post('authors/:authorId/anonymize')` 신설 (admin.controller.ts) + `anonymizeOnly` UseCase 분기 신설 (user-soft-delete.usecase.ts) + admin.controller.spec.ts 신규 (2 it) + user-soft-delete.usecase.spec 6 it 추가 + sensor 12→13 검증 + eval regression-73 12→13 criteria. jest 797 → 805 PASS (+8 it). DB schema 0 + dev migration 0 + 외부 API 0. 응답 시그니처 `{ anonymizedAt: string }` — web `adminAnonymizeAuthor` 호출 정합.
+
+---
+
+## 30. CreditOverhaul (server 도메인 — 크레딧 디노미네이션 + 출처 회계 + 채팅 4구간 차감)
+
+**위치**: `grimoire-server/src/domain/model/credit-point.ts`, `credit-source.ts`, `chat-charge-tier.ts`, `membership-tier.ts`
+**적용**: charge-points.usecase.ts / grant-points.usecase.ts / reset-monthly-pool.job.ts / chat.usecase.ts / novel-analysis.usecase.ts
+
+크레딧 개편 I Phase (2026-05-17) — 디노미네이션 1:1,000 + 포인트 출처 4종 분리 회계 + 채팅 4구간 사후 차감.
+정본: `research/CREDIT_PRICING_OVERHAUL_PLAN.md` §8 (v6) + `.claude/state/sprint-credit-overhaul-s-phase-draft.md` + ADR-012.
+
+### 인터페이스 (TypeScript)
+
+```typescript
+// 디노미네이션 상수 — 1 크레딧 = 1,000pt (§8-1)
+export const CREDIT_TO_POINT = 1000;
+
+// 포인트 출처 4종 (§8-2 분리 회계)
+export type CreditSource = 'free' | 'subscription' | 'gift' | 'charged';
+
+// ledger 엔트리 타입
+export type CreditLedgerType = 'earn' | 'spend' | 'deficit_incur' | 'deficit_settle' | 'expire';
+
+// 소진 우선순위 (§8-2) — 인덱스 0이 최우선 소진
+export const CREDIT_CONSUMPTION_ORDER: readonly CreditSource[] = ['free', 'subscription', 'gift', 'charged'];
+
+// 채팅 4구간 차감 (§8-4 — 경계값은 SystemSetting 동적, 아래는 §8 기본값)
+//   short ≤500tok=190pt / normal 501~4,000=810pt / long 4,001~12,000=3,390pt / xlong >12,000=5,520pt
+
+// 분석·테마 정액 차감 (§8-4)
+export const ANALYSIS_POINT_COST = 2440;  // 구 ANALYSIS_CREDIT_COST=4 디노미 환산
+export const THEME_POINT_COST = 590;      // 구 1 크레딧 디노미 환산
+
+// 멤버십 등급 + 월 포인트 풀 (§8-3)
+export type MembershipTier = 'free' | 'pro' | 'premium';
+export const MEMBERSHIP_MONTHLY_POOL: Record<MembershipTier, number> = { free: 0, pro: 93000, premium: 191500 };
+
+// CreditLedgerPort (domain/port/outbound/credit-ledger.port.ts)
+export interface CreditLedgerPort {
+  earn(input: EarnInput): Promise<CreditLedgerEntry>;            // 적립 (가입/충전/응원선물/구독풀)
+  spend(input: SpendInput): Promise<SpendResult>;                // 소진 (우선순위 적용 + 잔액 부족 시 deficit)
+  getBalance(authorId: string): Promise<CreditBalance>;          // 출처별 잔액 + deficit
+  settleDeficit(authorId: string, fromAmount: number): Promise<number>;  // 충전 시 deficit 우선 상계
+  findByAuthor(authorId: string, limit: number): Promise<CreditLedgerEntry[]>;
+  // CC-2b — 案 G1: 응원 선물 양측 작가 1 트랜잭션 이동 (작은 id 먼저 FOR UPDATE + deficit 금지)
+  transfer(senderId: string, receiverId: string, amount: number, relatedId?: string):
+    Promise<{ senderSpentBySource: Record<CreditSource, number>; receiverGiftBalance: number }>;
+}
+export interface SpendResult {
+  spentBySource: Record<CreditSource, number>;  // 출처별 차감액
+  deficitIncurred: number;                       // 외상 발생분 (잔액 부족, 정상 시 0)
+  balanceAfter: number;
+}
+export interface CreditBalance {
+  free: number; subscription: number; gift: number; charged: number;
+  total: number;      // 4 출처 합
+  deficit: number;    // Author.deficitPoints (외상)
+  available: number;  // total - deficit
+}
+
+// HTTP 응답 DTO — GET /credits/balance · GET /payments/credits (adapter/inbound/http/dto/credit.dto.ts)
+//   도메인 CreditBalance(flat) → web point-balance.ts normalizePointBalance 가 받는 bySource 중첩 형태
+export interface CreditBalanceResponseDto {
+  available: number; total: number; deficit: number;
+  bySource: { free: number; subscription: number; gift: number; charged: number };
+}
+
+// MembershipPlanPort (domain/port/outbound/membership-plan.port.ts)
+//   CC-5 (HIGH-1 案 B) — MembershipPlan.tier 가 tier 정본. Author.plan 은 [DEPRECATED] 미러.
+export interface MembershipPlanPort {
+  getPlan(authorId: string): Promise<MembershipPlanState | null>;  // tier 정본 출처 (案 B)
+  resetMonthlyPool(authorId: string, now: Date): Promise<void>;  // 월간 리셋 (이월 금지 — §8-8 #2)
+  findPlansToReset(now: Date): Promise<MembershipPlanState[]>;
+  // CC-5 — polarSubscriptionId? 추가 (구독 webhook 매핑 저장). status/expiresAt 정합:
+  //   free 다운그레이드 → status='cancelled' + expiresAt=now / pro·premium → status='active'.
+  changeTier(authorId: string, tier: MembershipTier, now: Date, polarSubscriptionId?: string): Promise<MembershipPlanState>;
+  checkAndResetExpiredPool(authorId: string, now: Date): Promise<LazyResetResult>;  // CC-3 lazy 안전망
+}
+
+// CC-5 (HIGH-1 案 B) — tier 정본 도메인 헬퍼 (domain/model/membership-tier.ts / plan.ts)
+//   getPlan 결과 → tier 결정 / 만기 판정. Author.plan 직접 읽기 0건 — 전부 이 헬퍼 경유.
+export function resolveTierOrFree(plan: { tier: string; status: string } | null): MembershipTier;
+//   plan null / status!='active' → 'free' 폴백
+export function isMembershipExpired(plan: { status: string } | null): boolean;
+//   plan null → false(free 만기 없음) / status!='active' → true
+
+// CC-5 (PAY-P1-4) — Polar 구독 생명주기 webhook 정규화 (domain/port/outbound/payment-gateway.port.ts)
+//   별도 타입 분리 — 충전 NormalizedWebhookEvent(status 3값)는 구독 생명주기 표현 불가.
+export interface NormalizedSubscriptionEvent {
+  eventId: string; type: string;
+  lifecycle: 'created' | 'updated' | 'canceled' | 'revoked';
+  polarSubscriptionId: string;       // MembershipPlan.polarSubscriptionId 매핑 키
+  tier: 'free' | 'pro' | 'premium';  // canceled/revoked 시 'free'
+  userId?: string;                   // metadata.authorId
+}
+// verifyAndParseWebhook 반환 = NormalizedWebhookEvent | NormalizedSubscriptionEvent | null.
+//   호출자는 isSubscriptionEvent(event) 가드로 라우팅 분기.
+export function isSubscriptionEvent(e): e is NormalizedSubscriptionEvent;  // 'lifecycle' in e
+
+// CC-5 (PAY-P1-4) — 구독 정기결제 Checkout (PaymentGatewayPort Optional 메서드)
+//   recurring product → Polar 정기결제 모드. env(POLAR_PRODUCT_SUBSCRIPTION_{tier}) 미설정 시 null.
+initiateSubscriptionCheckout?(tier: 'pro' | 'premium', userId: string, returnUrl: string):
+  Promise<PaymentInitResponse | null>;
+
+// CC-5 (PAY-P1-4) — 구독 webhook usecase (application/subscription/process-subscription-webhook.usecase.ts)
+//   created/updated → changeTier(authorId, tier, _, polarSubscriptionId)
+//   canceled/revoked → changeTier(authorId, 'free') 다운그레이드. WebhookEvent 멱등성 게이트 재사용.
+//   정기결제 갱신 ↔ cron 정합 案 A 분리 — 구독 webhook 은 등급 변경만, 풀 리셋은 resetMonthlyPool cron 단독.
+
+// ClaudeApiPort 확장 — 채팅 사후 차감용 토큰 usage 노출
+askWithUsage(systemPrompt: string, userMessage: string, options?: AskOptions): Promise<ClaudeAskResult>;
+// ClaudeAskResult: { text, inputTokens, outputTokens, model }
+
+// CREDIT_PRODUCTS — 충전 패키지 4종 (CC-2a 디노미 — domain/model/config.ts)
+//   ai-cost-table §2 정본 (cost-accountant 승인 786b0f3 — 전 패키지 §0 PASS).
+//   구 3종(credit-5/20/50, credits Int=수량) → 신 4종(points Int=총 pt + bonusRate).
+export const CREDIT_PRODUCTS = [
+  { id: 'credit-starter', name: '입문 패키지', points: 25000,  bonusRate: 0,    price: 3000,  priceUsd: 299,  providerProductIdEnv: 'POLAR_PRODUCT_STARTER' },
+  { id: 'credit-basic',   name: '기본 패키지', points: 41667,  bonusRate: 0,    price: 5000,  priceUsd: 499,  providerProductIdEnv: 'POLAR_PRODUCT_BASIC' },
+  { id: 'credit-popular', name: '인기 패키지', points: 91667,  bonusRate: 0.10, price: 10000, priceUsd: 999,  providerProductIdEnv: 'POLAR_PRODUCT_POPULAR' },
+  { id: 'credit-best',    name: '베스트 패키지', points: 287500, bonusRate: 0.15, price: 30000, priceUsd: 2999, providerProductIdEnv: 'POLAR_PRODUCT_BEST' },
+] as const;
+// GET /payments/products 응답: { id, name, points, bonusRate, price, pricePerPoint }
+
+// PaymentRepositoryPort 확장 (CC-2a — domain/port/outbound/payment-repository.port.ts)
+//   충전 success 결제 적립 — 案 1 트랜잭션 통합 (헥사고날 DIP 보존, Prisma tx 미노출).
+//   CLAUDE.md §9 결제 원자성 — 단일 $transaction: Payment 완료 + deficit 우선 상계
+//   (CreditLedger deficit_settle) + 남은 충전액 적립 (CreditLedger source='charged' earn)
+//   + Author.pointsCharged/deficitPoints 캐시. 금액 계산은 computeChargeLedgerEntries 위임.
+completePaymentWithPoints(
+  paymentId: string, authorId: string, totalPoints: number, productId: string, relatedId?: string,
+): Promise<{ settledDeficit: number; chargedPoints: number }>;
+// 구 completePaymentAtomically(Author.credits Int + CreditLog) 는 @deprecated — CC-2b 후 제거.
+
+// CC-2b — 환불 신 경로 + 이중 외상 통합 (案 R1, completePaymentWithPoints 대칭)
+//   단일 $transaction: authors FOR UPDATE + Payment status + 비례 계산(PAY-P2-1)
+//   + computeRefundLedgerEntries(charged→gift→subscription→free) + CAS race 차단(PAY-P3-A)
+//   + 부족분 Author.deficitPoints 가산 (이중 외상 통합 — RefundLog.deficitCredits 는 감사 추적용)
+//   + RefundLog 박제(credits=실 환수 pt, deficitCredits=외상 발생 pt)
+refundPaymentWithPoints(input: {
+  paymentId: string; authorId: string; refundPt: number;
+  refundedAmount: number; reason: string; source: 'webhook' | 'manual'
+}): Promise<{ actualRefunded: number; deficitIncurred: number; proportionalPt: number; isPartial: boolean }>;
+// 구 refundPaymentAtomically(Author.credits Int + CreditLog) 는 @deprecated — CC-3/CC-4 후 제거.
+
+// computeRefundLedgerEntries (domain/policy/credit-consumption-policy.ts — CC-2b 순수 함수)
+//   환수 우선순위 REFUND_RECOVERY_ORDER = ['charged', 'gift', 'subscription', 'free'].
+//   4 출처 환수액 + 부족분(=외상 가산분) 반환 — refundPaymentWithPoints + 통합 spec FakeRepo 공통 호출.
+computeRefundLedgerEntries(refundPt: number, balances: SourceBalances):
+  { recoveredBySource: Record<CreditSource, number>; totalRecovered: number; deficitIncurred: number };
+
+// GIFT_POINT_OPTIONS (domain/model/gift-points.ts — CC-2b 메인 §6 결정)
+//   응원 선물 3단계 = 1,000 / 3,000 / 5,000 pt (S Phase §8-6 잠정값 그대로 승인).
+//   POST /credits/gift body amount 단위 = pt (디노미 시스템 전체 일관).
+export const GIFT_POINT_OPTIONS = [1000, 3000, 5000] as const;
+
+// computeChargeLedgerEntries (domain/policy/credit-consumption-policy.ts — 순수 함수)
+//   충전 적립 ledger 박제 계획 — settleDeficitOnCharge 재사용. PaymentRepository 가 호출.
+computeChargeLedgerEntries(chargeAmount: number, currentDeficit: number, currentChargedCache: number):
+  { settledDeficit: number; remainingCharge: number; remainingDeficit: number; newChargedCache: number };
+```
+
+### DB 모델 (Prisma)
+
+- **CreditLedger** (신설) — `authorId` FK Restrict / `source` / `type` / `amount`(부호 有) / `balanceAfter` / `expiresAt?`(구독풀 만료) / `reason` / `relatedId?`. 인덱스 `[authorId,createdAt]` `[authorId,source]` `[expiresAt]`.
+- **MembershipPlan** (신설) — `authorId` FK Restrict / `tier`(CC-5 案 B tier 정본) / `monthlyPoolPoints` / `poolBalance` / `poolResetAt` / `polarSubscriptionId?`(CC-5 구독 매핑 — `changeTier` 가 저장) / `status`. 인덱스 `[authorId]` `[poolResetAt]` `[status]`.
+- **Author** — 4 필드 추가 (`pointsFree`/`pointsSubscription`/`pointsGift`/`pointsCharged` 잔액 캐시) + `deficitPoints`. `credits` 는 CC-4 Phase 3 DROP 완료. `plan`/`planExpireAt` 은 CC-5 案 B 로 `[DEPRECATED]` (tier 정본 = `MembershipPlan.tier`, `changeTier` 案 A 미러 — 컬럼 물리 DROP 은 별도 후속).
+
+### HTTP 엔드포인트 (CC-5 — PAY-P1-4 구독 정기결제, server 정본 docs/api-contract.md)
+
+- `POST /subscriptions/checkout` — 구독 정기결제 시작. `@UseGuards(JwtAuthGuard)` + `@Throttle`(분당 3). body `{ tier: 'pro'|'premium', returnUrl }` → `{ paymentUrl, tradeNo }`. **graceful** — env(`POLAR_PRODUCT_SUBSCRIPTION_*`) 미설정 시 `503`.
+- `GET /membership` — 멤버십 등급/풀 조회. `@UseGuards(JwtAuthGuard)`. → `{ tier, monthlyPoolPoints, poolBalance, poolResetAt, status, expiresAt }`. 내부 ID(`authorId`/`polarSubscriptionId`) 미노출.
+- env(Optional) — `POLAR_PRODUCT_SUBSCRIPTION_PRO` / `POLAR_PRODUCT_SUBSCRIPTION_PREMIUM`. 미설정 = 정상 상태(구독 checkout 만 비활성, 나머지 전부 정상).
+- **ChatMessage** — 5 필드 추가 (`inputTokens?`/`outputTokens?`/`model?`/`chargedPoints?`/`chargeTier?`, 전부 nullable).
+
+### 변경 시 동시 갱신 대상
+
+- `grimoire-server/src/domain/model/credit-point.ts` / `credit-source.ts` / `chat-charge-tier.ts` / `membership-tier.ts` / `credit-system-setting.ts`
+- `grimoire-server/docs/ai-cost-table.md` §0·§2·§3 (cost-accountant 단독 관리 — 차감 N 변경 시 §0 재검증)
+- `grimoire-server/docs/ai-analysis-spec.md` (분석 차감 pt)
+- `grimoire-server/docs/data-model.md` + `SCHEMA.md` (CreditLedger / MembershipPlan / Author / ChatMessage)
+- `grimoire-web` 잔액 표시 + 채팅 차감 안내 + 구독 플랜 + 충전 패키지 UI (web Generator — I Phase)
+- `eval/tasks/regression-74~77-*.json` + `.claude/scripts/sensor-credit-*.sh` (5종)
+
+### §7 `ANALYSIS_CREDIT_COST` 이행 관계
+
+기존 §7 `ANALYSIS_CREDIT_COST = 4` (정수 크레딧)는 본 §30 `ANALYSIS_POINT_COST = 2440` (디노미 pt)로 이행.
+`novel-analysis.usecase.ts` 가 `ChargePointsUseCase` 주입 시 디노미 차감, 미주입 시 구 경로(BACKWARD COMPATIBLE).
+
+### 변경 이력
+
+- 2026-05-17 #크레딧개편 I Phase: 신설 — grimoire-server. 디노미네이션 1:1,000 + 포인트 출처 4종 분리 회계(1-C 하이브리드: Author 4 필드 캐시 + CreditLedger 원장) + 구독 월 풀(MembershipPlan, 4-C 이월 금지) + 채팅 4구간 사후 차감(190/810/3,390/5,520pt) + 분석 2,440pt / 테마 590pt. DB schema 변경(CreditLedger/MembershipPlan 신설 + Author 5 필드 + ChatMessage 5 필드) + migration 파일 작성(apply 0건). jest 805 → 967 PASS (+162 it). cost-accountant 승인 `786b0f3`. 정본: ADR-012 + S Phase Draft. sensor 5종 신설(credit-overhaul-recalc / credit-denomination / credit-source-accounting / subscription-pool-no-rollover / chat-charge-tier).
+- 2026-05-17 #크레딧개편 I Phase web Generator: grimoire-web — §30 인터페이스 미변경(소비만). `src/features/credits/` 슬라이스 신설(credit-overhaul.ts §30 상수 미러 + point-balance.ts `/credits/balance` 응답 정규화 + CreditBalanceCard / ChatChargeGuide / MembershipPlans + 채팅 ChatChargeBadge). `/dashboard/credits` 디노미 개편 + `/dashboard/membership` 신설 + `/dashboard/chat` 4구간 차감 배지. **server I Phase backward-compatible 확인**: `/credits/balance`·`/auth/me`·`/payments/products` HTTP 응답 미변경(정수 크레딧 / 구 3 패키지), `CreditLedger.getBalance`(4 출처)·`MembershipPlan`은 HTTP 미연동 — web 은 server 실제 반환값에만 의존(없는 출처값 추정 금지, 잔액 정수 크레딧 ×1,000 환산). `ChatMessage.chargedPoints`/`chargeTier`만 실제 응답 포함. vitest 160→210 PASS (+50 it). 후속(별도 sprint): `MembershipPlanPort` HTTP 노출 시 멤버십 결제 UI / `CreditLedger.getBalance` HTTP 노출 시 4 출처 분해 자동 활성 / `CREDIT_PRODUCTS` #7 4종 갱신 시 패키지 자동 반영.
+- 2026-05-17 #크레딧개편 I Phase HTTP follow-up: grimoire-server — `GET /credits/balance` + `GET /payments/credits` 를 4 출처 `CreditBalanceResponseDto`(available/total/deficit/bySource)로 노출(기존 `{credits:number}` → 새 모델). `CreditUseCase.getPointBalance()` 신설 — `CreditLedgerPort.getBalance` 위임. web `point-balance.ts normalizePointBalance` 가 `bySource` 자동 분해 → 4 출처 표시 활성. jest 967→971 PASS (+4 it). 커밋 `1ba8c9f`→`9d0d2b7`. web Generator §0 검증으로 발견된 HTTP 미연동 갭(draft §5) 해소. 잔여(별도 sprint): `CREDIT_PRODUCTS` #7 4종(Polar 상품 등록 종속) / `MembershipPlanPort` HTTP 노출.
+- 2026-05-19 #크레딧개편 CC-1 적립 비결제 연동: grimoire-server — **CRITICAL-2 해소** (I Phase 의 `GrantPointsUseCase` 5메서드 호출처 0건 / 테마 차감 `chargeTheme` 미연동 = 적립 경로 런타임 미작동). 비결제 적립 5경로를 신 `CreditLedger` 원장으로 이행: ① T1 가입 보너스 (`AuthUseCase` email+Google 2 호출처 → `grantSignupBonus`) ② T2 첫 작품 보너스 (`WorkManagementUseCase` → `grantFirstWorkBonus`) ③ T5 관리자 지급 (`AdminUseCase.grantCredits` → `grantManual` + 출처 파라미터) ④ T6 관리자 차감 (`AdminUseCase.deductCredits` → `CreditLedgerPort.spend`, deficit 불가 모드 — 잔액 부족 시 throw) ⑤ 테마 차감 (`GenerateThemeUseCase` 구 `Author.credits -1` → `ChargePointsUseCase.chargeTheme` 590pt 교체 + 구 경로 제거). **인터페이스 변경**: `ChargePointsUseCase.chargeAnalysis` 반환 `void`→`SpendResult` (§5-D 출처별 환불 입력) / `refundAnalysis(authorId, relatedId?, spentBySource?)` 3번째 인자 추가 (출처별 복원, 미전달 시 charged 폴백) / `refundTheme(authorId, relatedId?)` 신설 / `POST /admin/credits/grant` body `source?` 추가. `AdminUseCase.grantCredits`/`deductCredits` 반환 `{credits,log}`→`{balance: CreditBalance}`. **통합 spec 신설** (`credit-grant-integration.spec.ts` — 실 `GrantPointsUseCase`/`ChargePointsUseCase` + 인메모리 `CreditLedgerPort` fake 로 호출 사슬 검증 — CRITICAL-2 가 unit mock 에 가려진 근본 원인 해결, RED 재현 실증). jest 971→991 PASS (+20 it). 커버리지 60.18%. 정본: `reports/CREDIT_CORE_DIAGNOSIS.md` §1·§2-2·§5-D·§8. 잔여(CC-2): T3 충전 / T4 선물 / T7 환불 적립 — 구 경로 잔존.
+- 2026-05-20 #크레딧개편 CC-2a 충전 결제 적립 연동: grimoire-server — **CRITICAL-2 충전분(T3) 해소 + C-6 해소**. ① `PaymentRepositoryPort.completePaymentWithPoints` 신설 (案 1 — 단일 `$transaction`: Payment 완료 + deficit 우선 상계 + 충전 적립 `CreditLedger` charged earn + `Author.pointsCharged`/`deficitPoints` 캐시. 案 2 CreditLedgerPort tx 오버로드는 헥사고날 DIP 위반이라 미채택). ② `payment.usecase` 충전 success 분기 재배선 — 구 `completePaymentAtomically` → `completePaymentWithPoints`. `settleDeficit` 가 실 충전 경로에 처음 연결돼 **C-6 해소** (deficit 10,000pt 상한 작가가 충전하면 외상 상계 → `isChatBlocked=false`). ③ 도메인 순수 함수 `computeChargeLedgerEntries` 추출 (案 1 로직 중복 0건). ④ `CREDIT_PRODUCTS` 디노미 4종 개편 (구 credit-5/20/50 `credits` Int=수량 → 신 입문/기본/인기/베스트 `points` Int=총 pt + `bonusRate`. `getProducts` `pricePerCredit`→`pricePerPoint`). ⑤ MEDIUM-4 — `Payment.credits` Int 의미 "수량"→"pt" 재해석 (컬럼 물리 rename 은 CC-2a 범위 외). **인터페이스 변경**: `PaymentRepositoryPort.completePaymentWithPoints` 신설 / `completePaymentAtomically` `@deprecated` / `GET /payments/products` 응답 3종→4종 (`credits`→`points`+`bonusRate`+`pricePerPoint`) / `Author` 도메인 모델에 `pointsFree`/`pointsSubscription`/`pointsGift`/`pointsCharged`/`deficitPoints` 5필드 추가. **통합 spec 신설** (`payment-charge-credit-integration.spec.ts` — 실 `PaymentUseCase` + `FakePaymentRepository`(도메인 헬퍼 실호출) 로 충전 webhook → CreditLedger charged earn + deficit 상계 사슬 검증. C7b RED 재현 실증 — 구 경로로 되돌리면 8건 FAIL). jest 1006→1012 PASS (+6 it 순증, payment.usecase.spec/polar.adapter.spec 디노미 정합 포함). 커버리지 60.37%. cost-accountant 재검증 불요 (`786b0f3` 기존 승인 소비). 정본: `reports/CREDIT_CORE_DIAGNOSIS.md` §1-A·§6·§8 + `.claude/state/sprint-cc2a-charge-wiring-plan-draft.md`. 잔여(CC-2b): T4 선물 / T7 환불 적립 — 구 경로 잔존. `Payment.credits` 컬럼 물리 rename / `completePaymentAtomically` 제거 = CC-2b 후.
+- 2026-05-20 #크레딧개편 CC-3 이월 금지 lazy 안전망 + Author.plan 양측 동기 + 신 ledger 선물 랭킹: grimoire-server — **잔존 결함 3건(CRITICAL-1·HIGH-1·HIGH-3) 종결**. ① **CRITICAL-1 案 B** — `MembershipPlanPort.checkAndResetExpiredPool(authorId, now): Promise<LazyResetResult>` 신설 (port 추상화, 案 (i)). `credit.usecase.getPointBalance` 가 `ledger.getBalance` 호출 직전에 lazy 훅 호출 — `MembershipPlanPort` Optional DI(BACKWARD COMPATIBLE). 호출 조건: `poolResetAt <= now AND tier !== 'free' AND status === 'active'` (free/미만료/non-active no-op). lazy 실패는 silent log + 잔액 조회 진행 (fallback 안전망). cron(`ResetMonthlyPoolJob`) 1차 + lazy 2차 이중 안전망 — cron 실패해도 잔액 조회 시점에 자동 보정. S Phase draft §8-6 원안 복원 (`reset-monthly-pool.job.ts:18` "I Phase 후속" 후속). ② **HIGH-1 案 A** — `MembershipPlanPort.changeTier` 트랜잭션 안에 `tx.author.update({ data: { plan: tier, planExpireAt } })` 추가. `Author.plan` 정본 유지 + `MembershipPlan.tier` 미러. `planExpireAt` 정책: free → null / pro·premium → poolResetAt 미러. 案 B (`tier` 정본화 + 읽기 13곳 이행)는 CC-3 비대 회피로 미채택 (CC-5/후속 옵션 보존). `changeTier` 호출처 현재 0건 (PAY-P1-4 미착수)이라 案 A 위험 ZERO. ③ **HIGH-3** — `CreditLedgerPort.getGiftRanking(limit): Promise<{authorId, totalGifted}[]>` 신설 (`creditLedger.groupBy(by:['authorId'], where:{source:'gift', type:'earn'}, _sum:{amount}, orderBy:{_sum:{amount:'desc'}}, take:limit)`). `credit.usecase.getGiftRanking`/`getLogs` → `ledger.getGiftRanking`/`ledger.findByAuthor` 위임 (ledger 미주입 시 구 경로 폴백). **인터페이스 변경**: `MembershipPlanPort.checkAndResetExpiredPool` 신설 / `LazyResetResult` 타입 신설 / `CreditLedgerPort.getGiftRanking` 신설 / `CreditUseCase.getLogs` 반환 `CreditLog[]` → `CreditLedgerEntry[] | CreditLog[]` (ledger 주입 시 신 형태) / `GET /credits/logs` 응답 형태 확장 (source/type/balanceAfter/expiresAt/relatedId 추가). **통합 spec 신설** (`credit-rollover-source-ledger-integration.spec.ts` — 실 `CreditUseCase` + 인메모리 `FakeMembershipPlanPort`/`FakeCreditLedger` 로 ① cron 미실행 상태에서 lazy 자동 보정(I1b — 4 시나리오) ② `changeTier` MembershipPlan + Author 양측 동기(I1c) ③ CC-2b 신 선물(`source='gift'`)이 신 ranking 에 집계(I1c — RED 재현: 구 경로면 ranking 누락) ④ `getLogs` `CreditLedgerEntry[]` 반환 검증). jest 1042→1073 PASS (+31 it 순증). 커버리지 61.61%(stmts) / 63.21%(lines) — 게이트 ≥60% 충족. cost-accountant 재검증 불요 (AI 기능 추가 0건, 잔액 조회 lazy 훅 + plan 동기 + 원장 위임만). **결함 3건 종결 증명**: ① `grep checkAndResetExpiredPool src` ≥4건 (port + repository + usecase + spec 4 파일) + 통합 I1b PASS ② `changeTier` 본문 `data: { plan: tier, planExpireAt: newPlanExpireAt }` 박제 + I1c PASS ③ `creditRepo.getGiftRanking`/`findLogsByAuthorId` application 호출 = `credit.usecase` fallback 폴백 경로만(ledger null 가드) + `admin.usecase.findLogsByAuthorId` + `discovery.usecase.getMostGiftedAuthors`(CC-4 후속 sprint 이월 — 진단 §10 호출처) + `ledger.getGiftRanking` 호출처 ≥1건 + I1c PASS. 정본: `reports/CREDIT_CORE_DIAGNOSIS.md` §4·§5-A·§5-B·§8 + `.claude/state/sprint-cc3-rollover-source-ledger-plan-draft.md` + ADR-014. CC-3/CC-4 이월: 案 B 이행(읽기 13곳) / `MembershipPlanPort.getPlan` HTTP 노출 / `CreditLog` 테이블 폐기 / `Author.credits` DROP / V Phase 마이그레이션 / sensor 7종 hook 등록(harness 영역).
+- 2026-05-21 #크레딧개편 CC-4 Phase 2 Payment.credits → points 물리 rename + RefundLog 案 Y 보존: grimoire-server — Phase 2만(Phase 3 = 별도 sprint). ① **컬럼 물리 rename**: `Payment.credits Int` → `Payment.points Int` (마이그레이션 `20260521_payment_credits_rename_phase2` 1건, `ALTER TABLE "payments" RENAME COLUMN "credits" TO "points"`). Postgres native ALTER — 메타데이터 한정 락, 무손실, 즉시. 역방향 ALTER로 비파괴 롤백. CC-2a 박제 의미(`Payment.credits Int = 충전 총 pt`)를 컬럼명 정합으로 종결 — 신규 개발자 혼선 위험 해소. ② **`PaymentRepositoryPort.PaymentRecord` 인터페이스 변경**: `credits: number` → `points: number`. `create(data: { ..., points: number })`. ③ **RefundLog 案 Y 보존 채택** (planner 권고 정합): `RefundLog.credits Int` + `RefundLog.deficitCredits Int` 컬럼 DDL 변경 0건. 보존 사유 = (a) 명명 충돌 회피(`Author.deficitPoints` 외상 잔액 정본과 의미 충돌 방지) (b) 회귀 범위 최소화(admin/audit 전용, HTTP 미노출) (c) CC-2b 의미 재해석은 schema 주석 + shared-contracts §13 박제로 강화. ④ **응답 키 보존**: `processNormalizedWebhook` 반환 `{ processed, credits, deficitCredits? }` — 외부 호환성(webhook payload) 위해 응답 키 그대로. 내부 컬럼/필드만 rename. ⑤ HTTP 응답 영향 0 — `GET /payments/products` 응답 키 이미 `points`/`pricePerPoint`(CC-2a 박제) / `GET /payments/credits` `bySource.charged`(CC-3 박제) — web 변경 불요. ⑥ 코드 일괄 rename ~30곳 + spec 7 파일. **인터페이스 변경**: `PaymentRecord.credits` → `PaymentRecord.points` / `PaymentRepositoryPort.create` 입력 `credits→points`. jest 1063→1063 PASS(변동 0 — assertion 키만 변경, 신설 it 0). 커버리지 61.74%/63.33%(lines) — 게이트 ≥60% 충족. 빌드 + tsc PASS. 로컬 dev DB migration apply PASS — 사후 검증 SQL 4건 PASS. cost-accountant/visual-canon-keeper 불요(신규 AI 0건, UI 영향 0건). **Payment.points 정합 종결 증명**: `grep "payment\.credits\|Payment\.credits" src --exclude="*.spec.ts"` = 주석 매치 2건만(rename 박제 이력) — 코드 본문 호출 0건 / `payments.points` Postgres 컬럼 존재 + `payments.credits` 컬럼 0건 / `refund_logs.credits`+`deficit_credits` 보존. Phase 3 이월 = `Author.credits` DROP + `CreditLog` 폐기 + `prisma-credit.repository` 잔존 메서드(`findLogsByAuthorId`/`getGiftRanking`) 제거 + `auth.controller:48` 응답 `credits` 필드 제거 + `refund-payment.usecase:124-125` 폴백 정리 + `credit-migration.ts` 디노미 도구 정리 + `prisma-author.repository` Author 매핑 정리. ≥1 sprint 운영 박제 후 별도 sprint(Cursor 반면교사). HIGH-1 案 B = Case C 별도 sprint(사용자 결정 5/21). 정본: `.claude/state/sprint-cc4-phase2-rename-plan-draft.md` + `reports/sprint-cc4-phase2-rename-progress.md`.
+- 2026-05-21 #크레딧개편 CC-4 Phase 1 폐기 정리 — 구 메서드 제거 + 신·구 분열 해소: grimoire-server — Phase 1만 (Phase 2/3 = 별도 sprint). ① 구 메서드 시그니처 + 본문 제거: `CreditUseCase.grant`/`.deduct`/`.getBalance` (호출처 0건) + `CreditRepositoryPort.adjustCredits`/`giftTransfer`/`sumNegativeAmounts` (port + repository 본문) + `PaymentRepositoryPort.completePaymentAtomically`/`refundPaymentAtomically` (port + repository 본문). 잔존 = `CreditRepositoryPort.findLogsByAuthorId`/`getGiftRanking` 2종(Phase 3 폐기 예정 — `credit.usecase` 폴백 경로용). ② **신·구 분열 해소**: `CreditLedgerPort.sumSpendByAuthor(authorId?)` 신설 (L2c/L2d) — `CreditLedger.aggregate({_sum, where:{type:'spend'}})` 절대값 반환. `admin.usecase.getStats` `creditRepo.sumNegativeAmounts` → `ledger.sumSpendByAuthor(null)` 전환. `admin.usecase.getAllCreditLogs` `creditRepo.findLogsByAuthorId` → `ledger.findByAuthor(authorId, 100)` 전환. `discovery.usecase.getMostGiftedAuthors` `creditRepo.getGiftRanking` → `creditUseCase.getGiftRanking` 위임 전환(CC-3 ledger 위임 재사용). ③ DI 정리: `AdminUseCase` 생성자 `creditRepo` 인자 제거 / `SocialUseCase` 생성자 `creditRepo` 인자 제거 + 구 `giftTransfer` 폴백 코드 제거 / `DiscoveryUseCase` 생성자 `creditRepo` → `creditUseCase` 전환 / `NovelAnalysisUseCase` 생성자 `creditRepo` 인자 제거 + 구 `adjustCredits` 폴백 제거(`chargePoints` 미주입 시 명시적 BadRequest). ④ `CreditReason` enum 폐기(호출처 0건) — `CreditLedger.reason` 자유 문자열 + 합의된 prefix 규약(`signup_bonus`/`gift_sent:..`/`admin_grant:..`)으로 대체. ⑤ 통합 spec 신설: `credit-rollover-source-ledger-integration.spec.ts` `CC-4 Phase 1 통합 — 구 메서드 제거 + admin·discovery 신·구 분열 해소` describe(4 it — L2c sumSpendByAuthor / L2e findByAuthor / L2a 신 선물 ranking 위임 / port 시그니처 제거 정합). **인터페이스 변경**: `CreditLedgerPort.sumSpendByAuthor(authorId?: string | null): Promise<number>` 신설(절대값 반환) / `AdminUseCase` 생성자 시그니처 `(authorRepo, workRepo, adminRepo, grantPoints, ledger, auditLog)` (creditRepo 제거) / `SocialUseCase` 생성자 시그니처 `(socialRepo, authorRepo, ledger?)` (creditRepo 제거) / `DiscoveryUseCase` 생성자 시그니처 `(authorRepo, workRepo, creditUseCase)` (creditRepo → creditUseCase) / `NovelAnalysisUseCase` 생성자 시그니처에서 `creditRepo` 인자 제거 / `PaymentRepositoryPort` `completePaymentAtomically`/`refundPaymentAtomically` 제거 / `CreditRepositoryPort` `adjustCredits`/`giftTransfer`/`sumNegativeAmounts` 제거 / `CreditUseCase.grant`/`.deduct`/`.getBalance` 제거 (4 메서드만 잔존). jest 1059→1063 PASS (+4 it). 커버리지 61.74%/63.33%(lines) — 게이트 ≥60% 충족. 빌드 + docker build 통과. cost-accountant/visual-canon-keeper 게이트 불요(신규 AI 0건, UI 변경 0건). **구 메서드 제거 증명**: `grep "creditRepo\.\(giftTransfer\|adjustCredits\|sumNegativeAmounts\)\|completePaymentAtomically\|refundPaymentAtomically\|CreditUseCase\.\(grant\|deduct\|getBalance\)\b" src --include="*.ts" --exclude="*.spec.ts"` = 주석만 매치(코드 본문 호출 0건). **신·구 분열 해소 증명**: `grep "creditRepo\." src/application/{admin,discovery}` = 주석 4건만(코드 본문 호출 0건 — 모두 ledger 위임). Phase 2(컬럼 rename `Payment.credits`→`Payment.points`)/Phase 3(`Author.credits` DROP + `CreditLog` 폐기)는 운영 안정성 ≥1 sprint 박제 후 별도 sprint(Cursor 반면교사). 정본: `.claude/state/sprint-cc4-postcleanup-plan-draft.md` (옵션 Z 3 Phase 분할 권고).
+- 2026-05-20 #크레딧개편 CC-2b 선물·환불 결제 적립 연동: grimoire-server — **CRITICAL-2 완전 종결** (적립 8경로 中 마지막 T4 선물 + T7 환불 신 시스템 이행). ① `CreditLedgerPort.transfer(senderId, receiverId, amount, relatedId?)` 신설 (案 G1 — 단일 `$transaction`: 데드락 방지 lock 순서 작은 id 먼저 `IN ORDER BY id FOR UPDATE`, sender `planConsumption` 4 출처 차감, **deficit 금지**(외상 선물 불가), receiver `source='gift'` earn + `pointsGift` 가산). ② `credit.usecase.gift` 재배선 — 구 `creditRepo.giftTransfer` → `ledger.transfer`. body `amount` 단위 = **pt**(메인 §6 결정 — 1,000/3,000/5,000pt, `GIFT_POINT_OPTIONS` 도메인 상수 정본). ③ `PaymentRepositoryPort.refundPaymentWithPoints` 신설 (案 R1 — 案 1 대칭): 단일 `$transaction` Payment status + 비례 계산(PAY-P2-1) + `computeRefundLedgerEntries`(charged→gift→subscription→free 우선) + `$executeRawUnsafe` CAS race 차단(PAY-P3-A) + 부족분 `Author.deficitPoints` 가산 + `RefundLog` 박제. ④ **이중 외상 통합** — 외상 정본을 `Author.deficitPoints` 단일화 → CC-2a `completePaymentWithPoints` 가 환불 외상까지 자동 회수(통합 spec C7d로 박제). `RefundLog.deficitCredits` 의미 재해석("이 환불 1건이 유발한 외상 pt 기여분" 감사 추적용, 외상 잔액 정본 아님 — 물리 rename 0건, CC-4 위임). ⑤ 도메인 헬퍼 `computeRefundLedgerEntries` + `REFUND_RECOVERY_ORDER` 추출 (案 R1 로직 중복 0건). ⑥ `refund-payment.usecase.execute` 입력 `credits→refundPt` + 반환 4 필드 rename(`actualDeducted→actualRefunded` 등), `RefundPaymentUseCase` 생성자 `CreditLedgerPort` Optional 추가(beforeState 4 출처 디노미 정합). ⑦ `payment.usecase` cancel 분기 — `refundPaymentUseCase.execute({refundPt: payment.credits, ...})` 호출 정합. **인터페이스 변경**: `CreditLedgerPort.transfer` 신설 / `PaymentRepositoryPort.refundPaymentWithPoints` 신설 / `refundPaymentAtomically` `@deprecated` / `POST /credits/gift` body `amount` 단위 = pt / `RefundLog.credits`·`deficitCredits` 컬럼 의미 재해석(pt 단위). **통합 spec 신설** (`credit-gift-refund-integration.spec.ts` — 실 `CreditUseCase`/`PaymentUseCase`/`RefundPaymentUseCase` + `FakeCreditLedger`/`FakePaymentRepository`(도메인 헬퍼 실호출) 로 C7b 선물 양측 이동 + C7c 4 출처 환수 + **C7d 이중 외상 통합**(환불 외상 → 충전 자동 회수) RED 재현 실증). jest 1012→1042 PASS (+30 it 순증). 커버리지 61.11%(stmts) / 62.67%(lines) — 게이트 ≥60% 충족. cost-accountant 재검증 불요(선물=매출 0, 환불=기존 결제 역방향, 가격값 무변경). **CRITICAL-2 종결 증명**: 적립 8경로(T1~T8) 전부 신 `CreditLedger` — `ledger.transfer` 호출처 1건(`credit.usecase.gift`) + 구 `giftTransfer` application 호출 0건 / `refundPaymentWithPoints` 호출처 1건(`refund-payment.usecase`) + 구 `refundPaymentAtomically` application 호출 0건 + 통합 spec C7b/C7c/C7d PASS. 정본: `reports/CREDIT_CORE_DIAGNOSIS.md` §1-B·§1-C·§8 + `.claude/state/sprint-cc2b-gift-refund-wiring-plan-draft.md`. **CC-3 핸드오프 박제**: CC-2b가 선물 적립을 `CreditLedger`로 옮김 → 구 `getGiftRanking`(`CreditLog reason='gift_received'` groupBy) + `getLogs`(`CreditLog.findMany`)가 **신·구 분열** 유발 (새 선물은 `CreditLog` 박제 0건). **CC-3 범위에서 `CreditLedger` 기반 재작성 필수** (HIGH-3 정합 — 진단 §5-B). CC-3/CC-4 이월: 구 메서드(`giftTransfer`/`refundPaymentAtomically`/`completePaymentAtomically`) 제거 + `Author.credits` DROP + `RefundLog.deficitCredits`/`credits` 컬럼 물리 rename.
+- 2026-05-21 #크레딧개편 CC-4 Phase 3 — `Author.credits` DROP + `CreditLog` 폐기 + `CreditRepositoryPort` 파일/Port 자체 제거 + 案 P3-Y 옵션 A 응답 키 보존: grimoire-server — **CC-4 sprint 전체 종결 단계**. ① **비가역 마이그레이션 1건**: `prisma/migrations/20260521_author_credits_drop_credit_log_phase3/migration.sql` — `ALTER TABLE "authors" DROP COLUMN "credits"` + `DROP TABLE IF EXISTS "credit_logs" CASCADE` (FK 자동 cascade). 사용자 키워드 게이트 사전 통과(5/21 박제). pg_dump 백업 필수(`pg_dump --table=authors --table=credit_logs`). ② **잔존 코드 제거**: `auth.controller.ts:48` 응답 직렬화 `credits: author.credits` → 案 P3-Y 옵션 A 적용(응답 키 `credits` **보존**, 값 = `creditLedger.getBalance(author.id).total` 매핑, ledger 미주입/throw 시 0 폴백). `AuthController` 생성자 `CreditLedgerPort` Optional DI 추가 + `resolveCredits` 헬퍼 + 5 핸들러(register/login/google/refresh/profile) 매핑. `refund-payment.usecase.ts:115-136` `authorRepo` 폴백(author.credits ?? 0) 완전 제거 → ledger 단일 경로 + 생성자 `authorRepo` 인자 제거. `prisma-author.repository.ts` `updateCredits` 메서드 + `findById`/`findDeletedById`/`findDeletedOlderThan` raw query `credits` 매핑 + `toDomain` 매핑 전부 제거. `domain/model/author.ts` `Author.credits` 필드 제거. `AuthorRepositoryPort.updateCredits` 시그니처 제거. ③ **파일/Port 삭제 4건**: `src/adapter/outbound/persistence/prisma-credit.repository.ts` + `src/domain/port/outbound/credit-repository.port.ts` + `src/domain/model/credit.ts`(CreditLog interface) + `src/domain/model/credit-migration.ts`(+spec — V Phase 마이그레이션 후 1회 사용 도구, 案 P3-d-X). `src/domain/model/index.ts` `./credit` re-export 제거. ④ **DI/usecase 정리**: `app.module.ts` `provide: 'CreditRepositoryPort'` provider 제거. `credit.usecase.ts` 생성자에서 `CreditRepositoryPort` Inject 제거 (3 인자 → 2 인자: authorRepo + ledger? + membershipRepo?). `getGiftRanking`/`getLogs` ledger 미주입 폴백 분기 제거 + ledger Required (미주입 시 BadRequest). `getLogs` 반환 타입 `CreditLedgerEntry[] | CreditLog[]` → `CreditLedgerEntry[]` 단일. ⑤ **Prisma schema 갱신**: `model Author { credits Int }` 컬럼 제거 + `Author.creditLogs CreditLog[]` 관계 제거 + `model CreditLog { ... }` 전체 제거. `prisma format` + `prisma generate` PASS. ⑥ **scripts/ 정리**: `seed-admin.ts`/`seed-all.ts`/`seed-themes.ts`/`seed-more-classics.ts` `credits` create/update 필드 제거. `db-sync.ts` `creditLog.findMany`/`deleteMany`/`create` 루프 제거. ⑦ **응답 키 案 P3-Y-a 보존**: `processNormalizedWebhook` 반환 `{ processed, credits, deficitCredits? }` Phase 2 박제 그대로 유지(외부 호환성 + `webhook-retry.job` consumer 영향 회피). 응답 일관성 정합은 Phase 4/CC-5 별도 sprint. ⑧ **spec 정리**: `credit.usecase.spec.ts` `mockCreditRepo` 제거 + `creditRepo` 인자 제거(3→2 인자) + ledger 미주입 폴백 case → BadRequest case. `refund-payment.usecase.spec.ts` `mockAuthorRepo` 제거 + 4번째 인자 제거 + `balanceBefore 조회 분기 — ledger 미주입 fallback` spec 제거. `credit-gift-refund-integration.spec.ts` + `credit-rollover-source-ledger-integration.spec.ts` `makeCreditRepoMock` 헬퍼 제거 + `new CreditUseCase` 3 인자(creditRepo, authorRepo, ledger) → 2 인자(authorRepo, ledger) + `makeAuthorRepo` `updateCredits` 제거. `prisma-fk-cascade.spec.ts` Restrict 8건 → 7건 정합(CreditLog 제거) + schema.prisma `model CreditLog` 부재 박제 검증 추가. **인터페이스 변경**: `Author.credits` 도메인 model 필드 제거 / `AuthorRepositoryPort.updateCredits` 시그니처 제거 / `CreditRepositoryPort` 인터페이스 자체 제거 / `CreditLog` interface 제거 / `CreditUseCase` 생성자 시그니처 `(creditRepo, authorRepo, ledger?, membershipRepo?)` → `(authorRepo, ledger?, membershipRepo?)` / `CreditUseCase.getLogs` 반환 타입 `CreditLedgerEntry[]` 단일 / `RefundPaymentUseCase` 생성자 시그니처 `(paymentRepo, auditLog, authorRepo?, ledger?)` → `(paymentRepo, auditLog, ledger?)` / `AuthController` 생성자 시그니처 `(authUseCase, accessLog, prisma, creditLedger?)` 추가. **신설 통합 spec describe** (`credit-rollover-source-ledger-integration.spec.ts` `CC-4 Phase 3 — Author.credits 컬럼 + CreditLog 테이블 폐기 정합` 3 it — Author.credits 필드 부재 컴파일 타임 박제 / CreditRepositoryPort interface 부재 박제 / 4 출처 잔액 단일 정본 회귀 안전망). jest 1051→1054 PASS (+3 it). 커버리지 61.66%(stmts) / 63.23%(lines) — 게이트 ≥60% 충족. 빌드 + tsc PASS. **로컬 dev DB migration apply PASS** — 사후 검증 SQL 4건 + Phase 2 정합 회귀 1건 = 5건 PASS(`authors.credits` 컬럼 부재 0 rows / `credit_logs` 테이블 부재 0 rows / 신 4 출처+deficit 컬럼 5건 정합 / migration history finished_at NOT NULL / Phase 2 `payments.points` 정합 회귀 0건). cost-accountant/visual-canon-keeper 게이트 불요(신규 AI 0건, UI 변경 0건 — 案 P3-Y 옵션 A 보존 정합). **DROP 증명**: `grep -rn "\.credits\b" src --include="*.ts" --exclude="*.spec.ts" \| grep -v "//\|/\*"` = 코드 본문 0건(주석/박제만 잔존) / `ls src/adapter/outbound/persistence/prisma-credit.repository.ts` = No such file / `ls src/domain/port/outbound/credit-repository.port.ts` = No such file / `ls src/domain/model/credit.ts` = No such file / `ls src/domain/model/credit-migration.ts` = No such file. **CC-4 sprint 전체 종결 박제**: Phase 1(구 메서드 제거) + Phase 2(Payment.credits→points rename) + Phase 3(Author.credits DROP + CreditLog 폐기) = 크레딧 디노미네이션 + 4 출처 회계 시스템 단일 정본 종결. dev/prod migration apply는 grimoire-infrastructure agent 영역(별도 핸드오프). web 핸드오프 = data-model.md + api-contract.md sync only(코드 변경 0건 — 案 P3-Y 옵션 A 보존). HIGH-1 案 B = Case C(별도 sprint, 사용자 결정 5/21 박제) + CC-5 PAY-P1-4 Polar 구독 연동(별도 sprint) + Phase 4 응답 일관성 정합(`processNormalizedWebhook` 반환 키 정합, 외부 호환성 영향 평가 종속, 별도 sprint). 정본: `.claude/state/sprint-cc4-phase3-drop-plan-draft.md` + `reports/sprint-cc4-phase3-drop-progress.md`.
+- 2026-05-27 #EMAIL-POLAR-READY Phase A~D (server): grimoire-server — Polar KYC + Email SaaS 양측 외부 게이트 통과 즉시 라이브 사전 박제. ① **Phase A (server 변경 0건)**: `start-subscription.usecase.ts` graceful 503 + `GET /api/membership` env 미설정 영향 0건 현행 정합 재확인. ② **Phase B (Email factory)**: `infrastructure/email/email.factory.ts` 신설 (`EMAIL_PROVIDER=null|resend|sendgrid` 분기, default NullEmailAdapter, 미지원 폴백 + logger.warn) + `ResendEmailAdapter`/`SendgridEmailAdapter` 신설 (RESEND_API_KEY/SENDGRID_API_KEY placeholder 시 isEnabled=false + sendXxx throw 폴백 — 외부 호출 0건 가드) + `app.module.ts` `EmailServicePort` useFactory provider 박제 + `package.json` `resend`/`@sendgrid/mail` dependencies 추가 (default 시 SDK 코드 로드 0). ③ **Phase C (EMAIL-P1-1)**: Prisma `EmailVerificationToken` model 신설 + migration `20260527_email_verification_token` (CREATE TABLE + 3 index + FK Restrict 1건, 사용자 제약 ≤2건 정합) + `domain/model/email-verification-token.ts` (`generatePlainToken`/`hashToken`/`calculateExpireAt`/`isTokenUsable` + `TOKEN_EXPIRE_MINUTES` 정본) + `EmailVerificationTokenRepositoryPort` + `PrismaEmailVerificationTokenRepository` (create/findByTokenHash/markRedeemed/deleteExpired 4 메서드) + `EmailVerificationUseCase` (sendVerification/sendPasswordReset/verifyToken 3 메서드, enumeration 차단, redeem 재사용 차단) + `auth.controller` 4 endpoint 신설 (verify-request/verify-confirm/password/reset-request/password/reset-confirm, @Throttle 분당 3-10회). ④ **Phase D (PAY-S4 결제 알림)**: `PaymentNotificationUseCase` 신설 (notifyChargeSuccess/notifyChargeFailed/notifyRefundProcessed/notifySubscriptionRenewal 4 메서드, NullAdapter 시 외부 호출 0건 + skipped=true 즉시 반환, 발송 실패 throw 0 — 결제 트랜잭션 보존) + `payment.usecase.processNormalizedWebhook` 3 호출점 박제 (success/cancel/fail 분기 후 try/catch + $transaction 외부) + `process-subscription-webhook.usecase` 후행 호출 박제 (changeTier commit 후 try/catch). ⑤ **app.module DI**: `EmailVerificationUseCase` + `PaymentNotificationUseCase` + `EmailVerificationTokenRepositoryPort` provider 박제. ⑥ **shared-contracts §31+§32+§33 신설** (EmailServiceFactory + EmailVerificationTokenPolicy + PaymentNotificationPolicy). **인터페이스 변경**: `EmailServicePort` factory provider (useFactory 분기) / `EmailVerificationTokenRepositoryPort` 신설 / `EmailVerificationUseCase` 신설 / `PaymentNotificationUseCase` 신설 / `PaymentUseCase` 생성자 7번째 인자 `PaymentNotificationUseCase?` Optional 추가 / `ProcessSubscriptionWebhookUseCase` 생성자 3번째 인자 `PaymentNotificationUseCase?` Optional 추가 / `AuthController` 생성자 5번째 인자 `EmailVerificationUseCase?` Optional 추가 / 4 신규 endpoint(verify-request/verify-confirm/password-reset-request/password-reset-confirm). jest 1120→1174 PASS (+54 it). 커버리지 ≥60% 유지. 빌드 PASS. sensor-server 4/4 + sensor-payment-idempotency 7/7 + sensor-payment-reconciliation 10/10 + sensor-circuit-breaker-policy 10/10 + sensor-fake-email-leak PASS — 회귀 0건. **마이그레이션 1건** (사용자 제약 ≤2건 정합). **외부 호출 0건 가드**: factory default NullAdapter + adapter 자체 placeholder 체크 + UseCase `isEnabled()` 가드 = 3중 안전망. **사용자 라이브 액션**: (Polar KYC) `gcloud run services update grimoire-web-prod --update-env-vars NEXT_PUBLIC_SUBSCRIPTION_LIVE=true` 1줄 / (Email SaaS) `gcloud secrets versions add resend-api-key-prod-an1 --data-file=-` + `gcloud run services update grimoire-server-prod --update-env-vars EMAIL_PROVIDER=resend` 2줄. dev/prod 배포 + Polar 구독 product 등록은 grimoire-infrastructure 별도 핸드오프. Phase E (Secret Manager placeholder)는 인프라 단독. web Phase A (env flag)는 grimoire-web 단독. 정본: `.claude/state/sprint-email-polar-ready-plan-draft.md` §5~§9. **메인 자율 결정**: G3 외부 SDK package.json 박제 OK (NullAdapter default + env 분기로 호출 0건 강제 — dynamic import 패턴 plan보다 단순 + npm install 1줄 사용자 액션 절감).
+- 2026-05-22 #크레딧개편 CC-5 Polar 구독 정기결제 연동 + HIGH-1 案 B: grimoire-server — **PAY-P1-4 종결 + HIGH-1 案 B 이행** (코드 구현만 — Polar 구독 상품 실등록 / 배포 / priceUsd cost-accountant 게이트 범위 외, 메인 후속). **Phase A — HIGH-1 案 B (`MembershipPlan.tier` 정본화)**: ADR-014 案 A → 案 B 전환. ① `resolveTierOrFree(membership-tier.ts)` + `isMembershipExpired(plan.ts)` 도메인 헬퍼 신설 — `getPlan` 결과 → tier 결정 / 만기 판정(plan null·status!='active' → free). ② theme 도메인 11곳 이행 — `generate-theme`/`theme-slot`/`get-theme` 의 `Author.plan` 직접 읽기를 `MembershipPlanPort.getPlan` + `resolveTierOrFree`/`isMembershipExpired` 경유로 교체. `MEMBERSHIP_THEME_SLOTS`/`MEMBERSHIP_DAILY_FREE_THEME` 사용. `MembershipPlanPort` Optional DI. ③ `plan.usecase`/`admin.usecase` — `activatePlan`/`createAuthor`/`changePlan` 의 직접 `authorRepo.updatePlan` SQL → `MembershipPlanPort.changeTier` 단일 진입점. ④ `Author.plan`/`planExpireAt` `[DEPRECATED]` 박제 (tier 정본 = `MembershipPlan.tier`, `changeTier` 案 A 미러 유지 — 컬럼 물리 DROP 은 별도 후속). **Phase B — Polar 구독 webhook**: ⑤ `NormalizedSubscriptionEvent` 신 타입 + `isSubscriptionEvent` 가드 (충전 `NormalizedWebhookEvent` status 3값이 구독 생명주기 표현 불가 — 타입 분리). ⑥ `polar.adapter` webhook 화이트리스트 — `subscription.created/updated/canceled/revoked` 4 case + `parseSubscriptionEvent` 정규화 + `tierForSubscriptionProductId`(productId→tier 역매핑) + metadata 폴백. ⑦ `ProcessSubscriptionWebhookUseCase` 신설 — created/updated → `changeTier(tier)` + `polarSubscriptionId` 매핑, canceled/revoked → `changeTier('free')` 다운그레이드. `WebhookEvent` 멱등성 게이트 재사용. ⑧ `changeTier` 시그니처 4번째 인자 `polarSubscriptionId?` + status/expiresAt 정합(free 다운그레이드 → cancelled, pro/premium → active). ⑨ `payment.usecase.processWebhook` 에 `isSubscriptionEvent` 라우팅 분기. ⑩ 정기결제 갱신↔cron 정합 案 A 분리 — 구독 webhook 은 등급 변경만, 풀 리셋은 `resetMonthlyPool` cron 단독. **Phase C — HTTP 엔드포인트**: ⑪ `polar.adapter.initiateSubscriptionCheckout` + `resolveSubscriptionProductId` (recurring product, CircuitBreaker 래핑). ⑫ `StartSubscriptionUseCase`/`GetMembershipUseCase` 신설. ⑬ `SubscriptionController` — `POST /subscriptions/checkout`(`JwtAuthGuard` + `@Throttle` 분당 3) + `GET /membership`(`JwtAuthGuard`). DTO class-validator. 내부 ID 미노출(SECURITY.md §4). **graceful 설계** (사용자 핵심 요건): env `POLAR_PRODUCT_SUBSCRIPTION_PRO/_PREMIUM` Optional — 미설정 시 `POST /subscriptions/checkout` 만 503, webhook 수신·`GET /membership`·기존 충전·테마·분석 전부 정상. **인터페이스 변경**: `MembershipPlanPort.changeTier` 4번째 인자 `polarSubscriptionId?` 추가 / `NormalizedSubscriptionEvent` 타입 신설 / `isSubscriptionEvent` 가드 신설 / `verifyAndParseWebhook` 반환 `NormalizedWebhookEvent | NormalizedSubscriptionEvent | null` / `PaymentGatewayPort.initiateSubscriptionCheckout?` Optional 메서드 신설 / `resolveTierOrFree`·`isMembershipExpired` 도메인 헬퍼 신설 / `POST /subscriptions/checkout`·`GET /membership` 신규 엔드포인트 / theme/plan/admin usecase 생성자에 `MembershipPlanPort` Optional 인자 추가 / `AdminUseCase` 생성자 7번째 인자 `MembershipPlanPort?`. **통합 spec 신설** (`subscription-webhook-integration.spec.ts` — 실 `ProcessSubscriptionWebhookUseCase`/`GetMembershipUseCase`/`StartSubscriptionUseCase`/`ThemeSlotUseCase` + 인메모리 fake 로 ① 구독 webhook → changeTier → MembershipPlan.tier 갱신 + polarSubscriptionId 저장 ② `GET /membership` 갱신 tier 반환 ③ revoke → free 다운그레이드 ④ 案 B 정합 — 구독 후 theme-slot 새 tier 슬롯 ⑤ graceful env 미설정 503 ⑥ 멱등성 중복 webhook → changeTier 1회 ⑦ 정기결제↔cron 정합 案 A 분리). jest 1054→1094 PASS (+40 it). 커버리지 61.92%(stmts) / 63.45%(lines) — 게이트 ≥60% 충족. 빌드 PASS. **마이그레이션 0건** — `Author.plan` 案 B 는 deprecated 주석만(컬럼 물리 변경 0), `MembershipPlan.polarSubscriptionId` 필드는 I Phase 부터 존재. cost-accountant 게이트 = priceUsd 1건(범위 외 — 메인 후속), visual-canon-keeper 불요(server sprint). **PAY-P1-4 종결 증명**: `grep "subscription.created" src/adapter/outbound/payment` ≥1건(화이트리스트) + `changeTier` 호출처 `process-subscription-webhook.usecase` 1건 + 통합 spec ① PASS. **HIGH-1 案 B 증명**: `grep "author\.plan\b" src/application/theme src/application/plan`(직접 읽기) 0건(getPlan 경유) + `Author.plan` `[DEPRECATED]` 박제 + 통합 spec ④ PASS. 잔존(메인 후속): Polar 구독 상품 dev/prod 등록 + env 입력 / priceUsd cost-accountant 게이트 / web 구독 페이지 실연결(별도 web sprint) / `Author.plan` 컬럼 물리 DROP(별도 후속). 정본: `reports/CREDIT_CORE_DIAGNOSIS.md` §7·§5-A + `.claude/state/sprint-cc5-subscription-plan-draft.md` + `reports/sprint-cc5-subscription-progress.md` + ADR-015.
+
+---
+
+## 31. EmailServiceFactory (server 도메인 — EMAIL-POLAR-READY Phase B 외부 게이트 즉시 라이브 사전 박제)
+
+**위치**: `grimoire-server/src/infrastructure/email/email.factory.ts` + `app.module.ts` provider.
+
+**적용**: Email SaaS 활성/비활성 분기. **사용자 절대 규정 0-1 (외부 API 신규 의존 보류) 사용자 명시 해제 전까지 NullEmailAdapter default**. 해제 후 env 1줄 갱신만으로 ResendEmailAdapter/SendgridEmailAdapter 활성.
+
+```typescript
+export function createEmailService(): EmailServicePort {
+  const provider = (process.env.EMAIL_PROVIDER ?? 'null').toLowerCase()
+  switch (provider) {
+    case 'resend': return new ResendEmailAdapter()       // RESEND_API_KEY 실값 필요
+    case 'sendgrid': return new SendgridEmailAdapter()   // SENDGRID_API_KEY 실값 필요
+    case 'null':
+    case '': return new NullEmailAdapter()
+    default: return new NullEmailAdapter()                // 미지원(ses/postmark 등) 폴백 + logger.warn
+  }
+}
+```
+
+- **사용자 라이브 액션** (G-Email-1+2+3+4 통과 후):
+  1. `gcloud secrets versions add resend-api-key-prod-an1 --data-file=<(echo -n "{실API key}")`
+  2. `gcloud run services update grimoire-server-prod --update-env-vars EMAIL_PROVIDER=resend`
+  3. 자동 재배포 (~3분) → 즉시 라이브
+- **default 정합**: `EMAIL_PROVIDER` 미설정 → NullEmailAdapter → 외부 API 호출 0건 (regression-수치 회귀 0).
+- **adapter 자체 가드**: ResendEmailAdapter/SendgridEmailAdapter는 `RESEND_API_KEY=placeholder` 시 `isEnabled()=false` + `sendXxx` throw 폴백 — env 일관성 잠시 깨져도 외부 호출 0 보장.
+- **package.json**: `resend`/`@sendgrid/mail` dependencies 박제 (npm install 1회). default NullAdapter 시 SDK 코드 로드 0 (factory 분기 미진입).
+- **외부 SDK 호출 0건 검증**: `EMAIL_PROVIDER` 미설정 시 ResendAdapter/SendgridAdapter constructor 미호출 → `Resend()`·`sgMail.setApiKey()` 호출 0.
+
+## 32. EmailVerificationTokenPolicy (server 도메인 — EMAIL-POLAR-READY Phase C 이메일 인증/비밀번호 초기화 토큰)
+
+**위치**: `grimoire-server/src/domain/model/email-verification-token.ts` + `application/auth/email-verification.usecase.ts` + `adapter/inbound/http/controller/auth.controller.ts` 4 endpoint + Prisma `EmailVerificationToken` model.
+
+**적용**: 이메일 인증/비밀번호 초기화 토큰 발급/검증 — NullEmailAdapter (default) 시에도 토큰 DB 박제 + 검증 흐름 정상 동작 (외부 발송만 logger.warn). 사용자 라이브 액션 (EMAIL_PROVIDER=resend) 후 자동 실 발송.
+
+```typescript
+// domain — 정책 단일 정본
+export const TOKEN_EXPIRE_MINUTES: Record<EmailTokenPurpose, number> = {
+  verify_email: 60,       // 1시간
+  password_reset: 30,     // 30분 — 비밀번호 노출 위험 최소화
+}
+export function hashToken(plain: string): string {
+  const pepper = process.env.EMAIL_TOKEN_PEPPER ?? ''
+  return crypto.createHash('sha256').update(plain + pepper).digest('hex')
+}
+export function generatePlainToken(): string {
+  return crypto.randomBytes(32).toString('base64url')  // 32바이트(256bit)
+}
+
+// usecase
+async sendVerification(authorId: string)         → 토큰 발급 + DB 박제 (hash만) + EmailServicePort.sendVerificationEmail
+async sendPasswordReset(email: string)           → enumeration 차단 (등록 여부 무관 동일 응답)
+async verifyToken(plainToken: string)            → hash 매칭 + expireAt + redeemedAt 검증 + markRedeemed
+```
+
+**보안 규약**:
+- **평문 토큰은 발송 시점만 메모리**, DB 0건 (sha256 hash만)
+- `EMAIL_TOKEN_PEPPER` env로 hash 강화 (rainbow table 차단)
+- `tokenHash @unique` 인덱스 — O(1) 조회 + 충돌 차단
+- **재사용 차단**: `redeemedAt NOT NULL` 시 BadRequest "이미 사용된 토큰입니다"
+- **만료**: verify_email=60분 / password_reset=30분, 만료 시 BadRequest "토큰이 만료되었습니다"
+- **enumeration 차단**: `sendPasswordReset` 미등록 이메일도 issued=true 응답 (등록 여부 누출 차단)
+
+**HTTP endpoint**:
+- `POST /auth/email/verify-request` (JwtAuthGuard, @Throttle 분당 3회)
+- `POST /auth/email/verify-confirm` (JwtAuthGuard, @Throttle 분당 10회, 본인 토큰 검증)
+- `POST /auth/password/reset-request` (비로그인 OK, @Throttle 분당 3회)
+- `POST /auth/password/reset-confirm` (비로그인 OK, @Throttle 분당 10회, purpose='password_reset' 강제)
+
+**제한**:
+- 본 sprint에서는 `Author.emailVerifiedAt` 컬럼 추가 X (마이그레이션 1건 제약 — EmailVerificationToken만)
+- 응답에 `verified: true` 박제하지만, Author 컬럼 갱신은 별 sprint (verify_email 토큰 redeem 흐름은 박제됨 → 별 sprint에서 redeemedAt 조회로 검증)
+- 비밀번호 초기화 토큰 검증 후 신 비밀번호 설정은 별 endpoint (reset-confirm → set-password 2단계)
+
+**마이그레이션**: `20260527_email_verification_token` (CREATE TABLE + 3 index + FK Restrict)
+
+## 33. PaymentNotificationPolicy (server 도메인 — EMAIL-POLAR-READY Phase D 결제 알림)
+
+**위치**: `grimoire-server/src/application/payment/payment-notification.usecase.ts` + `payment.usecase.ts` 3 호출점 + `refund-payment.usecase.ts` (envelope) + `process-subscription-webhook.usecase.ts` 1 호출점.
+
+**적용**: Polar webhook 충전 성공/실패 + 환불 완료 + 구독 갱신 시 EmailServicePort/SmsServicePort 양측 호출. NullAdapter (default) 시 호출 0건 (사용자 절대 규정 0-1 정합).
+
+```typescript
+// usecase 4 메서드
+async notifyChargeSuccess({ paymentId, authorId, amount, credits, productName? })
+async notifyChargeFailed({ paymentId, authorId, amount, productName? })
+async notifyRefundProcessed({ paymentId, authorId, refundedAmount, actualRefunded, deficitIncurred, isPartial, reason })
+async notifySubscriptionRenewal({ authorId, tier, monthlyPoolPoints, expiresAt })
+```
+
+**결제 트랜잭션 원자성 절대 규정 (CLAUDE.md §9 정합)**:
+- 본 usecase 호출은 `$transaction` **외부**에서만 (호출자 책임)
+- 호출자(payment.usecase / refund-payment.usecase / process-subscription-webhook.usecase)는 `try/catch` 필수
+- 알림 실패는 logger.warn만, **throw 0** (결제 commit 보존)
+- webhook 응답은 `processed: true` 유지 (재시도 유발 차단)
+
+**NullAdapter 가드**:
+- `EmailServicePort.isEnabled() === false && SmsServicePort.isEnabled() === false` 시 즉시 `skipped: true` 반환 + author 조회도 skip (성능)
+- ResendAdapter/SendgridAdapter 활성 시에만 author 조회 + sendPaymentNotification 호출
+- 발송 실패 시 logger.error만, throw 0 (결제 트랜잭션 영향 0)
+
+**호출점 매트릭스**:
+| 트리거 | 호출 메서드 | 위치 | $transaction 외부? |
+|---|---|---|---|
+| Polar webhook order.paid | `notifyChargeSuccess` | payment.usecase.processNormalizedWebhook success 분기 | ✅ (`completePaymentWithPoints` commit 후) |
+| Polar webhook order.refunded | `notifyRefundProcessed` | payment.usecase cancel 분기 | ✅ (`refundPaymentUseCase.execute` 후) |
+| Polar webhook 결제 실패 | `notifyChargeFailed` | payment.usecase fail 분기 | ✅ (`updateStatus(failed)` 후) |
+| Polar webhook subscription.created/updated | `notifySubscriptionRenewal` | process-subscription-webhook.usecase 후행 | ✅ (`changeTier` commit 후) |
+
+**Author.phone 컬럼 미박제 → SMS 호출 skip (별 sprint)**: 본 sprint는 EmailServicePort 단독 활성. SmsServicePort 활성 시에도 SMS 발송은 별 sprint 핸드오프 (Author.phone 컬럼 마이그레이션 + UI 동의 + provider 결정).
+
+**spec 정합** (AC-D 매트릭스):
+- AC-D1: 모든 adapter NullAdapter 시 외부 호출 0 + skipped=true (4 메서드 전부)
+- AC-D2: email 발송 실패 시 throw 0 + emailSent=false (결제 commit 보존 — CRITICAL)
+- AC-D3: author not found 시 silent skip
+- AC-D4: notifySubscriptionRenewal 시 payment_success 템플릿 재사용 + productName="PRO 구독"
 
 ---
 

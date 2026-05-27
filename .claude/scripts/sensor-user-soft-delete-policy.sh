@@ -48,8 +48,9 @@ if [ ! -f "${MW_FILE}" ]; then
   echo "FAIL [4/12]: prisma-soft-delete.middleware.ts 박제 0건"
   fail_count=$((fail_count + 1))
 else
-  if ! grep -q "applySoftDeleteMiddleware" "${MW_FILE}"; then
-    echo "FAIL [4/12]: applySoftDeleteMiddleware 함수 박제 0건"
+  # Prisma 6.x $use 제거 → $extends 마이그레이션 (eb5d931): applySoftDeleteExtension 정합
+  if ! grep -q "applySoftDeleteExtension" "${MW_FILE}"; then
+    echo "FAIL [4/12]: applySoftDeleteExtension 함수 박제 0건"
     fail_count=$((fail_count + 1))
   fi
 fi

@@ -1,4 +1,98 @@
-# HANDOVER — 2026-05-15 #10_8 연장 (7 sprint 종료: PAY-P3-H + PAY-P3-D + PAY-P3-E prod + PAY-P2-5 prod + main 머지 + prod 배포 + USER-SOFT-DELETE 풀스택 + anonymize 보강) → 다음 세션
+# HANDOVER — 2026-05-17 (크레딧 개편 I Phase 구현 종료 — §17 게이트 + server/web/HTTP follow-up, 3 레포 push) → 다음 세션
+
+> **작성자**: 2026-05-16 세션 신설 (모두의 창업 출품 + 과금 개편 R+S Phase) → 2026-05-17 세션 갱신 (Tier 0 deploy 안전망 + Tier 1 USER-SOFT-DELETE E2E + Tier 2 크레딧 개편 S Phase 스키마 설계).
+> **수신자**: 다음 세션
+> **검증 명령**: `cd /Users/sokol/Desktop/Git/ProjectGrimoire && git log --oneline -3 && head -12 research/CREDIT_PRICING_OVERHAUL_PLAN.md`
+> **최근 커밋**: 5/16 `dd0484a` → 5/17 `e6ee3b0` (Tier 2 S Phase 스키마 설계) → 본 핸드오버 커밋.
+
+## 0. 이번 세션 작업 2건
+
+### A. 모두의 창업 2026년 1기 신청서 — ✅ 제출 완료
+
+- **Grimoire 출품**(코드명 ProjectGrimoire, 외부 브랜드 Grimoire). 트랙: 일반/기술. 분야: 미디어/엔터테인먼트.
+- 박제: **`MODOO_APPLICATION_2026_1.md`** (루트). 메타·Q1~Q4 본문·변경이력 전부 포함.
+- 흐름: 메인이 4-agent 전수조사로 Q1~Q4 본문 작성 → Chrome MCP로 사이트 입력/임시저장 → **사용자가 직접 Q9 서약서 동의 + 지원지역(서울) + 멘토기관(광운대학교) 선택 + 최종 제출**.
+- **제출 시각 2026-05-15 10:27**. 2026-05-16 재점검에서 제출본(`/apply/preview`)이 박제 v4 본문과 일치 확인 — 본문 손실 0건.
+- **다음 세션 할 일 없음**. 수정 원하면 사이트 "수정하기" 버튼(사용자 영역).
+
+### B. 크레딧·구독·채팅 과금 전면 개편 — R Phase + S Phase 수치 산출 완료
+
+- **정본: `research/CREDIT_PRICING_OVERHAUL_PLAN.md` (v6)** — §8이 골격·수치 정본.
+- 보조 산출물: `research/CREDIT_OVERHAUL_RESEARCH_COMPETITORS.md`(경쟁사), `research/CREDIT_OVERHAUL_COST_SIM.md`(v1/v2/v3 마진 시뮬), `reports/AI_COST_MONITOR.md`(2026-05-16 재스윕 — 모델가 0% 변동, 환율 ₩1,497.08).
+- **문제**: 크레딧이 `Author.credits Int` 정수 — 채팅처럼 토큰 가변 비용을 못 담음.
+- **확정 골격**(§8): 디노미네이션 1크레딧=1,000pt 단일통화 / 1pt 표면 ₩0.12(§0 최악 순단가 ₩0.09856) / 구독 = 테마슬롯 + 월 포인트풀(채팅·테마·분석 공용, 매월 리셋) Pro ₩9,900·93,000pt / Premium ₩19,900·191,500pt / 채팅 **4구간 정액**(짧음190·보통810·긺3,390·초장문5,520 pt) / 테마 590pt·분석 2,440pt / 패키지 4종 단일단가+보너스(입문~베스트) / 포인트 출처 4종 분리 회계(무료적립→구독풀→응원선물→충전 소진순).
+
+## 0-C. (2026-05-16 후반 세션) Tier 0 deploy 안전망 종료 + 작업 순서 재산출
+
+> 정본: `memory/project_session_20260516.md`. 본 세션 = 크레딧 개편 컨텍스트 파악(참고만) + 전체 작업 순서 재산출 + Tier 0.
+
+- **전체 작업 순서 재산출** (8 카테고리 Tier 0~8): 크레딧 개편이 결제 백본 — AI 채팅 차감(P1#8)·PAY-P1-4 구독·시맨틱 캐시(P1#9)·PAY-P1-2 결제알림 4건 종속. 상세 `memory/project_remaining_tasks.md` "작업 순서 재산출 (2026-05-16)".
+- **Tier 0 종료**:
+  - F git 정리 — `dcc2060`(#10_8 잔여 baseline+HARNESS) + `dd0484a`+`be99c07`(5/16 크레딧 세션) origin push 종료
+  - B-1 — `sensor-deploy-health` jq 결함 = **결함 아님 (transient 확정)** / baseline FAIL 1건 = `regression-73` eval task criteria stale (`eb5d931` `$use`→`$extends` rename 미반영) → sensor `4324099` + eval task `b0bfa81` 교정
+  - B-2 — deploy 스크립트 **revision-aware 보강** (`action_post_deploy_revision_check` 신설 — 신규 revision `runningState` 직접 검증, ActivationFailed → 비0 exit, polling 30s×5) — server `cd961b2` + web `366b699`
+  - 전체 eval **71/71 PASS** / 3 레포 develop SYNC 0/0
+- **agent 신뢰도 주의**: infrastructure agent stall/파싱 실패 누적 (#10_8 + 본 세션) — agent 위임 결과는 메인이 직접 검증(diff + bash -n + git rev-list SYNC) 강제.
+
+## 1. 다음 세션 1순위 — 크레딧 코어 복구 CC-1 (적립 연동) — ⚠️ V Phase 직행 금지 (5/19 정밀진단)
+
+### Tier 1 — USER-SOFT-DELETE Playwright E2E ⚠️ 부분 종료 (5/17)
+- `e2e/account-delete.spec.ts` 5 it 신설 (web `6b95534`+`9c2137a`+머지). dev 대상 **3 PASS / 2 SKIP**:
+  - ✅ 본인 탈퇴 (프로필 "위험 영역" → 모달 → slug 검증) dev 실제 PASS + 비인증 리다이렉트 2 PASS
+  - ⚠️ 어드민 force delete / GDPR anonymize 2건 **SKIP** — dev admin 자격증명 불명
+- **dev admin incident (pending)**: dev DB admin 계정 존재(slug `grimoireadmin`)하나 email db-sync 마스킹(`author-4@masked.local`) + 비번 ACCOUNTS.md 공통 비번 불일치. **해소**: dev DB 접근 환경 `SEED_ADMIN_PASSWORD=<비번> npx tsx grimoire-server/scripts/seed-admin.ts` → `E2E_ADMIN_PASSWORD` 박제 → 어드민 2 it 재실행 5/5 PASS (코드 검증 완료). incident-log 박제.
+- E2E 버그 2건 수정: reCAPTCHA v3 빈 토큰(`waitForRecaptchaReady` 헬퍼) + `"로그인"` strict mode(`exact:true`).
+
+### Tier 2 — 크레딧 개편 S Phase 스키마 설계 ✅ 종료 (5/17)
+- planner Initializer Draft `.claude/state/sprint-credit-overhaul-s-phase-draft.md` (17 섹션 633 lines, claude-docs `e6ee3b0`)
+- **사용자 게이트 6건 권장값 채택**: 1-C 하이브리드 회계(Author 4필드+`CreditLedger`) / 2-C `credits` 폐기(1 sprint 유예) / ChatMessage 5필드 nullable / 4-C `MembershipPlan` 신설 / 사후차감+`deficitPoints`+`SystemSetting`+상한 -10,000pt / 6-B sensor+핸드오프
+- qa Draft 검증 **CONDITIONAL PASS** (설계 정합 전건 PASS — 게이트 6건↔§6 매트릭스 1:1 + §8-8 CRITICAL 5건 반영 + 정본 §8 13수치 일치)
+- cost-accountant `ai-cost-table.md` 개정 (server `786b0f3`, +264/-88) — 디노미 1,000pt + 채팅 4구간 + 구독 풀, **§0 전항목 ≥3× PASS** (경계선 3.00~3.05× ACCEPTABLE — §6 재산정 트리거 sensor가 안전장치)
+
+### Tier 3 — 크레딧 개편 I Phase ⚠️ 코드 작성만 종료, 기능 미완결 (5/17 작성 / 5/19 정밀진단 정정)
+
+⚠️ **5/19 정밀진단 정정**: 아래 "구현·검증"은 코드 작성 + 유닛테스트 한정. 적립(earn) 경로가 신 4-출처 시스템에 미연동 — 기능 미완결. V Phase 직행 시 신규 가입자 AI 마비. 상세 = §1 "다음 1순위" + `reports/CREDIT_CORE_DIAGNOSIS.md`.
+
+§17 진입 게이트 6/6 충족 → server + web + HTTP follow-up 전건 구현·검증·push 완료.
+- §16-2 #7/#8 사용자 확정: 패키지 충전액 ₩3,000/5,000/10,000(+10%)/30,000(+15%), 응원선물 1,000·3,000·5,000pt 현행 유지.
+- server `1c99123`→`376ee04` (schema 10모델 + 차감/적립/구독, qa CONDITIONAL PASS) + HTTP 노출 follow-up `1ba8c9f`→`9d0d2b7` (`/credits/balance` 4-source).
+- web `3e9bb06`→`20ee379` (credits 슬라이스 + 잔액/차감/멤버십 UI, VCK PASS) + docs 동기화 `9c9adf4`(api-contract) + `47621e1`(data-model — `9c9adf4`가 빠뜨린 straggler 정리, server↔web 바이트 동일 복구).
+- claude-docs `0941118`/`ea7ed47`/`46105f4`/`0feb5ff` (shared-contracts §30 + sensor 5 + eval 4 + regression-026 교정).
+- jest 971 / vitest 210 / eval 75/75 / 3 레포 develop push 완료.
+
+### 다음 1순위 — 크레딧 코어 복구 sprint (5/19 정밀진단 재추산)
+
+⚠️ **직전 "다음 1순위 = §7 단계6 dev migration(V Phase)"은 무효.** 5/19 정밀진단(구독제 audit + server 2트랙 진단, 메인 직접 실측 검증)에서 I Phase가 **기능 미완결**로 확인 — V Phase 마이그레이션을 현 상태로 적용하면 신규 가입자부터 AI 기능(채팅·분석·테마) 마비.
+
+**근본 결함**:
+- 적립(earn) 경로 전체가 신 4-출처 `Author.points*`가 아니라 구 `Author.credits`로 감 (`GrantPointsUseCase` 호출처 0건). 차감도 채팅·분석만 연동 — 테마 차감(`chargeTheme`) 호출처 0건.
+- `getBalance`가 `CreditLedger.expiresAt` 미반영 → 구독 풀 이월 금지가 cron 단일 의존.
+
+**재추산 sprint** (상세 정본: `memory/project_remaining_tasks.md` "정밀진단 재추산 (2026-05-19)" + `reports/CREDIT_CORE_DIAGNOSIS.md` · `reports/PAYMENT_PIPELINE_DIAGNOSIS.md`):
+- 즉시: PAY-S1 로컬 DB 마이그레이션 동기화 (로컬 5건 미적용)
+- 트랙 A (크레딧 코어, 순차): CC-1 적립 비결제 연동(가입·첫작품·관리자·테마) → CC-2a 충전 연동+트랜잭션 패턴 → CC-2b 선물·환불 연동 → CC-3 이월 안전망+이중출처+원장 → CC-4 V Phase 마이그레이션 → CC-5 PAY-P1-4 Polar 구독
+- 트랙 B (결제 하드닝, 독립 병렬): PAY-S2 다중 부분환불 한도 / PAY-S3 Circuit Breaker admin UI / PAY-S5~7 후순위
+- 차단: PAY-P1-2 결제알림 Email+SMS (절대규정 0-1 + cost-accountant + EMAIL-P1-1 인증)
+- **다음 세션 진입 = PAY-S1(로컬 DB 동기화) + CC-1(적립 비결제 연동).** 상세 실행 계획(writing-plans, PAY-S1 9 + CC-1 25 sub-task) = `.claude/state/sprint-cc1-pay-s1-plan-draft.md`. CC-4(V Phase)는 반드시 CC-1·2a·2b·3 이후.
+- ※ V Phase 마이그레이션 자체 잔여 결함: 검증 기준 `credit_ledgers row=10`이 (c-2) 구독 풀 행 미반영 / dev plan 분포 미측정 / (d) ×610 휴리스틱 → CC-4에서 해소.
+
+## 2. git 상태 (2026-05-18 갱신)
+
+- 3 레포 develop 모두 origin push 완료 — server `9d0d2b7` / web `47621e1` / claude-docs `6672d47`(직전 핸드오버) → 본 5/18 갱신 커밋은 직후 별도.
+- main 미머지 — I Phase는 develop 단계. main 머지·prod 배포는 dev migration + 검증 후 V Phase.
+- 검증 실측: jest 971 / vitest 210 / eval 75/75 / sensor 전건 PASS.
+- 다음 세션 검증 명령: `git -C grimoire-server log --oneline -3 && git -C grimoire-web log --oneline -3 && git log --oneline -3`.
+
+### 2-A. 2026-05-18 freeze 회복 세션 (프로젝트 작업 진척 0 — 하우스키핑만)
+
+- 데스크탑 앱 freeze로 5/17 세션 중단 → fresh 세션에서 잔여 마무리. 3 레포 push 확인 + web `docs/data-model.md` 동기화 straggler 정리(`47621e1` — 직전 `9c9adf4`가 api-contract만 동기화하고 data-model 누락).
+- 메모리 인덱스 consolidate — `MEMORY.md` 32KB→12KB (세션 엔트리 1줄 압축 + 중복 색인 3건 병합 + 누락 1건 색인). 메모리는 git 미추적.
+- **다음 1순위 불변** = 위 §1 §7 단계6 dev migration. 본 회복 세션은 코드/스키마 변경 0건.
+- ※ 사용자 iPad/원격 작업 희망 — Remote Control 기능 사용 시 `ANTHROPIC_API_KEY` env 제거 필요(claude.ai Pro/Max 로그인 전용, API 키 인증 불가). 버전 요구 2.1.51+ 충족(현재 2.1.140). 상세 `memory/project_session_20260517.md`.
+
+---
+
+# (직전 세션) HANDOVER — 2026-05-15 #10_8 연장 (7 sprint 종료: PAY-P3-H + PAY-P3-D + PAY-P3-E prod + PAY-P2-5 prod + main 머지 + prod 배포 + USER-SOFT-DELETE 풀스택 + anonymize 보강) → 다음 세션
 
 > **작성자**: 2026-05-15 본 세션 (Claude, #10_8 연장 — 본 세션 30+ commit, jest 711→805, qa #18~#20 모두 PASS, prod migration 2건 + prod 배포 종료)
 > **수신자**: 다음 세션 (로컬 또는 리모트 채팅방)
@@ -12,10 +106,13 @@
 > 5. **main 머지** (server `afee631` + claude-docs `440bc4a`) + **server prod 배포** (revision 100 Healthy + warm 0.72s, sensor-azure-env-secret 15/15)
 > 6. **USER-SOFT-DELETE 풀스택** (Initializer + server Generator `c72803f`+`492dae2` jest +28 it + web Generator `d33a0fb`+`62e6f6a` vitest +9 it + qa #20 CONDITIONAL PASS CRITICAL 1건 + **anonymize 보강** `8566c01`+`d3811b2`+`d1b585d`+`6ec56b5`+`b663d72`+`224e73f` jest +8 it AdminController @Post anonymize + UseCase anonymizeOnly 분기 + GDPR 정합)
 > 7. **C P0 외부 API 0 묶음** + **옵션 C** (regression-011 archive) + **로그인 `@grimoire.app` 완전 제거 검증**
+> 8. **USER-SOFT-DELETE dev+prod 풀 배포 종료** (옵션 A 24h 생략 일괄) — dev 배포 1차 **revision 159 ActivationFailed** (Prisma `$use` 6.x 제거 → `$extends` hotfix `85393b6`) → dev 재배포 revision 160 Healthy → main 머지 3 레포 (server `34e37e0`/web `1b3b03f`/claude-docs `1681ae0`) → prod migration (`deleted_at` 컬럼) → **prod 배포 server-prod revision 101 + web-prod revision 119 Healthy**.
 >
-> **인벤토리**: jest 711→**805** (+94 it) / vitest +9 it / sensor 48→50 / shared-contracts §1~29 / ADR-001~011 / 외부 API 0
+> **인벤토리**: jest 711→**813** (+102 it) / vitest +9 it / sensor 48→50 / shared-contracts §1~29 / ADR-001~011 / 외부 API 0 / prod migration 3건 (PAY-P3-E + PAY-P2-5 + USER-SOFT-DELETE) / prod 배포 server revision 101 + web 119
 >
-> **다음 세션 1순위**: **USER-SOFT-DELETE dev migration apply (~10분) + server+web prod 배포 (~30분)** — `npx prisma migrate dev --name user_soft_delete_policy` + `make deploy-prod`. dev 24h 후 prod migration 명시 키워드 `USER-SOFT-DELETE prod migration 진행`.
+> **본 세션 학습 (CRITICAL)**: 배포 검증에 **실제 부팅(`node dist`) 단계 필수** — `jest`(unit) + `nest build`(컴파일) 둘 다 NestJS `onModuleInit` 미실행 → revision 159 ActivationFailed 못 잡음. "dev 24h 안정성"은 planner agent 임의 박제 (docs 정본/INFRA-1 회고 0건) — 능동 검증으로 대체 가능.
+>
+> **다음 세션 후보**: ① USER-SOFT-DELETE Playwright E2E (탈퇴/force delete/anonymize) ② sensor-deploy-health jq 결함 수정 ③ deploy 스크립트 Healthcheck revision-aware 보강 (revision 159 fallback 200 오보고 결함) ④ PAY-P3-I / EMAIL-P1-1 등.
 
 ---
 
