@@ -60,8 +60,8 @@ classify_bash() {
 
   # 변경성 git (commit/push/merge/rebase/reset --hard) — git -c, git -C 변형 포함
   case "$norm" in
-    *"git commit"*|*"git push"*|*"git merge"*|*"git rebase"*|*"git reset --hard"*) echo "BLOCK:mutating-git"; return ;;
-    *"git "*" commit"*|*"git "*" push"*|*"git "*" merge"*) echo "BLOCK:mutating-git"; return ;;  # git -C path commit / git -c k=v push
+    *"git commit"*|*"git push"*|*"git merge "*|*"git merge"|*"git mergetool"*|*"git rebase"*|*"git reset --hard"*) echo "BLOCK:mutating-git"; return ;;
+    *"git "*" commit"*|*"git "*" push"*|*"git "*" merge "*|*"git "*" merge") echo "BLOCK:mutating-git"; return ;;  # git -C path commit / git -c k=v push (merge-base는 -base 접미사로 제외)
   esac
   # 배포/인프라
   case "$norm" in

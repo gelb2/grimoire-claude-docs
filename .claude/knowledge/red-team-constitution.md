@@ -1,7 +1,7 @@
-# Red-Team Constitution — ProjectGrimoire 적대적 검증 16 Principles
+# Red-Team Constitution — ProjectGrimoire 적대적 검증 20 Principles
 
 > **출처**: Anthropic Constitutional AI 16 principles 패턴 (arxiv 2212.08073) + ProjectGrimoire 도메인 적용
-> **사용**: `sensor-adversarial-pre-commit.sh`가 매 commit 직전 16 principles 자동 검증
+> **사용**: `sensor-adversarial-pre-commit.sh`가 매 commit 직전 20 principles 자동 검증
 > **갱신 정책**: 사용자 승인 게이트 (proposals/ 게이트 거치지 않은 자율 갱신 금지 — 책 Ch 23 안티패턴 #7 거버넌스 부재 방어)
 > **신설일**: 2026-05-02 #10_6 묶음 W
 
@@ -151,8 +151,8 @@
 
 ## 적용 방식 (책 Ch 17 Constitutional AI 자기-비판 패턴)
 
-각 commit 직전 본 sensor가 16 principles 자동 검증:
-1. principle 1~16 순차 검증
+각 commit 직전 본 sensor가 20 principles 자동 검증:
+1. principle 1~20 순차 검증
 2. 위반 1건이라도 발견 시 commit 차단 (exit 1)
 3. 모두 PASS 시 commit 허용 (exit 0)
 

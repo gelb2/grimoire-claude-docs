@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# sensor-adversarial-pre-commit.sh — Red Team Constitution 16 principles 적대적 검증
+# sensor-adversarial-pre-commit.sh — Red Team Constitution 20 principles 적대적 검증
 #
 # 책 Ch 17 Constitutional AI + Ch 23 자가진단 패턴 차용.
-# .claude/knowledge/red-team-constitution.md 16 principles 자동 검증.
+# .claude/knowledge/red-team-constitution.md 20 principles 자동 검증.
 # 위반 1건이라도 발견 시 commit 차단.
 #
 # 발동 조건:
@@ -10,7 +10,7 @@
 #   - 사용자/Claude 명시 호출 가능 (`bash sensor-adversarial-pre-commit.sh`)
 #
 # Exit:
-#   0 — 16 principles 모두 PASS (commit 허용)
+#   0 — 20 principles 모두 PASS (commit 허용)
 #   1 — WARN 1건 이상 (검토 권장, commit 허용)
 #   2 — FAIL 1건 이상 (commit 차단 — Constitutional AI 자기-비판 발동 권장)
 
@@ -35,7 +35,7 @@ check() {
   esac
 }
 
-echo "=== sensor-adversarial-pre-commit (Red Team Constitution 16 Principles) ==="
+echo "=== sensor-adversarial-pre-commit (Red Team Constitution 20 Principles) ==="
 echo ""
 
 # Constitution 파일 존재 검증
@@ -281,7 +281,7 @@ elif [ "$WARN" -gt 0 ]; then
   exit 1
 else
   echo ""
-  echo "✅ 16 Principles 모두 PASS — Commit 허용 (Constitutional AI 정합)"
+  echo "✅ 20 Principles 모두 PASS — Commit 허용 (Constitutional AI 정합)"
   bash "$ROOT/.claude/scripts/sensor-log.sh" "sensor-adversarial-pre-commit" "PASS" "PASS=$PASS WARN=$WARN FAIL=$FAIL" 2>/dev/null || true
   exit 0
 fi
