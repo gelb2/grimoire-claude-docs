@@ -41,6 +41,10 @@ case "$COMMAND" in
     DANGEROUS=1; DANGEROUS_TYPE="azure infra mutation" ;;
   *"az postgres"*"create"*|*"az postgres"*"delete"*)
     DANGEROUS=1; DANGEROUS_TYPE="azure postgres mutation" ;;
+  # 2026-05-29 verifier 보강: 이 레포는 GCP 배포 — gcloud run deploy가 현 1차 배포 경로인데
+  #   case에 없어 레드팀 0회 통과하던 결함. (Azure는 2026-05-27 GCP 마이그레이션으로 decommission 예정)
+  *"gcloud run deploy"*|*"gcloud run services update"*|*"gcloud sql"*|*"gcloud secrets"*)
+    DANGEROUS=1; DANGEROUS_TYPE="gcloud infra mutation" ;;
   *"npm publish"*|*"npx -p"*"publish"*)
     DANGEROUS=1; DANGEROUS_TYPE="npm publish" ;;
   *"polar product"*"create"*|*"polar webhook"*"update"*)

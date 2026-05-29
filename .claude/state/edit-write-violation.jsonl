@@ -20,3 +20,6 @@
 {"ts":"2026-05-10T10:43:42Z","type":"main_direct_in_agent_domain","tool":"Write","file":"/Users/sokol/Desktop/Git/ProjectGrimoire/reports/PLANNER_REPORT_main_work_migration_audit.md","expected_agent":"grimoire-planner"}
 {"ts":"2026-05-10T13:05:44Z","type":"main_direct_in_agent_domain","tool":"Write","file":"/Users/sokol/Desktop/Git/ProjectGrimoire/.claude/state/sprint-pay-p2-5-audit-retention-draft.md","expected_agent":"grimoire-harness"}
 {"ts":"2026-05-10T13:11:32Z","type":"main_direct_in_agent_domain","tool":"Write","file":"/Users/sokol/Desktop/Git/ProjectGrimoire/.claude/state/sprint-pay-p2-5-audit-retention-draft.md","expected_agent":"grimoire-harness"}
+{"ts":"2026-05-29T14:47:07Z","type":"main_edit_blocked","tool":"Edit","file":"/Users/sokol/Desktop/Git/ProjectGrimoire/GRIMOIRE-SERVER/SRC/x.ts","route":"grimoire-server"}
+{"ts":"2026-05-29T14:47:07Z","type":"main_edit_blocked","tool":"Edit","file":"/Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server//src//x.ts","route":"grimoire-server"}
+{"ts":"2026-05-29T14:47:07Z","type":"main_edit_blocked","tool":"Edit","file":"/Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/../grimoire-server/src/x.ts","route":"grimoire-server"}
