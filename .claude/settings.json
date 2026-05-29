@@ -108,8 +108,23 @@
     ],
     "PreToolUse": [
       {
+        "matcher": "Edit|Write|MultiEdit|NotebookEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/scripts/pretooluse-edit-write-guard.sh",
+            "timeout": 30
+          }
+        ]
+      },
+      {
         "matcher": "Bash",
         "hooks": [
+          {
+            "type": "command",
+            "command": "bash /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/scripts/pretooluse-bash-guard.sh",
+            "timeout": 30
+          },
           {
             "type": "command",
             "command": "bash /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/scripts/pretooluse-redteam-gate.sh",

@@ -48,7 +48,7 @@
 
 ### Principle 8 — Sensor 모두 PASS/WARN
 > pre-commit 시점 모든 sensor exit ≤2 (PASS/WARN 허용, FAIL 차단)
-- **검증 sensor**: 본 sensor가 23개 sensor 일괄 호출 후 FAIL 카운트
+- **검증 sensor**: 본 sensor(sensor-adversarial-pre-commit)의 Principle 8 단계가 **9개 핵심 sensor** 일괄 호출 후 FAIL 카운트 (실측 2026-05-29: 스크립트 line 116~124 정합. 이전 박제 "23개"는 코드 미정합 드리프트였음 — `reports/HARNESS_HONESTY_AUDIT_20260529.md` §C-2)
 
 ### Principle 9 — Stop hook 메모리 절대 규칙 (.claude/AGENTS.md §1)
 > 세션 종료 전 project_session_*.md + MEMORY.md 인덱스 갱신
@@ -131,6 +131,21 @@
   - Cuneiform Chat (Bikash Das): "팀의 기억"
   - 책 V1.1 Ch 23 안티패턴 #5 "하네스 부패" 방어
   - Anthropic Constitutional AI 자기-비판 루프 결과 박제
+
+---
+
+## 레드팀 운영 절대규정 5조 (2026-05-29 사용자 명시 — 정직성 사태 후속)
+
+> **배경**: 2026-05-29 하네스 정직성 사태 — 이전 세션들이 "sensor PASS / 가드 통과"로 보고했으나 실측 결과 fire/reject 실적 raw 0건(효과 입증 0)으로 드러남 (`reports/HARNESS_HONESTY_AUDIT_20260529.md`). 사용자가 레드팀 운영을 절대규정으로 박제 명시.
+> **원문 보존**: 사용자 발화 그대로(아래 1~5). 가공·축약 금지.
+
+1. **전수 참조**: 레드팀은 유닛테스트 + `.claude/agents` + `.claude/skills` 모든 내용을 다 참조한다.
+2. **실패 시 차단**: 유닛테스트 실패 / 컴파일 에러 시 절대 커밋·푸시 불가.
+3. **커밋 직전 강제**: 커밋 직전에 반드시 레드팀을 돌린다.
+4. **동반 확장**: 새 실수기록(incident)·유닛테스트 추가 시 레드팀도 그에 맞춰 항목 추가.
+5. **상위 기준선**: 레드팀 스트레스테스트 기준선은 유닛테스트·실수기록보다 **더 높게** — 더 엄격한 절차로 매 커밋 직전 감사.
+
+> **거품 방지 정직 병기 (정직성 사태 핵심 교훈)**: 위 5조는 **목표 규정**이다. 박제 = 규정 명시이지 효과 보장이 아니다. 현 시점(2026-05-29) 구현 충족도는 미달 항목이 존재한다 — 예: 1조의 `.claude/agents`·`.claude/skills` 전수 참조는 현재 `sensor-adversarial-pre-commit.sh`에 미구현(본체 grep 0건). **각 조의 실제 충족 여부는 grimoire-verifier가 변경 0 상태로 독립 실측해 raw 근거(exit code / grep 카운트 / 파일 존재)로 판정한다.** "박제했으므로 지켜진다"는 추정 금지.
 
 ---
 
