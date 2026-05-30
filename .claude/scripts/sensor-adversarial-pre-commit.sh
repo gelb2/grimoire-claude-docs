@@ -138,7 +138,7 @@ else
 fi
 
 # Principle 10 — 한국어 존댓말 (commit 메시지 한국어 비율 검사)
-RECENT_KOR=$(git -C "$ROOT" log -10 --format=%B 2>/dev/null | grep -cE "[가-힣]" || echo 0)
+RECENT_KOR=$(git -C "$ROOT" log -10 --format=%B 2>/dev/null | grep -cE "[가-힣]" 2>/dev/null); RECENT_KOR=${RECENT_KOR:-0}
 if [ "$RECENT_KOR" -ge 5 ]; then
   check 10 "한국어 존댓말" "PASS" "최근 10 commit 중 ${RECENT_KOR}건 한국어 사용"
 else
@@ -246,8 +246,7 @@ echo "── 박제 의무 규정 (Mitchell Ghostty + Cuneiform Chat 정합) ─
 INCIDENT_LOG="$ROOT/.claude/state/incident-log.jsonl"
 TODAY=$(date -u +%Y-%m-%d)  # UTC — incident-log.sh가 UTC ts 박제하므로 정합 (2026-05-06 자기 결함 박제 후 수정)
 if [ -f "$INCIDENT_LOG" ]; then
-  TODAY_INCIDENTS=$(grep -c "\"ts\":\"${TODAY}T" "$INCIDENT_LOG" 2>/dev/null || echo 0)
-  TODAY_INCIDENTS=${TODAY_INCIDENTS:-0}
+  TODAY_INCIDENTS=$(grep -c "\"ts\":\"${TODAY}T" "$INCIDENT_LOG" 2>/dev/null); TODAY_INCIDENTS=${TODAY_INCIDENTS:-0}
   HAS_TODAY_COMMITS=$(git -C "$ROOT" log --since="$TODAY 00:00:00" --oneline 2>/dev/null | wc -l | tr -d ' ')
   if [ "$HAS_TODAY_COMMITS" -gt 0 ] && [ "$TODAY_INCIDENTS" -eq 0 ]; then
     check 20 "incident-log 박제 의무 (Mitchell Ghostty)" "WARN" "오늘 commit ${HAS_TODAY_COMMITS}건 있으나 incident 박제 0건"

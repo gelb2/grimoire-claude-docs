@@ -101,7 +101,7 @@ else
 fi
 
 # 8. 2 action 식별자 (refund_normal + refund_deficit)
-ACTIONS=$(grep -cE 'refund_normal|refund_deficit' "$USECASE" 2>/dev/null || echo 0)
+ACTIONS=$(grep -cE 'refund_normal|refund_deficit' "$USECASE" 2>/dev/null); ACTIONS=${ACTIONS:-0}
 if [ "$ACTIONS" -ge 2 ]; then
   echo "  [PASS] 2 action 식별자 박제 (refund_normal + refund_deficit)"
   PASS=$((PASS + 1))

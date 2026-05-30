@@ -81,7 +81,7 @@ fi
 INCIDENT_LOG="$PROJECT_DIR/.claude/state/incident-log.jsonl"
 TODAY_UTC=$(date -u +%Y-%m-%d)  # incident-log.sh가 UTC ts 박제하므로 정합
 if [ -f "$INCIDENT_LOG" ] && [ "$HAS_TODAY_COMMITS" = true ]; then
-  TODAY_INCIDENTS=$(grep -c "\"ts\":\"${TODAY_UTC}T" "$INCIDENT_LOG" 2>/dev/null || echo 0)
+  TODAY_INCIDENTS=$(grep -c "\"ts\":\"${TODAY_UTC}T" "$INCIDENT_LOG" 2>/dev/null); TODAY_INCIDENTS=${TODAY_INCIDENTS:-0}
   if [ "${TODAY_INCIDENTS:-0}" = "0" ]; then
     echo ""
     echo "⚠️ [ProjectGrimoire] WARN: 오늘 commit 있으나 incident-log.jsonl 박제 0건"

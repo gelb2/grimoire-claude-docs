@@ -69,7 +69,7 @@ NEEDS_USER=0
 echo "  [1/4] drift 자동 갱신 (update-harness-inventory --apply)..."
 if [ "$DRY_RUN" -eq 0 ]; then
   if bash "$ROOT/.claude/scripts/update-harness-inventory.sh" --apply >> /tmp/adv-fix.log 2>&1; then
-    INV_FIXED=$(grep -c "✅ .*: .* → " /tmp/adv-fix.log 2>/dev/null || echo 0)
+    INV_FIXED=$(grep -c "✅ .*: .* → " /tmp/adv-fix.log 2>/dev/null); INV_FIXED=${INV_FIXED:-0}
     if [ "$INV_FIXED" -gt 0 ]; then
       echo "    ✅ drift ${INV_FIXED}건 자동 갱신"
       AUTO_FIXED=$((AUTO_FIXED + INV_FIXED))
@@ -85,7 +85,7 @@ fi
 echo "  [2/4] auto-sensor wrap 자동 보충 (generate-sensor-tasks apply)..."
 if [ "$DRY_RUN" -eq 0 ]; then
   GEN_OUT=$(bash "$ROOT/eval/scripts/generate-sensor-tasks.sh" apply 2>&1)
-  GEN_NEW=$(echo "$GEN_OUT" | grep -c "✨ 생성" || echo 0)
+  GEN_NEW=$(echo "$GEN_OUT" | grep -c "✨ 생성" 2>/dev/null); GEN_NEW=${GEN_NEW:-0}
   if [ "$GEN_NEW" -gt 0 ]; then
     echo "    ✅ auto-sensor wrap ${GEN_NEW}건 신규 생성"
     AUTO_FIXED=$((AUTO_FIXED + GEN_NEW))

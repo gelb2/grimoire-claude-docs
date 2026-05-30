@@ -40,7 +40,7 @@ echo "=== sensor-fk-cascade-policy ($(date '+%H:%M:%S')) ==="
 echo ""
 
 # 1. schema.prisma onDelete directive 33건 박제 (33 FK 영역 정합)
-ONDELETE_COUNT=$(grep -cE "onDelete:" "$SCHEMA" 2>/dev/null || echo 0)
+ONDELETE_COUNT=$(grep -cE "onDelete:" "$SCHEMA" 2>/dev/null); ONDELETE_COUNT=${ONDELETE_COUNT:-0}
 if [ "$ONDELETE_COUNT" -ge 33 ]; then
   echo "  [PASS] schema.prisma: onDelete directive ${ONDELETE_COUNT}건 박제 (≥ 33 정합, PAYMENT_AUDIT §1 모순-F 차단)"
   PASS=$((PASS + 1))
@@ -50,7 +50,7 @@ else
 fi
 
 # 2. Cascade 16건 박제 (사용자 종속 + Work/Episode 종속 + 통계)
-CASCADE_COUNT=$(grep -cE "onDelete: Cascade" "$SCHEMA" 2>/dev/null || echo 0)
+CASCADE_COUNT=$(grep -cE "onDelete: Cascade" "$SCHEMA" 2>/dev/null); CASCADE_COUNT=${CASCADE_COUNT:-0}
 if [ "$CASCADE_COUNT" -ge 16 ]; then
   echo "  [PASS] schema.prisma: onDelete Cascade ${CASCADE_COUNT}건 박제 (≥ 16 정합)"
   PASS=$((PASS + 1))
@@ -71,7 +71,7 @@ declare -a RESTRICT_PATTERNS=(
   "AdminAuditLog|admin_audit_logs"
   "RefundLog|refund_logs"
 )
-RESTRICT_TOTAL=$(grep -cE "onDelete: Restrict" "$SCHEMA" 2>/dev/null || echo 0)
+RESTRICT_TOTAL=$(grep -cE "onDelete: Restrict" "$SCHEMA" 2>/dev/null); RESTRICT_TOTAL=${RESTRICT_TOTAL:-0}
 if [ "$RESTRICT_TOTAL" -ge 7 ]; then
   echo "  [PASS] schema.prisma: onDelete Restrict ${RESTRICT_TOTAL}건 박제 (≥ 7 정합, 회계/세무/감사 영구 보존)"
   PASS=$((PASS + 1))
@@ -81,7 +81,7 @@ else
 fi
 
 # 4. SetNull 영역 박제 (익명화 + 운영자 변경 보존)
-SETNULL_COUNT=$(grep -cE "onDelete: SetNull" "$SCHEMA" 2>/dev/null || echo 0)
+SETNULL_COUNT=$(grep -cE "onDelete: SetNull" "$SCHEMA" 2>/dev/null); SETNULL_COUNT=${SETNULL_COUNT:-0}
 if [ "$SETNULL_COUNT" -ge 9 ]; then
   echo "  [PASS] schema.prisma: onDelete SetNull ${SETNULL_COUNT}건 박제 (≥ 9 정합, 익명화 + 운영자 변경 보존)"
   PASS=$((PASS + 1))
@@ -106,8 +106,8 @@ fi
 
 # 6. migration.sql ALTER TABLE 영역 박제
 if [ -f "$MIGRATION" ]; then
-  ALTER_COUNT=$(grep -cE "^ALTER TABLE" "$MIGRATION" 2>/dev/null || echo 0)
-  DROP_NOT_NULL_COUNT=$(grep -cE "DROP NOT NULL" "$MIGRATION" 2>/dev/null || echo 0)
+  ALTER_COUNT=$(grep -cE "^ALTER TABLE" "$MIGRATION" 2>/dev/null); ALTER_COUNT=${ALTER_COUNT:-0}
+  DROP_NOT_NULL_COUNT=$(grep -cE "DROP NOT NULL" "$MIGRATION" 2>/dev/null); DROP_NOT_NULL_COUNT=${DROP_NOT_NULL_COUNT:-0}
   if [ "$ALTER_COUNT" -ge 33 ] && [ "$DROP_NOT_NULL_COUNT" -ge 2 ]; then
     echo "  [PASS] migration.sql: ALTER TABLE ${ALTER_COUNT}건 + DROP NOT NULL ${DROP_NOT_NULL_COUNT}건 박제 (≥ 33 + 2 정합)"
     PASS=$((PASS + 1))
@@ -122,7 +122,7 @@ fi
 
 # 7. prisma-fk-cascade.spec.ts 8 it 박제 (Sprint §5-1 ≥ 6 it 정합)
 if [ -f "$SPEC" ]; then
-  IT_COUNT=$(grep -cE "^\s*it\(" "$SPEC" 2>/dev/null || echo 0)
+  IT_COUNT=$(grep -cE "^\s*it\(" "$SPEC" 2>/dev/null); IT_COUNT=${IT_COUNT:-0}
   if [ "$IT_COUNT" -ge 6 ]; then
     echo "  [PASS] prisma-fk-cascade.spec.ts: ${IT_COUNT} it 박제 (≥ 6 정합, Sprint §5-1)"
     PASS=$((PASS + 1))

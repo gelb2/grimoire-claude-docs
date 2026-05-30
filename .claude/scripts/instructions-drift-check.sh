@@ -67,13 +67,24 @@ sensors_actual = len(glob.glob(f"{PROJECT}/.claude/scripts/sensor-*.sh"))
 knowledge_actual = len(glob.glob(f"{PROJECT}/.claude/knowledge/*.md"))
 commands_actual = len(glob.glob(f"{PROJECT}/.claude/commands/*.md"))
 
-# settings.json hook 이벤트 수
+# settings.json hook 이벤트 수 + 등록 스크립트 수 (unique .sh 파일명)
 settings_path = f"{PROJECT}/.claude/settings.json"
 hook_events = 0
+hook_scripts = 0
 if Path(settings_path).exists():
     try:
         s = json.loads(Path(settings_path).read_text())
-        hook_events = len(s.get('hooks', {}).keys())
+        hooks_obj = s.get('hooks', {})
+        hook_events = len(hooks_obj.keys())
+        # 등록 스크립트 실측: 모든 이벤트의 command 내 .sh 파일명을 basename으로 unique 카운트
+        script_names = set()
+        for ev_entries in hooks_obj.values():
+            for entry in ev_entries:
+                for h in entry.get('hooks', []):
+                    cmd = h.get('command', '')
+                    for tok in re.findall(r'[A-Za-z0-9._/-]+\.sh', cmd):
+                        script_names.add(tok.rsplit('/', 1)[-1])
+        hook_scripts = len(script_names)
     except Exception:
         pass
 
@@ -94,6 +105,17 @@ sensors_doc = extract_n(r'14\.4\s*Sensors\s*(\d+)\s*개', content)
 knowledge_doc = extract_n(r'14\.5\s*Knowledge\s*(\d+)\s*개', content)
 slash_doc = extract_n(r'14\.6\s*Slash commands\s*(\d+)\s*개', content)
 
+# Hooks 표기는 "14.3 Hooks N 이벤트 M 스크립트" 형태 — 이벤트 수 + 스크립트 수 동시 추출
+hook_events_doc = None
+hook_scripts_doc = None
+m_hooks = re.search(r'14\.3\s*Hooks\s*(\d+)\s*이벤트\s*(\d+)\s*스크립트', content)
+if m_hooks:
+    try:
+        hook_events_doc = int(m_hooks.group(1))
+        hook_scripts_doc = int(m_hooks.group(2))
+    except (ValueError, IndexError):
+        pass
+
 # drift 비교
 drifts = []
 if agents_doc is not None and agents_doc != agents_actual:
@@ -106,6 +128,10 @@ if knowledge_doc is not None and knowledge_doc != knowledge_actual:
     drifts.append(f"Knowledge: 문서 {knowledge_doc}개 vs 실측 {knowledge_actual}개")
 if slash_doc is not None and slash_doc != commands_actual:
     drifts.append(f"Slash commands: 문서 {slash_doc}개 vs 실측 {commands_actual}개")
+if hook_events_doc is not None and hook_events_doc != hook_events:
+    drifts.append(f"Hooks 이벤트: 문서 {hook_events_doc}개 vs 실측 {hook_events}개")
+if hook_scripts_doc is not None and hook_scripts_doc != hook_scripts:
+    drifts.append(f"Hooks 스크립트: 문서 {hook_scripts_doc}개 vs 실측 {hook_scripts}개")
 
 # §17 분할 정본 4파일 검증 (2026-05-02 묶음 K L1)
 SPLIT_FILES = [

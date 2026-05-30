@@ -84,7 +84,7 @@ else
 fi
 
 # 6. 3 action 식별자
-ACTIONS=$(grep -cE 'reconciliation_boost|reconciliation_refund_mismatch|reconciliation_expire' "$JOB" 2>/dev/null || echo 0)
+ACTIONS=$(grep -cE 'reconciliation_boost|reconciliation_refund_mismatch|reconciliation_expire' "$JOB" 2>/dev/null); ACTIONS=${ACTIONS:-0}
 if [ "$ACTIONS" -ge 3 ]; then
   echo "  [PASS] 3 action 식별자 박제 (boost/refund_mismatch/expire)"
   PASS=$((PASS + 1))

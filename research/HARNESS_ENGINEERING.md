@@ -23,7 +23,7 @@
 | 11 | 루트 workspace Git 관리 → **분리됨** | 628 | `research/HARNESS_ROOT_WORKSPACE.md` (2026-05-02 묶음 N NEW-12) |
 | 12 | ProjectGrimoire 종합 대조 | 779 | Fowler 4축 매핑 |
 | 13 | 출처 (citations) → **분리됨** | 850 | `research/HARNESS_BIBLIOGRAPHY.md` (2026-05-02 묶음 L M2) |
-| 14 | **인벤토리** (sensors/skills/hooks/agents) | 856 | 14.2 Skills 17 (현역) + Archive 9 / 14.3 Hooks 9 / 14.4 Sensors 17 |
+| 14 | **인벤토리** (sensors/skills/hooks/agents) | 856 | 14.2 Skills 26 (현역) + Archive 9 / 14.3 Hooks 10 이벤트 17 스크립트 / 14.4 Sensors 57 |
 | 15 | **현장 운영 4 패턴** → **분리됨** | 1074 | `research/HARNESS_FIELD_PATTERNS_4.md` (§15.7 위임 가치 매트릭스 포함, 2026-05-02 묶음 L M1) |
 | 16 | ProjectGrimoire 4 패턴 위치 | 1080 | 채택 결정 + KPI |
 | 17 | CLAUDE.md 60줄 분할 + EDD → **분리됨** | 1102 | `research/HARNESS_SPLIT_AND_EDD.md` (2026-05-02 묶음 L M3) |
@@ -708,7 +708,7 @@ v2 추가 제안:
 
 > **이동 사유**: 루트 `CLAUDE.md` §14에 있던 본문(약 80줄)을 패턴 3(SSOT + CLAUDE.md 좁게) 채택에 따라 본 research 문서로 이동. CLAUDE.md §14는 이 §14를 가리키는 1줄 pointer로 슬림화. CLAUDE.md 19.6KB → 약 16KB로 축소.
 
-### 14.1 Agents 7개 (`.claude/agents/*.md`)
+### 14.1 Agents 10개 (`.claude/agents/*.md`)
 
 | 에이전트 | 역할 | 도구 |
 |---------|------|------|
@@ -719,6 +719,9 @@ v2 추가 제안:
 | qa | 전수검사 + 배포 게이트 판정 | +Bash |
 | server | NestJS 백엔드 개발 | +Bash |
 | web | Next.js 프론트엔드 개발 | +Bash |
+| infrastructure (2026-05-08 신설) | Azure/Cloud Run 배포·secret·cron (수동 배포 1차, Actions 자동배포 차단) | +Bash |
+| harness (2026-05-09 신설) | 하네스 메타 영역 `.claude/*` 전담 (sensor/hook/skill/agent 정의/settings) | +Bash |
+| verifier (2026-05-29 신설) | 읽기전용 독립 검증 (작업 주체 ↔ 검증 주체 분리, Edit/Write/commit 없음) | Read/Bash/Glob/Grep |
 
 각 에이전트 `.md` 하단에 "Skills 프로토콜 참조" 섹션으로 `.claude/skills/*/SKILL.md` 경로 embed (ouroboros 방식 — 공식 스펙상 서브에이전트는 Skill 자동 발동 불가).
 
@@ -753,7 +756,7 @@ v2 추가 제안:
 - 표시: docs 브랜치 + server/web ahead main + cost-margin 상태 + deploy-drift 상태 (ANSI 색상)
 - 효과: Ambient Affordance — sensor 호출 없이 항상 가시화
 
-### 14.3 Hooks 9 이벤트 12 스크립트 (`.claude/settings.json`) — 2026-04-27 #9 PostToolUseFailure 추가
+### 14.3 Hooks 10 이벤트 17 스크립트 (`.claude/settings.json`) — 2026-04-27 #9 PostToolUseFailure 추가
 
 | Hook | matcher | 스크립트 | 용도 |
 |---|---|---|---|
@@ -790,7 +793,7 @@ v2 추가 제안:
 | **sensor-fk-cascade-policy.sh (2026-05-10 #10_8 PAY-P3-E 신설)** | PAYMENT_AUDIT §1 모순-F (FK cascade 미정의 — Author 삭제 시 22 테이블 고아 행 위험) 차단 — 10 항목 (schema.prisma onDelete directive ≥ 33건 + Cascade ≥ 16 + Restrict ≥ 7 + SetNull ≥ 9 + self-ref @relation name 7건 / migration.sql ALTER TABLE ≥ 33 + DROP NOT NULL ≥ 2 / prisma-fk-cascade.spec.ts ≥ 6 it / shared-contracts §25 / data-model.md / ADR.md ADR-007). 첫 실측: PASS 10/10. |
 
 ### 14.5 Knowledge 9개 (`.claude/knowledge/`)
-- README.md · agent-system.md · sensors.md · **agent-interaction-matrix.md (2026-04-26 #9 신설 — 7×7 핸드오프 매트릭스 + 산출물 정합 + 트리거 규칙 + 금지 조합)** · book-harness-engineering-completion.md (2026-04-30 #10) · researcher-scope.md (2026-04-30 #10) · visual-canon-inventory.md (2026-04-30 #10) · **red-team-constitution.md (2026-05-02 #10_6 묶음 W — Constitutional AI 16 principles + ProjectGrimoire 정책)** · **build-to-delete-policy.md (2026-05-03 #10_6 묶음 II — 책 부록 B + Mitchell Ghostty 패턴, Skills/Sensors/Hooks 3 카테고리)**
+- README.md · agent-system.md · sensors.md · **agent-interaction-matrix.md (2026-04-26 #9 신설 — 7×7 핸드오프 매트릭스 + 산출물 정합 + 트리거 규칙 + 금지 조합)** · book-harness-engineering-completion.md (2026-04-30 #10) · researcher-scope.md (2026-04-30 #10) · visual-canon-inventory.md (2026-04-30 #10) · **red-team-constitution.md (2026-05-02 #10_6 묶음 W — Constitutional AI 20 principles + ProjectGrimoire 정책)** · **build-to-delete-policy.md (2026-05-03 #10_6 묶음 II — 책 부록 B + Mitchell Ghostty 패턴, Skills/Sensors/Hooks 3 카테고리)**
 
 ### 14.6 Slash commands 0개 (`.claude/commands/*.md` 폐기)
 
