@@ -128,11 +128,121 @@ _command_is_provably_readonly() {
           print $i; exit
         }
       }')
+      # 2026-05-30 파괴봉합: branch/tag는 읽기전용 allowlist에 있으나 삭제 플래그(-D/-d/--delete)가
+      #   붙으면 파괴 명령(`git branch -D`/`git tag -d`)이므로 읽기전용 단정 거부 → fall-through →
+      #   _command_destructive_verb가 BLOCK. (순수 강화: 평문 `git branch`/`git tag`/`-a`/`-l`은 ALLOW 유지)
+      if [ "$sub" = "branch" ] || [ "$sub" = "tag" ]; then
+        case " $seg " in
+          *' -D '*|*' -D'|*' -d '*|*' -d'|*' --delete '*|*' --delete'|*' -D='*|*' -d='*) return 1 ;;
+        esac
+      fi
       if _readonly_git_subcmd "$sub"; then continue; else return 1; fi
     fi
     if _readonly_token "$base"; then continue; else return 1; fi
   done
   return 0
+}
+
+# --- 파괴 명령 단정(2026-05-30 verifier 갭 봉합) — substring 금지, 명령위치 기준 ---
+# 갭(verifier 확인): 메인 가드가 git-mutation/deploy/test/코드쓰기 substring만 막아
+#   rm -rf / find -delete / chmod / mv / dd / git clean·stash·checkout --·restore 등
+#   파괴 명령이 메인에서 ALLOW로 통과(OLD=NEW). 읽기전용 short-circuit이 먼저 ALLOW를 조기반환하므로
+#   여기 도달하는 명령은 "읽기전용으로 증명 못 한" 것뿐 — 그중 실제 파괴 verb만 BLOCK.
+# 설계: _command_is_provably_readonly와 동일 세그먼트 토크나이저(세그먼트 분리 → env·cd 접두 제거 →
+#   선두 토큰 → basename → git 서브커맨드 처리)를 재활용. substring(rm/mv 문자열) 절대 금지 →
+#   form/alarm/경로명/`grep rm` 오탐 없음. 파괴 verb면 0(BLOCK), 아니면 1(파괴 아님).
+_command_destructive_verb() {
+  local cmd="$1"
+  # 세그먼트 분리: | && || ; & → 개행 (_command_is_provably_readonly와 동일)
+  local segs
+  segs=$(printf '%s' "$cmd" | sed -E 's/\|\||&&|;|\||&/\n/g')
+  local seg tok
+  local IFS=$'\n'
+  for seg in $segs; do
+    # 앞뒤 공백 제거
+    seg="${seg#"${seg%%[![:space:]]*}"}"
+    seg="${seg%"${seg##*[![:space:]]}"}"
+    [ -z "$seg" ] && continue
+    # 선두 env-var 할당(FOO=bar ...) 접두 제거 (반복)
+    while printf '%s' "$seg" | grep -qE '^[A-Za-z_][A-Za-z0-9_]*='; do
+      seg=$(printf '%s' "$seg" | sed -E 's/^[A-Za-z_][A-Za-z0-9_]*=[^ ]* *//')
+    done
+    tok=$(printf '%s' "$seg" | awk '{print $1}')
+    [ -z "$tok" ] && continue
+    [ "$tok" = "cd" ] && continue
+    local base="${tok##*/}"
+    # 1) 선두 명령이 find인 경우: 파괴 술어(-delete) 또는 -exec계 mutator 검사.
+    #    find -name/-type 등 비파괴 술어만 있으면 통과(과차단 0). 단 short-circuit이 이미
+    #    -exec/-delete 있는 find는 readonly 단정을 거부했으므로 여기까지 옴.
+    if [ "$base" = "find" ]; then
+      # -delete 술어 → 파괴
+      case " $seg " in
+        *' -delete '*|*' -delete') return 0 ;;
+      esac
+      # -exec/-execdir/-ok/-okdir 뒤 첫 토큰(mutator) 추출 → 파괴 verb면 BLOCK.
+      #   (find -exec git push 는 기존 mutating-git substring이 별도로 잡지만, 여기서도 정합)
+      local fx
+      fx=$(printf '%s' "$seg" | awk '{
+        for (i=1;i<=NF;i++){
+          if ($i=="-exec"||$i=="-execdir"||$i=="-ok"||$i=="-okdir"){
+            if (i+1<=NF){print $(i+1); exit}
+          }
+        }
+      }')
+      if [ -n "$fx" ]; then
+        local fxb="${fx##*/}"
+        case "$fxb" in
+          rm|rmdir|mv|chmod|chown|dd|truncate|shred|unlink|sh.|sh|bash) return 0 ;;
+          git) return 0 ;;
+        esac
+      fi
+      continue
+    fi
+    # 2) 파일시스템 파괴 verb (세그먼트 선두 명령 위치)
+    case "$base" in
+      rm|rmdir|mv|chmod|chown|dd|truncate|shred|unlink) return 0 ;;
+    esac
+    # 3) 파괴 git 서브커맨드
+    if [ "$base" = "git" ]; then
+      local sub
+      sub=$(printf '%s' "$seg" | awk '{
+        for (i=2;i<=NF;i++){
+          if ($i=="-c"||$i=="-C"){i++; continue}      # git -c k=v / git -C path
+          if (substr($i,1,1)=="-") continue             # 기타 옵션
+          print $i; exit
+        }
+      }')
+      case "$sub" in
+        clean|stash|restore|rm) return 0 ;;
+        checkout)
+          # 브랜치 전환(git checkout <branch>)은 비파괴 → 통과.
+          #   파괴 형태는 `git checkout -- <path>` / `git checkout .`(현 디렉터리 작업트리 복원)만.
+          case " $seg " in
+            *' -- '*|*' -- '|*' . '*|*' .') return 0 ;;
+          esac
+          ;;
+        branch)
+          # 브랜치 삭제(-D/-d)만 파괴. 목록(git branch)·생성은 비파괴.
+          case " $seg " in
+            *' -D '*|*' -D'|*' -d '*|*' -d'|*' --delete '*|*' --delete'|*' -D='*|*' -d='*) return 0 ;;
+          esac
+          ;;
+        tag)
+          # 태그 삭제(-d/--delete)만 파괴.
+          case " $seg " in
+            *' -d '*|*' -d'|*' --delete '*|*' --delete') return 0 ;;
+          esac
+          ;;
+        push)
+          # 강제 push만 (일반 push는 기존 mutating-git이 별도 차단)
+          case " $seg " in
+            *' --force '*|*' --force'|*' -f '*|*' -f'|*' --force-with-lease'*) return 0 ;;
+          esac
+          ;;
+      esac
+    fi
+  done
+  return 1
 }
 
 classify_bash() {
@@ -144,6 +254,11 @@ classify_bash() {
   # P4: 명령 전체가 읽기전용으로 증명되면 인자 내용(deploy/push 등) 무관 ALLOW.
   #     (증명 실패 시 아래 기존 차단 로직으로 그대로 진행 — 가드 약화 0)
   if _command_is_provably_readonly "$norm"; then echo "ALLOW"; return; fi
+
+  # 파괴 명령 차단(2026-05-30 verifier 갭 봉합) — 순수 가산. 읽기전용 short-circuit 통과 후 평가하므로
+  #   find -name·grep rm·경로내 rm 같은 읽기전용은 이미 위에서 ALLOW로 빠져 여기 안 옴 → 과차단 0.
+  #   명령위치 토크나이저로 실제 파괴 verb만 검출(substring 아님).
+  if _command_destructive_verb "$norm"; then echo "BLOCK:destructive-command"; return; fi
 
   # 변경성 git (commit/push/merge/rebase/reset --hard) — git -c, git -C 변형 포함
   case "$norm" in
