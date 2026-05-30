@@ -41,7 +41,7 @@ echo "[3/4] eval-precommit.sh (regression-tolerance 0.05) ..."
 bash "$PROJECT_ROOT/eval/scripts/eval-precommit.sh"
 
 echo ""
-echo "[4/4] sensor-adversarial-pre-commit.sh (Red Team Constitution 19 Principles, #10_6 묶음 KK 보강) ..."
+echo "[4/4] sensor-adversarial-pre-commit.sh (Red Team Constitution 20 Principles, #10_6 묶음 KK 보강) ..."
 # 2026-05-04 묶음 KK: set -e가 sensor exit 1(WARN)을 잡아 commit 차단되는 결함 #6 보강
 # server/web pre-commit과 동일 패턴 (set +e/-e 감싸 sensor WARN 허용, FAIL만 차단)
 set +e

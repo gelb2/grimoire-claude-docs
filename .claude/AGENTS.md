@@ -47,7 +47,7 @@
 
 ## 2. 멀티 에이전트 · Skills · Hooks 구조 (요약 + 정본 pointer)
 
-> **본 §2의 본문은 2026-04-25 세션 #6에서 패턴 3(SSOT + CLAUDE.md 좁게) 채택에 따라 `research/HARNESS_ENGINEERING.md` §14로 이동했습니다.** 상세 인벤토리(Agents 7 / Skills 14 / Hooks 9이벤트 12스크립트 / Sensors 12 / Knowledge 4 / Slash 3 / launchd 비활성 결정 / Zenith 대비 차이 / 미도입 보류 항목)는 그쪽을 참조.
+> **본 §2의 본문은 2026-04-25 세션 #6에서 패턴 3(SSOT + CLAUDE.md 좁게) 채택에 따라 `research/HARNESS_ENGINEERING.md` §14로 이동했습니다.** 상세 인벤토리(Agents 10 = 7 핵심 + 3 메타 / Skills 26현역 + 9 archive / Hooks 10이벤트 / Sensors 57 / Knowledge 9 / launchd 비활성 결정 / Zenith 대비 차이 / 미도입 보류 항목)는 그쪽을 참조 — 수치는 §3 인벤토리 검증 명령으로 실측.
 
 ### 2.1 핵심 제약 (Grimoire 고유 — 매 세션 강제)
 1. **PLANNING §0 원가 철칙**: 새 AI 기능은 cost-accountant 마진 ≥3배 검증 없이 기획 진행 불가
@@ -85,7 +85,7 @@
 | 패턴 | 에이전트 수 | 비용 | 적합 |
 |------|-----------|-----|------|
 | 1. **싱글** (기준선) | 1 | 낮음 | 단일 기능, 버그 수정 |
-| 2. **서브에이전트** (계층) | 2~5 | 중간 | 탐색+구현 — 부모 Opus + 자식 Sonnet (우리 7 에이전트 = 이 패턴) |
+| 2. **서브에이전트** (계층) | 2~5 | 중간 | 탐색+구현 — 부모 Opus + 자식 Sonnet (우리 10 에이전트 = 이 패턴, 7 핵심 도메인 흐름이 대표) |
 | 3. **멀티** (병렬) | 2~N | 높음 | 대규모 마이그레이션 — Git 워크트리 필수 (worktree-isolation skill 보유) |
 | 4. **Plan-and-Execute** | 2~3 | 중간 | 장기 실행 — Sprint 계약 (Initializer/Generator/Evaluator) |
 | 5. **Ralph Loop** (책 부록 B 신규) | 1+훅 | 가변 | 무한 반복 (장기 실행, 종료 가로채 재주입) — 우리 PostToolBatch hook이 부분 적용 |
@@ -103,11 +103,13 @@
 
 - **인터페이스 변경 = 모든 에이전트가 알아야 함** (책 Ch 16)
 - 정본 위치: `.claude/shared-contracts.md`
-- 새 인터페이스 추가/기존 변경 시 → shared-contracts.md 먼저 업데이트 → 7개 에이전트 .md에 반영
+- 새 인터페이스 추가/기존 변경 시 → shared-contracts.md 먼저 업데이트 → 7 핵심 에이전트 .md에 반영 (reports/*.md 산출물은 7 핵심 도메인 흐름 한정. 3 메타 에이전트는 별도 산출물 규약)
 
 ### 2.4 에이전트별 예산 할당 (2026-05-02 BN-#3 신설, 책 Ch 16 AGENT_BUDGETS)
 
 호출 비용 폭주 / 둠 루프 / 무한 반복 방어용 에이전트별 한도. 본 정본을 기준으로 메인 Claude가 위임 시 예산 초과 의심 시 ALERT (sensor-loop-detection / cost-tracker 결합).
+
+**7 핵심 기능** (책 Ch 16 정본 수치):
 
 | 에이전트 | max_tokens | max_tool_calls | max_wall_time | max_retries |
 |---------|------------|---------------|---------------|------------|
@@ -118,6 +120,14 @@
 | **server** (개발) | 800K | 150 | 2700s (45분) | 3 |
 | **web** (개발) | 800K | 150 | 2700s (45분) | 3 |
 | **qa** (검증 전담) | 400K | 80 | 1800s (30분) | 1 |
+
+**3 메타·인프라** (역할·도구 특성 근거 — 책 Ch 16 원 정본엔 미수록, 신설 시점별 도구 범위 기준 산정):
+
+| 에이전트 | max_tokens | max_tool_calls | max_wall_time | max_retries |
+|---------|------------|---------------|---------------|------------|
+| **infrastructure** (배포·secret·cron) | 400K | 80 (gcloud/az/배포 다단계) | 1800s (30분) | 2 |
+| **harness** (메타 영역 .claude/*) | 400K | 80 (sensor/hook 시뮬 다회) | 1800s (30분) | 2 |
+| **verifier** (읽기전용 검증) | 300K | 60 (Read/Grep 위주, Edit/Write 없음) | 1200s (20분) | 1 |
 
 운영 규칙:
 - **[MUST]** 위 한도는 책 Ch 16 정본. 변경 시 반드시 사용자 승인 (cost-accountant도 호출됨)
@@ -165,3 +175,4 @@
 ## 5. 변경 이력
 
 - 2026-04-30: 본 파일 신설 — 루트 CLAUDE.md §12 + §14 + §15을 본 파일로 이동 (책 Ch 08 60-line 분할 + Ch 16 shared-contracts 도입과 같은 세션). 인벤토리 §3 추가 (드리프트 방지).
+- 2026-05-30 (harness): 7 → **10 에이전트 (7 핵심 + 3 메타)** 정합. §2 인벤토리 pointer 수치 갱신(Agents 10/Skills 26현역+9archive/Hooks 10이벤트/Sensors 57/Knowledge 9), §2.2.2 패턴 표 "우리 10 에이전트", §2.3 shared-contracts 반영 대상 "7 핵심" 명시, §2.4 예산표에 3 메타(infrastructure/harness/verifier) 행 추가(책 Ch 16 원 정본 미수록 → 도구·역할 특성 근거 산정 명시).

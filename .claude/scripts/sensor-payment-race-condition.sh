@@ -9,8 +9,10 @@
 #   2. payment.usecase.ts — payment.status='partial_refunded' 사전 게이트 grep
 #   3. payment.usecase.ts — [PaymentRaceCondition] logger.warn 박제
 #   4. payment.usecase.ts — already_refunded / already_partial_refunded 박제
-#   5. prisma-payment.repository.ts — findUniqueOrThrow 박제 (race 차단 진입)
-#   6. prisma-payment.repository.ts — updateMany WHERE credits >= actualDeducted CAS 패턴 박제
+#   5. prisma-payment.repository.ts — FOR UPDATE 비관락 + payment null guard (race 차단 진입)
+#      [불변 시그널] findUniqueOrThrow → FOR UPDATE + findUnique+null throw 로 대체(CC-2b 이후)
+#   6. prisma-payment.repository.ts — raw SQL CAS (>= $N decrement + 0 row throw) 패턴 박제
+#      [불변 시그널] updateMany+gte → $executeRawUnsafe(WHERE col >= $1) CAS 로 변경(PAY-S2 이후)
 #   7. prisma-payment.repository.ts — CAS_MISMATCH throw 박제 (호출자 retry 위임)
 #   8. shared-contracts.md §22 PaymentRaceCondition 박제
 #
@@ -70,18 +72,23 @@ else
   FAIL=$((FAIL + 1))
 fi
 
-# 5. findUniqueOrThrow 박제 (race 진입 명시)
-if grep -qE 'findUniqueOrThrow' "$PRISMA_REPO" 2>/dev/null; then
-  echo "  [PASS] prisma-payment.repository: findUniqueOrThrow 박제 (구멍-B 진입 명시)"
+# 5. FOR UPDATE 비관락 + payment null guard (race 진입 명시)
+#   불변 시그널: findUniqueOrThrow → FOR UPDATE 직렬화 + findUnique 후 null throw 로 대체(CC-2b).
+#   동작 동치(없는 row 시 throw) 검증 — 비관락 존재 AND null guard 존재.
+if grep -qE 'FOR UPDATE' "$PRISMA_REPO" 2>/dev/null && \
+   grep -qE 'if \(!payment\)' "$PRISMA_REPO" 2>/dev/null; then
+  echo "  [PASS] prisma-payment.repository: FOR UPDATE 비관락 + payment null guard 박제 (구멍-B 진입)"
   PASS=$((PASS + 1))
 else
-  echo "  [FAIL] prisma-payment.repository: findUniqueOrThrow 누락 — race 진입 부재"
+  echo "  [FAIL] prisma-payment.repository: FOR UPDATE / payment null guard 누락 — race 진입 부재"
   FAIL=$((FAIL + 1))
 fi
 
-# 6. updateMany WHERE credits >= actualDeducted CAS 패턴
-if grep -qE 'updateMany' "$PRISMA_REPO" 2>/dev/null && grep -qE 'credits:\s*\{\s*gte' "$PRISMA_REPO" 2>/dev/null; then
-  echo "  [PASS] prisma-payment.repository: updateMany WHERE credits gte CAS 패턴 박제 (구멍-B 차단)"
+# 6. raw SQL CAS 패턴 (WHERE col >= $N decrement + 0 row throw)
+#   불변 시그널: updateMany+gte → $executeRawUnsafe CAS 로 변경(PAY-S2). 형태 비의존.
+#   동시 트랜잭션이 잔액 변경 시 0 row → throw 하는 CAS 가드 = `>= $N` 조건 AND CAS_MISMATCH throw.
+if grep -qE '>=\s*\$[0-9]' "$PRISMA_REPO" 2>/dev/null && grep -qE 'CAS_MISMATCH' "$PRISMA_REPO" 2>/dev/null; then
+  echo "  [PASS] prisma-payment.repository: raw SQL CAS (WHERE col >= \$N + CAS_MISMATCH throw) 박제 (구멍-B 차단)"
   PASS=$((PASS + 1))
 else
   echo "  [FAIL] prisma-payment.repository: CAS 패턴 누락 — race window 회귀"

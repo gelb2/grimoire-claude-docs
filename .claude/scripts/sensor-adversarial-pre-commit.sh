@@ -257,10 +257,45 @@ else
   check 20 "incident-log 박제 의무 (Mitchell Ghostty)" "FAIL" "incident-log.jsonl 자체 부재 — 박제 시스템 미도입"
 fi
 
+# ── P3 증분 배선 (HARNESS_P3_SENSOR_WIRING_PROPOSAL.md §4-2, 2026-05-30) ──
+# A군 clean 센서 16종을 WARN 등급으로 증분 디스패치. 커밋 시점 1곳 집중(이 디스패처는
+# .githooks/pre-commit + pretooluse-redteam-gate가 공유). **WARN 강제** — 추가 센서가
+# FAIL/비정상 종료해도 커밋을 차단하지 않음(FAIL 카운트 미증가, WARN 카운트만). 기존 FAIL 게이트 보존.
+# 제외(노이즈/선행의존): sensor-partial-refund(exit2)·sensor-payment-race-condition(exit1)·
+#   sensor-instruction-degradation(P7 이미 등록, over-length WARN).
+# 멱등: 16종 전부 read-only grep — incident-log/state append 0, git index 변경 0(실측).
+echo ""
+echo "── P3 도메인 정책 센서 (WARN 등급 — 보고 전용, commit 비차단) ──"
+P3_PID=21
+P3_WARN_LOCAL=0
+for s in sensor-refund-atomicity sensor-payment-status-mapping sensor-payment-retry-reuse \
+         sensor-subscription-pool-no-rollover sensor-credit-denomination sensor-credit-overhaul-recalc \
+         sensor-credit-source-accounting sensor-chat-charge-tier sensor-polar-timeout-policy \
+         sensor-audit-retention-policy sensor-audit-log-before-after sensor-circuit-breaker-policy \
+         sensor-user-soft-delete-policy sensor-oauth-email-verification \
+         sensor-slug-login sensor-webhook-dlq; do
+  SCRIPT="$ROOT/.claude/scripts/$s.sh"
+  if [ ! -f "$SCRIPT" ]; then
+    check "$P3_PID" "$s" "WARN" "센서 파일 부재 (배선 누락 — commit 비차단)"
+    P3_WARN_LOCAL=$((P3_WARN_LOCAL+1))
+  else
+    bash "$SCRIPT" >/dev/null 2>&1
+    P3_EC=$?
+    if [ "$P3_EC" -eq 0 ]; then
+      check "$P3_PID" "$s" "PASS" "exit 0 (정책 정합)"
+    else
+      check "$P3_PID" "$s" "WARN" "exit=$P3_EC (검토 권장 — commit 비차단, P3 WARN 격리)"
+      P3_WARN_LOCAL=$((P3_WARN_LOCAL+1))
+    fi
+  fi
+  P3_PID=$((P3_PID+1))
+done
+echo "  (P3 배선 16종 — WARN 격리: 이 블록은 FAIL 미발생, commit 차단 신호 없음. 로컬 WARN=$P3_WARN_LOCAL)"
+
 # 종합
 echo ""
-echo "── 종합 (20 Principles, OWASP LLM Top 10 + Mitchell Ghostty 통합) ──"
-echo "PASS: $PASS / WARN: $WARN / FAIL: $FAIL (총 20)"
+echo "── 종합 (20 Principles + P3 도메인 16, OWASP LLM Top 10 + Mitchell Ghostty 통합) ──"
+echo "PASS: $PASS / WARN: $WARN / FAIL: $FAIL (Constitution 20 + P3 16)"
 
 if [ "$FAIL" -gt 0 ]; then
   echo ""
