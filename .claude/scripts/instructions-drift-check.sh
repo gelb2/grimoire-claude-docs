@@ -24,7 +24,16 @@
 
 set +e
 
-INPUT_JSON=$(cat 2>/dev/null)
+# 2026-06-01 hang 정정 — 종전 `INPUT_JSON=$(cat)` 는 stdin 이 닫히지 않은 호출자
+#   (예: grade.py subprocess.run 가 stdin 미지정 → 부모 fd 상속, eval 전체 run)에서
+#   EOF 를 무한 대기 → 300s timeout → grade.py 사망 후 자식 bash 고아(PPID=1) 영생 누적.
+#   InstructionsLoaded hook 정상 경로(JSON 파이프 전달)는 데이터가 즉시 도착하므로
+#   `read -t` 타임아웃에 영향 없음. tty 직접 실행 / stdin 無 호출은 빈 입력으로 즉시 진행.
+INPUT_JSON=""
+if [ ! -t 0 ]; then
+  # 비-tty stdin: hook JSON 은 즉시 도착. 데이터 없으면 1s 후 빈 입력으로 진행 (무한대기 차단).
+  IFS= read -r -d '' -t 1 INPUT_JSON 2>/dev/null || true
+fi
 [ -z "$INPUT_JSON" ] && exit 0
 
 export INPUT_JSON

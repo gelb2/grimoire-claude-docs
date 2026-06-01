@@ -1,0 +1,15 @@
+# eval known-accepted FAIL allowlist — eval-precommit.sh 강제 게이트 예외 목록
+#
+# 형식 (1줄 1건): <task-id> <사유 / 추적 메모>
+#   - 첫 토큰 = task id (eval/tasks/*.json 의 "id" 필드, 예: regression-066)
+#   - 나머지 = 사유 + 추적(이슈/세션). 게이트는 task id 만 사용, 사유는 가독용.
+#   - '#' 시작 줄과 빈 줄은 무시.
+#
+# 용도: cross-domain real FAIL (다른 도메인 미완결로 일시 FAIL이나 즉시 수정 불가)을
+#       hard-block 에서 분리. 등재 시 반드시 사유 + 추적을 남기고, 해소되면 즉시 제거.
+#
+# 정책: stale task 는 여기 등재 금지 — task 를 현행화하라.
+#       코드 회귀는 여기 등재 금지 — 코드를 고쳐라.
+#       여기는 오직 "코드는 올바르나 cross-domain 의존으로 일시 FAIL" 만.
+#
+# 현재 등재: 0건 (2026-06-01 — 전체 75 task 0 FAIL 달성. allowlist 비어 hard-block 전면 작동)

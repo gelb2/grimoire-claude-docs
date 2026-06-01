@@ -7,7 +7,7 @@
   "eval_criteria": [
     {"type": "command", "command": "bash .claude/scripts/sensor-credit-atomicity.sh --quiet ; [ $? -le 2 ]", "desc": "sensor-credit-atomicity FAIL 아님 (PASS or WARN 허용)"},
     {"type": "grep", "target": "grimoire-server/src/adapter/outbound/persistence/prisma-payment.repository.ts", "pattern": "\\$transaction", "min": 1, "desc": "payment repository $transaction 존재"},
-    {"type": "grep", "target": "grimoire-server/src/adapter/outbound/persistence/prisma-credit.repository.ts", "pattern": "\\$transaction", "min": 1, "desc": "credit repository $transaction 존재"}
+    {"type": "grep", "target": "grimoire-server/src/adapter/outbound/persistence/prisma-credit-ledger.repository.ts", "pattern": "\\$transaction", "min": 1, "desc": "credit-ledger repository $transaction 존재 (원자성 보존) [2026-06-01 현행화: 구 prisma-credit.repository.ts가 CC-4 Phase3(git 93aa6f5)에서 CreditRepositoryPort 자체와 함께 제거. 결제+크레딧 원자성은 CreditLedger 회계 원장(prisma-credit-ledger.repository.ts $transaction)으로 이전 — 원자성 자체는 생존·강화]"}
   ],
   "threshold": 1.0,
   "runs": 1
