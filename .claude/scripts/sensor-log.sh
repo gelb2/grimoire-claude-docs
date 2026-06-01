@@ -29,15 +29,32 @@ LOG_FILE="$LOG_DIR/sensor-hits.jsonl"
 mkdir -p "$LOG_DIR"
 
 # 7일 TTL prune (LRU): 7일 이전 라인만 보존된 새 파일로 교체
+#
+# 2026-06-01 수정 (P0 근본원인): 기존 awk 3-인자 match($0, re, arr) 는 GNU awk(gawk) 전용 확장으로
+# macOS 기본 /usr/bin/awk(BSD awk)에서 syntax error → exit 2 → 빈 TMP 생성 + `&&` 단락으로 mv 미실행
+# → .tmp.<PID> 빈 파일 무한 누적(25k+) + prune 영구 미작동(jsonl 무한증가). 두 결함의 단일 근본원인.
+# 수정: ① 2-인자 match()+substr 로 BSD awk 호환(gawk 의존 제거) ② `&&` 단락 제거(prune 항상 적용)
+#       ③ EXIT trap 으로 어떤 경로(awk 실패/중단/시그널)로도 TMP 잔존 방지.
 if [ -f "$LOG_FILE" ]; then
   CUTOFF=$(date -u -v-7d +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date -u -d "7 days ago" +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || echo "")
   if [ -n "$CUTOFF" ]; then
     TMP="$LOG_FILE.tmp.$$"
-    awk -v c="$CUTOFF" '
-      match($0, /"ts":"([^"]+)"/, m) {
-        if (m[1] >= c) print
+    # 재발 방지 가드: 정상/비정상 종료 어느 쪽이든 TMP 가 남지 않도록 EXIT 시 정리.
+    trap 'rm -f "$TMP" 2>/dev/null' EXIT
+    # BSD awk 호환: 2-인자 match() 가 RSTART/RLENGTH 설정 → substr 로 ts 값 추출.
+    #   매치 패턴 "ts":"<value>" 에서 앞 6글자('"ts":"')와 뒤 1글자('"') 를 제외해 value 만 취득.
+    if awk -v c="$CUTOFF" '
+      {
+        if (match($0, /"ts":"[^"]+"/)) {
+          ts = substr($0, RSTART + 6, RLENGTH - 7)
+          if (ts >= c) print
+        }
       }
-    ' "$LOG_FILE" > "$TMP" 2>/dev/null && mv "$TMP" "$LOG_FILE"
+    ' "$LOG_FILE" > "$TMP" 2>/dev/null; then
+      # awk 성공 시에만 교체 (실패 시 원본 보존 — 데이터 유실 방지). mv 성공하면 TMP 소멸.
+      mv "$TMP" "$LOG_FILE"
+    fi
+    # mv 후 TMP 가 원본으로 이동했어도, 또는 awk 실패로 TMP 가 남았어도 trap 이 잔존분 정리.
   fi
 fi
 
@@ -62,8 +79,10 @@ case "$EXIT_CODE" in
 esac
 EXIT_CODE="$EXIT_CODE_NUM"
 
-# extra의 큰따옴표는 백슬래시 이스케이프
-EXTRA_ESCAPED=$(printf '%s' "$EXTRA" | sed 's/\\/\\\\/g; s/"/\\"/g')
+# extra 이스케이프: JSON 유효성을 위해 백슬래시 → 탭/CR(제어문자) → 큰따옴표 순서로 처리.
+# 2026-06-01: 기존엔 백슬래시/큰따옴표만 처리해 호출자가 extra 에 탭(\t)을 넘기면 raw 제어문자가
+# 섞여 깨진 JSON 라인이 적재됐음(예: sensor-red-team-source-whitelist). 탭/CR 을 추가 escape.
+EXTRA_ESCAPED=$(printf '%s' "$EXTRA" | sed 's/\\/\\\\/g; s/	/\\t/g; s/'"$(printf '\r')"'/\\r/g; s/"/\\"/g')
 
 printf '{"ts":"%s","sensor":"%s","exit":%s,"result":"%s","extra":"%s"}\n' \
   "$TS" "$NAME" "$EXIT_CODE" "$RESULT" "$EXTRA_ESCAPED" >> "$LOG_FILE"
