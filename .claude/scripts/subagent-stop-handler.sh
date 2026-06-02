@@ -8,16 +8,22 @@
 #
 # Anthropic 명세: SubagentStop hook은 차단 불가, audit/observability만.
 #   stdin payload 공통 필드: session_id / transcript_path / stop_hook_active / hook_event_name.
-#   ⚠️ subagent_type 는 SubagentStop payload 표준 필드가 아님 → 종전 d.get('subagent_type') 가
-#      항상 None 이라 type=unknown 80/80 고정 (2026-06-01 실측, sensor-hits.jsonl).
 #
-# 2026-06-01 type=unknown 정정:
-#   SubagentStop payload 에 subagent_type 가 직접 오면 그대로 사용(향후 명세 변경 대비).
-#   없으면 → transcript_path(에이전트 transcript = {uuid}/subagents/agent-XXXX.jsonl)에서 agent id 추출
-#   → 짝 agent-XXXX.meta.json 의 agentType 으로 식별 (meta.json 은 전 프로젝트 공통 구조로 실증).
-#   transcript_path 도 못 얻으면 → 방금 종료분일 개연이 높은 "최신 mtime meta.json" fallback.
-#   끝까지 불가 시에만 정직하게 'unknown' (추정 금지).
-#   1회성 진단: payload 원본을 .claude/state/subagent-payload-debug.jsonl 에 append(키 실증용, 최대 50줄 유지).
+# 2026-06-02 P2#4 실측 정정 (subagent-payload-debug.jsonl 7건 raw 확인 — 추정 폐기):
+#   실제 SubagentStop payload 는 다음 키를 직접 싣는다(이 프로젝트/현 Claude Code 버전):
+#     - agent_type            : "grimoire-harness" / "grimoire-qa" / "grimoire-verifier" 등 (← 정답, 직접 사용)
+#     - agent_id              : "ae86f1695c27cfa21" 등
+#     - agent_transcript_path : …/{uuid}/subagents/agent-XXXX.jsonl  (서브에이전트 transcript)
+#     - transcript_path       : …/{uuid}.jsonl                       (*메인* 세션 transcript — /subagents/ 없음)
+#   종전 코드는 step-1 에서 snake_case `agent_type` 를 빠뜨려(‘subagent_type’만 봄) 항상 실패 →
+#   step-2 도 메인 transcript_path 라 /subagents/ 미포함으로 실패 → step-3(최신 mtime meta.json)
+#   fallback 으로 떨어져, 7 payload 중 3건(qa/verifier)을 harness 로 오식별. 'unknown' 자체는
+#   해소됐었지만 *오답*을 내고 있었던 셈. → step-1 에 agent_type, step-2 에 agent_transcript_path
+#   추가로 7/7 직접·정확 식별(fallback 0).
+#
+# 식별 우선순위(현행): ① payload.agent_type 직접 → ② agent_transcript_path → 짝 .meta.json 의 agentType
+#   → ③ 최신 mtime meta.json fallback → 끝까지 불가 시에만 정직하게 'unknown'(추정 금지).
+#   진단 박제: payload 원본을 .claude/state/subagent-payload-debug.jsonl 에 append(키 실증용, 최대 50줄 ring).
 
 set +u
 
@@ -57,17 +63,25 @@ try:
 except Exception:
     d = {}
 
-# 1) payload 직접 (표준 아님이나 향후 대비)
+# 1) payload 직접
+#    ⚠️ 2026-06-02 P2#4 실측(subagent-payload-debug.jsonl 7건): 실제 SubagentStop payload 는
+#    snake_case `agent_type` 로 에이전트 타입을 직접 실어 보낸다(예: "grimoire-harness"/"grimoire-qa"/
+#    "grimoire-verifier"). 종전 키 목록에 `agent_type` 가 빠져 step-1 이 항상 실패 → step-3
+#    (최신 mtime fallback)로 떨어져 7건 중 3건 오식별(qa/verifier 를 harness 로 라벨)되던 결함.
+#    `agent_type` 를 선두에 추가하면 7/7 step-1 직접 식별(fallback 0, 오식별 0). 나머지 키는 향후 대비 유지.
 if isinstance(d, dict):
-    for k in ('subagent_type', 'agentType', 'agent', 'subagentType'):
+    for k in ('agent_type', 'subagent_type', 'agentType', 'agent', 'subagentType'):
         v = d.get(k)
         if v:
             result = v
             break
 
 # 2) transcript_path 기반: agent transcript → 짝 meta.json
+#    실측: payload 의 `transcript_path` 는 *메인* 세션 jsonl(…/{uuid}.jsonl, /subagents/ 없음)이라
+#    여기에 안 걸린다. 서브에이전트 transcript 는 별도 키 `agent_transcript_path`
+#    (…/{uuid}/subagents/agent-XXXX.jsonl)로 온다 → 이를 선두 후보로 추가(step-1 실패 시의 견고한 2차).
 if not result and isinstance(d, dict):
-    tp = d.get('transcript_path') or d.get('transcriptPath') or ''
+    tp = d.get('agent_transcript_path') or d.get('transcript_path') or d.get('transcriptPath') or ''
     if tp and tp.endswith('.jsonl') and '/subagents/' in tp:
         mp = tp[:-len('.jsonl')] + '.meta.json'
         if os.path.exists(mp):

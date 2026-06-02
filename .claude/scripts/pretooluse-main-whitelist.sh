@@ -74,6 +74,62 @@ _readonly_git_subcmd() {
     *) return 1 ;;
   esac
 }
+
+# --- 명령치환/프로세스치환 내부 텍스트 추출(2026-06-02 verifier 갭 봉합) ---
+# 갭(verifier 독립확인): _command_mutating_git/_command_destructive_verb의 세그먼트 토크나이저가
+#   `| && || ; &`만 분리하므로 `$(...)`·백틱·`<(...)`/`>(...)` *내부* 명령을 못 봄.
+#   결과: `echo "$(git push)"`/`echo $(git commit -m x)`/`echo \`git push\``/`cat <(git push)`가
+#   선두토큰 echo/cat 기준으로 비변경 판정 → ALLOW로 약화(OLD substring=BLOCK).
+# 해법: 치환 영역의 내부 텍스트만 줄 단위로 추출해 형제 함수가 *추가 세그먼트*로 재검(1단계 재귀).
+#   중첩($(echo $(git push)))·다중도 깊이추적으로 내부를 모두 추출. python3 실패 시 빈 출력(fail-open
+#   아님: 본 추출이 비면 형제 함수는 기존 세그먼트만 검사 → 약화 없이 OLD 동작 회귀).
+# 안전 불변식(★FP 재발 금지): blanket "$(...) 있으면 BLOCK" 절대 금지. 내부 텍스트를 동일 토크나이저로
+#   재검하므로 내부가 readonly면(예: `git rev-list --count HEAD`) mutating/destructive에 안 걸려 ALLOW 유지.
+#   → P4 FP 수정의 핵심 케이스 `echo "$(git rev-list --count HEAD) commits"`는 그대로 ALLOW.
+# ─────────────────────────────────────────────────────────────────────────────
+# ★ 잔여 한계 박제(verifier 발견, 미방어 — 협조적 위협모델 밖):
+#   백틱 파서(아래 line `c=="`"` 분기)는 *단순 쌍매칭*이라, 이스케이프로 중첩된 백틱은 내부
+#   mutator를 못 본다. 예: echo "`echo \`git push\`\`"  형태의 중첩/이스케이프 백틱은 바깥 쌍만
+#   잡고 \` 로 이스케이프된 내부 `git push`를 추출하지 못해 ALLOW로 샌다.
+#   → 이는 *의도적 난독화*이므로 협조적 위협모델(협조적 LLM의 실수 방어)의 적용 대상이 아니다.
+#     의도를 갖고 가드를 우회하려는 적대 행위는 미방어. 단, **동일 의미의 `$(...)` 형태는 전부 차단**
+#     된다($() 는 위 depth-tracking 으로 중첩까지 추출됨).
+#   적대적 완벽 방어는 도구 한계상 불가능 — "가드 한 줄에 뚫린다"는 누구도 못 막는 영역(2026-05-29 박제).
+#   따라서 본 한계는 *알면서 남겨둔* 것이며, 회귀가 아니다.
+# ─────────────────────────────────────────────────────────────────────────────
+_extract_substitutions() {
+  printf '%s' "$1" | python3 -c '
+import sys
+def extract(s):
+    out=[]; i=0; n=len(s)
+    while i<n:
+        c=s[i]
+        # $( ... )  /  <( ... )  /  >( ... )  — 깊이추적으로 중첩 괄호 매칭
+        if (c=="$" and i+1<n and s[i+1]=="(") or (c in "<>" and i+1<n and s[i+1]=="("):
+            start=i+2; depth=1; j=start
+            while j<n and depth>0:
+                if s[j]=="(": depth+=1
+                elif s[j]==")":
+                    depth-=1
+                    if depth==0: break
+                j+=1
+            inner=s[start:j]
+            out.append(inner); out.extend(extract(inner))  # 1단계+중첩 재귀
+            i=j+1; continue
+        # `...` 백틱 (단순 쌍 매칭)
+        if c=="`":
+            j=i+1
+            while j<n and s[j]!="`": j+=1
+            inner=s[i+1:j]
+            out.append(inner); out.extend(extract(inner))
+            i=j+1; continue
+        i+=1
+    return out
+for ln in extract(sys.stdin.read()):
+    ln=ln.strip()
+    if ln: print(ln)
+' 2>/dev/null
+}
 # 명령 전체가 읽기전용으로 증명되면 0, 아니면 1 반환.
 _command_is_provably_readonly() {
   local cmd="$1"
@@ -156,6 +212,14 @@ _command_destructive_verb() {
   # 세그먼트 분리: | && || ; & → 개행 (_command_is_provably_readonly와 동일)
   local segs
   segs=$(printf '%s' "$cmd" | sed -E 's/\|\||&&|;|\||&/\n/g')
+  # 2026-06-02 verifier 갭 봉합: 치환($(...)/백틱/<(...)) 내부 텍스트도 추가 세그먼트로 동일검사(1단계 재귀).
+  #   내부가 readonly면 어느 case에도 안 걸려 ALLOW 유지 → FP 재발 0. 내부 텍스트도 sed로 재분리.
+  local subst
+  subst=$(_extract_substitutions "$cmd")
+  if [ -n "$subst" ]; then
+    segs="$segs
+$(printf '%s' "$subst" | sed -E 's/\|\||&&|;|\||&/\n/g')"
+  fi
   local seg tok
   local IFS=$'\n'
   for seg in $segs; do
@@ -245,6 +309,74 @@ _command_destructive_verb() {
   return 1
 }
 
+# --- 변경성 git 단정(2026-06-02 P2#1 substring FP 봉합) — 명령위치 토크나이저 기준 ---
+# 갭(이번 세션 메인 2회 피격): line 263-266의 글로벌 substring `*"git "*" commit"*`(및 형제
+#   ` push`/` merge`)이 세그먼트 경계를 무시해, 읽기전용 git이 인자/후속에 "commits"/"pushed"/"merged"
+#   단어를 담으면 오차단. 재현(OLD):
+#     echo "$(git rev-list --count HEAD) commits"        → " commit"이 "commits" 부분문자열 매칭 → BLOCK(FP)
+#     git rev-list --count main...develop | awk '{...commits}'  → 동상 → BLOCK(FP)
+#     git log --all | xargs echo pushed                  → " push"가 "pushed" 매칭 → BLOCK(FP)
+# 해법: _command_is_provably_readonly / _command_destructive_verb와 동일 세그먼트 토크나이저
+#   (세그먼트 분리 → env·cd 접두 제거 → 선두 토큰 → basename → git 서브커맨드[-c/-C 스킵])를 재활용.
+#   각 세그먼트의 선두 명령이 git이고 그 "실제 서브커맨드"가 commit/push/merge/rebase/mergetool/
+#   reset(--hard)이면 BLOCK. substring 절대 금지 → "commits"/"pushed"/"merged" 단어 오탐 0.
+# 안전 불변식: 명령위치 식별이므로 평문 git mutator(`git commit`/`git push`/`git -C p commit`/
+#   `git -c k=v push`/`git merge foo`/`git rebase`/`git reset --hard`/`git mergetool`)는 전건 BLOCK 유지.
+#   merge-base는 서브커맨드 == "merge-base" 라 merge와 구별되어 readonly(이미 short-circuit ALLOW).
+#   변경성 git이면 0(BLOCK), 아니면 1.
+_command_mutating_git() {
+  local cmd="$1"
+  # 세그먼트 분리: | && || ; & → 개행 (형제 함수와 동일)
+  local segs
+  segs=$(printf '%s' "$cmd" | sed -E 's/\|\||&&|;|\||&/\n/g')
+  # 2026-06-02 verifier 갭 봉합: 치환($(...)/백틱/<(...)) 내부 텍스트도 추가 세그먼트로 동일검사(1단계 재귀).
+  #   `echo "$(git push)"`→내부 `git push` 세그먼트가 선두 git+서브 push로 BLOCK. 내부 readonly git
+  #   (`git rev-list --count HEAD`)은 서브 rev-list라 case 미매칭 → ALLOW 유지(★FP 핵심 케이스 보존).
+  local subst
+  subst=$(_extract_substitutions "$cmd")
+  if [ -n "$subst" ]; then
+    segs="$segs
+$(printf '%s' "$subst" | sed -E 's/\|\||&&|;|\||&/\n/g')"
+  fi
+  local seg tok
+  local IFS=$'\n'
+  for seg in $segs; do
+    seg="${seg#"${seg%%[![:space:]]*}"}"
+    seg="${seg%"${seg##*[![:space:]]}"}"
+    [ -z "$seg" ] && continue
+    # 선두 env-var 할당 접두 제거 (반복)
+    while printf '%s' "$seg" | grep -qE '^[A-Za-z_][A-Za-z0-9_]*='; do
+      seg=$(printf '%s' "$seg" | sed -E 's/^[A-Za-z_][A-Za-z0-9_]*=[^ ]* *//')
+    done
+    tok=$(printf '%s' "$seg" | awk '{print $1}')
+    [ -z "$tok" ] && continue
+    [ "$tok" = "cd" ] && continue
+    local base="${tok##*/}"
+    [ "$base" = "git" ] || continue
+    # 실제 서브커맨드 추출 (-c k=v / -C path 옵션 스킵, 기타 -옵션도 스킵)
+    local sub
+    sub=$(printf '%s' "$seg" | awk '{
+      for (i=2;i<=NF;i++){
+        if ($i=="-c"||$i=="-C"){i++; continue}      # git -c k=v / git -C path
+        if (substr($i,1,1)=="-") continue             # 기타 옵션
+        print $i; exit
+      }
+    }')
+    case "$sub" in
+      commit|push|merge|rebase|mergetool) return 0 ;;
+      reset)
+        # 원본 의미 보존: `git reset --hard`만 변경성으로 차단(작업트리 파괴).
+        #   평문 `git reset HEAD~1`(index unstage)·`--soft`·`--mixed`는 원본도 미차단 → 유지.
+        #   (파괴성 reset은 _command_destructive_verb 미등재였고 본 함수가 --hard만 담당 — 약화 0.)
+        case " $seg " in
+          *' --hard '*|*' --hard'|*' --hard='*) return 0 ;;
+        esac
+        ;;
+    esac
+  done
+  return 1
+}
+
 classify_bash() {
   local c="$1"
   # 공백 정규화 (GAP C: 다중 공백/탭 → 단일 공백)
@@ -260,11 +392,11 @@ classify_bash() {
   #   명령위치 토크나이저로 실제 파괴 verb만 검출(substring 아님).
   if _command_destructive_verb "$norm"; then echo "BLOCK:destructive-command"; return; fi
 
-  # 변경성 git (commit/push/merge/rebase/reset --hard) — git -c, git -C 변형 포함
-  case "$norm" in
-    *"git commit"*|*"git push"*|*"git merge "*|*"git merge"|*"git mergetool"*|*"git rebase"*|*"git reset --hard"*) echo "BLOCK:mutating-git"; return ;;
-    *"git "*" commit"*|*"git "*" push"*|*"git "*" merge "*|*"git "*" merge") echo "BLOCK:mutating-git"; return ;;  # git -C path commit / git -c k=v push (merge-base는 -base 접미사로 제외)
-  esac
+  # 변경성 git (commit/push/merge/rebase/mergetool/reset --hard) — git -c, git -C 변형 포함.
+  #   2026-06-02 P2#1: 글로벌 substring(`*"git "*" commit"*` 등 세그먼트 경계 무시 → "commits"/"pushed"
+  #   /"merged" 부분문자열 오탐)을 명령위치 토크나이저(_command_mutating_git)로 교체. 가드 약화 0
+  #   (평문 mutator 전건 BLOCK 유지), FP 봉합(readonly git + commits/pushed/merged 단어 → ALLOW).
+  if _command_mutating_git "$norm"; then echo "BLOCK:mutating-git"; return; fi
   # 배포/인프라
   case "$norm" in
     *"gcloud run deploy"*|*"gcloud sql"*|*"gcloud secrets"*|*"make deploy"*|*"deploy-prod"*|*"deploy-dev"*) echo "BLOCK:deploy"; return ;;
