@@ -3,6 +3,8 @@
 > ProjectGrimoire 적용 정본. 책 전체 학습 완료 (Ch 1~23 + 부록 A/B/C, 206 페이지).
 > 박제 일자: 2026-04-30 #10 (Ch 08/15/16) → 2026-05-01 #10_5 전면 갱신 (책 전체).
 > **POINT**: "모델은 범용품(commodity)이다. 하네스가 해자(moat)다." (책 결론)
+>
+> ⚠️ **[2026-05-01 학습 스냅샷] 본 파일의 "우리 구현" 컬럼 + "❌ 미적용 NEW P0 후보" 목록은 *당시 기준* 평가다.** 이후 다수가 구현·처리됐다 (AGENT_BUDGETS = `.claude/AGENTS.md §2.4` / 5 오케스트레이션 패턴 = `.claude/AGENTS.md §2.2.2` / loop-detection = `sensor-loop-detection.sh`+`loop-detection-tracker.sh` / cost-tracker = 도입 후 DEAD 처리, `reports/HARNESS_AUDIT_20260601.md`). **현행 인벤토리 정본 = `research/HARNESS_ENGINEERING.md §14` + `.claude/AGENTS.md §2.2.2`/§2.4 실측.** 본 파일의 카운트(Skills/Eval/Hooks 등)는 학습 시점 동결값이므로 현행 수치로 신뢰하지 말 것 — 아래 명백히 stale한 상태값에는 [당시]/[현행] 라벨을 박제했다.
 
 ---
 
@@ -26,10 +28,10 @@
 
 | 기둥 | 정의 | 우리 구현 |
 |------|------|---------|
-| **Constrain** | 에이전트가 "할 수 없는 것" 강제 | Hooks 9이벤트 12스크립트 + .githooks/AGENTS.md 금지 |
-| **Inform** | 에이전트가 "해야 하는 것" 알림 | CLAUDE.md+분할정본 + Skills 14 + (MCP 미연동) |
-| **Verify** | 결과 품질 측정/검증 | Eval 41 task + EDD + sensor-* 12개 + verification skill |
-| **Correct** | 잘못된 경로 진입 시 복구 | PreCompact + (loop-detection 미구현) + posttooluse-failure |
+| **Constrain** | 에이전트가 "할 수 없는 것" 강제 | Hooks [당시] 9이벤트 12스크립트 / [현행] 10이벤트 17스크립트 (§14.3) + .githooks/AGENTS.md 금지 |
+| **Inform** | 에이전트가 "해야 하는 것" 알림 | CLAUDE.md+분할정본 + Skills [당시] 14 / [현행] 26 현역 (§14.2) + (MCP 미연동) |
+| **Verify** | 결과 품질 측정/검증 | Eval [당시] 41 task + EDD + sensor-* [당시] 12개 / [현행] 57개 (§14.4) + verification skill |
+| **Correct** | 잘못된 경로 진입 시 복구 | PreCompact + [당시] loop-detection 미구현 / [현행] 구현됨 (sensor-loop-detection.sh) + posttooluse-failure |
 
 **KEY INSIGHT**: 4 기둥은 누적 (모두 갖춰야 함). Constrain만 비대 → 안티패턴 ① 과도한 제약.
 
@@ -112,7 +114,7 @@ AGENT_BUDGETS = {
     "evaluator":{"max_tokens": 300K, "max_tool_calls": 50,  "max_wall_time": 900,  "max_retries": 1},
 }
 ```
-> 우리 7 에이전트 미적용 — **NEW P0 후보**
+> [당시] 우리 7 에이전트 미적용 — NEW P0 후보 / **[현행] 구현됨 — `.claude/AGENTS.md §2.4` 에이전트별 예산 할당 (2026-05-02 BN-#3)**
 
 ### shared-contracts.md 10 인터페이스 (2026-04-30 #10)
 1. PLANNER_REPORT / 2. COST_AUDIT_REPORT / 3. VISUAL_CANON_REPORT / 4. DEV_REPORT / 5. QA_REPORT / 6. AskOptions / 7. ANALYSIS_CREDIT_COST=4 / 8. Eval task 형식 / 9. LLM-Judge 가드 / 10. PostToolUseFailure 정책
@@ -127,7 +129,7 @@ AGENT_BUDGETS = {
 | 2. Schema | 도구 스키마 제한 | Plan/Execute 이중 모드 (부분 적용) |
 | 3. Runtime | 퍼미션 (Manual→Semi→Auto) | settings.json (Semi-Auto) |
 | 4. Tool | 명령어 블랙리스트 + 경로 제한 | posttooluse-failure-handler (force push 차단) |
-| 5. Hooks | 라이프사이클 정책 | 9 이벤트 12 스크립트 |
+| 5. Hooks | 라이프사이클 정책 | [당시] 9 이벤트 12 스크립트 / [현행] 10 이벤트 17 스크립트 (§14.3) |
 
 ### 보안 체크리스트 8 — 우리 충족 7/8
 | # | 항목 | 우리 |
@@ -139,7 +141,7 @@ AGENT_BUDGETS = {
 | 5 | 파일 경로 제한 | ✅ Hooks |
 | 6 | 위험 명령어 블랙리스트 | ✅ posttooluse |
 | 7 | 도구 호출 로깅 | ✅ sensor-log |
-| 8 | Diff/토큰/비용 감사 로깅 | ⚠️ 부분 (cost-tracker 미구현) |
+| 8 | Diff/토큰/비용 감사 로깅 | ⚠️ 부분 ([당시] cost-tracker 미구현 / [현행] cost-tracker.sh 도입 후 DEAD 처리 — 수동 박제 규율 의존이라 frozen, `reports/HARNESS_AUDIT_20260601.md`) |
 
 ### 샌드박스 3단계
 마이크로VM (Firecracker / 최강) > gVisor (강) > 강화 컨테이너 (중간 — 우리 로컬 환경 적합)
@@ -177,7 +179,7 @@ AGENT_BUDGETS = {
 
 ### cost_tracker.py 패턴 (책 정본)
 호출별 JSONL: `{ts, task_id, model, input_tokens, output_tokens, cache_tokens, cost_usd}`
-> 우리 sensor-cost-table.sh 있지만 호출별 추적 미구현 — **NEW P0**
+> [당시] 우리 sensor-cost-table.sh 있지만 호출별 추적 미구현 — NEW P0 / **[현행] cost-tracker.sh + cost-tracker.jsonl 도입했으나 DEAD 처리** (자동 호출 설계가 아닌 수동 박제 모드 → frozen May 2 → 6/1 감사에서 dead 판정. 호출별 토큰을 hook으로 자동 적재하는 메커니즘 부재가 근본 한계, `reports/HARNESS_AUDIT_20260601.md`)
 
 ---
 
@@ -185,10 +187,10 @@ AGENT_BUDGETS = {
 
 | 기둥 | 책 권장 구현 | 우리 구현 | 갭 |
 |------|------------|---------|------|
-| **Inform** | AGENTS.md + Skills + **MCP** | CLAUDE.md+분할 + Skills 14 | **MCP 미연동** |
-| **Constrain** | Hooks + 퍼미션 Semi-Auto | Hooks 9이벤트 + settings.json | 퍼미션 정책 미정의 |
-| **Verify** | Eval + Self-check + 서브에이전트 | Eval 41 + verification skill | 서브에이전트 탐색 패턴 미적용 |
-| **Correct** | 루프 탐지 + 컨텍스트 컴팩션 | (없음) + PreCompact | **MAX_EDITS_PER_FILE=5 임계 미박제** |
+| **Inform** | AGENTS.md + Skills + **MCP** | CLAUDE.md+분할 + Skills [당시] 14 / [현행] 26 (§14.2) | **MCP 미연동** |
+| **Constrain** | Hooks + 퍼미션 Semi-Auto | Hooks [당시] 9이벤트 / [현행] 10이벤트 (§14.3) + settings.json | 퍼미션 정책 미정의 |
+| **Verify** | Eval + Self-check + 서브에이전트 | Eval [당시] 41 + verification skill + [현행] verifier 에이전트 (작업↔검증 분리) | (해소) |
+| **Correct** | 루프 탐지 + 컨텍스트 컴팩션 | [당시] (없음) / [현행] sensor-loop-detection.sh + PreCompact | [당시] MAX_EDITS_PER_FILE=5 임계 미박제 / [현행] loop-detection-tracker.sh 박제 |
 
 POINT (책 정본): **"Foundation Model = CPU, 하네스 = OS" (Philipp Schmid)**
 
@@ -215,7 +217,7 @@ POINT (책 정본): **"Foundation Model = CPU, 하네스 = OS" (Philipp Schmid)*
 | 3 | 하네스 수정 효과 수치 증명? | sensor-eval-trend | ✅ |
 | 4 | 모델 개선 여지 측정? | — | ❌ **NEW** |
 | 5 | CLAUDE.md ↔ 코드 일치? | sensor-doc-drift | ✅ |
-| 6 | 태스크 유형별 비용 인지? | — | ❌ **NEW** (cost-tracker) |
+| 6 | 태스크 유형별 비용 인지? | (cost-tracker DEAD) | ⚠️ [당시] ❌ NEW / [현행] cost-tracker.sh 도입했으나 자동 적재 부재로 dead — 호출별 비용 인지는 여전히 갭 |
 | 7 | 하네스 변경 리뷰 프로세스? | sensor-shared-contracts | ⚠️ |
 
 **최우선 해결**: ③ Eval → ⑤ 부패 → 나머지
@@ -282,25 +284,28 @@ POINT (책 정본): **"Foundation Model = CPU, 하네스 = OS" (Philipp Schmid)*
 ### ✅ 정합 (책 권장 그대로 적용)
 1. shared-contracts.md (책 정본 파일명 동일!)
 2. 60-line 황금률 4 분할
-3. EDD 38 task + sensor-eval-trend
-4. Hooks 9이벤트 12스크립트
-5. Skills 14 (Progressive Disclosure)
+3. EDD [당시] 38 task + sensor-eval-trend
+4. Hooks [당시] 9이벤트 12스크립트 / [현행] 10이벤트 17스크립트 (§14.3)
+5. Skills [당시] 14 / [현행] 26 현역 (§14.2) (Progressive Disclosure)
 6. PreCompact memory guard
 7. Sprint 계약 (Plan/QA agent로 부분 적용)
 8. .claude/ 디렉토리 = 사내 위키 패턴 (Cuneiform Chat 동일)
 9. CLAUDE.md = 인덱스 및 결정 라우터
 
-### ❌ 미적용 (NEW P0 후보)
-1. **MCP 연동** (Inform 3층 中 미완) — Figma MCP / GitHub MCP / Playwright MCP 등
-2. **에이전트별 모델 티어링** (J5 보류 결정 — 책 강력 권장 40~60% 절감)
-3. **에이전트별 예산 할당** (max_tokens/max_tool_calls/max_wall_time)
-4. **cost-tracker.jsonl** (호출별 task_id/model/tokens/cost — 비용 블랙홀 방어)
-5. **sensor-loop-detection** (MAX_EDITS_PER_FILE=5 둠 루프 방지)
-6. **sensor-harness-self-diagnose** (자가진단 7질문 자동화 — 매주 ALERT)
-7. **Hooks에 Semgrep/Snyk 통합** (AI 코드 정적 분석)
-8. **Eval 점수 가중치 도입** (이분법 PASS/FAIL → 0~100 점수 분포)
-9. **컨텍스트 토큰 예산 sensor** (시스템 프롬프트 + CLAUDE.md + 누적 대화)
-10. **5 오케스트레이션 박제** (현재 .claude/AGENTS.md §2.2.1 위임 매트릭스 → 5 패턴 표 추가)
+### NEW P0 후보 — 처리 현황 (⚠️ [2026-05-01 도출] 목록, 이후 다수 처리됨)
+
+> 아래는 책 학습 시점 도출 목록이다. **[현행] 라벨로 처리 결과 박제** — 미해소만 ❌ 유지.
+
+1. ❌ **MCP 연동** (Inform 3층 中 미완) — Figma MCP / GitHub MCP / Playwright MCP 등 (외부 의존 영구 보류 정합)
+2. ❌ **에이전트별 모델 티어링** (J5 보류 결정 — 모두 Opus 유지 무기한 보류, §14.10)
+3. ✅ **[현행] 구현됨 — 에이전트별 예산 할당** `.claude/AGENTS.md §2.4` (max_tokens/max_tool_calls/max_wall_time, 2026-05-02 BN-#3)
+4. ⚠️ **[현행] cost-tracker.jsonl 도입 후 DEAD** — 자동 적재 부재(수동 박제 모드)로 frozen → 6/1 감사 dead 판정 (`reports/HARNESS_AUDIT_20260601.md`). 호출별 비용 자동 추적은 여전히 갭
+5. ✅ **[현행] 구현됨 — loop-detection** `sensor-loop-detection.sh` + `loop-detection-tracker.sh` (둠 루프 방지)
+6. ❌ **sensor-harness-self-diagnose** (자가진단 7질문 자동화 — 매주 ALERT)
+7. ❌ **Hooks에 Semgrep/Snyk 통합** (AI 코드 정적 분석)
+8. ❌ **Eval 점수 가중치 도입** (이분법 PASS/FAIL → 0~100 점수 분포)
+9. ❌ **컨텍스트 토큰 예산 sensor** (시스템 프롬프트 + CLAUDE.md + 누적 대화)
+10. ✅ **[현행] 박제됨 — 5 오케스트레이션 패턴** `.claude/AGENTS.md §2.2.2` (싱글/서브에이전트/멀티/Plan-and-Execute/Ralph Loop 표, 2026-05-02 BN-#10)
 
 ---
 
