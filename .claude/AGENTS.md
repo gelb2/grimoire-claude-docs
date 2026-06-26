@@ -86,7 +86,7 @@
 |------|-----------|-----|------|
 | 1. **싱글** (기준선) | 1 | 낮음 | 단일 기능, 버그 수정 |
 | 2. **서브에이전트** (계층) | 2~5 | 중간 | 탐색+구현 — 부모 Opus + 자식 Sonnet (우리 10 에이전트 = 이 패턴, 7 핵심 도메인 흐름이 대표) |
-| 3. **멀티** (병렬) | 2~N | 높음 | 대규모 마이그레이션 — Git 워크트리 필수 (worktree-isolation skill 보유) |
+| 3. **멀티** (병렬) | 2~N | 높음 | 대규모 마이그레이션 — Git 워크트리 필수 (worktree-isolation skill은 현재 `.claude/skills/_archive/` — 미사용, 필요 시 복원) |
 | 4. **Plan-and-Execute** | 2~3 | 중간 | 장기 실행 — Sprint 계약 (Initializer/Generator/Evaluator) |
 | 5. **Ralph Loop** (책 부록 B 신규) | 1+훅 | 가변 | 무한 반복 (장기 실행, 종료 가로채 재주입) — 우리 PostToolBatch hook이 부분 적용 |
 

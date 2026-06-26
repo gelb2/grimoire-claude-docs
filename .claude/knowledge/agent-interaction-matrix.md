@@ -1,5 +1,5 @@
 ---
-name: 7 서브에이전트 핸드오프 매트릭스 (§8.8)
+name: 7 핵심 도메인 에이전트 핸드오프 매트릭스 (§8.8 — 전체 10 중 7 핵심 기준, 3 메타 별도)
 description: planner / researcher / cost-accountant / visual-canon-keeper / server / web / qa 간 상호 호출 규칙·산출물 파일·트리거·금지 조합. agent-system.md(역할 개요)의 보완 정본.
 type: project
 created: 2026-04-26
@@ -10,8 +10,10 @@ related:
   - AUTOMATION.md §1
 ---
 
-# Agent Interaction Matrix — 7×7 핸드오프 정본
+# Agent Interaction Matrix — 7 핵심 도메인 7×7 핸드오프 정본
 
+> **범위 (2026-06-26 정합)**: 본 매트릭스는 **7 핵심 도메인 에이전트** 기준이다. 전체 에이전트는 **10개** (7 핵심 + 3 메타: infrastructure / harness / verifier). 3 메타 에이전트는 도메인 작업 흐름(기획→구현→검증)의 트리거 대상이 아니라 시스템 운영 주체이므로 본 매트릭스에서 제외하고 `agent-system.md` §3에서 별도 명시한다.
+>
 > agent-system.md가 **역할 분담 개요**라면, 본 문서는 **상호 호출 규칙·산출물·금지 조합**을 정밀 명시한다.
 > Fowler "Requisite Variety" + sshh.io "explicit handoff" 원칙 적용.
 >

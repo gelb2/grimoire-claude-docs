@@ -1,5 +1,7 @@
-# Shared Contracts — ProjectGrimoire 7 Agents 인터페이스 규약
+# Shared Contracts — ProjectGrimoire 7 핵심 도메인 에이전트 인터페이스 규약
 
+> **범위 (2026-06-26 정합)**: 본 인터페이스 규약은 **7 핵심 도메인 에이전트** 기준 (reports/*.md 산출물 흐름). 전체 에이전트는 **10개** (7 핵심 + 3 메타: infrastructure / harness / verifier). 3 메타 에이전트는 별도 산출물 규약을 따르며 본 규약 대상이 아니다.
+>
 > 책 "하네스 엔지니어링 완전 정복" Ch 16 멀티 에이전트 의사결정 전파 패턴 적용.
 > agent-interaction-matrix.md(7×7 핸드오프 메타)의 보완 정본.
 > 본 파일은 **공유 상태 파일** — 인터페이스 변경 시 즉시 갱신 (책 Ch 16 충돌 2번 해결책).
