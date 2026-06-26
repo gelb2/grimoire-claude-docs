@@ -144,4 +144,4 @@ CLAUDE.md §14.2 규칙 + Pattern 1 (orchestration 분리):
 - `research/HARNESS_ENGINEERING.md` §8.8 / §9.4 / §14.1
 - `CLAUDE.md` §14.2 — 메인 Claude 오케스트레이션 규칙
 
-마지막 업데이트: 2026-04-26
+마지막 업데이트: 2026-06-26 (범위 정합 — 7 핵심 도메인 기준 + 전체 10 에이전트 중 3 메타 제외 명문화. 정본 카운트 = `research/HARNESS_ENGINEERING.md §14.1`)

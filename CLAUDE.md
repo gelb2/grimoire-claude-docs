@@ -49,7 +49,7 @@
 | production | grimoire-book.com | api.grimoire-book.com | main |
 
 > QA는 dev 환경에서 develop 브랜치로. 시드 스크립트는 localhost 1회만.
-> 상세: `docs/environments.md` (정본은 grimoire-server) + `.githooks/AGENTS.md` (브랜치/Pre-Push)
+> 상세: `grimoire-server/docs/environments.md` (정본 = grimoire-server, web 복사본 = `grimoire-web/docs/environments.md`) + `.githooks/AGENTS.md` (브랜치/Pre-Push)
 
 ---
 

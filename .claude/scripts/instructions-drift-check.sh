@@ -161,6 +161,32 @@ for path, threshold, label in SPLIT_FILES:
         except Exception:
             pass
 
+# 평행정본(HTML 맵) 카운트 사각 봉합 (2026-06-26 문서감사 2차 재발방지)
+# HARNESS_MAP.html 헤드라인 subtitle 의 하드 카운트가 실측과 어긋나면 WARN.
+# (본문 Mermaid 노드 라벨은 시각 보조라 면제 — 헤드라인만 §14 동기화 대상으로 강제)
+HMAP = f"{PROJECT}/HARNESS_MAP.html"
+if Path(HMAP).exists():
+    try:
+        htext = Path(HMAP).read_text()
+        # subtitle 1줄만 대상 (class="subtitle")
+        m_sub = re.search(r'<p class="subtitle">(.*?)</p>', htext, re.S)
+        sub = m_sub.group(1) if m_sub else ""
+        def _hn(pat):
+            mm = re.search(pat, sub)
+            return int(mm.group(1)) if mm else None
+        hmap_agents = _hn(r'(\d+)\s*grimoire-\*\s*agent')
+        hmap_sensors = _hn(r'(\d+)\s*Sensors')
+        # "26 Skills 현역" — 현역 카운트(§14.2 헤드라인 표기 기준)와 대조
+        hmap_skills = _hn(r'(\d+)\s*Skills')
+        if hmap_agents is not None and hmap_agents != agents_actual:
+            drifts.append(f"평행정본 HARNESS_MAP.html: agent {hmap_agents} vs 실측 {agents_actual} (헤드라인 §14.1 동기화 필요)")
+        if hmap_sensors is not None and hmap_sensors != sensors_actual:
+            drifts.append(f"평행정본 HARNESS_MAP.html: Sensors {hmap_sensors} vs 실측 {sensors_actual} (헤드라인 §14.4 동기화 필요)")
+        if hmap_skills is not None and hmap_skills != skills_actual:
+            drifts.append(f"평행정본 HARNESS_MAP.html: Skills(현역) {hmap_skills} vs 실측 {skills_actual} (헤드라인 §14.2 동기화 필요)")
+    except Exception:
+        pass
+
 if drifts:
     print(f"[instructions-drift-check] CLAUDE.md 로드 ({load_reason}) — research/HARNESS_ENGINEERING.md §14 또는 §17 drift 발견:", file=sys.stderr)
     for d in drifts:
