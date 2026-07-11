@@ -11,6 +11,10 @@ ProjectGrimoire 개발 시 차용한 외부 프로젝트와 차용 영역.
 | **projectZenith** | 폴더 구조, 문서 동기화, Azure 배포, 브랜치 전략, CI/CD, **멀티 에이전트 구조** (7 subagent 패턴 차용 — `research/HARNESS_ENGINEERING.md` §14 참조) |
 | **YECHANGPE_urbanProjectAuto** | Claude API 래퍼, 구조화 프롬프트, JSON 파싱 에러 복구, 결과 캐싱 |
 | **Tajook** | 크레딧 시스템 (적립/차감/로그), 재가입 방지, RLS, 관리자 크레딧 부여 |
+| **brightMall** (CERTI_PROJ, 2026-06-27 전수 대조) | 결제 패턴 참조 커버리지 ≈72% — MISSED 3건(크레딧 만료·기간필터 이력 / returnUrl 비신뢰 원칙 박제 / admin statusCounts). 정본: `reports/BRIGHTMALL_PAYMENT_REFERENCE_AUDIT_20260627.md` |
+| **유키효(wickiho-server)** (ProjectShowRoomAndMall_Wickiho) | 동일 스택(NestJS 헥사고날 + Prisma + PostgreSQL) 무통장입금 1차 — 차용보다 **역수출** 방향 (`research/BACKEND_ROBUSTNESS_RESEARCH.md` §6-D) |
+
+> **해외 백엔드 견고성 정본** (2026-07-11 신설): 국내 참조 2건을 넘는 서적·빅테크·컨퍼런스·패턴 카탈로그 심층 연구 + 그리무아르 접목 매핑 = `research/BACKEND_ROBUSTNESS_RESEARCH.md`
 
 ## 차용 시 원칙
 
