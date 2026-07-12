@@ -23,3 +23,5 @@
 {"ts":"2026-05-29T14:47:07Z","type":"main_edit_blocked","tool":"Edit","file":"/Users/sokol/Desktop/Git/ProjectGrimoire/GRIMOIRE-SERVER/SRC/x.ts","route":"grimoire-server"}
 {"ts":"2026-05-29T14:47:07Z","type":"main_edit_blocked","tool":"Edit","file":"/Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server//src//x.ts","route":"grimoire-server"}
 {"ts":"2026-05-29T14:47:07Z","type":"main_edit_blocked","tool":"Edit","file":"/Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/../grimoire-server/src/x.ts","route":"grimoire-server"}
+{"ts":"2026-05-31T15:10:39Z","type":"main_edit_blocked","tool":"Edit","file":"/Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/src/main.ts","route":"grimoire-server"}
+{"ts":"2026-05-31T15:10:39Z","type":"main_edit_blocked","tool":"Write","file":"/Users/sokol/Desktop/Git/ProjectGrimoire/.claude/scripts/sensor-NEW.sh","route":"grimoire-harness"}
