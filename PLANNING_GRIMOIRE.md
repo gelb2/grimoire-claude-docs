@@ -21,6 +21,15 @@
 
 유저가 1,000원을 내고 크레딧을 충전했을 때, 그 크레딧을 전부 소진하는 데 드는 AI API 비용이 1,000원을 넘으면 **적자**다. 크레딧 가격은 반드시 AI 원가에 **마진을 얹은 값**이어야 한다.
 
+### 디노미네이션 개편 반영 (2026-05, 크레딧 코어 CC-1~5 — 구현 완료)
+
+> 철칙(안전배수 ≥ 3×)은 불변. 아래는 **현행 구현 모델**이며 구 정수 크레딧 서술을 대체한다.
+
+- **1 크레딧 = 1,000 포인트(pt)** 디노미네이션 (`CREDIT_TO_POINT = 1000`, `domain/model/credit-point.ts`). 차감·적립·선물 전 경로가 pt 단위.
+- 구 `Author.credits` 단일 정수 컬럼은 **DROP 완료**(마이그레이션 `20260521_author_credits_drop_credit_log_phase3`). 잔액은 **4 출처 포인트 + 외상**으로 회계(§8 참조). HTTP 응답 키 `credits`(`/auth/me` 등)는 하위호환으로 `CreditLedgerPort.getBalance().total`(4 출처 합) 매핑 보존(`auth.controller.ts:96-97`).
+- **기능별 차감은 pt 정액/구간** — 아래 "기능별 원가 테이블" 참조. 구 "1 크레딧/3 크레딧" 서술은 모두 pt로 이행됨.
+- **§0 마진 검증 정본은 `grimoire-server/docs/ai-cost-table.md` §2** (cost-accountant 단독 관리). 충전 패키지 4종 전부 §0 PASS 판정 완료 — cost-accountant 승인 `786b0f3`. 본 문서는 요약만 싣고, 신규 AI 기능·가격 변동 시 재검증은 ai-cost-table.md에서 수행한다.
+
 ### 원가 계산식
 
 ```
@@ -39,7 +48,11 @@
          = $0.0024 + $0.0075
          = $0.0099 × ₩1,474 ≈ ₩14.6 (환율 1,474원 기준, 2026-04)
 
-[2] 크레딧 1개의 판매 단가 (§8 반영, F1 인상 2026-04-19)
+[2] 크레딧 1개의 판매 단가 (구 정수 크레딧 모델 — F1 인상 2026-04-19)
+
+  ※ 아래 [2]~[4]는 **구 정수 크레딧 모델(F1 시점) 히스토리**로 보존한다.
+    현행은 pt 디노미(위 "디노미네이션 개편 반영" 배너) — 충전 패키지 4종은 §8,
+    실효 pt 단가·마진 정본은 grimoire-server/docs/ai-cost-table.md §2 참조.
 
   기본   5개 / ₩2,000 → 개당 ₩400   ← F1 인상 (구 ₩1,000/₩200)
   인기  20개 / ₩3,000 → 개당 ₩150
@@ -87,33 +100,30 @@
 | 기능 추가 (RAG 등)로 토큰 사용량 증가 | 해당 기능에 크레딧 추가 차감 또는 별도 요금제 |
 | 환율 급등 | 원가 재계산 → 가격 조정 |
 
-### 기능별 원가 테이블 (2026-04-19 F1~F3 반영)
+### 기능별 원가 테이블 (현행 pt 디노미 모델 — CC-1~5 구현 반영)
 
-> 수수료 `₩11.7`는 베스트 패키지(₩5,000) 개당 수수료 기준 — 최악 케이스 아님 주의.
-> 기본/인기 패키지는 개당 수수료가 각각 ₩100/₩26.5로 다름. 패키지별 안전배수는 아래 시나리오 참조.
+> 차감 pt는 cost-accountant v3 **스트레스 원가 × 3** 산출값 (`ceil(스트레스원가×3 ÷ ₩0.09856)`).
+> 경계값·차감 N은 `SystemSetting`으로 동적 오버라이드 가능 (`domain/model/chat-charge-tier.ts` 기본값 정본).
+> 충전 pt 실효 단가 ₩0.09856(입문, §0 최악)~₩0.09976(베스트) 기준 — 4종 전 패키지 §0 PASS (`786b0f3`).
 
-| 기능 | AI 모델 | 추정 input | 추정 output | AI 원가/회 (₩) | 크레딧 차감 | 판매가 (베스트 기준) | 안전배수 (베스트) | 판정 |
-|------|---------|-----------|------------|----------------|-------------|---------------------|-------------------|------|
-| 테마 AI 초안 생성 | Claude Sonnet 4.6 | ~800 tok | ~500 tok | ₩14.6 | 1 | ₩100 | 3.80× | ✅ PASS |
-| AI 작품 분석 (설정/톤/캐릭터) | Claude Sonnet 4.6 | — | — | ₩60.4 | **3** | ₩300 (₩100×3) | 3.14× | ✅ PASS |
-| AI 작품 분석 (Haiku 4.5 전환 시) | Claude Haiku 4.5 | — | — | ₩20.6 | **3** | ₩300 (₩100×3) | 5.39× | ✅ PASS |
-| AI 채팅 1턴 | Claude Sonnet 4.6 | — | — | ₩16.2 | 1 (연동 미착수) | ₩100 | 3.58× | ⏳ 미연동 |
+| 기능 | AI 모델 | 차감 (pt) | 차감 시점 | 스트레스 안전배수 | 판정 |
+|------|---------|-----------|----------|-------------------|------|
+| 테마 AI 생성 | Claude Sonnet | 590 (`THEME_POINT_COST`) | 사전 (일일 무료 초과분) | 3.01× | ✅ PASS |
+| AI 작품 분석 (설정/톤/캐릭터) | Claude Sonnet | 2,440 (`ANALYSIS_POINT_COST`) | 사전 | 3.01× | ✅ PASS |
+| AI 채팅 — short (≤500 tok) | Claude Sonnet | 190 | 사후 (토큰 실측 후) | 3.05× | ✅ PASS |
+| AI 채팅 — normal (501~4,000) | Claude Sonnet | 810 | 사후 | 3.03× | ✅ PASS |
+| AI 채팅 — long (4,001~12,000) | Claude Sonnet | 3,390 | 사후 | 3.01× | ✅ PASS |
+| AI 채팅 — xlong (>12,000) | Claude Sonnet | 5,520 | 사후 | 3.00× (쿠션 0) | ✅ PASS |
 
-**패키지별 AI 작품 분석 마진 (3 크레딧 차감, Sonnet 기준)**
+> **채팅은 4구간 사후 차감** — 응답 생성 후 input 토큰 실측으로 구간 판정, 잔액 부족 시 **외상(deficit)** 누적(충전 시 우선 상계). 3구간 시 P99 꼬리 2.40×로 §0 위반 → xlong 구간 필수(§8-8 #4). 구현: `chat.usecase.ts` `chargeChatTurn`.
+> **새 AI 기능을 추가할 때마다 `grimoire-cost-accountant` 마진 ≥3배 검증을 받은 뒤 구현한다.** 마진 정본: `grimoire-server/docs/ai-cost-table.md` §2·§3.
 
-| 패키지 | 판매가(3×개당) | 수수료(3×개당) | 총 원가 | 안전배수 | 판정 |
-|---|---|---|---|---|---|
-| 기본   ₩400×3 = ₩1,200 | ₩300 | ₩60.4 + ₩300 = ₩360.4 | 3.33× | ✅ PASS |
-| 인기   ₩150×3 = ₩450   | ₩79.5 | ₩60.4 + ₩79.5 = ₩139.9 | 3.22× | ✅ PASS |
-| 베스트 ₩100×3 = ₩300   | ₩35.1 | ₩60.4 + ₩35.1 = ₩95.5  | 3.14× | ✅ PASS |
-
-> **새 AI 기능을 추가할 때마다 이 테이블을 먼저 업데이트하고, `grimoire-cost-accountant` 에이전트 마진 ≥3배 검증을 받은 뒤에 구현한다.**
-> 정본: `grimoire-server/docs/ai-cost-table.md`
+**모델 티어링 여지 (P1 로드맵)**: 분석을 Haiku로 전환 시 원가 1/3 → 안전배수 대폭 상승 (§14 참조).
 
 ### 모니터링 (Phase 3~)
 
-- 실제 API 호출당 토큰 사용량을 DB에 기록 (credit_logs에 `token_usage` 필드 추가 검토)
-- 월간 AI API 비용 vs 크레딧 매출 대시보드 (관리자 패널)
+- 채팅은 API 호출당 토큰 사용량 기록 완료 (`ChatMessage.inputTokens/outputTokens/model` + `chargedPoints/chargeTier`). 원장은 `CreditLedger`(출처별 거래 전건)
+- 월간 AI API 비용 vs 포인트 매출 대시보드 (관리자 패널)
 - 마진율이 50% 이하로 떨어지면 알림
 
 ---
@@ -285,11 +295,11 @@ Author 1:1 DefaultTheme (작가 공간 기본 테마 — 선택적)
 
 ```
 [방법 1 — 이메일 가입 (Phase 2 구현 완료)]
-이메일 입력 → 비밀번호 설정 → 비밀번호 재확인 → 작가명 → 슬러그 설정 → 가입 완료 (3 크레딧 보너스)
+이메일 입력 → 비밀번호 설정 → 비밀번호 재확인 → 작가명 → 슬러그 설정 → 가입 완료 (가입 보너스 3,000pt = 구 3 크레딧)
 ※ 이메일 인증(verification) 없음 — 이메일+비밀번호+비밀번호재확인 입력 방식
 
-[방법 2 — 소셜 로그인 가입 (Phase 3 예정)]
-Kakao/Google 중 택 1 → 슬러그 설정 → 가입 완료 (3 크레딧 보너스)
+[방법 2 — 소셜 로그인 가입 (Google 완료, Kakao 미착수)]
+Kakao/Google 중 택 1 → 슬러그 설정 → 가입 완료 (가입 보너스 3,000pt = 구 3 크레딧)
 ※ Apple 로그인은 제외 (심사 요건 대비 비용 과다)
 ※ Kakao는 기술적 난이도 확인 후 도입 결정
 
@@ -303,7 +313,7 @@ Kakao로 가입한 유저가 나중에 Google도 연결 가능.
 
 ```
 1. 가입 (이메일 or 소셜) → 슬러그 설정 (예: /deerdevil/)
-2. 테마 에디터 진입 → 텍스트로 분위기 구술 [1 크레딧]
+2. 테마 에디터 진입 → 텍스트로 분위기 구술 [일일 무료 초과 시 590pt]
    "어둡고 묵직한 A24 감성으로 해줘"
 3. AI 초안 생성 → 에디터에서 미세 조정 [무료, 무제한]
    → 작가공간 미리보기 + 에피소드 미리보기로 실시간 확인
@@ -389,9 +399,17 @@ users                        # 독자 = 작가 (구분 없음)
 ├── name
 ├── email (unique)
 ├── password_hash (nullable) # 이메일 가입 시
-├── credits (int, default 3)
+├── points_free (int, default 0)          # 무료 적립 (가입·첫작품 보너스 — CAC)
+├── points_subscription (int, default 0)  # 구독 월 풀 (매월 리셋, 이월 금지)
+├── points_gift (int, default 0)          # 응원 선물 수령분
+├── points_charged (int, default 0)       # 충전(Polar) — pt 단가에 §0 마진 박힘
+├── deficit_points (int, default 0)       # 외상 (채팅 사후 차감 잔액 부족분, 충전 시 우선 상계)
+├── plan (text, default "free")           # [DEPRECATED] tier 정본은 MembershipPlan.tier (CC-5 案 B)
 ├── created_at
 └── updated_at
+
+# 구 `credits (int)` 단일 컬럼은 DROP 완료 (CC-4 Phase 3, 마이그레이션 20260521).
+#   → 위 4 출처 캐시 + deficit 로 회계. API `credits` 응답 키는 getBalance().total 매핑으로 하위호환 보존.
 
 social_accounts              # 소셜 로그인 식별자 (1:N — 핵심!)
 ├── id (uuid)
@@ -434,12 +452,28 @@ episodes
 ├── view_count (int, default 0)  # 에피소드 조회수
 └── created_at
 
-credit_logs                  # 크레딧 감사 로그 (INSERT only)
+credit_ledger                # 포인트 원장 — 4 출처 회계 정본 (구 credit_logs 폐기, CC-4 Phase 3)
 ├── id (uuid)
-├── user_id (FK → users)
-├── amount (int)
+├── author_id (FK → users, Restrict)
+├── source (text)            # 'free' | 'subscription' | 'gift' | 'charged'
+├── type (text)              # 'earn' | 'spend' | 'deficit_incur' | 'deficit_settle' | 'expire'
+├── amount (int)             # 부호 有
+├── balance_after (int)
+├── expires_at (timestamptz?) # 구독 풀 만료 (이월 금지)
 ├── reason (text)
-├── created_at
+├── related_id (text?)
+└── created_at
+# 인덱스: [author_id, created_at] / [author_id, source] / [expires_at]
+
+membership_plan              # 구독 등급 + 월 포인트 풀 (CC-5)
+├── id (uuid)
+├── author_id (FK → users, Restrict)
+├── tier (text)              # 'free' | 'pro' | 'premium' — tier 정본 (案 B)
+├── monthly_pool_points (int)
+├── pool_balance (int)
+├── pool_reset_at (timestamptz)
+├── polar_subscription_id (text?)  # 구독 webhook 매핑
+└── status (text)
 
 signup_history               # 재가입 악용 방지
 ├── provider_id (text, PK)
@@ -538,23 +572,37 @@ projectZenith에서 서버가 frankfurter.app(환율 API)을 호출한 것과 �
 
 Tajook (타죽) — Claude Haiku 기반 중고 오토바이 AI 분석 서비스. 크레딧 기반 과금 시스템이 구현되어 있음.
 
+### 포인트 시스템 개편 요약 (크레딧 코어 CC-1~5, 2026-05 — 구현 완료)
+
+> 인터페이스 정본: `.claude/shared-contracts.md §30` (CreditOverhaul). 아래는 그 요약.
+
+- **디노미네이션 1:1,000** — 1 크레딧 = 1,000pt. 모든 차감/적립/선물이 pt 단위 (§0 배너).
+- **4 출처 분리 회계** — `free`(무료 적립) / `subscription`(구독 월 풀) / `gift`(응원 선물) / `charged`(충전). Author 4 캐시 컬럼 + `CreditLedger` 원장(하이브리드). 잔액 부족 시 **외상(deficitPoints)** 누적 → 충전 시 우선 상계.
+- **소진 우선순위** free → subscription → gift → charged / **환불 환수 우선순위** charged → gift → subscription → free.
+- **구독 월 풀 (CC-5)** — pro 93,000pt / premium 191,500pt, 매월 리셋·이월 금지. `MembershipPlan.tier`가 tier 정본(구 `Author.plan`은 [DEPRECATED] 미러).
+- **환불 정밀 (구현 완료)** — 3중 멱등(webhook·CAS·status) + 비례 부분환불 누적 한도 검증(PAY-S2) + 부족분 외상 통합. `refundPaymentWithPoints`.
+- **Circuit Breaker (PAY-S3, 구현 완료)** — Polar 결제 게이트웨이 장애 시 차단 + 운영자 admin UI(`CircuitBreakerPanel`).
+- **채팅 4구간 사후 차감 (구현 완료)** — 아래 §14 · §0 기능별 테이블 참조. (구 "무료/미연동" 서술 폐기.)
+
 ### 크레딧 개념
 
-유저가 플랫폼 기능을 사용할 때 크레딧을 소비한다.
+유저가 플랫폼 기능을 사용할 때 포인트(pt)를 소비한다. (1 크레딧 = 1,000pt 디노미 — §0 배너)
 
-| 기능 | 크레딧 소비 | 비고 |
+| 기능 | 차감 (pt) | 비고 |
 |------|-----------|------|
-| 테마 AI 초안 생성 (Claude API 호출) | 1 크레딧 | 일일 무료 횟수 초과 시에만 |
+| 테마 AI 생성 (Claude API 호출) | 590 | 일일 무료 횟수 초과 시에만, 사전 차감 |
+| AI 작품 분석 (설정/톤/캐릭터) | 2,440 | 사전 차감, 잔액 부족 시 거부 (§14) |
+| AI 채팅 1턴 | 190 / 810 / 3,390 / 5,520 | 4구간 사후 차감 (input 토큰 실측), 부족 시 외상 |
 | 커스텀 에디터로 미세 조정 | **무료** | Color Picker 등으로 직접 수정 |
 | 에피소드 퍼블리시 | 무료 | - |
 | 공간 유지 | 무료 | - |
-| 작가에게 크레딧 선물 | 선택한 만큼 | 독자 → 작가 크레딧 이전 |
+| 작가에게 응원 선물 | 1,000 / 3,000 / 5,000 | 독자 → 작가 포인트 이전 (§8 선물) |
 
 > **핵심 원칙: "돈은 AI의 창의성에 내는 것이지, 수정 작업에 내게 만들면 안 된다."**
 >
 > LLM은 비결정적이다 — 한 번에 작가 마음에 쏙 드는 완벽한 Hex 색상을 뽑아줄 확률은 낮다.
 > 작가가 "네온 핑크가 너무 쨍한데 톤 다운해 줘"라고 텍스트를 수정할 때마다
-> 1 크레딧(200원)을 태워야 한다면 불쾌감 → 이탈로 이어진다.
+> 테마 생성 pt(590pt)를 태워야 한다면 불쾌감 → 이탈로 이어진다.
 >
 > 따라서 크레딧은 **AI 초안 생성에만** 사용하고,
 > 이후 미세 조정은 **무료 커스텀 에디터**로 직접 할 수 있어야 한다.
@@ -562,7 +610,7 @@ Tajook (타죽) — Claude Haiku 기반 중고 오토바이 AI 분석 서비스.
 ### 테마 생성 + 수정 흐름 (수정됨)
 
 ```
-[1 크레딧 소비]
+[590pt 차감 — 일일 무료 초과 시]
 작가: "어둡고 묵직한 A24 감성"
   → Claude API → Base Theme JSON 생성
   → 미리보기 표시
@@ -573,7 +621,7 @@ Tajook (타죽) — Claude Haiku 기반 중고 오토바이 AI 분석 서비스.
   → JSON 직접 수정 → 실시간 미리보기
   → 만족할 때까지 반복
 
-[선택 — 1 크레딧]
+[선택 — 590pt]
 작가: "아예 다른 분위기로 다시 해줘"
   → Claude API 재호출 (새로운 Base Theme)
 
@@ -591,7 +639,7 @@ Tajook (타죽) — Claude Haiku 기반 중고 오토바이 AI 분석 서비스.
 | 애니메이션 선택 | typing / fade / slide / none |
 | 카드 스타일 | sharp / rounded / minimal |
 | 실시간 미리보기 | 수정 즉시 CSS Variables 반영 |
-| "AI로 다시 생성" 버튼 | 새 설명 입력 → 1 크레딧 소비 (명확히 고지) |
+| "AI로 다시 생성" 버튼 | 새 설명 입력 → 590pt 차감 (명확히 고지) |
 
 ### Tajook과의 차이
 
@@ -599,24 +647,28 @@ Tajook (타죽) — Claude Haiku 기반 중고 오토바이 AI 분석 서비스.
 |------|-------------------|-------------------|
 | AI 결과 만족도 | 분석 결과 = 정답에 가까움 (만족도 높음) | 디자인 취향 = 주관적 (만족도 편차 큼) |
 | 재호출 빈도 | 낮음 (1회성 분석) | 높을 수 있음 (수정 반복) |
-| 해결 | 1회 = 1크레딧 그대로 | AI 초안 1크레딧 + 수동 수정 무료 |
+| 해결 | 1회 = 1크레딧 그대로 | AI 초안 590pt + 수동 수정 무료 |
 
 ### 구독 플랜 + 테마 슬롯
 
 테마의 소유권은 유저에게 있으며, 동시에 활성화할 수 있는 테마 수(슬롯)로 플랜을 차등화한다.
 테마 생성(보유) 자체는 슬롯에 제한받지 않는다. 테마는 작가 공간 전체 또는 개별 작품에 적용할 수 있다.
 
-| 플랜 | 테마 슬롯 | 일일 무료 생성 | 초과 시 | 월 가격 |
-|------|----------|-------------|--------|--------|
-| Free | 1개 | 3회 | 크레딧 차감 (1크레딧/회) | ₩0 |
-| Pro | 3개 | 7회 | 크레딧 차감 (1크레딧/회) | 미정 |
-| Premium | 8개 | 12회 | 크레딧 차감 (1크레딧/회) | 미정 |
+| 플랜 | 테마 슬롯 | 일일 무료 생성 | 초과 시 | 월 포인트 풀 | 월 가격 |
+|------|----------|-------------|--------|------------|--------|
+| Free | 1개 | 3회 | 590pt 차감 | 0 (충전 pt로만) | ₩0 |
+| Pro | 3개 | 7회 | 590pt 차감 | 93,000pt | ₩9,900 |
+| Premium | 8개 | 12회 | 590pt 차감 | 191,500pt | ₩19,900 |
+
+> **월 포인트 풀 (CC-5)**: 구독 등급별 매월 지급되는 pt(`points_subscription`). **이월 금지** — 매월 `pool_reset_at`에 리셋 (`MembershipPlan` 모델). 소진 우선순위상 무료·구독 pt가 충전 pt보다 먼저 소진(free → subscription → gift → charged).
+> **구독 정기결제**: 서버 구현 완료 (`POST /subscriptions/checkout` Polar 정기결제 + `GET /membership`). 단 **Polar 구독 상품 등록·KYC는 사용자/인프라 영역** — env(`POLAR_PRODUCT_SUBSCRIPTION_*`) 미설정 시 checkout 503 graceful.
+> 값 정본: `domain/model/membership-tier.ts` (`MEMBERSHIP_MONTHLY_POOL`/`MEMBERSHIP_PRICE_KRW`/슬롯/일일무료).
 
 **테마 슬롯 규칙:**
 - 테마 생성은 슬롯과 무관하게 가능 (보관 상태로 생성됨)
 - 슬롯이 꽉 찬 상태에서 새 테마를 활성화(슬롯 배치) → 차단 ("기존 테마를 보관으로 변경하세요")
 - 테마 삭제 → 활성 상태였다면 슬롯 반환
-- 재생성도 신규 생성과 동일 크레딧 차감 (할인 없음)
+- 재생성도 신규 생성과 동일 590pt 차감 (할인 없음)
 - 일일 무료 횟수는 유저 단위 글로벌 (테마 A 2회 + 테마 B 1회 = 3회 소진)
 
 **업셀 동기:**
@@ -649,16 +701,18 @@ Tajook (타죽) — Claude Haiku 기반 중고 오토바이 AI 분석 서비스.
 
 ### 크레딧 선물 (독자 → 작가)
 
-독자가 에피소드를 다 읽은 후 작가에게 크레딧을 선물할 수 있다.
+독자가 에피소드를 다 읽은 후 작가에게 포인트를 선물할 수 있다.
 Twitch 비트, YouTube 슈퍼챗과 유사한 모델.
 
 ```
 에피소드 마지막 화면
   → "작가에게 응원 보내기" 버튼
-  → 1 / 3 / 5 크레딧 선택
-  → 독자 크레딧 차감, 작가 크레딧 적립
-  → CreditLog에 type: "gift" 기록
+  → 1,000 / 3,000 / 5,000 pt 선택 (POST /credits/gift, amount 단위 = pt)
+  → 독자·작가 양측 1 트랜잭션 이동 (작은 id 먼저 잠금, 외상 금지)
+  → CreditLedger source='gift' earn/spend 기록 (구 CreditLog 폐기)
 ```
+
+> 선물은 매출 0(독자↔작가 pt 이동)이라 §0 마진 검증과 무관. 값 정본: `domain/model/gift-points.ts` `GIFT_POINT_OPTIONS`.
 
 **선순환 구조:**
 독자 응원(크레딧 선물) → 작가 크레딧 적립 → 테마 생성 → 더 좋은 공간 → 독자 유입 증가
@@ -667,20 +721,24 @@ Twitch 비트, YouTube 슈퍼챗과 유사한 모델.
 
 | 방법 | 적립량 | 조건 |
 |------|--------|------|
-| 가입 보너스 | 3 크레딧 | 최초 가입 시 1회 (재가입 악용 방지) |
-| 첫 작품 등록 보너스 | 2 크레딧 | 첫 에피소드 퍼블리시 시 |
+| 가입 보너스 | 3,000pt (구 3 크레딧) | 최초 가입 시 1회 (재가입 악용 방지) |
+| 첫 작품 등록 보너스 | 2,000pt (구 2 크레딧) | 첫 에피소드 퍼블리시 시 |
+
+> 두 보너스 모두 `source='free'`(CAC)로 `CreditLedger`에 적립 (`grant-points.usecase.ts`, CC-1).
 
 ### 크레딧 구매 방법 (유료)
 
-| 상품 | 크레딧 | 가격 | 단가 | 비고 |
-|------|--------|------|------|------|
-| 기본 | 5 크레딧 | ₩2,000 | ₩400/개 | **F1(2026-04-19) 인상** — Polar 고정수수료 $0.30 보전 |
-| 인기 | 20 크레딧 | ₩3,000 | ₩150/개 | |
-| 베스트 | 50 크레딧 | ₩5,000 | ₩100/개 | |
+디노미 개편(CC-2a, 2026-05-20) — 구 3종(5/20/50 크레딧)을 폐기하고 신 4종(총 충전 pt + 보너스율)으로 전환.
 
-> F1 배경: 구 기본 패키지 ₩1,000은 Polar 수수료(2.9% + $0.30) 구조에서 고정 ₩442가 44%를 잠식해
-> 모든 AI 기능에서 §0 안전배수 1.84× (CRITICAL) 판정을 받았다. ₩2,000 인상으로 개당 ₩400 확보 → 3.49× PASS.
-> 대안으로 "최소 결제 ₩3,000 설정(기본 폐지)" 검토됐으나 소액 진입 유지 목적으로 인상 선택.
+| 상품 (id) | 충전 pt | 보너스 | 가격 | Polar USD | 비고 |
+|-----------|--------|--------|------|-----------|------|
+| 입문 (`credit-starter`) | 25,000pt | 0% | ₩3,000 | $2.99 | §0 최악 실효단가 ₩0.09856/pt |
+| 기본 (`credit-basic`) | 41,667pt | 0% | ₩5,000 | $4.99 | |
+| 인기 (`credit-popular`) | 91,667pt | +10% | ₩10,000 | $9.99 | 보너스 포함 총 pt |
+| 베스트 (`credit-best`) | 287,500pt | +15% | ₩30,000 | $29.99 | 실효단가 ₩0.09976/pt |
+
+> 4종 전부 cost-accountant 승인 `786b0f3`으로 §0 PASS 판정 완료 (신규 AI 기능 0건 — 기존 충전 경로의 디노미 환산이므로 재마진검증 불요). 값 정본: `domain/model/config.ts` `CREDIT_PRODUCTS` + `docs/ai-cost-table.md` §2.
+> Polar 상품 등록(`POLAR_PRODUCT_STARTER` 등 env)은 인프라/사용자 영역. `GET /payments/products` 응답 = `{ id, name, points, bonusRate, price, pricePerPoint }`.
 
 ### 결제 채널 — Polar (구현 완료, KYC 대기)
 
@@ -697,17 +755,18 @@ Twitch 비트, YouTube 슈퍼챗과 유사한 모델.
 ```
 [현재 — Polar webhook 자동화]
 사용자가 "크레딧 충전" 클릭 (/dashboard/credits)
-    → 상품 선택 (5/20/50 크레딧)
+    → 상품 선택 (입문/기본/인기/베스트 — 4종 pt 패키지)
     → grimoire-server가 Polar checkout 세션 생성
     → 사용자가 Polar 결제 페이지에서 결제
     → Polar가 grimoire-server webhook 호출
         POST /api/payments/webhook
     → 결제 검증 (Polar 서명 검증)
-    → 검증 성공 시:
-        1. payment_logs에 결제 기록 INSERT
-        2. credit_logs에 적립 기록 INSERT
-        3. users.credits += 구매 크레딧 수
-    → 사용자에게 "충전 완료" 알림
+    → 검증 성공 시 (단일 $transaction — completePaymentWithPoints):
+        1. Payment 상태 → completed (status CAS 멱등 — 동시성 패자는 no-op)
+        2. deficit(외상) 우선 상계 (CreditLedger deficit_settle)
+        3. 남은 충전 pt 적립 (CreditLedger source='charged' earn)
+        4. Author.pointsCharged / deficitPoints 캐시 갱신
+    → 사용자에게 "충전 완료" 알림 (멱등 패자는 skip)
 
 [향후 — PG사 확장 검토]
 한국 시장 확대 시 토스페이먼츠/포트원 등 정식 PG 연동 검토
@@ -716,47 +775,45 @@ Twitch 비트, YouTube 슈퍼챗과 유사한 모델.
 #### 결제 DB 스키마 (구현 완료)
 
 ```
-payment_logs                    # 결제 기록
+payment                         # 결제 기록 (Payment 모델)
 ├── id (uuid)
-├── user_id (FK → users)
-├── product_id (text)           # "credit_5" | "credit_20" | "credit_50"
+├── author_id (FK → users)
+├── product_id (text)           # "credit-starter" | "credit-basic" | "credit-popular" | "credit-best"
 ├── amount_krw (int)            # 결제 금액 (원)
-├── credit_count (int)          # 부여할 크레딧 수
+├── points (int)                # 부여 pt (구 credit_count → CC-4 Phase 2 물리 rename, 2026-05-21)
 ├── payment_provider (text)     # "polar"
 ├── payment_id (text)           # 외부 결제 ID (Polar에서 부여)
-├── status (text)               # "pending" | "completed" | "refunded" | "failed"
+├── status (text)               # "pending" | "completed" | "refunded" | "failed" | "expired"
 ├── verified_at (timestamptz?)  # 검증 완료 시각
 ├── created_at (timestamptz)
 
-→ credit_logs.reason: "purchase_credit_5_{paymentId}" 형태로 결제 ID 연결
+refund_log                      # 환불 감사 (RefundLog — 부분/누적 환불)
+├── payment_id / credits(실 환수 pt) / deficitCredits(외상 발생 pt) / reason / ...
+
+→ CreditLedger.reason: "purchase_{productId}_{paymentId}" 형태로 결제 ID 연결
+→ 만료: 24h 초과 pending row → 매일 새벽 4시 cron이 'expired' 마킹 (delete 아닌 soft expire, Asia/Seoul)
 ```
 
 #### 원가 검증 연동 (§0 참조, F1 인상 반영 2026-04-19)
 
 ```
-크레딧 구매 시 §0의 원가 검증이 자동 적용됨 (환율 ₩1,474, 고정수수료 ₩442):
+포인트 충전 시 §0의 원가 검증이 pt 실효 단가 기준으로 적용됨:
 
-  [결제] ₩2,000 → 5 크레딧 (개당 ₩400)   ← F1 인상 후
-  [소비] 테마 생성 1회 → 1 크레딧 소비 → AI 원가 ₩14.6
-  [수수료] ₩2,000 × 2.9% + ₩442 = ₩500 → 개당 ₩100
-  [마진] ₩400 - ₩14.6 - ₩100 = ₩285.4 (71.4%), 안전배수 3.49× ✅
+  [실효 단가] ₩0.09856/pt (입문 — §0 최악) ~ ₩0.09976/pt (베스트)
+  [소비 예] 테마 생성 = 590pt / 분석 = 2,440pt / 채팅 = 190~5,520pt (4구간)
+  [차감 산출식] 각 pt = ceil(스트레스 AI원가 × 3 ÷ ₩0.09856) → 스트레스 안전배수 ≈ 3.00~3.05×
 
-  베스트 패키지 (₩5,000, 개당 ₩100):
-  [수수료] ₩5,000 × 2.9% + ₩442 = ₩587 → 개당 ₩11.7
-  [마진] ₩100 - ₩14.6 - ₩11.7 = ₩73.7 (73.7%), 안전배수 3.80× ✅
-
-→ F1 인상으로 전 패키지 §0 안전 마진 기준(3배) 통과
+→ cost-accountant 승인 `786b0f3`으로 충전 4종 전 패키지 §0 PASS.
+→ 상세 마진 표(패키지별·기능별)는 `grimoire-server/docs/ai-cost-table.md` §2·§3 정본 참조.
 ```
 
 ### DB 스키마 (크레딧 관련)
 
 ```
-credit_logs
-├── id (uuid)
-├── user_id (uuid, FK → authors)
-├── amount (integer)          # 양수: 적립, 음수: 소비
-├── reason (text)             # 'signup_bonus', 'theme_generate', 'purchase_credit_20'
-├── created_at (timestamptz)
+credit_ledger                 # 포인트 원장 (구 credit_logs 폐기 — CC-4 Phase 3). 스키마 상세는 §6 참조.
+├── source ('free'|'subscription'|'gift'|'charged') / type / amount(부호) / balance_after / expires_at? / reason
+├── reason 예: 'signup_bonus', 'first_work_bonus', 'theme_generate', 'analysis', 'chat', 'purchase_credit-basic_{id}'
+└── 소진 우선순위: free → subscription → gift → charged / 환수 우선순위: charged → gift → subscription → free
 
 signup_history                # 재가입 악용 방지
 ├── provider_id (text, PK)   # OAuth provider ID
@@ -768,11 +825,11 @@ signup_history                # 재가입 악용 방지
 
 | 패턴 | 설명 | Grimoire 적용 |
 |------|------|-------------|
-| 즉시 차감 | 기능 실행 전 크레딧 먼저 차감 | 테마 생성 요청 시 즉시 차감 |
-| 감사 로그 | credit_logs에 모든 거래 기록 | 동일 |
+| 차감 시점 | 기능 실행 전/후 차감 | 테마·분석 = **사전** 차감(부족 시 거부) / 채팅 = **사후** 차감(부족 시 외상) |
+| 감사 로그 | 모든 거래 기록 | `CreditLedger` 원장에 출처·타입·잔액 전건 기록 |
 | 재가입 방지 | signup_history로 provider_id 추적 | 동일 |
-| 관리자 부여 | 관리자가 직접 크레딧 설정 가능 | 동일 |
-| RLS | 사용자는 자기 로그만 조회 | Supabase RLS 동일 적용 |
+| 관리자 부여 | 관리자가 직접 포인트 설정 가능 | 동일 (admin 크레딧 부여) |
+| 소유권 검증 | 사용자는 자기 로그만 조회 | JWT sub 기반 소유권 검증 (NestJS Guard) |
 
 ---
 
@@ -819,7 +876,8 @@ signup_history                # 재가입 악용 방지
 - [ ] **소셜 계정 연동** (1 유저 : N 소셜 계정 — §5, §6) — Google만 완료, Kakao 미착수
 - [x] 작가 대시보드 고도화 (조회수 통계, 작품 CRUD, 분석 탭)
 - [x] 타 플랫폼 대시보드 리서치 (네이버 시리즈, 카카오페이지, Wattpad 등) — 리서치 완료
-- [x] 크레딧 충전 UI + 결제 연동 (Polar — KYC 대기 중)
+- [x] 크레딧 충전 UI + 결제 연동 (Polar — KYC 대기 중). 디노미 개편 4종 pt 패키지 (§8)
+- [x] 구독 멤버십 서버 구현 (Free/Pro/Premium 월 포인트 풀 — CC-5, `POST /subscriptions/checkout`+`GET /membership`) — Polar 구독 상품등록/KYC 대기
 - [x] 프로필 설정 (슬러그, 프로필 편집)
 
 ### Phase 4 — 고도화
@@ -834,12 +892,13 @@ signup_history                # 재가입 악용 방지
 - [x] YECHANGPE RAG/Vector 코드 grimoire-server 이식
 - [x] 소설 도메인 임베딩 전략 설계 (`docs/ai-analysis-spec.md`)
 - [x] 설정 붕괴/톤 일관성/캐릭터 어감 체크 (§14) — 서버 구현 완료
-- [ ] 작가 대시보드 AI 피드백 탭 — 웹 UI 미연결
+- [x] 작가 대시보드 AI 피드백 탭 — 웹 UI 연결 완료 (`grimoire-web/src/app/dashboard/analysis/page.tsx`)
 
 ### Phase 5+ — AI 채팅 기능 (장기 검토)
 - [x] AI 채팅 모듈 도입 (`/dashboard/chat` — 서버+웹 완료)
+- [x] 크레딧(pt) 연동 — 4구간 사후 차감 + 토큰 사용량 기록(`ChatMessage.input/outputTokens`) 완료
 - [ ] 모델 티어링 전략 (FAQ→Haiku, 창작→Sonnet)
-- [ ] 크레딧 연동 + 토큰 비용 모니터링
+- [ ] 월간 AI 비용 대시보드 (관리자 — §0 모니터링)
 
 ---
 
@@ -1062,8 +1121,11 @@ Block[] 데이터
 | 조회수 통계 | 작품별/에피소드별 조회수, 기간별 추이 | 3 |
 | 테마 관리 | 내 테마 목록, 활성/보관, 퍼블리시, 에디터 진입 | 2 |
 | 원고 관리 | 에피소드 추가/수정/삭제/순서 변경 | 3 |
-| 크레딧 현황 | 잔액, 사용 내역, 충전 | 3 |
+| 크레딧 현황 | 잔액(pt), 사용 내역, 충전, 만료 예정 | 3 |
 | 프로필 설정 | 작가명, 슬러그, 소셜 계정 연동 관리 | 3 |
+
+> **순서 변경 (F-20, 구현 완료)**: `PATCH /works/:id/episodes/reorder` — 소유권 + 집합 일치 검증 후 단일 트랜잭션 재부여.
+> **크레딧 이력 기간/만료 (F-21, 구현 완료)**: `GET /credits/logs?from&to&limit&offset`(기간·페이지) + `GET /credits/expiring`(구독 풀 만료 예정 pt 조회).
 
 ### 분석 탭 (`/dashboard/analytics`)
 
@@ -1089,7 +1151,7 @@ Block[] 데이터
 │   ├── [편집] → /dashboard/theme?id={themeId} 이동
 │   ├── [활성/보관] 토글 (슬롯 점유 제어)
 │   └── [퍼블리시] → 활성 테마를 CSS로 베이킹하여 방문자에게 적용
-├── 슬롯 현황: "활성 2 / 슬롯 3 (STANDARD 플랜)"
+├── 슬롯 현황: "활성 2 / 슬롯 3 (Pro 플랜)"
 └── [새 테마 만들기] → /dashboard/theme (신규 생성 모드)
 ```
 
@@ -1182,17 +1244,17 @@ YECHANGPE 프로젝트에서 검증된 Claude API + OpenAI Embedding + RAG + Vec
 | 캐릭터 어감 체크 | "이 캐릭터는 존댓말 캐릭터인데 반말을 쓰고 있음" | 동일 |
 | 작가 대시보드 피드백 | 위 분석 결과 표시 | `grimoire-web/src/app/dashboard/analysis/page.tsx` |
 
-### F2 — AI 분석 크레딧 확정 (2026-04-19)
+### F2 — AI 분석 차감 (현행 2,440pt — 구 크레딧 확정 이력 반영)
 
-> **AI 작품 분석 3유형 = 3 크레딧 차감 (Sonnet 4.6 기준)**
+> **AI 작품 분석 = 2,440pt 사전 차감** (`ANALYSIS_POINT_COST`, 스트레스 안전배수 3.01×).
 >
-> 근거: `docs/ai-analysis-spec.md §8` 회당 원가 ₩60.4 + 패키지별 수수료(기본 ₩300/인기 ₩79.5/베스트 ₩35.1)
-> 3 크레딧 시 베스트 패키지 ₩300 vs 총 원가 ₩95.5 → 안전배수 3.14× PASS.
-> 1~2 크레딧 시 전 패키지 CRITICAL(안전배수 <3×)로 채택 불가. §0 기능별 원가 테이블 참조.
+> 이력: F2(2026-04-19) 3 크레딧 확정 → #9(2026-04-27) 사용자 결정 4 크레딧 인상(Sonnet +20%/환율 +8.5% 시뮬 시 <3× 약점 해소) → 디노미 개편(CC-1~5)으로 **4 크레딧 = 2,440pt** 환산.
+> 정본: `docs/ai-analysis-spec.md` + `docs/ai-cost-table.md §3`.
 
-- 차감 지점: `novel-analysis.usecase.ts` 분석 실행 전 크레딧 3 차감
-- 차감 실패 시 분석 중단 + 사용자에게 부족 크레딧 안내
-- 시맨틱 캐시 히트 시에도 동일 3 크레딧 차감 (정책 단순화) — 향후 1 크레딧으로 할인 검토 여지
+- 차감 지점: `novel-analysis.usecase.ts:128` 분석 실행 전 `chargePoints.chargeAnalysis` (2,440pt 사전 차감)
+- 차감 실패 시(잔액 부족) 분석 중단 + BadRequest "포인트가 부족합니다" 안내
+- 분석 실패 시 환불 경로(`refundAnalysis`) 출처별 정확 복원 (F-10, deficitIncurred 반영)
+- 시맨틱 캐시 히트 시에도 동일 2,440pt 차감 (정책 단순화) — 향후 할인 검토 여지
 
 ### F4 — Q1=(a) 에피소드 ID 모드 확정 (2026-04-24)
 
@@ -1214,9 +1276,9 @@ YECHANGPE 프로젝트에서 검증된 Claude API + OpenAI Embedding + RAG + Vec
 
 ### 미결 사항 (P1 이하)
 
-- [ ] AI 채팅 1턴 크레딧 차감 연동 (현재 무료 사용 중)
+- [x] **AI 채팅 1턴 차감 연동 — 구현 완료** (4구간 사후 차감 190/810/3,390/5,520pt, `chat.usecase.ts` `chargeChatTurn`, 잔액 부족 시 외상). 구 "무료 사용 중" 서술 폐기.
 - [ ] 모델 티어링 (Haiku 4.5 FAQ 라우팅)
-- [ ] 시맨틱 캐시 히트 시 할인 크레딧 정책
+- [ ] 시맨틱 캐시 히트 시 할인 pt 정책
 
 ---
 
@@ -1265,7 +1327,7 @@ YECHANGPE 프로젝트에서 검증된 Claude API + OpenAI Embedding + RAG + Vec
 - [x] 폴더 구조 확정 → **projectZenith 패턴** (루트 + 하위 독립 레포)
 - [x] AI API 통합 방식 확정 → **Claude API 구조화 프롬프트 → JSON 반환** (YECHANGPE 패턴)
 - [x] 크레딧 시스템 설계 → **Tajook 패턴** (즉시 차감, 감사 로그, 재가입 방지)
-- [x] 크레딧 과금 vs LLM 비결정성 충돌 해소 → **AI 초안 1크레딧 + 커스텀 에디터 무료 수정** (§8)
+- [x] 크레딧 과금 vs LLM 비결정성 충돌 해소 → **AI 초안 590pt + 커스텀 에디터 무료 수정** (§8)
 - [x] 독자 트래픽 DB 병목 대응 → **테마 Baking 파이프라인** Phase 2 적용 (§11)
 - [ ] RAG/Vector 이식 범위 + Vector DB 선택 + 비용 구조 확정 (§14)
 - [ ] 작가 대시보드 핵심 지표 확정 — 타 플랫폼 리서치 후 결정 (§13)
@@ -1296,7 +1358,7 @@ YECHANGPE 프로젝트에서 검증된 Claude API + OpenAI Embedding + RAG + Vec
 
 ---
 
-## 16. 변경 이력 (2026-04-19 ~ 2026-05-03 — 묶음 DD 갱신)
+## 16. 변경 이력 (2026-04-19 ~ 2026-07-13)
 
 > 본 §16은 PLANNING_GRIMOIRE.md 자체의 변경 + 운영 결정사항 누적. 코드/하네스 변경은 각 레포 CHANGELOG.md / `research/HARNESS_ENGINEERING.md` 참조.
 
@@ -1329,6 +1391,11 @@ YECHANGPE 프로젝트에서 검증된 Claude API + OpenAI Embedding + RAG + Vec
 | 2026-05-03 #10_6 묶음 CC | **Constitution 16 → 19 Principles 확장** (OWASP LLM Top 10 통합 — P17 Prompt Injection / P18 Output Encoding / P19 Sensitive Info Disclosure) + socratic Q11~Q14 (Lateral Personas) + Ambiguity 정량 공식 + cost gate 명시 | proposal §10-1 적용 |
 | 2026-05-03 #10_6 J8 머지 3회 | claude-docs develop → main (총 22 commit, 100% 비파괴적) | main 7e7c7ec |
 | 2026-05-03 #10_6 묶음 DD | 본 PLANNING 갱신 (#9~#10_6 결정사항 누적) | §16 |
+| 2026-05-17 크레딧개편 I | **디노미네이션 1:1,000** + 포인트 4 출처 분리 회계(free/subscription/gift/charged) + 채팅 4구간 사후 차감(190/810/3,390/5,520pt) + 분석 2,440pt / 테마 590pt | §0·§8·§14 + shared-contracts §30 |
+| 2026-05-20~22 CC-1~5 | 크레딧 코어 완결 — 가입 3,000pt/첫작품 2,000pt 신 원장 적립 · 충전 4종 pt 패키지 · 응원 선물 1,000/3,000/5,000pt · 구독 월 풀(pro 93k/premium 191.5k) · 환불 3중 멱등 + PAY-S2 부분환불 누적한도 | §8 |
+| 2026-05-23 PAY-S3 | 결제 Circuit Breaker 운영자 admin UI | §8 |
+| 2026-07-12 F-20/F-21 | 에피소드 순서 변경(`PATCH /works/:id/episodes/reorder`) + 크레딧 이력 기간/만료 조회(`/credits/logs?from&to`·`/credits/expiring`) | §13 + shared-contracts §30 |
+| 2026-07-13 F-24 | **본 PLANNING 크레딧 개편 현행화** (구현 현실 동기화 — 4출처 포인트/원장/채팅 사후차감 반영, 역방향 stale 정정). 신규 기획·결정 0건 | §0·§5·§6·§8·§13·§14 |
 
 ### 운영 정책 강화 누적 (2026-04-25 ~ 2026-05-03, 외부 API 0)
 
@@ -1345,7 +1412,7 @@ YECHANGPE 프로젝트에서 검증된 Claude API + OpenAI Embedding + RAG + Vec
 
 - **외부 Anthropic API 신규 의존 보류** (4-30): LLM-as-Judge SDK / 모델 티어링 / Agent teams — 0-1 결정 무기한 보류
 - **Polar KYC + 한국 payout** (사용자 본인 액션): 승인 전까지 test mode
-- **PLANNING_GRIMOIRE.md 갱신**: 본 §16 (사용자 명시 시만, proposals 패턴 가능)
+- **PLANNING_GRIMOIRE.md 갱신**: 본 §16 (사용자 명시 시만, proposals 패턴 가능). F-24 크레딧 개편 현행화는 사용자 승인 완료(2026-07-13) — 구현 현실 동기화만, 신규 결정 0건
 - **claude-docs main 머지**: 사용자 명시 J8 (지금까지 3회 — e26b627 / 8158a5e / 7e7c7ec)
 - **server·web main 머지**: 동일 패턴
 
