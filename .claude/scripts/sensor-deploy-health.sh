@@ -19,7 +19,7 @@
 # 2. Serving revision Ready == True (revision-aware — startup 실패+직전 revision fallback 200 사고 검출)
 # 3. Traffic 100% (serving revision 단일 라우팅)
 # 4. curl public endpoint HTTP 2xx/3xx (+ 배포 image 보고)
-# 5. latency ≤ 120s (Cloudflare 524 / cold start 가드)
+# 5. startup time ≤ 120s (curl latency = cold start 포함 startup time / Cloudflare 524 가드)
 #
 # 사용:
 #   bash .claude/scripts/sensor-deploy-health.sh <SERVICE>
@@ -186,12 +186,12 @@ case "$HTTP_STATUS" in
     FAIL=$((FAIL+1)) ;;
 esac
 
-# ── [5/5] latency ≤ 120s (Cloudflare 524 / cold start 가드) ──
+# ── [5/5] startup time ≤ 120s (curl latency = cold start 포함 startup time / Cloudflare 524 가드) ──
 if [ "$CURL_TIME" -le 120 ]; then
-  echo "  ✓ [5/5] latency ${CURL_TIME}s (≤120s)"
+  echo "  ✓ [5/5] startup time (curl latency) ${CURL_TIME}s (≤120s)"
   PASS=$((PASS+1))
 else
-  echo "  ✗ [5/5] latency ${CURL_TIME}s (>120s) — Cloudflare 524 위험"
+  echo "  ✗ [5/5] startup time (curl latency) ${CURL_TIME}s (>120s) — Cloudflare 524 위험"
   FAIL=$((FAIL+1))
 fi
 
