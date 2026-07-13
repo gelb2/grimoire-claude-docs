@@ -44,6 +44,13 @@ if [ ! -f "$CONSTITUTION" ]; then
   exit 2
 fi
 
+# 2026-07-13 (H-1 이중실행 봉합): 아래 sensor 2종은 여러 Principle에서 중복 호출되던 것.
+#   sensor-secret-leak  → P8(핵심 loop) + P13(보안) 2회
+#   sensor-credit-atomicity → P8(핵심 loop) + P16(원자성) 2회
+#   동일 commit 안에서 git 상태 불변 → 결과 동일. 1회만 실행하고 exit code 재사용.
+bash "$ROOT/.claude/scripts/sensor-secret-leak.sh" >/dev/null 2>&1; SECRET_LEAK_EC=$?
+bash "$ROOT/.claude/scripts/sensor-credit-atomicity.sh" >/dev/null 2>&1; CREDIT_ATOM_EC=$?
+
 # Principle 1 — §0 ZERO-TOLERANCE: commit 메시지에 추정 패턴
 echo "── 절대 규정 (Critical) ──"
 LAST_COMMIT_MSG=$(git -C "$ROOT" log -1 --format=%B 2>/dev/null || echo "")
@@ -113,13 +120,17 @@ esac
 # 2026-05-04 묶음 KK: PAY-P0 신규 sensor 3건 추가
 # 2026-05-06 묶음 OO-1: sensor-chat-domain 추가 (chat 회귀 차단)
 SENSOR_FAIL=0
-for s in sensor-server sensor-web sensor-docs-sync sensor-secret-leak sensor-credit-atomicity \
+# secret-leak / credit-atomicity 는 상단에서 1회 실행 (SECRET_LEAK_EC / CREDIT_ATOM_EC) — loop에서 제외 (중복 봉합)
+for s in sensor-server sensor-web sensor-docs-sync \
          sensor-payment-idempotency sensor-payment-reconciliation sensor-admin-credit-ui \
          sensor-chat-domain; do
   bash "$ROOT/.claude/scripts/$s.sh" >/dev/null 2>&1
   EC=$?
   [ "$EC" -gt 2 ] && SENSOR_FAIL=$((SENSOR_FAIL+1))
 done
+# 상단 1회 실행분 반영 (9 핵심 sensor 커버리지 동일 유지)
+[ "$SECRET_LEAK_EC" -gt 2 ] && SENSOR_FAIL=$((SENSOR_FAIL+1))
+[ "$CREDIT_ATOM_EC" -gt 2 ] && SENSOR_FAIL=$((SENSOR_FAIL+1))
 if [ "$SENSOR_FAIL" -eq 0 ]; then
   check 8 "핵심 Sensor exit ≤2" "PASS" "9 핵심 sensor 모두 통과 (PAY-P0 3건 + chat-domain 1건 포함)"
 else
@@ -166,8 +177,7 @@ fi
 # Principle 13 — 시크릿 평문 금지 (lenient)
 echo ""
 echo "── 보안 규정 ──"
-bash "$ROOT/.claude/scripts/sensor-secret-leak.sh" >/dev/null 2>&1
-EC=$?
+EC=$SECRET_LEAK_EC   # 상단 1회 실행분 재사용 (중복 봉합)
 if [ "$EC" -eq 0 ]; then
   check 13 "시크릿 평문 금지" "PASS" "sensor-secret-leak PASS"
 elif [ "$EC" -le 2 ]; then
@@ -229,8 +239,7 @@ else
 fi
 
 # Principle 16 — 결제 원자성 (lenient — sensor-credit-atomicity가 WARN exit 2 컨벤션 사용)
-bash "$ROOT/.claude/scripts/sensor-credit-atomicity.sh" >/dev/null 2>&1
-EC=$?
+EC=$CREDIT_ATOM_EC   # 상단 1회 실행분 재사용 (중복 봉합)
 if [ "$EC" -eq 0 ]; then
   check 16 "결제 원자성 (transaction)" "PASS" "sensor-credit-atomicity PASS"
 elif [ "$EC" -le 2 ]; then

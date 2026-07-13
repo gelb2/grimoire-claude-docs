@@ -41,7 +41,7 @@ bugfix/*  ──↗              ↓
   - 위 §1 본문 규칙(feature/* → develop --no-ff → main)을 그대로 적용. server/web과 동일 흐름
   - 단 본 레포는 런타임 코드 없으므로 develop 머지 시 테스트는 "문서·스크립트 무결성 체크"로 대체 (위 §1 1.5 참조)
 - **빌드/테스트 수단**: 런타임 코드 없음. Hook/Skill 스크립트 수정 시 shell 구문 체크 + skill-injector/bash-guard 스모크 테스트로 대체
-- **Pre-push hook**: 아직 미도입 (server/web 참고하여 추후 도입 권장)
+- **Pre-push hook**: 2026-07-13 도입 (`.githooks/pre-push`) — eval 회귀 게이트(75 task, HARD-BLOCK). H-1 이중실행 봉합 시 pre-commit에서 이관 (§2 하단 참조).
 - **origin**: https://github.com/gelb2/grimoire-claude-docs (PRIVATE)
 
 ### 커밋 메시지 컨벤션 (3개 레포 공통)
@@ -109,22 +109,34 @@ chmod +x .githooks/pre-push
 
 > `--no-verify`는 긴급 상황에서만 사용. 남용 금지.
 
-### claude-docs pre-commit (워크스페이스 루트, 2026-04-30 #10 H6 신설)
+### claude-docs pre-commit + pre-push (워크스페이스 루트)
 
+**2026-07-13 (H-1 이중실행 봉합) 재구성** — eval 회귀 게이트를 pre-commit → pre-push로 이관. pre-commit은 결정적·고속 유지.
+
+pre-commit (`.githooks/pre-commit`) — 매 커밋, 실측 <1분 (네트워크 무관):
 ```sh
-# .githooks/pre-commit (claude-docs 자체)
 #!/bin/sh
 set -e
-echo "=== claude-docs pre-commit 검증 ==="
-echo "[1/2] instructions-drift-check.sh ..."
-bash /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/scripts/instructions-drift-check.sh
-echo "[2/2] eval-precommit.sh (regression-tolerance 0.05) ..."
-bash /Users/sokol/Desktop/Git/ProjectGrimoire/eval/scripts/eval-precommit.sh
-echo "=== pre-commit 검증 통과 ==="
+# [1/3] update-harness-inventory.sh --apply   (HARNESS 인벤토리 drift 사전 갱신)
+# [2/3] instructions-drift-check.sh
+# [3/3] sensor-adversarial-pre-commit.sh       (Red Team Constitution 20 — WARN 허용, FAIL만 차단)
 ```
 
+pre-push (`.githooks/pre-push`) — 매 push (반드시 timeout=600000), eval 회귀 게이트:
+```sh
+#!/bin/sh
+set -e
+# [1/1] eval-precommit.sh   (eval-runner 75 task, regression-tolerance 0.05, must-pass HARD-BLOCK)
+```
+
+**이관 근거 (실측 raw)**:
+- eval-runner 단일 실행 = ~240s → Bash 기본 2분 timeout 초과 → 커밋 파싱실패·salvage 빈발 (H-1 근원).
+- eval task(`auto-sensor-adversarial-pre-commit` 116s, `auto-sensor-security-gate` 66s 등)가 sensor를 "실행" → redteam-gate + eval task + pre-commit step 이 동일 sensor 3중 실행.
+- `sensor-security-gate`는 운영(prod) curl(`--max-time` 無)을 포함 → pre-commit이 네트워크 의존·비결정적.
+- **eval 커버리지 75/75 그대로** (eval-precommit.sh 무변경 호출, push 경계로 이동). 게이트 강도 약화 0 — root pre-push는 지금까지 없었으므로 net "게이트 신설(강화)".
+- 부수 봉합: `sensor-secret-leak` xargs -I{} → git grep (28.8s→1.1s), `sensor-adversarial` 내부 secret-leak/credit-atomicity 2회→1회, `pretooluse-redteam-gate` 평범한 commit 시 적대검증 skip(pre-commit이 담당).
+
 활성화: `git config core.hooksPath .githooks` (워크스페이스 루트에서 1회).
-근거: 책 Ch 15 "EDD CI/CD 통합" — claude-docs는 코드 없으므로 매 commit 부담 작음 (~30s + 1s).
 
 ---
 
@@ -140,3 +152,4 @@ echo "=== pre-commit 검증 통과 ==="
 ## 4. 변경 이력
 
 - 2026-04-30: 본 파일 신설 — 루트 CLAUDE.md §8+§10을 이동 + 실제 server/web hook 본문 박제 (책 Ch 08 60-line 분할). hook 본문이 CLAUDE.md 예시와 달라진 것(prisma validate 추가, sensor-docs-sync 추가) 반영.
+- 2026-07-13 (H-1 이중실행 봉합): claude-docs pre-commit에서 eval 회귀 게이트(75 task)를 `.githooks/pre-push` 신설로 이관. pre-commit은 inventory+drift+adversarial(레드팀)만 유지 → 실측 커밋 훅 시간 ~6.2분→<1분. eval 커버리지 75/75·HARD-BLOCK·regression-tolerance 0.05 그대로. 부수: sensor-secret-leak git grep 전환(28.8s→1.1s), adversarial 내부 중복 봉합, redteam-gate commit skip. §1 Pre-push + §2 본문 동기화.

@@ -56,6 +56,29 @@ if [ "$DANGEROUS" -eq 0 ]; then
   exit 0
 fi
 
+# 2026-07-13 (H-1 이중실행 봉합): 평범한 root `git commit`은 .githooks/pre-commit이 이미
+#   sensor-adversarial-pre-commit 를 실행(게이트)함. redteam-gate가 여기서 또 실행하면 적대검증 2중 실행.
+#   → pre-commit이 확실히 실행될 조건이면 redteam-gate는 skip (중복만 제거, 게이트 강도 불변).
+#   fail-closed 방어: 아래 중 하나라도 해당하면 skip 안 하고 적대검증 강제 실행 —
+#     · --no-verify / -n  (pre-commit 우회 시도)
+#     · git -C <repo>     (타 레포 대상 — root pre-commit 담당 불확실)
+#     · core.hooksPath != .githooks 또는 .githooks/pre-commit 비실행 (pre-commit 게이트 부재)
+#   push / 인프라 변경은 pre-commit 무관 → 항상 적대검증 (아래 로직 그대로).
+if [ "$DANGEROUS_TYPE" = "git commit" ]; then
+  BYPASS=0
+  case "$COMMAND" in
+    *"git -C"*)         BYPASS=1 ;;   # 타 레포 대상 — fail-closed
+    *"--no-verify"*)    BYPASS=1 ;;   # pre-commit 우회
+    *" -n"*)            BYPASS=1 ;;   # -n / -nm 등 no-verify 단축 (message 내 오탐은 안전측 무해)
+  esac
+  HOOKS_PATH=$(git -C "$ROOT" config --get core.hooksPath 2>/dev/null)
+  if [ "$BYPASS" -eq 0 ] && [ "$HOOKS_PATH" = ".githooks" ] && [ -x "$ROOT/.githooks/pre-commit" ]; then
+    echo "🛈 [pretooluse-redteam-gate] git commit — .githooks/pre-commit이 적대검증 담당 → 중복 실행 skip" >&2
+    exit 0
+  fi
+  # BYPASS 또는 pre-commit 게이트 부재 → 아래에서 적대검증 강제 실행
+fi
+
 # 위험 명령 → 레드팀 검증
 echo "🛡 [pretooluse-redteam-gate] 위험 명령 검출: $DANGEROUS_TYPE" >&2
 echo "   command: $(echo "$COMMAND" | head -c 100)" >&2
