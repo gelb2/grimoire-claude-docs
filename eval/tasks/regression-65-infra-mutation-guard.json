@@ -9,7 +9,7 @@
     {"type": "command", "command": "test -f /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/skills/rollback-revision/SKILL.md", "desc": "rollback-revision SKILL.md 박제"},
     {"type": "command", "command": "test -x /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/scripts/sensor-deploy-health.sh", "desc": "sensor-deploy-health.sh 실행 권한"},
     {"type": "command", "command": "test -x /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/scripts/sensor-azure-env-secret.sh", "desc": "sensor-azure-env-secret.sh 실행 권한"},
-    {"type": "command", "command": "grep -qE 'HealthState=Healthy' /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/scripts/sensor-deploy-health.sh", "desc": "sensor-deploy-health HealthState 검증"},
+    {"type": "command", "command": "grep -qE 'Ready=True' /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/scripts/sensor-deploy-health.sh", "desc": "sensor-deploy-health GCP Cloud Run Ready=True health 검증 (H-2 이관, 구 Azure HealthState=Healthy)"},
     {"type": "command", "command": "grep -qE 'Traffic=100' /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/scripts/sensor-deploy-health.sh", "desc": "sensor-deploy-health Traffic 100 검증"},
     {"type": "command", "command": "grep -qE 'startup time' /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/scripts/sensor-deploy-health.sh", "desc": "sensor-deploy-health startup time 검증"},
     {"type": "command", "command": "grep -qE 'PUBLIC_API_BASE_URL' /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/scripts/sensor-azure-env-secret.sh", "desc": "sensor-azure-env-secret PUBLIC_API_BASE_URL 검증"},
