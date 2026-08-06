@@ -56,20 +56,20 @@ load_reason = payload.get('load_reason', '')
 memory_type = payload.get('memory_type', '')
 
 # 루트 CLAUDE.md만 검사 대상 (sub repo CLAUDE.md, .claude/rules/* 등은 스킵)
-ROOT_CLAUDE = "/Users/sokol/Desktop/Git/ProjectGrimoire/CLAUDE.md"
+ROOT_CLAUDE = "/Users/sokol/Git/ProjectGrimoire/CLAUDE.md"
 if file_path != ROOT_CLAUDE:
     sys.exit(0)
 
 # §14 본문은 research로 이동했으므로 CLAUDE.md §14 자체에 N개 표기 거의 없음.
 # 대신 research/HARNESS_ENGINEERING.md §14의 표기와 실측을 비교.
-RESEARCH = "/Users/sokol/Desktop/Git/ProjectGrimoire/research/HARNESS_ENGINEERING.md"
+RESEARCH = "/Users/sokol/Git/ProjectGrimoire/research/HARNESS_ENGINEERING.md"
 if not Path(RESEARCH).exists():
     sys.exit(0)
 
 content = Path(RESEARCH).read_text()
 
 # 실측
-PROJECT = "/Users/sokol/Desktop/Git/ProjectGrimoire"
+PROJECT = "/Users/sokol/Git/ProjectGrimoire"
 agents_actual = len(glob.glob(f"{PROJECT}/.claude/agents/*.md"))
 skills_actual = len(glob.glob(f"{PROJECT}/.claude/skills/*/SKILL.md"))
 sensors_actual = len(glob.glob(f"{PROJECT}/.claude/scripts/sensor-*.sh"))

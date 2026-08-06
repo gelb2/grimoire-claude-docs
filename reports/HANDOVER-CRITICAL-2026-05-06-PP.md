@@ -185,7 +185,7 @@
 
 ### Step 1 — 정본 Read (3 파일, 순서대로)
 1. `reports/HANDOVER-CRITICAL-2026-05-06-PP.md` (본 파일 — 시작점)
-2. `~/.claude/projects/-Users-sokol-Desktop-Git-ProjectGrimoire/memory/project_session_20260506.md` (세션 메모리)
+2. `~/.claude/projects/-Users-sokol-Git-ProjectGrimoire/memory/project_session_20260506.md` (세션 메모리)
 3. `HARNESS_MAP.html` (시각 자료 — mermaid 4건 + 표/grid 4건 = 8 섹션)
 
 ### Step 2 — 본 세션 자동 강제 hook 작동 검증
@@ -206,7 +206,7 @@ grep -A 1 "name in" .claude/scripts/sensor-orchestration-ratio.sh
 # 기대: name in ('Task', 'Agent') 매칭 정합
 
 # 메모리 박제 (Q5)
-grep -c "5월 6\|20260506" "$HOME/.claude/projects/-Users-sokol-Desktop-Git-ProjectGrimoire/memory/MEMORY.md"
+grep -c "5월 6\|20260506" "$HOME/.claude/projects/-Users-sokol-Git-ProjectGrimoire/memory/MEMORY.md"
 # 기대: ≥1
 
 # 회귀 sensor (P1~P20)

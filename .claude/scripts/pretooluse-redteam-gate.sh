@@ -21,7 +21,7 @@
 
 set -uo pipefail
 
-ROOT="/Users/sokol/Desktop/Git/ProjectGrimoire"
+ROOT="/Users/sokol/Git/ProjectGrimoire"
 INCIDENT_LOG="$ROOT/.claude/state/incident-log.jsonl"
 VIOLATION_LOG="$ROOT/.claude/state/violation-log.jsonl"
 

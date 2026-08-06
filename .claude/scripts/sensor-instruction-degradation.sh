@@ -31,7 +31,7 @@
 # Exit 0: 모든 파일 PASS, Exit 1: WARN 1건 이상, Exit 2: FAIL 1건 이상.
 
 set +u
-ROOT="/Users/sokol/Desktop/Git/ProjectGrimoire"
+ROOT="/Users/sokol/Git/ProjectGrimoire"
 PASS=0
 WARN=0
 FAIL=0

@@ -60,8 +60,8 @@ esac
 ### Step 2. git main HEAD SHA 추출 (자동)
 
 ```bash
-SERVER_SHA=$(cd /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server && git rev-parse main)
-WEB_SHA=$(cd /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-web && git rev-parse main)
+SERVER_SHA=$(cd /Users/sokol/Git/ProjectGrimoire/grimoire-server && git rev-parse main)
+WEB_SHA=$(cd /Users/sokol/Git/ProjectGrimoire/grimoire-web && git rev-parse main)
 echo "[git] server main HEAD: $SERVER_SHA"
 echo "[git] web main HEAD: $WEB_SHA"
 ```

@@ -86,7 +86,7 @@ server ~2h (PAYMENT_SYSTEM_PLAN §3-2 PAY-P1-3 견적 — usecase 변경 + 신�
 
 **검증 명령**:
 ```bash
-cd /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server
+cd /Users/sokol/Git/ProjectGrimoire/grimoire-server
 grep -nE "findReusablePendingPayment|reusable_pending" src/application/payment/payment.usecase.ts
 grep -nE "findReusablePendingPayment" src/domain/port/outbound/payment-repository.port.ts
 grep -nE "findReusablePendingPayment" src/adapter/outbound/persistence/prisma-payment.repository.ts
@@ -190,7 +190,7 @@ grep -nE "race|동시|concurrent" src/application/payment/payment.usecase.spec.t
 
 **검증 명령**:
 ```bash
-cd /Users/sokol/Desktop/Git/ProjectGrimoire
+cd /Users/sokol/Git/ProjectGrimoire
 ls eval/tasks/regression-*.json | wc -l
 cat eval/tasks/regression-57-payment-retry-reuse.json | python3 -c "import json,sys;d=json.load(sys.stdin);print(len(d['eval_criteria']))"
 ls -la .claude/scripts/sensor-payment-retry-reuse.sh
@@ -217,7 +217,7 @@ bash eval/scripts/eval-runner.sh 2>&1 | tail -10
 
 **검증 명령**:
 ```bash
-cd /Users/sokol/Desktop/Git/ProjectGrimoire
+cd /Users/sokol/Git/ProjectGrimoire
 grep -nE "^## 14\\. PaymentRetryReuse" .claude/shared-contracts.md
 grep -nE "findReusablePendingPayment|payment-cleanup" .claude/shared-contracts.md
 grep -nE "2026-05-04 #10_7 PAY-P1-3" .claude/shared-contracts.md

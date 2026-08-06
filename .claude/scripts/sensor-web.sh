@@ -3,7 +3,7 @@
 # 에이전트는 이 스크립트의 raw stdout을 reports/DEV_REPORT.md에 전체 첨부해야 함
 set -u
 START_TIME=$(date +%s)
-cd /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-web
+cd /Users/sokol/Git/ProjectGrimoire/grimoire-web
 
 PASS_COUNT=0
 FAIL_COUNT=0

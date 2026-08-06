@@ -5,16 +5,16 @@
   "source_session": "20260505 sprint #10_7 트랙 F (RFC 6819 §5.1.1 / OWASP A07:2021)",
   "prompt": "OAuth 자동 링크 보안 강화 회귀 차단: (a) auth.usecase.ts에 payload.email_verified === false 차단 박제 (b) 차단 게이트가 findBySocialAccount 호출보다 앞에 위치 (c) UnauthorizedException 메시지 (d) spec googleLogin describe + email_verified=false 시나리오 it (e) email_verified=true 회귀 보존 it (f) sensor-oauth-email-verification.sh 신설 (g) 외부 프로젝트 인용 0건 (h) shared-contracts §16 OAuthEmailVerification 박제. 회귀 시 즉시 FAIL.",
   "eval_criteria": [
-    {"type": "command", "command": "test -x /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/scripts/sensor-oauth-email-verification.sh", "desc": "sensor-oauth-email-verification.sh 실행 권한"},
-    {"type": "command", "command": "bash /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/scripts/sensor-oauth-email-verification.sh > /dev/null 2>&1", "desc": "sensor-oauth-email-verification PASS"},
-    {"type": "command", "command": "grep -nE 'payload\\.email_verified\\s*===\\s*false' /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/src/application/auth/auth.usecase.ts > /dev/null", "desc": "auth.usecase.ts email_verified === false 차단 패턴"},
-    {"type": "command", "command": "grep -nE 'Google 이메일이 아직 인증되지 않았습니다' /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/src/application/auth/auth.usecase.ts > /dev/null", "desc": "사용자 안내 메시지 박제 (한국어 존댓말)"},
-    {"type": "command", "command": "grep -nE \"describe\\(['\\\"]googleLogin\" /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/src/application/auth/auth.usecase.spec.ts > /dev/null", "desc": "spec googleLogin describe 박제"},
-    {"type": "command", "command": "grep -nE 'email_verified.*false|email_verified: false' /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/src/application/auth/auth.usecase.spec.ts > /dev/null", "desc": "spec email_verified=false 시나리오"},
-    {"type": "command", "command": "grep -nE 'email_verified: true|email_verified.*true.*정상' /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/src/application/auth/auth.usecase.spec.ts > /dev/null", "desc": "spec email_verified=true 회귀 보존"},
-    {"type": "command", "command": "! grep -rEi 'CERTI_PROJ|brightmall|thermage|inapi' /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/src/application/auth/auth.usecase.ts /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/src/application/auth/auth.usecase.spec.ts 2>/dev/null", "desc": "외부 프로젝트 인용 0건"},
-    {"type": "command", "command": "grep -nE '§16.*OAuthEmailVerification|OAuthEmailVerification' /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/shared-contracts.md > /dev/null", "desc": "shared-contracts §16 OAuthEmailVerification 박제"},
-    {"type": "command", "command": "test -f /Users/sokol/Desktop/Git/ProjectGrimoire/reports/sprint-oauth-email-verification-progress.md", "desc": "sprint 보고서 박제"}
+    {"type": "command", "command": "test -x /Users/sokol/Git/ProjectGrimoire/.claude/scripts/sensor-oauth-email-verification.sh", "desc": "sensor-oauth-email-verification.sh 실행 권한"},
+    {"type": "command", "command": "bash /Users/sokol/Git/ProjectGrimoire/.claude/scripts/sensor-oauth-email-verification.sh > /dev/null 2>&1", "desc": "sensor-oauth-email-verification PASS"},
+    {"type": "command", "command": "grep -nE 'payload\\.email_verified\\s*===\\s*false' /Users/sokol/Git/ProjectGrimoire/grimoire-server/src/application/auth/auth.usecase.ts > /dev/null", "desc": "auth.usecase.ts email_verified === false 차단 패턴"},
+    {"type": "command", "command": "grep -nE 'Google 이메일이 아직 인증되지 않았습니다' /Users/sokol/Git/ProjectGrimoire/grimoire-server/src/application/auth/auth.usecase.ts > /dev/null", "desc": "사용자 안내 메시지 박제 (한국어 존댓말)"},
+    {"type": "command", "command": "grep -nE \"describe\\(['\\\"]googleLogin\" /Users/sokol/Git/ProjectGrimoire/grimoire-server/src/application/auth/auth.usecase.spec.ts > /dev/null", "desc": "spec googleLogin describe 박제"},
+    {"type": "command", "command": "grep -nE 'email_verified.*false|email_verified: false' /Users/sokol/Git/ProjectGrimoire/grimoire-server/src/application/auth/auth.usecase.spec.ts > /dev/null", "desc": "spec email_verified=false 시나리오"},
+    {"type": "command", "command": "grep -nE 'email_verified: true|email_verified.*true.*정상' /Users/sokol/Git/ProjectGrimoire/grimoire-server/src/application/auth/auth.usecase.spec.ts > /dev/null", "desc": "spec email_verified=true 회귀 보존"},
+    {"type": "command", "command": "! grep -rEi 'CERTI_PROJ|brightmall|thermage|inapi' /Users/sokol/Git/ProjectGrimoire/grimoire-server/src/application/auth/auth.usecase.ts /Users/sokol/Git/ProjectGrimoire/grimoire-server/src/application/auth/auth.usecase.spec.ts 2>/dev/null", "desc": "외부 프로젝트 인용 0건"},
+    {"type": "command", "command": "grep -nE '§16.*OAuthEmailVerification|OAuthEmailVerification' /Users/sokol/Git/ProjectGrimoire/.claude/shared-contracts.md > /dev/null", "desc": "shared-contracts §16 OAuthEmailVerification 박제"},
+    {"type": "command", "command": "test -f /Users/sokol/Git/ProjectGrimoire/reports/sprint-oauth-email-verification-progress.md", "desc": "sprint 보고서 박제"}
   ],
   "threshold": 1.0,
   "runs": 1

@@ -11,7 +11,7 @@ ProjectGrimoire 크레딧-원가 마진 수호자. §0 원가 철칙의 강제 �
 </ROLE>
 
 <CONTEXT>
-프로젝트 경로: /Users/sokol/Desktop/Git/ProjectGrimoire
+프로젝트 경로: /Users/sokol/Git/ProjectGrimoire
 Grimoire 고유 제약 (이 에이전트의 핵심 미션):
 - §0 원가 철칙: 사용자가 1 크레딧을 쓸 때 우리가 그 크레딧에서 받은 수익 > AI 호출 실제 원가 × 3
 - 마진 <3배면 기획 차단 (planner에게 CRITICAL 신호)
@@ -26,12 +26,12 @@ Grimoire 고유 제약 (이 에이전트의 핵심 미션):
 
 <INPUTS>
 읽을 파일 (의존성 순서):
-1. /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/agents/grimoire-cost-accountant.md (에이전트 자기정의)
-2. /Users/sokol/Desktop/Git/ProjectGrimoire/CLAUDE.md §0 ZERO-TOLERANCE
-3. /Users/sokol/Desktop/Git/ProjectGrimoire/PLANNING_GRIMOIRE.md (§0 원가 철칙, §8 크레딧 상품, 인라인 ai-cost-table)
-4. /Users/sokol/Desktop/Git/ProjectGrimoire/reports/AI_COST_MONITOR.md (researcher 실측 가격)
-5. /Users/sokol/Desktop/Git/ProjectGrimoire/reports/COST_ALERT.md (있을 때만 — 5%+ 변동)
-6. /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/docs/ai-analysis-spec.md (기능별 AI 호출 스펙)
+1. /Users/sokol/Git/ProjectGrimoire/.claude/agents/grimoire-cost-accountant.md (에이전트 자기정의)
+2. /Users/sokol/Git/ProjectGrimoire/CLAUDE.md §0 ZERO-TOLERANCE
+3. /Users/sokol/Git/ProjectGrimoire/PLANNING_GRIMOIRE.md (§0 원가 철칙, §8 크레딧 상품, 인라인 ai-cost-table)
+4. /Users/sokol/Git/ProjectGrimoire/reports/AI_COST_MONITOR.md (researcher 실측 가격)
+5. /Users/sokol/Git/ProjectGrimoire/reports/COST_ALERT.md (있을 때만 — 5%+ 변동)
+6. /Users/sokol/Git/ProjectGrimoire/grimoire-server/docs/ai-analysis-spec.md (기능별 AI 호출 스펙)
 </INPUTS>
 
 <INSTRUCTIONS priority_system="[MUST] = 필수 / [SHOULD] = 권장 / [NICE] = 선택">
@@ -89,7 +89,7 @@ Grimoire 고유 제약 (이 에이전트의 핵심 미션):
 </INSTRUCTIONS>
 
 <OUTPUT_FORMAT>
-파일: /Users/sokol/Desktop/Git/ProjectGrimoire/reports/COST_AUDIT_REPORT.md (덮어쓰기)
+파일: /Users/sokol/Git/ProjectGrimoire/reports/COST_AUDIT_REPORT.md (덮어쓰기)
 필수 섹션:
 1. 메타데이터 (감사일, AI_COST_MONITOR 조사일, 사용 단가 snapshot)
 2. COST_ALERT 처리 (있으면 변동 요약, 없으면 "없음" 명시)

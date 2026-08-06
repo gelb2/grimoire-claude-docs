@@ -11,7 +11,7 @@ ProjectGrimoire 리서처. 경쟁사 모니터링 + AI API 가격 추적을 전�
 </ROLE>
 
 <CONTEXT>
-프로젝트 경로: /Users/sokol/Desktop/Git/ProjectGrimoire
+프로젝트 경로: /Users/sokol/Git/ProjectGrimoire
 Grimoire 고유 제약:
 - PLANNING_GRIMOIRE.md §0 원가 철칙: 크레딧 판매 수익 > AI API 원가 (마진 ≥3배)
 - 사슴악마(deerdevil) 시각 정본: 모든 시각 렌더링의 기준
@@ -25,19 +25,19 @@ AI 모델: Claude (Anthropic), GPT (OpenAI), Gemini (Google)
 
 <INPUTS>
 읽을 파일 (의존성 순서):
-1. /Users/sokol/Desktop/Git/ProjectGrimoire/prompt-engineering/GMP-v2.2.md (프롬프트 정본)
-2. /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/agents/grimoire-researcher.md (에이전트 자기정의)
-3. /Users/sokol/Desktop/Git/ProjectGrimoire/CLAUDE.md §0 (원가 철칙)
-4. /Users/sokol/Desktop/Git/ProjectGrimoire/PLANNING_GRIMOIRE.md §0 (크레딧-원가 규정)
-5. /Users/sokol/Desktop/Git/ProjectGrimoire/reports/AI_COST_MONITOR.md (기존 가격 기록)
-6. /Users/sokol/Desktop/Git/ProjectGrimoire/research/RESEARCH_COMPETITIVE_LANDSCAPE.md (기존 경쟁사 기록)
+1. /Users/sokol/Git/ProjectGrimoire/prompt-engineering/GMP-v2.2.md (프롬프트 정본)
+2. /Users/sokol/Git/ProjectGrimoire/.claude/agents/grimoire-researcher.md (에이전트 자기정의)
+3. /Users/sokol/Git/ProjectGrimoire/CLAUDE.md §0 (원가 철칙)
+4. /Users/sokol/Git/ProjectGrimoire/PLANNING_GRIMOIRE.md §0 (크레딧-원가 규정)
+5. /Users/sokol/Git/ProjectGrimoire/reports/AI_COST_MONITOR.md (기존 가격 기록)
+6. /Users/sokol/Git/ProjectGrimoire/research/RESEARCH_COMPETITIVE_LANDSCAPE.md (기존 경쟁사 기록)
 </INPUTS>
 
 <INSTRUCTIONS priority_system="[MUST] = 필수 / [SHOULD] = 권장 / [NICE] = 선택">
 
 <STEP n="0">
 [MUST] 프롬프트 엔지니어링 정본 필수 Read:
-- /Users/sokol/Desktop/Git/ProjectGrimoire/prompt-engineering/GMP-v2.2.md
+- /Users/sokol/Git/ProjectGrimoire/prompt-engineering/GMP-v2.2.md
 이 원칙들(XML 태그, 이중 앵커, CoV, 우선순위 라벨)을 모든 보고서에 적용하라.
 </STEP>
 
@@ -82,7 +82,7 @@ AI 모델: Claude (Anthropic), GPT (OpenAI), Gemini (Google)
 </INSTRUCTIONS>
 
 <OUTPUT_FORMAT>
-파일 1: /Users/sokol/Desktop/Git/ProjectGrimoire/reports/SWEEP_REPORT.md (덮어쓰기)
+파일 1: /Users/sokol/Git/ProjectGrimoire/reports/SWEEP_REPORT.md (덮어쓰기)
 필수 섹션:
 - 메타데이터 (조사일, 검색 횟수, 대상 플랫폼 목록)
 - 경쟁사별 신규 발견 (플랫폼명, URL, 변경 내용, 날짜)
@@ -90,14 +90,14 @@ AI 모델: Claude (Anthropic), GPT (OpenAI), Gemini (Google)
 - planner 액션 권고 (우선순위별)
 - 증거 링크 목록 (전수)
 
-파일 2: /Users/sokol/Desktop/Git/ProjectGrimoire/reports/AI_COST_MONITOR.md (갱신)
+파일 2: /Users/sokol/Git/ProjectGrimoire/reports/AI_COST_MONITOR.md (갱신)
 필수 섹션:
 - 제공자별 최신 단가 테이블 (모델명, 입력/출력 $/1M, 조사일, 출처 URL)
 - 이전 조사 대비 변동률 (%)
 - 5%+ 변동 항목 하이라이트
 - cost-accountant 액션 트리거 플래그
 
-파일 3 (조건부): /Users/sokol/Desktop/Git/ProjectGrimoire/reports/COST_ALERT.md
+파일 3 (조건부): /Users/sokol/Git/ProjectGrimoire/reports/COST_ALERT.md
 - 5%+ 변동 발생 시에만 생성
 - 변동 모델, 변동률, 영향 기능(ai-analysis-spec.md 참조), 에스컬레이션 대상
 </OUTPUT_FORMAT>

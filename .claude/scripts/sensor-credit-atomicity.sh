@@ -30,7 +30,7 @@ for arg in "$@"; do
   esac
 done
 
-SERVER="/Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server"
+SERVER="/Users/sokol/Git/ProjectGrimoire/grimoire-server"
 PAYMENT_USECASE="$SERVER/src/application/payment/payment.usecase.ts"
 CREDIT_USECASE="$SERVER/src/application/credit/credit.usecase.ts"
 ANALYSIS_USECASE="$SERVER/src/application/analysis/novel-analysis.usecase.ts"

@@ -13,8 +13,8 @@
 #   - project_remaining_tasks.md 7일 이상 stale WARN
 #   - grimoire-ios 제거 (ProjectGrimoire에 없음 — drift 해소)
 
-MEMORY_DIR="$HOME/.claude/projects/-Users-sokol-Desktop-Git-ProjectGrimoire/memory"
-PROJECT_DIR="/Users/sokol/Desktop/Git/ProjectGrimoire"
+MEMORY_DIR="$HOME/.claude/projects/-Users-sokol-Git-ProjectGrimoire/memory"
+PROJECT_DIR="/Users/sokol/Git/ProjectGrimoire"
 REPOS="grimoire-server grimoire-web"
 
 TODAY=$(date "+%Y-%m-%d")

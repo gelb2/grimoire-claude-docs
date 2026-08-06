@@ -39,14 +39,14 @@ model: opus
 
 ### 프롬프트 엔지니어링 정본 — 작업 시작 전 반드시 Read
 
-- `/Users/sokol/Desktop/Git/ProjectGrimoire/prompt-engineering/vibe-coding-unified-guide.md` — Phase 0~5 + 서브에이전트 7종 + PROGRESS.md 핸드오프 + 레이어 구조(API→서비스→리포지토리) + 게이트 체크 패턴
+- `/Users/sokol/Git/ProjectGrimoire/prompt-engineering/vibe-coding-unified-guide.md` — Phase 0~5 + 서브에이전트 7종 + PROGRESS.md 핸드오프 + 레이어 구조(API→서비스→리포지토리) + 게이트 체크 패턴
 
 이 정본의 원칙(우선순위 라벨 [MUST]/[SHOULD]/[NICE], Chain-of-Verification, 최소 구현 원칙, 게이트 체크 패턴 등)을 모든 출력물(DEV_REPORT web 섹션, 코드 주석, 커밋 메시지)에 적용한다.
 
 ### 워크스페이스
-- `/Users/sokol/Desktop/Git/ProjectGrimoire/CLAUDE.md`
-- `/Users/sokol/Desktop/Git/ProjectGrimoire/PLANNING_GRIMOIRE.md`
-- `/Users/sokol/Desktop/Git/ProjectGrimoire/SYNC_STATUS.md`
+- `/Users/sokol/Git/ProjectGrimoire/CLAUDE.md`
+- `/Users/sokol/Git/ProjectGrimoire/PLANNING_GRIMOIRE.md`
+- `/Users/sokol/Git/ProjectGrimoire/SYNC_STATUS.md`
 
 ### 웹 레포
 - `grimoire-web/CLAUDE.md`
@@ -250,9 +250,9 @@ model: opus
 ## Skills 프로토콜 참조 (상황 매칭 시 Read — ouroboros 방식)
 서브에이전트는 Claude Code 공식 스펙상 Skill을 자동 발동하지 못하므로, 아래 상황이 **작업 중 나타나면** 해당 SKILL.md를 직접 Read로 로드하세요.
 
-- `/Users/sokol/Desktop/Git/ProjectGrimoire/.claude/skills/claude-in-chrome-recovery/SKILL.md` — Claude-in-Chrome MCP(`tabs_context_mcp`, `navigate`, `read_page`) "not connected" 또는 지연 시. 3회 재시도 + javascript_tool URL 확인 프로토콜
-- `/Users/sokol/Desktop/Git/ProjectGrimoire/.claude/skills/production-bug-triage/SKILL.md` — 프론트 증상(fetch aborted/작품 로드 실패/404) 보고 시 curl→코드→수치 3단계
-- `/Users/sokol/Desktop/Git/ProjectGrimoire/.claude/skills/macos-tcc-handling/SKILL.md` — `make deploy-*` 중 TCC 다이얼로그 반복 시
+- `/Users/sokol/Git/ProjectGrimoire/.claude/skills/claude-in-chrome-recovery/SKILL.md` — Claude-in-Chrome MCP(`tabs_context_mcp`, `navigate`, `read_page`) "not connected" 또는 지연 시. 3회 재시도 + javascript_tool URL 확인 프로토콜
+- `/Users/sokol/Git/ProjectGrimoire/.claude/skills/production-bug-triage/SKILL.md` — 프론트 증상(fetch aborted/작품 로드 실패/404) 보고 시 curl→코드→수치 3단계
+- `/Users/sokol/Git/ProjectGrimoire/.claude/skills/macos-tcc-handling/SKILL.md` — `make deploy-*` 중 TCC 다이얼로그 반복 시
 
 
 ## Shared Contracts 참조 (인터페이스 규약 — 모든 agent 공통)

@@ -37,23 +37,23 @@ model: opus
 
 ### 프롬프트 엔지니어링 정본 — 작업 시작 전 반드시 Read
 
-- `/Users/sokol/Desktop/Git/ProjectGrimoire/prompt-engineering/GMP-v2.2.md` — 프롬프트 설계 원칙 (XML 태그, 이중 앵커, Chain-of-Verification)
+- `/Users/sokol/Git/ProjectGrimoire/prompt-engineering/GMP-v2.2.md` — 프롬프트 설계 원칙 (XML 태그, 이중 앵커, Chain-of-Verification)
 
 이 정본의 원칙(XML 태그 구조, 이중 앵커, 우선순위 라벨 [MUST]/[SHOULD]/[NICE], Chain-of-Verification 등)을 모든 출력물(SWEEP_REPORT, COST_ALERT, Canonical 승격 제안 문서)에 적용한다.
 
 ### 전략/정본
-- `/Users/sokol/Desktop/Git/ProjectGrimoire/CLAUDE.md`
-- `/Users/sokol/Desktop/Git/ProjectGrimoire/PLANNING_GRIMOIRE.md` — §0 원가 철칙 필독
+- `/Users/sokol/Git/ProjectGrimoire/CLAUDE.md`
+- `/Users/sokol/Git/ProjectGrimoire/PLANNING_GRIMOIRE.md` — §0 원가 철칙 필독
 
 ### Canonical RESEARCH (거의 안 변함)
 - `research/MARKET_ANALYSIS.md`
 - `research/RESEARCH_ANIMATION.md`
-- `/Users/sokol/Desktop/Git/ProjectGrimoire/research/RESEARCH_HANLINE_API.md`
-- `/Users/sokol/Desktop/Git/ProjectGrimoire/research/RESEARCH_PLATFORM_CASES.md`
+- `/Users/sokol/Git/ProjectGrimoire/research/RESEARCH_HANLINE_API.md`
+- `/Users/sokol/Git/ProjectGrimoire/research/RESEARCH_PLATFORM_CASES.md`
 
 ### Live RESEARCH (자율 관리, 매일 스윕)
-- `/Users/sokol/Desktop/Git/ProjectGrimoire/research/RESEARCH_COMPETITIVE_LANDSCAPE.md` — **경쟁사 Live 캐시**
-- `/Users/sokol/Desktop/Git/ProjectGrimoire/reports/AI_COST_MONITOR.md` — **AI 모델 가격 Live 캐시 (본 에이전트 고유)**
+- `/Users/sokol/Git/ProjectGrimoire/research/RESEARCH_COMPETITIVE_LANDSCAPE.md` — **경쟁사 Live 캐시**
+- `/Users/sokol/Git/ProjectGrimoire/reports/AI_COST_MONITOR.md` — **AI 모델 가격 Live 캐시 (본 에이전트 고유)**
 
 ### 공유 정본 (참조용)
 - `grimoire-server/docs/ai-cost-table.md` — cost-accountant 관리, 리서처는 가격 변동만 알림
@@ -301,7 +301,7 @@ Grimoire는 금지어 목록이 Zenith/RoadRage보다 적지만, 작가 콘텐�
 ## Skills 프로토콜 참조 (상황 매칭 시 Read — ouroboros 방식)
 researcher는 외부 리서치 전담이라 Skills 직접 활용은 드물지만, 다음 상황 시 해당 SKILL.md를 Read로 로드하세요.
 
-- `/Users/sokol/Desktop/Git/ProjectGrimoire/.claude/skills/production-bug-triage/SKILL.md` — 경쟁사·가격 리서치 중 운영 증상을 근거로 인용해야 할 때 (추정 금지, 실측 근거)
+- `/Users/sokol/Git/ProjectGrimoire/.claude/skills/production-bug-triage/SKILL.md` — 경쟁사·가격 리서치 중 운영 증상을 근거로 인용해야 할 때 (추정 금지, 실측 근거)
 
 
 ## Shared Contracts 참조 (인터페이스 규약 — 모든 agent 공통)

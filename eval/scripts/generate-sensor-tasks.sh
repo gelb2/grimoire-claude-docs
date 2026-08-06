@@ -21,7 +21,7 @@
 #   bash eval/scripts/generate-sensor-tasks.sh apply     # 실제 생성
 
 set +u
-ROOT="/Users/sokol/Desktop/Git/ProjectGrimoire"
+ROOT="/Users/sokol/Git/ProjectGrimoire"
 TASKS_DIR="$ROOT/eval/tasks"
 APPLY="${1:-dry-run}"
 

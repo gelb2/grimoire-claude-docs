@@ -26,7 +26,7 @@
 
 set +u
 
-ROOT="/Users/sokol/Desktop/Git/ProjectGrimoire"
+ROOT="/Users/sokol/Git/ProjectGrimoire"
 
 estimate_tokens() {
   local file="$1"

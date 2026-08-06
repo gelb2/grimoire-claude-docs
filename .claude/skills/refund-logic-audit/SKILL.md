@@ -30,7 +30,7 @@ paths:
 # 사용자 인자가 있으면 그 키워드로, 없으면 기본 4종 패턴
 KEYWORDS="${ARGUMENTS:-자동 환불|환불됩니다|크레딧 반환|크레딧이 반환}"
 
-cd /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-web
+cd /Users/sokol/Git/ProjectGrimoire/grimoire-web
 grep -rEn "$KEYWORDS" src --include="*.ts" --include="*.tsx" | head -30
 ```
 
@@ -39,7 +39,7 @@ grep -rEn "$KEYWORDS" src --include="*.ts" --include="*.tsx" | head -30
 ### Step 2. 서버 측 환불 로직 grep
 
 ```bash
-cd /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server
+cd /Users/sokol/Git/ProjectGrimoire/grimoire-server
 echo "=== processRefund / refundCredit 호출 ==="
 grep -rEn "processRefund|refundCredit|reverseCredit|환불" src --include="*.ts" | grep -v ".spec.ts" | head -30
 

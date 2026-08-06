@@ -15,7 +15,7 @@
 # Exit: 0 통과 / 2 차단(Claude Code reject)
 
 set -uo pipefail
-ROOT="/Users/sokol/Desktop/Git/ProjectGrimoire"
+ROOT="/Users/sokol/Git/ProjectGrimoire"
 WHITELIST="$ROOT/.claude/scripts/pretooluse-main-whitelist.sh"
 VIOLATION_LOG="$ROOT/.claude/state/edit-write-violation.jsonl"
 mkdir -p "$(dirname "$VIOLATION_LOG")"

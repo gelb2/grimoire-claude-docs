@@ -169,7 +169,7 @@ qa 전수검사 → reports/QA_REPORT.md → 배포 게이트 판정
 ```
 Agent(subagent_type="general-purpose",
       prompt="당신은 grimoire-cost-accountant 에이전트입니다.
-              /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/agents/grimoire-cost-accountant.md
+              /Users/sokol/Git/ProjectGrimoire/.claude/agents/grimoire-cost-accountant.md
               를 먼저 읽고 §0 크레딧-원가 철칙 전용 수호자 역할을 숙지한 후...")
 ```
 

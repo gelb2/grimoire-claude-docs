@@ -5,14 +5,14 @@
   "source_session": "20260503_2 sprint-pay-p0-3-admin-credit-grant-ui — Generator grimoire-web",
   "prompt": "PAY-P0-3: admin web UI에서 크레딧 수동 지급/차감 기능. (a) CreditsTab 별도 파일 분리 (b) admin/page.tsx tab 타입에 'credits' 등록 + 라우팅 (c) api.adminGrantCredits/adminDeductCredits 호출 (d) 사유 필수 검증 (disabled when !reason) (e) 멀티콘펌 confirm() (f) sonner toast 결과 표시 (g) audit log 박제 안내 helper text. 회귀 시 기능/검증 우회 시 즉시 FAIL.",
   "eval_criteria": [
-    {"type": "command", "command": "test -f /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-web/src/app/admin/tabs/CreditsTab.tsx", "desc": "CreditsTab 별도 파일 분리"},
-    {"type": "command", "command": "grep -E \"'credits'\" /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-web/src/app/admin/page.tsx > /dev/null", "desc": "admin/page.tsx Tab 타입에 'credits' 등록"},
-    {"type": "command", "command": "grep -E 'CreditsTab' /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-web/src/app/admin/page.tsx > /dev/null", "desc": "admin/page.tsx CreditsTab import + 라우팅"},
-    {"type": "command", "command": "grep -E 'adminGrantCredits|adminDeductCredits' /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-web/src/app/admin/tabs/CreditsTab.tsx > /dev/null", "desc": "api.adminGrantCredits/adminDeductCredits 호출"},
-    {"type": "command", "command": "grep -E 'confirm\\s*\\(' /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-web/src/app/admin/tabs/CreditsTab.tsx > /dev/null", "desc": "멀티콘펌 confirm() 박제"},
-    {"type": "command", "command": "grep -E \"from 'sonner'|from \\\"sonner\\\"\" /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-web/src/app/admin/tabs/CreditsTab.tsx > /dev/null", "desc": "sonner toast import (admin 신규 패턴 정합)"},
-    {"type": "command", "command": "grep -E 'audit log|감사 로그|영구 박제' /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-web/src/app/admin/tabs/CreditsTab.tsx > /dev/null", "desc": "audit log 박제 helper text 박제"},
-    {"type": "command", "command": "test -f /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-web/src/app/admin/tabs/CreditsTab.test.tsx -o -f /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-web/src/app/admin/tabs/CreditsTab.spec.tsx", "desc": "CreditsTab spec 신설"}
+    {"type": "command", "command": "test -f /Users/sokol/Git/ProjectGrimoire/grimoire-web/src/app/admin/tabs/CreditsTab.tsx", "desc": "CreditsTab 별도 파일 분리"},
+    {"type": "command", "command": "grep -E \"'credits'\" /Users/sokol/Git/ProjectGrimoire/grimoire-web/src/app/admin/page.tsx > /dev/null", "desc": "admin/page.tsx Tab 타입에 'credits' 등록"},
+    {"type": "command", "command": "grep -E 'CreditsTab' /Users/sokol/Git/ProjectGrimoire/grimoire-web/src/app/admin/page.tsx > /dev/null", "desc": "admin/page.tsx CreditsTab import + 라우팅"},
+    {"type": "command", "command": "grep -E 'adminGrantCredits|adminDeductCredits' /Users/sokol/Git/ProjectGrimoire/grimoire-web/src/app/admin/tabs/CreditsTab.tsx > /dev/null", "desc": "api.adminGrantCredits/adminDeductCredits 호출"},
+    {"type": "command", "command": "grep -E 'confirm\\s*\\(' /Users/sokol/Git/ProjectGrimoire/grimoire-web/src/app/admin/tabs/CreditsTab.tsx > /dev/null", "desc": "멀티콘펌 confirm() 박제"},
+    {"type": "command", "command": "grep -E \"from 'sonner'|from \\\"sonner\\\"\" /Users/sokol/Git/ProjectGrimoire/grimoire-web/src/app/admin/tabs/CreditsTab.tsx > /dev/null", "desc": "sonner toast import (admin 신규 패턴 정합)"},
+    {"type": "command", "command": "grep -E 'audit log|감사 로그|영구 박제' /Users/sokol/Git/ProjectGrimoire/grimoire-web/src/app/admin/tabs/CreditsTab.tsx > /dev/null", "desc": "audit log 박제 helper text 박제"},
+    {"type": "command", "command": "test -f /Users/sokol/Git/ProjectGrimoire/grimoire-web/src/app/admin/tabs/CreditsTab.test.tsx -o -f /Users/sokol/Git/ProjectGrimoire/grimoire-web/src/app/admin/tabs/CreditsTab.spec.tsx", "desc": "CreditsTab spec 신설"}
   ],
   "threshold": 1.0,
   "runs": 1

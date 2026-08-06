@@ -38,7 +38,7 @@
 
 set +u
 
-PROJECT_ROOT="/Users/sokol/Desktop/Git/ProjectGrimoire"
+PROJECT_ROOT="/Users/sokol/Git/ProjectGrimoire"
 EVAL_DIR="$PROJECT_ROOT/eval"
 TASKS_DIR="$EVAL_DIR/tasks"
 TASKS_EDD_DIR="$EVAL_DIR/tasks-edd"

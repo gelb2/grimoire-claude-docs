@@ -40,26 +40,26 @@ model: opus
 
 ### 프롬프트 엔지니어링 정본 — 작업 시작 전 반드시 Read
 
-- `/Users/sokol/Desktop/Git/ProjectGrimoire/prompt-engineering/GMP-v2.2.md` — 프롬프트 설계 원칙 (XML 태그, 이중 앵커, Chain-of-Verification)
-- `/Users/sokol/Desktop/Git/ProjectGrimoire/prompt-engineering/prd-generation-prompt-gmp2.md` — PRD 자동 생성 (도메인검증→기능설계→기술설계)
-- `/Users/sokol/Desktop/Git/ProjectGrimoire/prompt-engineering/vibe-coding-unified-guide.md` — Phase 0~5 + 서브에이전트 + 작업 프롬프트 11종
+- `/Users/sokol/Git/ProjectGrimoire/prompt-engineering/GMP-v2.2.md` — 프롬프트 설계 원칙 (XML 태그, 이중 앵커, Chain-of-Verification)
+- `/Users/sokol/Git/ProjectGrimoire/prompt-engineering/prd-generation-prompt-gmp2.md` — PRD 자동 생성 (도메인검증→기능설계→기술설계)
+- `/Users/sokol/Git/ProjectGrimoire/prompt-engineering/vibe-coding-unified-guide.md` — Phase 0~5 + 서브에이전트 + 작업 프롬프트 11종
 
 이 정본들의 원칙(XML 태그 구조, 이중 앵커, 우선순위 라벨 [MUST]/[SHOULD]/[NICE], Chain-of-Verification 등)을 모든 출력물(보고서, 기획 Draft, 코드 주석, 커밋 메시지)에 적용한다.
 
 ### 전략/정본
-- `/Users/sokol/Desktop/Git/ProjectGrimoire/CLAUDE.md` — 루트 규칙 + §0 + §5 문서 피라미드
-- `/Users/sokol/Desktop/Git/ProjectGrimoire/PLANNING_GRIMOIRE.md` — **최상위 정본** (§0 크레딧-원가 철칙 필독)
-- `/Users/sokol/Desktop/Git/ProjectGrimoire/SYNC_STATUS.md` — 서버-웹 연결 상태 (거의 완성 상태)
-- `/Users/sokol/Desktop/Git/ProjectGrimoire/research/FEATURE_AI_ANALYSIS.md`, `research/FUNDING_RESEARCH_2026.md`, `research/FUNDING_STRATEGY.md`, `research/PROPOSAL_DATA_BROKERAGE.md`, `research/PROPOSAL_DIGITAL_SHOWROOM.md`
-- `/Users/sokol/Desktop/Git/ProjectGrimoire/research/RESEARCH_HANLINE_API.md`, `research/RESEARCH_PLATFORM_CASES.md`
+- `/Users/sokol/Git/ProjectGrimoire/CLAUDE.md` — 루트 규칙 + §0 + §5 문서 피라미드
+- `/Users/sokol/Git/ProjectGrimoire/PLANNING_GRIMOIRE.md` — **최상위 정본** (§0 크레딧-원가 철칙 필독)
+- `/Users/sokol/Git/ProjectGrimoire/SYNC_STATUS.md` — 서버-웹 연결 상태 (거의 완성 상태)
+- `/Users/sokol/Git/ProjectGrimoire/research/FEATURE_AI_ANALYSIS.md`, `research/FUNDING_RESEARCH_2026.md`, `research/FUNDING_STRATEGY.md`, `research/PROPOSAL_DATA_BROKERAGE.md`, `research/PROPOSAL_DIGITAL_SHOWROOM.md`
+- `/Users/sokol/Git/ProjectGrimoire/research/RESEARCH_HANLINE_API.md`, `research/RESEARCH_PLATFORM_CASES.md`
 
 ### 시각적 정본
 - **사슴악마(deerdevil)** — `/deerdevil/` 라우트 (grimoire-web). **모든 시각적 렌더링의 성경.** 이 기준과 불일치하면 버그.
 - 상세: `grimoire-web/DESIGN.md`, `grimoire-web/SCREENS.md`
 
 ### Live 캐시 (researcher가 관리)
-- `/Users/sokol/Desktop/Git/ProjectGrimoire/research/RESEARCH_COMPETITIVE_LANDSCAPE.md`
-- `/Users/sokol/Desktop/Git/ProjectGrimoire/reports/AI_COST_MONITOR.md` — Claude/OpenAI 가격 Live 캐시
+- `/Users/sokol/Git/ProjectGrimoire/research/RESEARCH_COMPETITIVE_LANDSCAPE.md`
+- `/Users/sokol/Git/ProjectGrimoire/reports/AI_COST_MONITOR.md` — Claude/OpenAI 가격 Live 캐시
 
 ### 공유 정본 (server가 대부분 정본)
 - `grimoire-server/docs/api-contract.md`
@@ -270,9 +270,9 @@ model: opus
 ## Skills 프로토콜 참조 (상황 매칭 시 Read — ouroboros 방식)
 서브에이전트는 Claude Code 공식 스펙상 Skill을 자동 발동하지 못하므로, 아래 상황이 **기획 도중 언급되면** 해당 SKILL.md를 직접 Read로 로드하세요.
 
-- `/Users/sokol/Desktop/Git/ProjectGrimoire/.claude/skills/production-bug-triage/SKILL.md` — 운영 버그·성능 이슈를 기획 근거로 언급할 때 (추정 금지, 실측 근거 요구)
-- `/Users/sokol/Desktop/Git/ProjectGrimoire/.claude/skills/macos-tcc-handling/SKILL.md` — 배포 인프라 관련 TCC/Docker 증상이 기획 맥락에 포함될 때
-- `/Users/sokol/Desktop/Git/ProjectGrimoire/.claude/skills/claude-in-chrome-recovery/SKILL.md` — 시각 검증 작업 흐름에 Chrome MCP 활용이 포함될 때
+- `/Users/sokol/Git/ProjectGrimoire/.claude/skills/production-bug-triage/SKILL.md` — 운영 버그·성능 이슈를 기획 근거로 언급할 때 (추정 금지, 실측 근거 요구)
+- `/Users/sokol/Git/ProjectGrimoire/.claude/skills/macos-tcc-handling/SKILL.md` — 배포 인프라 관련 TCC/Docker 증상이 기획 맥락에 포함될 때
+- `/Users/sokol/Git/ProjectGrimoire/.claude/skills/claude-in-chrome-recovery/SKILL.md` — 시각 검증 작업 흐름에 Chrome MCP 활용이 포함될 때
 
 
 ## Shared Contracts 참조 (인터페이스 규약 — 모든 agent 공통)

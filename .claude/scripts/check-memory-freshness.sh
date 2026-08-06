@@ -2,8 +2,8 @@
 # 메모리 신선도 검증 스크립트 — ProjectGrimoire
 # SessionStart 훅에서 자동 호출. git 최신 커밋 vs 메모리 최종 수정 비교.
 
-MEMORY_DIR="$HOME/.claude/projects/-Users-sokol-Desktop-Git-ProjectGrimoire/memory"
-PROJECT_DIR="/Users/sokol/Desktop/Git/ProjectGrimoire"
+MEMORY_DIR="$HOME/.claude/projects/-Users-sokol-Git-ProjectGrimoire/memory"
+PROJECT_DIR="/Users/sokol/Git/ProjectGrimoire"
 REPOS="grimoire-server grimoire-web grimoire-ios"
 
 if [ ! -d "$MEMORY_DIR" ]; then

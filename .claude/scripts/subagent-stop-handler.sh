@@ -28,9 +28,9 @@
 set +u
 
 INPUT_JSON=$(cat 2>/dev/null)
-ROOT="/Users/sokol/Desktop/Git/ProjectGrimoire"
+ROOT="/Users/sokol/Git/ProjectGrimoire"
 STATE_DIR="$ROOT/.claude/state"
-PROJ_DIR="$HOME/.claude/projects/-Users-sokol-Desktop-Git-ProjectGrimoire"
+PROJ_DIR="$HOME/.claude/projects/-Users-sokol-Git-ProjectGrimoire"
 mkdir -p "$STATE_DIR"
 
 # payload 진단 박제 (실측 키 입증용 — 추정 대신 raw 보존, 50줄 ring)

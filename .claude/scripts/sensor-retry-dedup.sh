@@ -22,7 +22,7 @@ trap '_rc=$?; bash "$(dirname "$0")/sensor-log.sh" "$(basename "$0" .sh)" "$_rc"
 
 set -uo pipefail
 
-ROOT="/Users/sokol/Desktop/Git/ProjectGrimoire"
+ROOT="/Users/sokol/Git/ProjectGrimoire"
 SERVER="$ROOT/grimoire-server"
 RETRY_JOB="$SERVER/src/application/payment/webhook-retry.job.ts"
 SHARED_CONTRACTS="$ROOT/.claude/shared-contracts.md"

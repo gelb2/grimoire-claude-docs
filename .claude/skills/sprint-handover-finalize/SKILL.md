@@ -37,9 +37,9 @@ git -C grimoire-web log --oneline -10
 git log --oneline -10
 
 # 본 세션 인벤토리 변동 영역 박제 (jest / eval / sensor / shared-contracts 등)
-ls /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/scripts/sensor-*.sh | wc -l
-ls /Users/sokol/Desktop/Git/ProjectGrimoire/eval/tasks/*/*.json | wc -l
-grep -c "^## §" /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/shared-contracts.md
+ls /Users/sokol/Git/ProjectGrimoire/.claude/scripts/sensor-*.sh | wc -l
+ls /Users/sokol/Git/ProjectGrimoire/eval/tasks/*/*.json | wc -l
+grep -c "^## §" /Users/sokol/Git/ProjectGrimoire/.claude/shared-contracts.md
 ```
 
 ### 단계 2 — HANDOVER_NEXT_SESSION.md 영역 갱신
@@ -73,16 +73,16 @@ grep -c "^## §" /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/shared-contrac
 
 ```bash
 # 본 세션 박제 영역 incident-log 영역 누적 박제 영역 박제
-wc -l /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/state/incident-log.jsonl
+wc -l /Users/sokol/Git/ProjectGrimoire/.claude/state/incident-log.jsonl
 
 # 본 세션 신설 영역 박제 횟수 영역 (필요 영역 grep으로 박제 영역)
-grep "$(date -u +%Y-%m-%d)" /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/state/incident-log.jsonl | wc -l
+grep "$(date -u +%Y-%m-%d)" /Users/sokol/Git/ProjectGrimoire/.claude/state/incident-log.jsonl | wc -l
 ```
 
 ### 단계 5 — claude-docs commit + push develop 영역
 
 ```bash
-cd /Users/sokol/Desktop/Git/ProjectGrimoire
+cd /Users/sokol/Git/ProjectGrimoire
 
 # specific add 영역 강제 (sensitive file 영역 회피)
 git add HANDOVER_NEXT_SESSION.md
@@ -120,7 +120,7 @@ git log --oneline -3
 박제 영역 진행 중 발견하는 결함 / 우회 / 거짓 보고 영역 즉시 박제:
 
 ```bash
-bash /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/scripts/incident-log.sh \
+bash /Users/sokol/Git/ProjectGrimoire/.claude/scripts/incident-log.sh \
   sprint_handover_finalize {severity} {source} "{description}"
 ```
 

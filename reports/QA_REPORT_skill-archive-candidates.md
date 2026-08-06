@@ -11,7 +11,7 @@
 - **측정 시점**: 2026-05-03 (KST)
 - **측정 범위**: `.claude/skills/` 박제된 SKILL.md 26건
 - **측정 방법**:
-  1. `~/.claude/projects/-Users-sokol-Desktop-Git-ProjectGrimoire/*.jsonl` (47개 파일) 30일 mtime 필터
+  1. `~/.claude/projects/-Users-sokol-Git-ProjectGrimoire/*.jsonl` (47개 파일) 30일 mtime 필터
   2. `assistant` role 메시지 안 `tool_use` 중 `name == 'Skill'` 또는 `name == 'mcp__claude-skill__skill'` 카운트
   3. 각 SKILL.md frontmatter (`disable-model-invocation`, `triggers`, `paths`, `effort`, `description`) 추출
   4. 본문 + description에서 비상 발동 가치 키워드 매치 (29개 키워드: 비상/장애/복구/롤백/배포/디버깅/보안/유출/환불/긴급/incident/rollback/deploy/debug/credential/leak/audit/RLS/CORS/마이그레이션/삭제/토큰/회전/guard/shared/drift/incompatible/production)
@@ -205,7 +205,7 @@ Top skill 호출:
 **주장 3**: 분류된 26건의 합계가 박제 skill 26건과 정확히 일치함
 
 - 검증 질문: ARCHIVE 9 + KEEP 8 + GRAY 9 = 26 = `ls .claude/skills | wc -l` 출력?
-- 독립 답: 9+8+9=26, `ls /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/skills/ | wc -l` = 26 → **PASS**
+- 독립 답: 9+8+9=26, `ls /Users/sokol/Git/ProjectGrimoire/.claude/skills/ | wc -l` = 26 → **PASS**
 - 결과: 일치
 
 ### CRITICAL_CONSTRAINTS 점검 (qa agent 정합)
@@ -227,15 +227,15 @@ PP-3에서 server agent가 본 보고서를 입력으로 archive 실행 시 다�
 ### §7.1 ARCHIVE 대상 9개 디렉토리 절대 경로
 
 ```
-/Users/sokol/Desktop/Git/ProjectGrimoire/.claude/skills/dev-login-smoke
-/Users/sokol/Desktop/Git/ProjectGrimoire/.claude/skills/dispatching-parallel-agents
-/Users/sokol/Desktop/Git/ProjectGrimoire/.claude/skills/drift-check
-/Users/sokol/Desktop/Git/ProjectGrimoire/.claude/skills/eval-run
-/Users/sokol/Desktop/Git/ProjectGrimoire/.claude/skills/feedback-to-skill
-/Users/sokol/Desktop/Git/ProjectGrimoire/.claude/skills/handover-refresh
-/Users/sokol/Desktop/Git/ProjectGrimoire/.claude/skills/red-team-update-propose
-/Users/sokol/Desktop/Git/ProjectGrimoire/.claude/skills/shared-contracts-check
-/Users/sokol/Desktop/Git/ProjectGrimoire/.claude/skills/worktree-isolation
+/Users/sokol/Git/ProjectGrimoire/.claude/skills/dev-login-smoke
+/Users/sokol/Git/ProjectGrimoire/.claude/skills/dispatching-parallel-agents
+/Users/sokol/Git/ProjectGrimoire/.claude/skills/drift-check
+/Users/sokol/Git/ProjectGrimoire/.claude/skills/eval-run
+/Users/sokol/Git/ProjectGrimoire/.claude/skills/feedback-to-skill
+/Users/sokol/Git/ProjectGrimoire/.claude/skills/handover-refresh
+/Users/sokol/Git/ProjectGrimoire/.claude/skills/red-team-update-propose
+/Users/sokol/Git/ProjectGrimoire/.claude/skills/shared-contracts-check
+/Users/sokol/Git/ProjectGrimoire/.claude/skills/worktree-isolation
 ```
 
 ### §7.2 archive 후 검증 게이트

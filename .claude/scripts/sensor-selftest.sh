@@ -36,7 +36,7 @@
 #   - 거짓 금지: 안 잡히면 FIRE_FAIL 그대로 기록
 set -uo pipefail
 
-ROOT="/Users/sokol/Desktop/Git/ProjectGrimoire"
+ROOT="/Users/sokol/Git/ProjectGrimoire"
 SCRIPTS_DIR="$ROOT/.claude/scripts"
 STATE_DIR="$ROOT/.claude/state"
 RESULTS="$STATE_DIR/sensor-selftest-results.jsonl"

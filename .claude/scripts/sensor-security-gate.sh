@@ -16,7 +16,7 @@
 set -u
 START_TIME=$(date +%s)
 
-PROJECT_ROOT="/Users/sokol/Desktop/Git/ProjectGrimoire"
+PROJECT_ROOT="/Users/sokol/Git/ProjectGrimoire"
 SERVER_DIR="$PROJECT_ROOT/grimoire-server"
 WEB_DIR="$PROJECT_ROOT/grimoire-web"
 

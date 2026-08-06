@@ -24,7 +24,7 @@ trap '_rc=$?; bash "$(dirname "$0")/sensor-log.sh" "$(basename "$0" .sh)" "$_rc"
 
 set -uo pipefail
 
-ROOT="/Users/sokol/Desktop/Git/ProjectGrimoire"
+ROOT="/Users/sokol/Git/ProjectGrimoire"
 SERVER="$ROOT/grimoire-server"
 SCHEMA="$SERVER/prisma/schema.prisma"
 MIGRATION="$SERVER/prisma/migrations/20260510_pay_p3_e_fk_cascade_policy/migration.sql"

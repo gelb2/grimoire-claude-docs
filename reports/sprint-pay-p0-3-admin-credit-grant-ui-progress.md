@@ -236,7 +236,7 @@ grep -rnE "from 'react-hot-toast'|from 'sonner'|useToast" grimoire-web/src/app/a
 
 **검증 명령**:
 ```bash
-cd /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-web
+cd /Users/sokol/Git/ProjectGrimoire/grimoire-web
 test -f src/app/admin/tabs/CreditsTab.tsx
 grep -nE 'export function CreditsTab|export default function CreditsTab' src/app/admin/tabs/CreditsTab.tsx
 grep -nE 'searchAuthors' src/app/admin/tabs/CreditsTab.tsx
@@ -255,7 +255,7 @@ grep -nE 'adminGetCreditLogs' src/app/admin/tabs/CreditsTab.tsx
 
 **검증 명령**:
 ```bash
-cd /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-web
+cd /Users/sokol/Git/ProjectGrimoire/grimoire-web
 grep -nE 'adminGrantCredits|adminDeductCredits' src/app/admin/tabs/CreditsTab.tsx
 grep -nE "'grant'|'deduct'|mode === 'grant'|mode === 'deduct'" src/app/admin/tabs/CreditsTab.tsx
 grep -nE "type=.number.|min=.1." src/app/admin/tabs/CreditsTab.tsx
@@ -270,7 +270,7 @@ grep -nE "type=.number.|min=.1." src/app/admin/tabs/CreditsTab.tsx
 
 **검증 명령**:
 ```bash
-cd /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-web
+cd /Users/sokol/Git/ProjectGrimoire/grimoire-web
 test -f src/app/admin/tabs/CreditsTab.spec.tsx
 grep -nE "describe\\(.CreditsTab|it\\(|test\\(" src/app/admin/tabs/CreditsTab.spec.tsx
 grep -nE 'adminGrantCredits|adminDeductCredits' src/app/admin/tabs/CreditsTab.spec.tsx
@@ -295,7 +295,7 @@ npm test -- CreditsTab 2>&1 | tail -20
 
 **검증 명령**:
 ```bash
-cd /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-web
+cd /Users/sokol/Git/ProjectGrimoire/grimoire-web
 grep -nE "import.*CreditsTab.*from.*tabs/CreditsTab" src/app/admin/page.tsx
 grep -nE "type Tab = .*'credits'" src/app/admin/page.tsx
 grep -nE "credits:\\s*'크레딧'" src/app/admin/page.tsx
@@ -312,7 +312,7 @@ grep -nE "tab === 'credits'.*<CreditsTab" src/app/admin/page.tsx
 
 **검증 명령**:
 ```bash
-cd /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-web
+cd /Users/sokol/Git/ProjectGrimoire/grimoire-web
 grep -nE 'g-bg|g-fg|g-accent|var\\(--g-' src/app/admin/tabs/CreditsTab.tsx
 grep -nE 'bg-neutral-|border-neutral-|text-neutral-|text-white|bg-red-600' src/app/admin/tabs/CreditsTab.tsx
 grep -nE 'dangerouslySetInnerHTML' src/app/admin/tabs/CreditsTab.tsx
@@ -327,12 +327,12 @@ grep -nE 'dangerouslySetInnerHTML' src/app/admin/tabs/CreditsTab.tsx
 
 **검증 명령**:
 ```bash
-cat /Users/sokol/Desktop/Git/ProjectGrimoire/eval/tasks/regression-54-admin-credit-ui.json
-ls /Users/sokol/Desktop/Git/ProjectGrimoire/eval/tasks/regression-*.json | wc -l
-ls -la /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/scripts/sensor-admin-credit-ui.sh
-bash /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/scripts/sensor-admin-credit-ui.sh
+cat /Users/sokol/Git/ProjectGrimoire/eval/tasks/regression-54-admin-credit-ui.json
+ls /Users/sokol/Git/ProjectGrimoire/eval/tasks/regression-*.json | wc -l
+ls -la /Users/sokol/Git/ProjectGrimoire/.claude/scripts/sensor-admin-credit-ui.sh
+bash /Users/sokol/Git/ProjectGrimoire/.claude/scripts/sensor-admin-credit-ui.sh
 echo "exit code: $?"
-bash /Users/sokol/Desktop/Git/ProjectGrimoire/eval/scripts/eval-runner.sh 2>&1 | tail -10
+bash /Users/sokol/Git/ProjectGrimoire/eval/scripts/eval-runner.sh 2>&1 | tail -10
 ```
 
 **기대 raw 출력**:

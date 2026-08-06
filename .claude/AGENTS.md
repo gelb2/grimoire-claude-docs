@@ -15,7 +15,7 @@
 메모리 파일들의 **실제 저장 위치**는 루트 workspace가 아닌 사용자 홈의 Claude Code 프로젝트 디렉토리:
 
 ```
-/Users/sokol/.claude/projects/-Users-sokol-Desktop-Git-ProjectGrimoire/memory/
+/Users/sokol/.claude/projects/-Users-sokol-Git-ProjectGrimoire/memory/
 ```
 
 짧게 쓸 때는 `memory/...`로 표기하되, 실제로는 위 절대 경로를 가리킨다. 루트 workspace나 grimoire-claude-docs repo에는 **포함되지 않음** (Claude Code가 사용자별 관리하는 영역).

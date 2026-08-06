@@ -25,7 +25,7 @@
 
 set +u
 
-ROOT="/Users/sokol/Desktop/Git/ProjectGrimoire"
+ROOT="/Users/sokol/Git/ProjectGrimoire"
 PASS=0
 FAIL=0
 SKIP=0

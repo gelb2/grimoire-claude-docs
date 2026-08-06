@@ -5,13 +5,13 @@
   "source_session": "20260503_2 sprint-pay-p0-1-webhook-event-id-idempotency — Generator grimoire-server",
   "prompt": "PAY-P0-1: webhook event_id 멱등성 박제. (a) WebhookEvent Prisma 모델 존재 (@unique eventId) (b) NormalizedWebhookEvent.eventId 필드 박제 (c) polar.adapter가 'webhook-id' 헤더 추출 (d) payment.usecase.processWebhook이 findByEventId 게이트 사용 (e) WebhookEventRepositoryPort 인터페이스 존재 (f) 마이그레이션 파일 존재. 회귀 시 멱등성 게이트 우회되면 즉시 FAIL.",
   "eval_criteria": [
-    {"type": "command", "command": "grep -E 'model WebhookEvent' /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/prisma/schema.prisma > /dev/null", "desc": "WebhookEvent Prisma 모델 존재"},
-    {"type": "command", "command": "grep -E 'eventId\\s+String\\s+@unique' /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/prisma/schema.prisma > /dev/null", "desc": "eventId @unique 제약 존재"},
-    {"type": "command", "command": "grep -E 'eventId:\\s*string' /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/src/domain/port/outbound/payment-gateway.port.ts > /dev/null", "desc": "NormalizedWebhookEvent.eventId 필드 박제"},
-    {"type": "command", "command": "grep -E \"webhook-id|'webhook-id'\" /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/src/adapter/outbound/payment/polar.adapter.ts > /dev/null", "desc": "polar.adapter가 webhook-id 헤더 추출"},
-    {"type": "command", "command": "test -f /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/src/domain/port/outbound/webhook-event-repository.port.ts", "desc": "WebhookEventRepositoryPort 인터페이스 신설"},
-    {"type": "command", "command": "grep -E 'findByEventId' /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/src/application/payment/payment.usecase.ts > /dev/null", "desc": "payment.usecase.processWebhook이 findByEventId 게이트 사용"},
-    {"type": "command", "command": "ls /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/prisma/migrations/ | grep webhook_event_idempotency > /dev/null", "desc": "Prisma 마이그레이션 파일 존재"}
+    {"type": "command", "command": "grep -E 'model WebhookEvent' /Users/sokol/Git/ProjectGrimoire/grimoire-server/prisma/schema.prisma > /dev/null", "desc": "WebhookEvent Prisma 모델 존재"},
+    {"type": "command", "command": "grep -E 'eventId\\s+String\\s+@unique' /Users/sokol/Git/ProjectGrimoire/grimoire-server/prisma/schema.prisma > /dev/null", "desc": "eventId @unique 제약 존재"},
+    {"type": "command", "command": "grep -E 'eventId:\\s*string' /Users/sokol/Git/ProjectGrimoire/grimoire-server/src/domain/port/outbound/payment-gateway.port.ts > /dev/null", "desc": "NormalizedWebhookEvent.eventId 필드 박제"},
+    {"type": "command", "command": "grep -E \"webhook-id|'webhook-id'\" /Users/sokol/Git/ProjectGrimoire/grimoire-server/src/adapter/outbound/payment/polar.adapter.ts > /dev/null", "desc": "polar.adapter가 webhook-id 헤더 추출"},
+    {"type": "command", "command": "test -f /Users/sokol/Git/ProjectGrimoire/grimoire-server/src/domain/port/outbound/webhook-event-repository.port.ts", "desc": "WebhookEventRepositoryPort 인터페이스 신설"},
+    {"type": "command", "command": "grep -E 'findByEventId' /Users/sokol/Git/ProjectGrimoire/grimoire-server/src/application/payment/payment.usecase.ts > /dev/null", "desc": "payment.usecase.processWebhook이 findByEventId 게이트 사용"},
+    {"type": "command", "command": "ls /Users/sokol/Git/ProjectGrimoire/grimoire-server/prisma/migrations/ | grep webhook_event_idempotency > /dev/null", "desc": "Prisma 마이그레이션 파일 존재"}
   ],
   "threshold": 1.0,
   "runs": 1

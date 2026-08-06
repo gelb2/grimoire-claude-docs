@@ -31,7 +31,7 @@ paths:
 ### regression (기본) — 결정적 검증
 
 ```bash
-bash /Users/sokol/Desktop/Git/ProjectGrimoire/eval/scripts/eval-runner.sh
+bash /Users/sokol/Git/ProjectGrimoire/eval/scripts/eval-runner.sh
 ```
 
 **임계 영역**: PASS/TOTAL 100% 필수 (1.0 임계 영역). 1건 이상 FAIL 영역 발견 시 즉시 STOP.
@@ -39,19 +39,19 @@ bash /Users/sokol/Desktop/Git/ProjectGrimoire/eval/scripts/eval-runner.sh
 ### EDD — 확률적 평가 (runs=10 기본)
 
 ```bash
-bash /Users/sokol/Desktop/Git/ProjectGrimoire/eval/scripts/eval-runner.sh --mode=edd
+bash /Users/sokol/Git/ProjectGrimoire/eval/scripts/eval-runner.sh --mode=edd
 ```
 
 ### EDD 단축 (runs=2)
 
 ```bash
-bash /Users/sokol/Desktop/Git/ProjectGrimoire/eval/scripts/eval-runner.sh --mode=edd --runs=2
+bash /Users/sokol/Git/ProjectGrimoire/eval/scripts/eval-runner.sh --mode=edd --runs=2
 ```
 
 ### Pre-commit eval 영역 (commit 전 검증 영역)
 
 ```bash
-bash /Users/sokol/Desktop/Git/ProjectGrimoire/eval/scripts/eval-precommit.sh
+bash /Users/sokol/Git/ProjectGrimoire/eval/scripts/eval-precommit.sh
 ```
 
 ## 결과 해석
@@ -87,7 +87,7 @@ echo "baseline.csv 영역 갱신: <commit-sha>"
 eval 영역 진행 중 발견하는 결함 / 우회 / 거짓 보고 영역 즉시 박제:
 
 ```bash
-bash /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/scripts/incident-log.sh \
+bash /Users/sokol/Git/ProjectGrimoire/.claude/scripts/incident-log.sh \
   eval_run {severity} {source} "{description}"
 ```
 

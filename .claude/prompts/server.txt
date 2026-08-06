@@ -19,8 +19,8 @@ ProjectGrimoire 백엔드(NestJS) 개발자 에이전트. server 레포(grimoire
 </ROLE>
 
 <CONTEXT>
-프로젝트 경로: /Users/sokol/Desktop/Git/ProjectGrimoire
-서버 레포: /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server
+프로젝트 경로: /Users/sokol/Git/ProjectGrimoire
+서버 레포: /Users/sokol/Git/ProjectGrimoire/grimoire-server
 
 Grimoire 고유 제약:
 - §0 원가 철칙: cost-accountant 승인 없는 새 AI 기능 구현 금지
@@ -30,10 +30,10 @@ Grimoire 고유 제약:
 - design-tokens / theme-spec은 web 정본 — 서버는 읽기만
 
 센서 스크립트:
-- /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/scripts/sensor-server.sh (server 빌드/테스트)
-- /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/scripts/sensor-docs-sync.sh (정본 ↔ 사본 drift)
-- /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/scripts/sensor-credit-atomicity.sh (결제·환불 원자성)
-- /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/scripts/sensor-secret-leak.sh (하드코딩 시크릿)
+- /Users/sokol/Git/ProjectGrimoire/.claude/scripts/sensor-server.sh (server 빌드/테스트)
+- /Users/sokol/Git/ProjectGrimoire/.claude/scripts/sensor-docs-sync.sh (정본 ↔ 사본 drift)
+- /Users/sokol/Git/ProjectGrimoire/.claude/scripts/sensor-credit-atomicity.sh (결제·환불 원자성)
+- /Users/sokol/Git/ProjectGrimoire/.claude/scripts/sensor-secret-leak.sh (하드코딩 시크릿)
 
 의존 보고서:
 - reports/PLANNER_REPORT.md (오늘자 — 작업 지시)
@@ -47,30 +47,30 @@ Grimoire 고유 제약:
 
 <INPUTS>
 읽을 파일 (의존성 순서):
-1. /Users/sokol/Desktop/Git/ProjectGrimoire/prompt-engineering/vibe-coding-unified-guide.md (Phase/레이어/게이트 정본)
-2. /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/agents/grimoire-server.md (자기 에이전트 정의 — 헥사고날 + 보안 + 절대 규칙)
-3. /Users/sokol/Desktop/Git/ProjectGrimoire/CLAUDE.md §0 §1 §8 §14
-4. /Users/sokol/Desktop/Git/ProjectGrimoire/PLANNING_GRIMOIRE.md §0 (원가 철칙)
-5. /Users/sokol/Desktop/Git/ProjectGrimoire/reports/PLANNER_REPORT.md (오늘자 — server 항목)
-6. /Users/sokol/Desktop/Git/ProjectGrimoire/reports/COST_AUDIT_REPORT.md (cost-accountant 승인 상태)
-7. /Users/sokol/Desktop/Git/ProjectGrimoire/SYNC_STATUS.md
-8. /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/CLAUDE.md (서버 규칙)
-9. /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/SCHEMA.md (Prisma 상세)
-10. /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/SECURITY.md (보안 정책)
-11. /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/INFRASTRUCTURE.md (Azure)
-12. /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/TECH_STATUS.md
-13. /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/TESTING.md
-14. /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/docs/api-contract.md (정본)
-15. /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/docs/data-model.md (정본)
-16. /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/docs/ai-cost-table.md (참고만, 수정 금지)
-17. /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/docs/ai-analysis-spec.md (정본)
+1. /Users/sokol/Git/ProjectGrimoire/prompt-engineering/vibe-coding-unified-guide.md (Phase/레이어/게이트 정본)
+2. /Users/sokol/Git/ProjectGrimoire/.claude/agents/grimoire-server.md (자기 에이전트 정의 — 헥사고날 + 보안 + 절대 규칙)
+3. /Users/sokol/Git/ProjectGrimoire/CLAUDE.md §0 §1 §8 §14
+4. /Users/sokol/Git/ProjectGrimoire/PLANNING_GRIMOIRE.md §0 (원가 철칙)
+5. /Users/sokol/Git/ProjectGrimoire/reports/PLANNER_REPORT.md (오늘자 — server 항목)
+6. /Users/sokol/Git/ProjectGrimoire/reports/COST_AUDIT_REPORT.md (cost-accountant 승인 상태)
+7. /Users/sokol/Git/ProjectGrimoire/SYNC_STATUS.md
+8. /Users/sokol/Git/ProjectGrimoire/grimoire-server/CLAUDE.md (서버 규칙)
+9. /Users/sokol/Git/ProjectGrimoire/grimoire-server/SCHEMA.md (Prisma 상세)
+10. /Users/sokol/Git/ProjectGrimoire/grimoire-server/SECURITY.md (보안 정책)
+11. /Users/sokol/Git/ProjectGrimoire/grimoire-server/INFRASTRUCTURE.md (Azure)
+12. /Users/sokol/Git/ProjectGrimoire/grimoire-server/TECH_STATUS.md
+13. /Users/sokol/Git/ProjectGrimoire/grimoire-server/TESTING.md
+14. /Users/sokol/Git/ProjectGrimoire/grimoire-server/docs/api-contract.md (정본)
+15. /Users/sokol/Git/ProjectGrimoire/grimoire-server/docs/data-model.md (정본)
+16. /Users/sokol/Git/ProjectGrimoire/grimoire-server/docs/ai-cost-table.md (참고만, 수정 금지)
+17. /Users/sokol/Git/ProjectGrimoire/grimoire-server/docs/ai-analysis-spec.md (정본)
 </INPUTS>
 
 <INSTRUCTIONS priority_system="[MUST] = 필수 / [SHOULD] = 권장 / [NICE] = 선택">
 
 <STEP n="0">
 [MUST] 프롬프트 엔지니어링 정본 필수 Read:
-- /Users/sokol/Desktop/Git/ProjectGrimoire/prompt-engineering/vibe-coding-unified-guide.md
+- /Users/sokol/Git/ProjectGrimoire/prompt-engineering/vibe-coding-unified-guide.md
 원칙(우선순위 라벨, Chain-of-Verification, 최소 구현, 게이트 체크)을 모든 출력물에 적용.
 </STEP>
 
@@ -138,7 +138,7 @@ Grimoire 고유 제약:
 </MID_CHECK>
 
 <OUTPUT_FORMAT>
-파일: /Users/sokol/Desktop/Git/ProjectGrimoire/reports/DEV_REPORT.md (server 섹션 — 덮어쓰기 또는 append)
+파일: /Users/sokol/Git/ProjectGrimoire/reports/DEV_REPORT.md (server 섹션 — 덮어쓰기 또는 append)
 
 필수 섹션:
 1. 메타데이터 (작업일, 참조한 PLANNER/COST_AUDIT/VISUAL_CANON 요약)

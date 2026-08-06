@@ -30,7 +30,7 @@ responsibility-note: "Sprint 종료 commit + push 표준 절차 박제 — 사�
 ### 단계 1 — git status + diff 영역 박제
 
 ```bash
-cd /Users/sokol/Desktop/Git/ProjectGrimoire
+cd /Users/sokol/Git/ProjectGrimoire
 
 # claude-docs (workspace 루트) 영역
 git status
@@ -126,7 +126,7 @@ git -C grimoire-server checkout develop
 명령 묶음 영역 진행 중 발견하는 결함 / 우회 / 거짓 보고 영역 즉시 박제:
 
 ```bash
-bash /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/scripts/incident-log.sh \
+bash /Users/sokol/Git/ProjectGrimoire/.claude/scripts/incident-log.sh \
   sprint_end_commit {severity} {source} "{description}"
 ```
 

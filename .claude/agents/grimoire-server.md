@@ -36,14 +36,14 @@ model: opus
 
 ### 프롬프트 엔지니어링 정본 — 작업 시작 전 반드시 Read
 
-- `/Users/sokol/Desktop/Git/ProjectGrimoire/prompt-engineering/vibe-coding-unified-guide.md` — Phase 0~5 + 서브에이전트 7종 + PROGRESS.md 핸드오프 + 레이어 구조(API→서비스→리포지토리) + 게이트 체크 패턴
+- `/Users/sokol/Git/ProjectGrimoire/prompt-engineering/vibe-coding-unified-guide.md` — Phase 0~5 + 서브에이전트 7종 + PROGRESS.md 핸드오프 + 레이어 구조(API→서비스→리포지토리) + 게이트 체크 패턴
 
 이 정본의 원칙(우선순위 라벨 [MUST]/[SHOULD]/[NICE], Chain-of-Verification, 최소 구현 원칙, 게이트 체크 패턴 등)을 모든 출력물(DEV_REPORT server 섹션, 코드 주석, 커밋 메시지)에 적용한다.
 
 ### 워크스페이스
-- `/Users/sokol/Desktop/Git/ProjectGrimoire/CLAUDE.md`
-- `/Users/sokol/Desktop/Git/ProjectGrimoire/PLANNING_GRIMOIRE.md` §0 원가 철칙
-- `/Users/sokol/Desktop/Git/ProjectGrimoire/SYNC_STATUS.md`
+- `/Users/sokol/Git/ProjectGrimoire/CLAUDE.md`
+- `/Users/sokol/Git/ProjectGrimoire/PLANNING_GRIMOIRE.md` §0 원가 철칙
+- `/Users/sokol/Git/ProjectGrimoire/SYNC_STATUS.md`
 
 ### 서버 레포
 - `grimoire-server/CLAUDE.md` — 서버 규칙
@@ -265,9 +265,9 @@ src/
 ## Skills 프로토콜 참조 (상황 매칭 시 Read — ouroboros 방식)
 서브에이전트는 Claude Code 공식 스펙상 Skill을 자동 발동하지 못하므로, 아래 상황이 **작업 중 나타나면** 해당 SKILL.md를 직접 Read로 로드하세요.
 
-- `/Users/sokol/Desktop/Git/ProjectGrimoire/.claude/skills/macos-tcc-handling/SKILL.md` — `az acr login`, `docker login`, `make deploy-*` 중 TCC 다이얼로그가 반복되는 경우 (credsStore=osxkeychain 프로토콜)
-- `/Users/sokol/Desktop/Git/ProjectGrimoire/.claude/skills/production-bug-triage/SKILL.md` — 사용자가 서버 증상(fetch aborted/timeout/502)을 보고할 때 curl→코드→수치 3단계 강제
-- `/Users/sokol/Desktop/Git/ProjectGrimoire/.claude/skills/claude-in-chrome-recovery/SKILL.md` — 웹 E2E·시각 검증 연쇄 시 Chrome MCP 활용 실패 복구
+- `/Users/sokol/Git/ProjectGrimoire/.claude/skills/macos-tcc-handling/SKILL.md` — `az acr login`, `docker login`, `make deploy-*` 중 TCC 다이얼로그가 반복되는 경우 (credsStore=osxkeychain 프로토콜)
+- `/Users/sokol/Git/ProjectGrimoire/.claude/skills/production-bug-triage/SKILL.md` — 사용자가 서버 증상(fetch aborted/timeout/502)을 보고할 때 curl→코드→수치 3단계 강제
+- `/Users/sokol/Git/ProjectGrimoire/.claude/skills/claude-in-chrome-recovery/SKILL.md` — 웹 E2E·시각 검증 연쇄 시 Chrome MCP 활용 실패 복구
 
 
 ## Shared Contracts 참조 (인터페이스 규약 — 모든 agent 공통)

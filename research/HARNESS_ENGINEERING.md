@@ -403,7 +403,7 @@ $ARGUMENTS 변수로 사용자 입력 받기
       "mcp__Claude_Preview__preview_start",
       "WebFetch(domain:grimoire-book.com)",
       "Bash(cat)",
-      "Bash(chmod +x /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/scripts/deploy-prod.sh)"
+      "Bash(chmod +x /Users/sokol/Git/ProjectGrimoire/.claude/scripts/deploy-prod.sh)"
     ]
   }
 }
@@ -584,7 +584,7 @@ v2 추가 제안:
     "matcher": "Edit|Write",
     "hooks": [{
       "type": "command",
-      "command": "bash /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/scripts/post-edit-tsc.sh",
+      "command": "bash /Users/sokol/Git/ProjectGrimoire/.claude/scripts/post-edit-tsc.sh",
       "timeout": 60
     }]
   }]

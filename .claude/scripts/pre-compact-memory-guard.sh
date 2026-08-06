@@ -11,8 +11,8 @@
 #   - MEMORY.md 인덱스 오늘 박제 검증
 #   - 컨텍스트 압축 시점 sensor-log 박제
 
-MEMORY_DIR="$HOME/.claude/projects/-Users-sokol-Desktop-Git-ProjectGrimoire/memory"
-PROJECT_DIR="/Users/sokol/Desktop/Git/ProjectGrimoire"
+MEMORY_DIR="$HOME/.claude/projects/-Users-sokol-Git-ProjectGrimoire/memory"
+PROJECT_DIR="/Users/sokol/Git/ProjectGrimoire"
 REPOS="grimoire-server grimoire-web"
 
 TODAY=$(date "+%Y-%m-%d")

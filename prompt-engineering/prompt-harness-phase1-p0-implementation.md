@@ -6,7 +6,7 @@
 ───────────────────────────────────────────────────────────── -->
 
 <CRITICAL_CONSTRAINTS>
-[MUST] `/Users/sokol/Desktop/Git/ProjectGrimoire/CLAUDE.md` §0 ZERO-TOLERANCE 절대 수칙을 준수하라. 상태 추정 금지 — DB/API/브랜치 상태는 실측(ls/git/curl/psql)으로만 확인하라.
+[MUST] `/Users/sokol/Git/ProjectGrimoire/CLAUDE.md` §0 ZERO-TOLERANCE 절대 수칙을 준수하라. 상태 추정 금지 — DB/API/브랜치 상태는 실측(ls/git/curl/psql)으로만 확인하라.
 [MUST] `CLAUDE.md` §8 브랜치 전략을 지켜라 — develop에서 bugfix/{name} 또는 feature/{name} 브랜치 생성 → 작업 → develop 머지. main 직접 커밋·푸시 금지.
 [MUST] 코드·설정 변경 후 해당 레포의 `npm test` 및 `npx tsc --noEmit`가 통과할 때만 커밋하라.
 [MUST] 2레포(grimoire-server, grimoire-web)와 루트 workspace의 `.claude/` 설정 변경은 각각 독립 커밋으로 관리하라. 루트는 현재 git 아니므로 server 레포에 대표 이동본을 두고 루트에는 링크 또는 복사본을 유지하라.
@@ -24,7 +24,7 @@
 
 <CONTEXT>
 ### 프로젝트 구조
-- 루트: `/Users/sokol/Desktop/Git/ProjectGrimoire/` (git 아님, workspace)
+- 루트: `/Users/sokol/Git/ProjectGrimoire/` (git 아님, workspace)
 - 서브 레포: `grimoire-server/` (NestJS), `grimoire-web/` (Next.js)
 - 양쪽 현재 브랜치는 `develop`. origin은 `gelb2/grimoire-server`, `gelb2/grimoire-web` (둘 다 PRIVATE)
 
@@ -33,7 +33,7 @@
 - ❌ Skills 디렉토리 없음, PostToolUse/PreToolUse hook 없음, grimoire-web pre-push 없음
 
 ### 필수 참조 문서 (읽는 순서)
-1. `/Users/sokol/Desktop/Git/ProjectGrimoire/CLAUDE.md` §0, §8, §12
+1. `/Users/sokol/Git/ProjectGrimoire/CLAUDE.md` §0, §8, §12
 2. `grimoire-server/research/HARNESS_ENGINEERING.md` §6 (Skills 개념), §9 (Agent 전수검사), §10 (Dev 로드맵 Phase 1)
 3. `grimoire-server/HANDOVER.md` (이전 세션 상태)
 4. `grimoire-server/TODO.md` "Claude Code harness 강화" 섹션
@@ -75,7 +75,7 @@
 
   <STEP n="0" title="Phase 0 — 현황 실측">
   [MUST] 다음 명령을 실행하여 실측 결과를 `PROGRESS_HARNESS_P0.md`에 기록하라:
-  - `cd /Users/sokol/Desktop/Git/ProjectGrimoire && ls -la .claude/`
+  - `cd /Users/sokol/Git/ProjectGrimoire && ls -la .claude/`
   - `ls .claude/agents/ .claude/prompts/ .claude/scripts/ .claude/knowledge/`
   - `cat .claude/settings.json`
   - `ls -la grimoire-server/.githooks/ grimoire-web/.githooks/ 2>&1`
@@ -107,7 +107,7 @@
   </STEP>
 
   <STEP n="2" title="Phase 2 — PostToolUse hook + post-edit-tsc.sh 구현">
-  [MUST] `/Users/sokol/Desktop/Git/ProjectGrimoire/.claude/scripts/post-edit-tsc.sh`를 신설하라. 요구사항:
+  [MUST] `/Users/sokol/Git/ProjectGrimoire/.claude/scripts/post-edit-tsc.sh`를 신설하라. 요구사항:
   - 입력: 첫 번째 인자로 편집된 파일 절대 경로
   - 동작: 파일이 `grimoire-server/` 하위면 `cd grimoire-server && npx tsc --noEmit`, `grimoire-web/` 하위면 `cd grimoire-web && npx tsc --noEmit`, 그 외면 조용히 종료 (exit 0)
   - `.ts`, `.tsx`, `.cts`, `.mts` 확장자만 대상. 다른 확장자면 조용히 종료
@@ -116,13 +116,13 @@
 
   [MUST] `chmod +x .claude/scripts/post-edit-tsc.sh`로 실행 권한을 부여하라.
 
-  [MUST] `/Users/sokol/Desktop/Git/ProjectGrimoire/.claude/settings.json`의 `hooks` 객체에 `PostToolUse` 키를 추가하라. 기존 4개 hook은 보존. 스펙:
+  [MUST] `/Users/sokol/Git/ProjectGrimoire/.claude/settings.json`의 `hooks` 객체에 `PostToolUse` 키를 추가하라. 기존 4개 hook은 보존. 스펙:
   ```json
   "PostToolUse": [{
     "matcher": "Edit|Write",
     "hooks": [{
       "type": "command",
-      "command": "bash /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/scripts/post-edit-tsc.sh \"$CLAUDE_TOOL_INPUT_file_path\"",
+      "command": "bash /Users/sokol/Git/ProjectGrimoire/.claude/scripts/post-edit-tsc.sh \"$CLAUDE_TOOL_INPUT_file_path\"",
       "timeout": 60
     }]
   }]
@@ -186,11 +186,11 @@
 
 <OUTPUT_SPEC>
 ### 최종 산출물 체크리스트
-- [ ] `/Users/sokol/Desktop/Git/ProjectGrimoire/.claude/skills/macos-tcc-handling/SKILL.md`
-- [ ] `/Users/sokol/Desktop/Git/ProjectGrimoire/.claude/skills/production-bug-triage/SKILL.md`
-- [ ] `/Users/sokol/Desktop/Git/ProjectGrimoire/.claude/skills/claude-in-chrome-recovery/SKILL.md`
-- [ ] `/Users/sokol/Desktop/Git/ProjectGrimoire/.claude/scripts/post-edit-tsc.sh` (실행 권한 포함)
-- [ ] `/Users/sokol/Desktop/Git/ProjectGrimoire/.claude/settings.json` (PostToolUse 추가, 기존 4개 hook 보존)
+- [ ] `/Users/sokol/Git/ProjectGrimoire/.claude/skills/macos-tcc-handling/SKILL.md`
+- [ ] `/Users/sokol/Git/ProjectGrimoire/.claude/skills/production-bug-triage/SKILL.md`
+- [ ] `/Users/sokol/Git/ProjectGrimoire/.claude/skills/claude-in-chrome-recovery/SKILL.md`
+- [ ] `/Users/sokol/Git/ProjectGrimoire/.claude/scripts/post-edit-tsc.sh` (실행 권한 포함)
+- [ ] `/Users/sokol/Git/ProjectGrimoire/.claude/settings.json` (PostToolUse 추가, 기존 4개 hook 보존)
 - [ ] `grimoire-web/.githooks/pre-push` (실행 권한 포함)
 - [ ] `grimoire-web` develop 커밋 1건 + push + Actions 확인
 - [ ] `grimoire-server/HANDOVER.md` 갱신 커밋 + push

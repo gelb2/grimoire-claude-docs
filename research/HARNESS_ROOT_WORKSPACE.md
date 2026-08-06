@@ -13,7 +13,7 @@
 ### 11.1 현재 구조 (실측)
 
 ```
-/Users/sokol/Desktop/Git/ProjectGrimoire/          ← git 아님
+/Users/sokol/Git/ProjectGrimoire/          ← git 아님
 ├── .DS_Store
 ├── .claude/                    ← 에이전트·프롬프트·센서·hook 설정
 ├── .idea/                      ← IntelliJ (로컬)
@@ -45,7 +45,7 @@
 #### 옵션 A: 루트 git init + 서브 레포 gitignore (**추천**)
 
 ```bash
-cd /Users/sokol/Desktop/Git/ProjectGrimoire
+cd /Users/sokol/Git/ProjectGrimoire
 git init -b main
 cat > .gitignore <<'EOF'
 # 서브 레포 (독립 git으로 관리 중)
@@ -136,7 +136,7 @@ gh repo create gelb2/grimoire-workspace --private --source=. --remote=origin --p
 
 ```bash
 # 1) 루트 진입
-cd /Users/sokol/Desktop/Git/ProjectGrimoire
+cd /Users/sokol/Git/ProjectGrimoire
 
 # 2) 기존 서브 repo 건드리지 않는지 확인
 ls -la grimoire-server/.git grimoire-web/.git  # 존재 확인

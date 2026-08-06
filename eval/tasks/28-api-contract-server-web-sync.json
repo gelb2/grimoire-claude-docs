@@ -5,7 +5,7 @@
   "source_session": "20260502 묶음 M NEW-9 — category 균형 보강",
   "prompt": "grimoire-server/docs/api-contract.md와 grimoire-web/docs/api-contract.md가 동기화되어 있는가? sensor-docs-sync.sh가 9개 공유 문서를 검증하지만 본 task는 api-contract만 단독 회귀 차단.",
   "eval_criteria": [
-    {"type": "command", "command": "diff -q /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/docs/api-contract.md /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-web/docs/api-contract.md > /dev/null 2>&1", "desc": "api-contract.md server == web (바이트 단위 동일)"}
+    {"type": "command", "command": "diff -q /Users/sokol/Git/ProjectGrimoire/grimoire-server/docs/api-contract.md /Users/sokol/Git/ProjectGrimoire/grimoire-web/docs/api-contract.md > /dev/null 2>&1", "desc": "api-contract.md server == web (바이트 단위 동일)"}
   ],
   "threshold": 1.0,
   "runs": 1

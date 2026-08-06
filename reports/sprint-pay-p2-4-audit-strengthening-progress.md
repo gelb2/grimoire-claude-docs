@@ -417,7 +417,7 @@ async log(
 ## §13. 검증 명령 (메인 수동 실행)
 
 ```bash
-cd /Users/sokol/Desktop/Git/ProjectGrimoire
+cd /Users/sokol/Git/ProjectGrimoire
 
 # 1. server jest (변경 spec 4건)
 cd grimoire-server
@@ -430,7 +430,7 @@ npx jest src/application/payment/refund-payment.usecase.spec.ts --runInBand
 npm test -- --runInBand
 
 # 3. sensor 신설 PASS 8/8
-cd /Users/sokol/Desktop/Git/ProjectGrimoire
+cd /Users/sokol/Git/ProjectGrimoire
 bash .claude/scripts/sensor-audit-log-before-after.sh
 
 # 4. eval-runner 전체 회귀 (33 → 65 task PASS-only)

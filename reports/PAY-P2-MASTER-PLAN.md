@@ -310,7 +310,7 @@ bash eval/scripts/eval-runner.sh tasks/regression-62-webhook-dlq.json
 cd grimoire-server && npx jest src/application/payment/webhook-retry.job.spec.ts
 
 # 종합 회귀 (P2 종료 후)
-cd /Users/sokol/Desktop/Git/ProjectGrimoire
+cd /Users/sokol/Git/ProjectGrimoire
 bash eval/scripts/eval-runner.sh
 bash .claude/scripts/sensor-adversarial-pre-commit.sh
 bash .claude/scripts/sensor-harness-self-diagnose.sh

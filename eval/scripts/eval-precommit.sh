@@ -22,7 +22,7 @@
 
 set -u
 
-PROJECT_ROOT="/Users/sokol/Desktop/Git/ProjectGrimoire"
+PROJECT_ROOT="/Users/sokol/Git/ProjectGrimoire"
 EVAL_DIR="$PROJECT_ROOT/eval"
 BASELINE_FILE="$EVAL_DIR/results/baseline.csv"
 ALLOWLIST_FILE="$EVAL_DIR/known-accepted-fails.txt"

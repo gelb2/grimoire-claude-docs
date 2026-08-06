@@ -214,5 +214,5 @@ hit 많은데 FAIL 한 번도 안 낸 sensor (= 항상 PASS/WARN, 검사 항목�
 
 ---
 
-*경로: `/Users/sokol/Desktop/Git/ProjectGrimoire/reports/HARNESS_HONESTY_AUDIT_20260529.md`*
+*경로: `/Users/sokol/Git/ProjectGrimoire/reports/HARNESS_HONESTY_AUDIT_20260529.md`*
 *수정 0건 — 진단 전용. "PASS" 선언 0회.*

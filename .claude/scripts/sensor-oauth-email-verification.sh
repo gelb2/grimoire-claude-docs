@@ -29,7 +29,7 @@ trap '_rc=$?; bash "$(dirname "$0")/sensor-log.sh" "$(basename "$0" .sh)" "$_rc"
 
 set +e
 
-REPO_ROOT="/Users/sokol/Desktop/Git/ProjectGrimoire"
+REPO_ROOT="/Users/sokol/Git/ProjectGrimoire"
 SERVER="$REPO_ROOT/grimoire-server"
 USECASE="$SERVER/src/application/auth/auth.usecase.ts"
 SPEC="$SERVER/src/application/auth/auth.usecase.spec.ts"

@@ -21,13 +21,13 @@ triggers:
 
 ```bash
 # MEMORY.md 인덱스
-cat /Users/sokol/.claude/projects/-Users-sokol-Desktop-Git-ProjectGrimoire/memory/MEMORY.md
+cat /Users/sokol/.claude/projects/-Users-sokol-Git-ProjectGrimoire/memory/MEMORY.md
 
 # 남은 과제
-cat /Users/sokol/.claude/projects/-Users-sokol-Desktop-Git-ProjectGrimoire/memory/project_remaining_tasks.md
+cat /Users/sokol/.claude/projects/-Users-sokol-Git-ProjectGrimoire/memory/project_remaining_tasks.md
 
 # 최근 세션 기록 (5건)
-ls -lt /Users/sokol/.claude/projects/-Users-sokol-Desktop-Git-ProjectGrimoire/memory/project_session_*.md | head -5
+ls -lt /Users/sokol/.claude/projects/-Users-sokol-Git-ProjectGrimoire/memory/project_session_*.md | head -5
 ```
 
 ## 트리거
@@ -38,7 +38,7 @@ ls -lt /Users/sokol/.claude/projects/-Users-sokol-Desktop-Git-ProjectGrimoire/me
 
 ## 절대 규칙 참조
 
-- 메모리 디렉토리는 `/Users/sokol/.claude/projects/-Users-sokol-Desktop-Git-ProjectGrimoire/memory/` (사용자 홈)
+- 메모리 디렉토리는 `/Users/sokol/.claude/projects/-Users-sokol-Git-ProjectGrimoire/memory/` (사용자 홈)
 - 세션 종료 전 `project_session_YYYYMMDD[_N].md` 작성 + MEMORY.md 인덱스 갱신 필수
 
 상세: `.claude/AGENTS.md` §1 (메모리 절대 규칙)

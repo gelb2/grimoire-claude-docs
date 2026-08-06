@@ -11,17 +11,17 @@
   "eval_criteria": [
     {
       "type": "command",
-      "command": "test -f /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/skills/deploy-precheck/SKILL.md",
+      "command": "test -f /Users/sokol/Git/ProjectGrimoire/.claude/skills/deploy-precheck/SKILL.md",
       "desc": "(1) deploy-precheck/SKILL.md 존재"
     },
     {
       "type": "command",
-      "command": "grep -E '배포|deploy|점검|precheck|sensor-secret-leak|prod' /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/skills/deploy-precheck/SKILL.md | wc -l | xargs -I{} test {} -ge 3",
+      "command": "grep -E '배포|deploy|점검|precheck|sensor-secret-leak|prod' /Users/sokol/Git/ProjectGrimoire/.claude/skills/deploy-precheck/SKILL.md | wc -l | xargs -I{} test {} -ge 3",
       "desc": "(2) trigger/description에 '배포|deploy|점검|precheck' 어휘 ≥3건"
     },
     {
       "type": "command",
-      "command": "grep -qE 'disable-model-invocation:|triggers:|argument-hint:' /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/skills/deploy-precheck/SKILL.md",
+      "command": "grep -qE 'disable-model-invocation:|triggers:|argument-hint:' /Users/sokol/Git/ProjectGrimoire/.claude/skills/deploy-precheck/SKILL.md",
       "desc": "(3) 호출 메커니즘 명시 보존 (slash command `/deploy-precheck` 전용 의도)"
     }
   ],

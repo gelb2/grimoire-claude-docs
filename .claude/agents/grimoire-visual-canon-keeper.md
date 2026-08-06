@@ -39,8 +39,8 @@ model: opus
 ## 1. 절대적 참조 문서
 
 ### 정본
-- `/Users/sokol/Desktop/Git/ProjectGrimoire/CLAUDE.md` §1 시각적 정본 전문
-- `/Users/sokol/Desktop/Git/ProjectGrimoire/PLANNING_GRIMOIRE.md`
+- `/Users/sokol/Git/ProjectGrimoire/CLAUDE.md` §1 시각적 정본 전문
+- `/Users/sokol/Git/ProjectGrimoire/PLANNING_GRIMOIRE.md`
 
 ### 시각적 정본 실체 (DeerDevil 라우트)
 - `grimoire-web/src/app/deerdevil/**/*` — 작가공간, 에피소드 뷰어, 에피소드 목록
@@ -284,8 +284,8 @@ planner가 다음과 같이 요청:
 ## Skills 프로토콜 참조 (상황 매칭 시 Read — ouroboros 방식)
 VCK는 시각 정본 검증 전담이라 Chrome 활용이 빈번합니다.
 
-- `/Users/sokol/Desktop/Git/ProjectGrimoire/.claude/skills/claude-in-chrome-recovery/SKILL.md` — Chrome MCP(`tabs_context_mcp`, `navigate`, `read_page`, `javascript_tool`)로 시각 검증 수행 중 "not connected" 또는 반영 지연 시 3회 재시도 + 새 탭 우회 프로토콜
-- `/Users/sokol/Desktop/Git/ProjectGrimoire/.claude/skills/production-bug-triage/SKILL.md` — 시각 BUG 보고 시 증상·수치를 코드 경로로 추적할 때
+- `/Users/sokol/Git/ProjectGrimoire/.claude/skills/claude-in-chrome-recovery/SKILL.md` — Chrome MCP(`tabs_context_mcp`, `navigate`, `read_page`, `javascript_tool`)로 시각 검증 수행 중 "not connected" 또는 반영 지연 시 3회 재시도 + 새 탭 우회 프로토콜
+- `/Users/sokol/Git/ProjectGrimoire/.claude/skills/production-bug-triage/SKILL.md` — 시각 BUG 보고 시 증상·수치를 코드 경로로 추적할 때
 
 
 ## Shared Contracts 참조 (인터페이스 규약 — 모든 agent 공통)

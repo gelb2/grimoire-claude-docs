@@ -2,7 +2,7 @@
 
 > 상태: 리서치 단계
 > **출처:** Project Zenith 리서치 문서를 Grimoire로 이관 (2026-04-09)
-> **원본 위치:** `/Users/sokol/Desktop/Git/simple_project_zenith/RESEARCH_ANIMATION.md`
+> **원본 위치:** `/Users/sokol/Git/simple_project_zenith/RESEARCH_ANIMATION.md`
 >
 > **Grimoire 적용 대상:**
 > - A24식 Artifacts 디자인 방향 (남은 과제 #5)

@@ -14,7 +14,7 @@
 # 호출자: pretooluse-edit-write-guard.sh / pretooluse-bash-guard.sh
 
 set -uo pipefail
-ROOT="/Users/sokol/Desktop/Git/ProjectGrimoire"
+ROOT="/Users/sokol/Git/ProjectGrimoire"
 BOOTSTRAP_FLAG="$ROOT/.claude/state/harness-bootstrap.flag"
 
 KIND="${1:-}"     # "file" 또는 "bash"

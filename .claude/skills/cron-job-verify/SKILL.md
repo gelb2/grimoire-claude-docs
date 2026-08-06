@@ -62,7 +62,7 @@ gh run list -R JunYoungJee/grimoire-web --limit 5
 
 ```bash
 # webhook 영역 정합 sensor (영역 박제 영역)
-ls /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/scripts/ \
+ls /Users/sokol/Git/ProjectGrimoire/.claude/scripts/ \
   | grep -E "sensor.*webhook|sensor.*cron|sensor.*dlq"
 ```
 
@@ -82,7 +82,7 @@ echo "sensor 영역: N건 활성"
 검증 영역 진행 중 발견하는 결함 / 우회 / 거짓 보고 영역 즉시 박제:
 
 ```bash
-bash /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/scripts/incident-log.sh \
+bash /Users/sokol/Git/ProjectGrimoire/.claude/scripts/incident-log.sh \
   cron_job_verify {severity} {source} "{description}"
 ```
 

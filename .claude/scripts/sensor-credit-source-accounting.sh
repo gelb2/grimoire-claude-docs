@@ -21,7 +21,7 @@ trap '_rc=$?; bash "$(dirname "$0")/sensor-log.sh" "$(basename "$0" .sh)" "$_rc"
 
 set -uo pipefail
 
-ROOT="/Users/sokol/Desktop/Git/ProjectGrimoire"
+ROOT="/Users/sokol/Git/ProjectGrimoire"
 SERVER="$ROOT/grimoire-server"
 SCHEMA="$SERVER/prisma/schema.prisma"
 SOURCE_MODEL="$SERVER/src/domain/model/credit-source.ts"

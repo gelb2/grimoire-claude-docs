@@ -16,7 +16,7 @@
 
 set +u
 
-LOG_DIR="/Users/sokol/Desktop/Git/ProjectGrimoire/.claude/state"
+LOG_DIR="/Users/sokol/Git/ProjectGrimoire/.claude/state"
 mkdir -p "$LOG_DIR"
 
 INPUT_JSON=$(cat 2>/dev/null)
@@ -48,7 +48,7 @@ entry = {
     'duration_ms': duration_ms,
     'is_interrupt': is_interrupt,
 }
-LOG_FILE = '/Users/sokol/Desktop/Git/ProjectGrimoire/.claude/state/tool-failures.jsonl'
+LOG_FILE = '/Users/sokol/Git/ProjectGrimoire/.claude/state/tool-failures.jsonl'
 try:
     with open(LOG_FILE, 'a') as f:
         f.write(json.dumps(entry, ensure_ascii=False) + '\n')

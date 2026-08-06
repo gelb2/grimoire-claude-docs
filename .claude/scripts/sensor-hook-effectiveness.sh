@@ -22,7 +22,7 @@
 
 set -uo pipefail
 
-ROOT="/Users/sokol/Desktop/Git/ProjectGrimoire"
+ROOT="/Users/sokol/Git/ProjectGrimoire"
 STATE_DIR="$ROOT/.claude/state"
 EW_FILE="$STATE_DIR/edit-write-violation.jsonl"
 PR_FILE="$STATE_DIR/post-response-skill-trigger.jsonl"
@@ -56,7 +56,7 @@ import json, time, os
 from collections import Counter
 from datetime import datetime, timezone
 
-STATE = "/Users/sokol/Desktop/Git/ProjectGrimoire/.claude/state"
+STATE = "/Users/sokol/Git/ProjectGrimoire/.claude/state"
 now = time.time()
 cut7 = now - 7 * 86400
 cut14 = now - 14 * 86400

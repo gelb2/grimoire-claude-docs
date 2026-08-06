@@ -35,7 +35,7 @@ responsibility-note: "prod 배포 표준 절차 박제 — 5/8 INFRA-1 (revision
 
 ```bash
 # prod 환경 변수 영역 + secret 누락 영역 검증
-bash /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/scripts/sensor-azure-env-secret.sh prod
+bash /Users/sokol/Git/ProjectGrimoire/.claude/scripts/sensor-azure-env-secret.sh prod
 ```
 
 **임계 영역**: 누락 0건. 1건 이상 누락 영역 발견 시 즉시 STOP.
@@ -44,7 +44,7 @@ bash /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/scripts/sensor-azure-env-s
 
 ```bash
 # 현재 prod revision 영역 health 영역 박제
-bash /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/scripts/sensor-deploy-health.sh prod
+bash /Users/sokol/Git/ProjectGrimoire/.claude/scripts/sensor-deploy-health.sh prod
 ```
 
 **임계 영역**: 5/5 PASS. 1건 이상 FAIL 영역 발견 시 즉시 STOP.
@@ -53,7 +53,7 @@ bash /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/scripts/sensor-deploy-heal
 
 ```bash
 # 3 레포 영역 main 머지 정합 검증 (사용자 명시 후)
-cd /Users/sokol/Desktop/Git/ProjectGrimoire
+cd /Users/sokol/Git/ProjectGrimoire
 git -C grimoire-server log main --oneline -1
 git -C grimoire-web log main --oneline -1
 
@@ -77,10 +77,10 @@ curl -sS -w "%{http_code} %{time_total}s\n" \
   https://api.grimoire-book.com/api/payments/products
 
 # sensor-deploy-health 영역 prod 영역 (5/5 PASS)
-bash /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/scripts/sensor-deploy-health.sh prod
+bash /Users/sokol/Git/ProjectGrimoire/.claude/scripts/sensor-deploy-health.sh prod
 
 # sensor-azure-env-secret 영역 prod 영역
-bash /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/scripts/sensor-azure-env-secret.sh prod
+bash /Users/sokol/Git/ProjectGrimoire/.claude/scripts/sensor-azure-env-secret.sh prod
 ```
 
 **임계 영역**: 모두 PASS. 1건 이상 FAIL 영역 = 즉시 rollback 영역 진입.
@@ -114,7 +114,7 @@ az containerapp revision deactivate \
 명령 묶음 영역 진행 중 발견하는 결함 / 우회 / 거짓 보고 영역 즉시 박제:
 
 ```bash
-bash /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/scripts/incident-log.sh \
+bash /Users/sokol/Git/ProjectGrimoire/.claude/scripts/incident-log.sh \
   prod_deploy {severity} {source} "{description}"
 ```
 

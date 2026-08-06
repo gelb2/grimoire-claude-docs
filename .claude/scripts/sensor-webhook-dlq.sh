@@ -32,7 +32,7 @@ trap '_rc=$?; bash "$(dirname "$0")/sensor-log.sh" "$(basename "$0" .sh)" "$_rc"
 
 set +e
 
-REPO_ROOT="/Users/sokol/Desktop/Git/ProjectGrimoire"
+REPO_ROOT="/Users/sokol/Git/ProjectGrimoire"
 SERVER="$REPO_ROOT/grimoire-server"
 SCHEMA="$SERVER/prisma/schema.prisma"
 MIGRATION_DIR="$SERVER/prisma/migrations/20260505020000_add_webhook_retry_queue"

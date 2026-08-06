@@ -43,10 +43,10 @@ esac
 REPO=""
 case "$FILE_PATH" in
   */grimoire-server/*)
-    REPO="/Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server"
+    REPO="/Users/sokol/Git/ProjectGrimoire/grimoire-server"
     ;;
   */grimoire-web/*)
-    REPO="/Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-web"
+    REPO="/Users/sokol/Git/ProjectGrimoire/grimoire-web"
     ;;
   *) exit 0 ;;
 esac
@@ -62,7 +62,7 @@ RC=$?
 
 # sensor-log 적재 — 메인 직접 작업의 hit-rate 측정 + orchestration ratio 정확도 향상
 # REPO 명을 EXTRA로 박제 (server vs web 분포 분석용)
-SENSOR_LOG="/Users/sokol/Desktop/Git/ProjectGrimoire/.claude/scripts/sensor-log.sh"
+SENSOR_LOG="/Users/sokol/Git/ProjectGrimoire/.claude/scripts/sensor-log.sh"
 if [ -x "$SENSOR_LOG" ]; then
   REPO_NAME=$(basename "$REPO")
   bash "$SENSOR_LOG" "post-edit-tsc" "$RC" "repo=$REPO_NAME file=$FILE_PATH" 2>/dev/null || true

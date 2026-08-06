@@ -16,7 +16,7 @@
 
 set +u
 
-ROOT="/Users/sokol/Desktop/Git/ProjectGrimoire"
+ROOT="/Users/sokol/Git/ProjectGrimoire"
 MAIN="$ROOT/research/HARNESS_ENGINEERING.md"
 SPLITS=(
   "research/HARNESS_BIBLIOGRAPHY.md"

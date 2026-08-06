@@ -11,7 +11,7 @@ ProjectGrimoire 기획 에이전트. researcher/cost-accountant/visual-canon-kee
 </ROLE>
 
 <CONTEXT>
-프로젝트 경로: /Users/sokol/Desktop/Git/ProjectGrimoire
+프로젝트 경로: /Users/sokol/Git/ProjectGrimoire
 Grimoire 고유 제약:
 - PLANNING_GRIMOIRE.md §0 원가 철칙: 크레딧 판매 수익 > AI API 원가 (마진 ≥3배)
 - 사슴악마(deerdevil) 시각 정본: 모든 시각 렌더링의 기준
@@ -27,16 +27,16 @@ Grimoire 고유 제약:
 
 <INPUTS>
 읽을 파일 (의존성 순서):
-1. /Users/sokol/Desktop/Git/ProjectGrimoire/prompt-engineering/GMP-v2.2.md (프롬프트 정본)
-2. /Users/sokol/Desktop/Git/ProjectGrimoire/prompt-engineering/prd-generation-prompt-gmp2.md (PRD 생성 정본)
-3. /Users/sokol/Desktop/Git/ProjectGrimoire/prompt-engineering/vibe-coding-unified-guide.md (Phase/게이트 정본)
-4. /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/agents/grimoire-planner.md (에이전트 자기정의)
-5. /Users/sokol/Desktop/Git/ProjectGrimoire/CLAUDE.md §0 §5 §14 §15
-6. /Users/sokol/Desktop/Git/ProjectGrimoire/PLANNING_GRIMOIRE.md (최상위 정본, §9 마일스톤 핵심)
-7. /Users/sokol/Desktop/Git/ProjectGrimoire/SYNC_STATUS.md (서버-웹 연결 실측)
-8. /Users/sokol/Desktop/Git/ProjectGrimoire/reports/SWEEP_REPORT.md (researcher 결과)
-9. /Users/sokol/Desktop/Git/ProjectGrimoire/reports/COST_AUDIT_REPORT.md (cost-accountant 결과)
-10. /Users/sokol/Desktop/Git/ProjectGrimoire/reports/VISUAL_CANON_REPORT.md (VCK 결과)
+1. /Users/sokol/Git/ProjectGrimoire/prompt-engineering/GMP-v2.2.md (프롬프트 정본)
+2. /Users/sokol/Git/ProjectGrimoire/prompt-engineering/prd-generation-prompt-gmp2.md (PRD 생성 정본)
+3. /Users/sokol/Git/ProjectGrimoire/prompt-engineering/vibe-coding-unified-guide.md (Phase/게이트 정본)
+4. /Users/sokol/Git/ProjectGrimoire/.claude/agents/grimoire-planner.md (에이전트 자기정의)
+5. /Users/sokol/Git/ProjectGrimoire/CLAUDE.md §0 §5 §14 §15
+6. /Users/sokol/Git/ProjectGrimoire/PLANNING_GRIMOIRE.md (최상위 정본, §9 마일스톤 핵심)
+7. /Users/sokol/Git/ProjectGrimoire/SYNC_STATUS.md (서버-웹 연결 실측)
+8. /Users/sokol/Git/ProjectGrimoire/reports/SWEEP_REPORT.md (researcher 결과)
+9. /Users/sokol/Git/ProjectGrimoire/reports/COST_AUDIT_REPORT.md (cost-accountant 결과)
+10. /Users/sokol/Git/ProjectGrimoire/reports/VISUAL_CANON_REPORT.md (VCK 결과)
 </INPUTS>
 
 <INSTRUCTIONS priority_system="[MUST] = 필수 / [SHOULD] = 권장 / [NICE] = 선택">
@@ -97,7 +97,7 @@ Grimoire 고유 제약:
 </INSTRUCTIONS>
 
 <OUTPUT_FORMAT>
-파일: /Users/sokol/Desktop/Git/ProjectGrimoire/reports/PLANNER_REPORT.md (덮어쓰기)
+파일: /Users/sokol/Git/ProjectGrimoire/reports/PLANNER_REPORT.md (덮어쓰기)
 필수 섹션:
 1. 메타데이터 (작성일, 참조 보고서 3개 요약 1줄씩)
 2. 이어받은 정보 (Phase 0~2 결과 요약)

@@ -21,7 +21,7 @@
 
 set +u
 
-ROOT="/Users/sokol/Desktop/Git/ProjectGrimoire"
+ROOT="/Users/sokol/Git/ProjectGrimoire"
 STATE="$ROOT/.claude/state"
 
 GREEN="\033[32m"

@@ -11,7 +11,7 @@ ProjectGrimoire 시각 정본 수호자 + 디자이너 겸직. CLAUDE.md §1 "�
 </ROLE>
 
 <CONTEXT>
-프로젝트 경로: /Users/sokol/Desktop/Git/ProjectGrimoire
+프로젝트 경로: /Users/sokol/Git/ProjectGrimoire
 Grimoire 고유 제약 (이 에이전트의 핵심 미션):
 - 사슴악마 정본: `/{author}/` (동적 라우트 — 실제 deerdevil 공간 렌더링) + reader/theme 기능 모듈
 - 새 UI/테마/포맷 출력은 이 에이전트의 검수 없이 구현 불가 (CLAUDE.md §14 제약)
@@ -26,13 +26,13 @@ Grimoire 고유 제약 (이 에이전트의 핵심 미션):
 
 <INPUTS>
 읽을 파일 (의존성 순서):
-1. /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/agents/grimoire-visual-canon-keeper.md (에이전트 자기정의)
-2. /Users/sokol/Desktop/Git/ProjectGrimoire/CLAUDE.md §1 시각 정본 규칙
-3. /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-web/DESIGN.md (UI 디자인 시스템)
-4. /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-web/SCREENS.md (화면/컴포넌트 카탈로그)
-5. /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-web/docs/theme-spec.md (테마 파라미터)
-6. /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-web/docs/design-tokens.md (색상/타이포/간격)
-7. /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-web/src/app/theme.css (런타임 CSS 변수)
+1. /Users/sokol/Git/ProjectGrimoire/.claude/agents/grimoire-visual-canon-keeper.md (에이전트 자기정의)
+2. /Users/sokol/Git/ProjectGrimoire/CLAUDE.md §1 시각 정본 규칙
+3. /Users/sokol/Git/ProjectGrimoire/grimoire-web/DESIGN.md (UI 디자인 시스템)
+4. /Users/sokol/Git/ProjectGrimoire/grimoire-web/SCREENS.md (화면/컴포넌트 카탈로그)
+5. /Users/sokol/Git/ProjectGrimoire/grimoire-web/docs/theme-spec.md (테마 파라미터)
+6. /Users/sokol/Git/ProjectGrimoire/grimoire-web/docs/design-tokens.md (색상/타이포/간격)
+7. /Users/sokol/Git/ProjectGrimoire/grimoire-web/src/app/theme.css (런타임 CSS 변수)
 동적 탐색 (하드코딩 금지 — find/grep 실행):
 - grimoire-web/src/features/reader/ui/ 전체 컴포넌트
 - grimoire-web/src/features/theme/ 전체
@@ -101,7 +101,7 @@ cd grimoire-web && git log --oneline --since="7 days ago" -- src/features/reader
 </INSTRUCTIONS>
 
 <OUTPUT_FORMAT>
-파일: /Users/sokol/Desktop/Git/ProjectGrimoire/reports/VISUAL_CANON_REPORT.md (덮어쓰기)
+파일: /Users/sokol/Git/ProjectGrimoire/reports/VISUAL_CANON_REPORT.md (덮어쓰기)
 필수 섹션:
 1. 메타데이터 (감사일, 정본 범위 3개 영역의 실제 파일 수)
 2. 요약 테이블 | 등급 | 건수 | 내용 |

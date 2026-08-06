@@ -16,7 +16,7 @@
 
 set +e
 
-LOCK_DIR="/Users/sokol/Desktop/Git/ProjectGrimoire/.claude/state"
+LOCK_DIR="/Users/sokol/Git/ProjectGrimoire/.claude/state"
 LOCK_FILE="$LOCK_DIR/post-batch-tsc.lock"
 DEBOUNCE_SEC=60
 
@@ -43,8 +43,8 @@ export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
 
 # server + web 양쪽 tsc (병렬 실행)
-SERVER_DIR="/Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server"
-WEB_DIR="/Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-web"
+SERVER_DIR="/Users/sokol/Git/ProjectGrimoire/grimoire-server"
+WEB_DIR="/Users/sokol/Git/ProjectGrimoire/grimoire-web"
 
 run_tsc() {
   local repo="$1"

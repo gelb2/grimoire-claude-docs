@@ -8,7 +8,7 @@
 #   - task_calls: 메인 Claude가 spawn한 subagent 호출 (Task tool, isSidechain=false)
 #
 # 데이터 소스:
-#   - 메인: $HOME/.claude/projects/-Users-sokol-Desktop-Git-ProjectGrimoire/*.jsonl (최상위, isSidechain=false)
+#   - 메인: $HOME/.claude/projects/-Users-sokol-Git-ProjectGrimoire/*.jsonl (최상위, isSidechain=false)
 #   - 에이전트(sidechain): 위 경로/{session-uuid}/subagents/agent-*.jsonl (isSidechain=true)
 #     · 2026-06-01 결함정정: 종전 글롭이 최상위 *.jsonl만 봐서 subagents/ 하위 308 jsonl(Edit/Write/Bash 실재)을
 #       전혀 안 읽음 → sidechain_edits/writes가 643 전 엔트리 (0,0) 고정 = "에이전트 0편집" 거짓 측정.
@@ -38,9 +38,9 @@
 
 set -u
 
-LOG_DIR="/Users/sokol/Desktop/Git/ProjectGrimoire/.claude/state"
+LOG_DIR="/Users/sokol/Git/ProjectGrimoire/.claude/state"
 RATIO_FILE="$LOG_DIR/orchestration-ratio.jsonl"
-JSONL_DIR="$HOME/.claude/projects/-Users-sokol-Desktop-Git-ProjectGrimoire"
+JSONL_DIR="$HOME/.claude/projects/-Users-sokol-Git-ProjectGrimoire"
 
 mkdir -p "$LOG_DIR"
 

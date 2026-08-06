@@ -347,7 +347,7 @@ refundPaymentAtomically(input: {
 
 **검증 명령**:
 ```bash
-cd /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server
+cd /Users/sokol/Git/ProjectGrimoire/grimoire-server
 grep -nE "model RefundLog" prisma/schema.prisma
 grep -nE "deficitCredits|deficit_credits" prisma/schema.prisma
 ls prisma/migrations/ | grep -iE "refund_log"
@@ -366,7 +366,7 @@ cat prisma/migrations/*_add_refund_log*/migration.sql | grep -iE "INSERT INTO" |
 
 **검증 명령**:
 ```bash
-cd /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server
+cd /Users/sokol/Git/ProjectGrimoire/grimoire-server
 grep -nE "refundPaymentAtomically" src/domain/port/outbound/payment-repository.port.ts
 grep -nE "refundPaymentAtomically" src/adapter/outbound/persistence/prisma-payment.repository.ts
 grep -nE "\\\$transaction" src/adapter/outbound/persistence/prisma-payment.repository.ts | wc -l
@@ -394,7 +394,7 @@ npx jest src/application/payment/refund-payment.usecase.spec.ts 2>&1 | tail -20
 
 **검증 명령**:
 ```bash
-cd /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server
+cd /Users/sokol/Git/ProjectGrimoire/grimoire-server
 grep -nE "event.status === 'cancel'" src/application/payment/payment.usecase.ts
 grep -nE "refundPaymentUseCase" src/application/payment/payment.usecase.ts
 grep -nE "refundPaymentUseCase|RefundPaymentUseCase" src/application/payment/payment.usecase.spec.ts
@@ -414,7 +414,7 @@ npx jest src/application/payment/payment.usecase.spec.ts 2>&1 | tail -20
 
 **검증 명령**:
 ```bash
-cd /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server
+cd /Users/sokol/Git/ProjectGrimoire/grimoire-server
 grep -nE "system_refund" src/application/payment/refund-payment.usecase.ts
 grep -nE "refund_deficit|refund_normal" src/application/payment/refund-payment.usecase.ts
 grep -nE "Math.min|currentBalance|balance.*credits|deficitCredits" src/application/payment/refund-payment.usecase.ts
@@ -433,7 +433,7 @@ grep -nE "Author.credits.*0|credits.*decrement.*actualDeducted" src/adapter/outb
 
 **검증 명령**:
 ```bash
-cd /Users/sokol/Desktop/Git/ProjectGrimoire
+cd /Users/sokol/Git/ProjectGrimoire
 cat eval/tasks/regression-55-refund-atomicity.json | python3 -c "import json,sys;d=json.load(sys.stdin);print(len(d['eval_criteria']))"
 ls eval/tasks/regression-*.json | wc -l
 ls -la .claude/scripts/sensor-refund-atomicity.sh
@@ -460,7 +460,7 @@ bash eval/scripts/eval-runner.sh 2>&1 | tail -10
 
 **검증 명령**:
 ```bash
-cd /Users/sokol/Desktop/Git/ProjectGrimoire
+cd /Users/sokol/Git/ProjectGrimoire
 grep -nE "^## 13\\. RefundPaymentAtomically" .claude/shared-contracts.md
 grep -nE "deficitCredits|actualDeducted" .claude/shared-contracts.md
 grep -nE "2026-05-03 #10_7 PAY-P1-1" .claude/shared-contracts.md
@@ -478,7 +478,7 @@ echo "exit: $?"
 
 **검증 명령**:
 ```bash
-cd /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server
+cd /Users/sokol/Git/ProjectGrimoire/grimoire-server
 grep -nE "duplicate_event|findByEventId" src/application/payment/payment.usecase.ts
 grep -nE "duplicate_event|findByEventId" src/application/payment/payment.usecase.spec.ts
 grep -nE "refundPaymentUseCase.*toHaveBeenCalledTimes\\(0\\)|refundPaymentUseCase.*not\\.toHaveBeenCalled" src/application/payment/payment.usecase.spec.ts

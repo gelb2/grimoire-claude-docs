@@ -21,7 +21,7 @@
 
 set -e
 
-PROJECT_ROOT="/Users/sokol/Desktop/Git/ProjectGrimoire"
+PROJECT_ROOT="/Users/sokol/Git/ProjectGrimoire"
 
 echo "=== claude-docs pre-commit 검증 ==="
 

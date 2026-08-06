@@ -19,7 +19,7 @@ trap '_rc=$?; bash "$(dirname "$0")/sensor-log.sh" "$(basename "$0" .sh)" "$_rc"
 
 set -uo pipefail
 
-ROOT="/Users/sokol/Desktop/Git/ProjectGrimoire"
+ROOT="/Users/sokol/Git/ProjectGrimoire"
 SERVER="$ROOT/grimoire-server"
 POLAR_ADAPTER="$SERVER/src/adapter/outbound/payment/polar.adapter.ts"
 PAYMENT_USECASE="$SERVER/src/application/payment/payment.usecase.ts"

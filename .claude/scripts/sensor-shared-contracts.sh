@@ -23,7 +23,7 @@
 # Exit 0: 모든 검증 PASS, Exit 1: 1건 이상 FAIL.
 
 set +u
-ROOT="/Users/sokol/Desktop/Git/ProjectGrimoire"
+ROOT="/Users/sokol/Git/ProjectGrimoire"
 SC="$ROOT/.claude/shared-contracts.md"
 FAIL=0
 WARN=0

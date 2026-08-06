@@ -1,6 +1,6 @@
 # AGENTS · SKILLS 등록 무결성 감사 (D4 · D5) — 2026-06-01
 
-> **읽기 전용 감사. 수정 0건.** 작업 디렉터리 `/Users/sokol/Desktop/Git/ProjectGrimoire`.
+> **읽기 전용 감사. 수정 0건.** 작업 디렉터리 `/Users/sokol/Git/ProjectGrimoire`.
 > 핵심 질문: 에이전트는 실제로 일을 나눠 갖는 구조인가(분업 실체) / 스킬은 제대로 등록·트리거되는가.
 > 모든 수치는 RAW 실측(파일 경로·frontmatter 라인·grep 출력·transcript tool_use 카운트). 미검증은 "미검증" 명시.
 
@@ -51,7 +51,7 @@
 
 ## D4-2. 실제 호출 증거 — 정의됐지만 안 쓰인 에이전트 0건
 
-**RAW 출처**: `~/.claude/projects/-Users-sokol-Desktop-Git-ProjectGrimoire/*.jsonl` (transcript 25개, 199M).
+**RAW 출처**: `~/.claude/projects/-Users-sokol-Git-ProjectGrimoire/*.jsonl` (transcript 25개, 199M).
 **방법**: `"name":"Agent"` tool_use 블록(= Task tool, 2026-05-06 INCIDENT KK'에서 `Task`→`Agent` 리네임 박제됨) 내 `subagent_type` 카운트. 전 294 `name:Agent` 블록 전건 `subagent_type` 보유(0 누락).
 
 | 에이전트 | 실제 invoke 횟수 | 샘플 description(raw) |

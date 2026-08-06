@@ -201,7 +201,7 @@ EmailServicePort 패턴 정합 — Hexagonal Port 캡슐화 우선 박제 가능
 ## §8. 검증 명령
 
 ```bash
-cd /Users/sokol/Desktop/Git/ProjectGrimoire
+cd /Users/sokol/Git/ProjectGrimoire
 
 # PAY-P2-2 회귀 검증
 bash .claude/scripts/sensor-webhook-dlq.sh
@@ -213,7 +213,7 @@ npx jest src/application/payment/webhook-retry.job.spec.ts
 npx jest src/application/payment/payment.usecase.spec.ts  # 회귀 보존 확인
 
 # 다른 sprint 회귀 보존
-cd /Users/sokol/Desktop/Git/ProjectGrimoire
+cd /Users/sokol/Git/ProjectGrimoire
 bash eval/scripts/eval-runner.sh
 bash .claude/scripts/sensor-adversarial-pre-commit.sh
 ```

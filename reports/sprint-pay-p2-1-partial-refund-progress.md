@@ -226,7 +226,7 @@ grep -rEi 'CERTI_PROJ|brightmall|thermage|inapi' \
 ## §8. 검증 명령
 
 ```bash
-cd /Users/sokol/Desktop/Git/ProjectGrimoire
+cd /Users/sokol/Git/ProjectGrimoire
 
 # PAY-P2-1 회귀 검증
 bash .claude/scripts/sensor-partial-refund.sh
@@ -237,7 +237,7 @@ cd grimoire-server
 npx jest src/application/payment/refund-payment.usecase.spec.ts
 
 # 다른 sprint 회귀 보존
-cd /Users/sokol/Desktop/Git/ProjectGrimoire
+cd /Users/sokol/Git/ProjectGrimoire
 bash eval/scripts/eval-runner.sh
 bash .claude/scripts/sensor-adversarial-pre-commit.sh
 ```

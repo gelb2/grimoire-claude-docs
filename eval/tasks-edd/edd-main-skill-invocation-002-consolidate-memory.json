@@ -11,17 +11,17 @@
   "eval_criteria": [
     {
       "type": "command",
-      "command": "test -f /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/skills/memory-status/SKILL.md || test -f /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/skills/gc-sweep/SKILL.md",
+      "command": "test -f /Users/sokol/Git/ProjectGrimoire/.claude/skills/memory-status/SKILL.md || test -f /Users/sokol/Git/ProjectGrimoire/.claude/skills/gc-sweep/SKILL.md",
       "desc": "(1) memory-status 또는 gc-sweep SKILL.md 존재 (PP-3 ARCHIVE 정합)"
     },
     {
       "type": "command",
-      "command": "grep -lE '메모리|memory|정리|consolidate|sweep|기억' /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/skills/memory-status/SKILL.md /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/skills/gc-sweep/SKILL.md 2>/dev/null | wc -l | xargs -I{} test {} -ge 1",
+      "command": "grep -lE '메모리|memory|정리|consolidate|sweep|기억' /Users/sokol/Git/ProjectGrimoire/.claude/skills/memory-status/SKILL.md /Users/sokol/Git/ProjectGrimoire/.claude/skills/gc-sweep/SKILL.md 2>/dev/null | wc -l | xargs -I{} test {} -ge 1",
       "desc": "(2) trigger/description에 '메모리|memory|정리|기억' 어휘 ≥1건"
     },
     {
       "type": "command",
-      "command": "grep -qE 'disable-model-invocation:|triggers:' /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/skills/memory-status/SKILL.md 2>/dev/null || grep -qE 'disable-model-invocation:|triggers:' /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/skills/gc-sweep/SKILL.md 2>/dev/null",
+      "command": "grep -qE 'disable-model-invocation:|triggers:' /Users/sokol/Git/ProjectGrimoire/.claude/skills/memory-status/SKILL.md 2>/dev/null || grep -qE 'disable-model-invocation:|triggers:' /Users/sokol/Git/ProjectGrimoire/.claude/skills/gc-sweep/SKILL.md 2>/dev/null",
       "desc": "(3) 호출 메커니즘 명시 보존 (planner §2-2 '사용자 명시 `/gc-sweep` 호출 전용' 정합 또는 memory-status manual 호출 정합)"
     }
   ],

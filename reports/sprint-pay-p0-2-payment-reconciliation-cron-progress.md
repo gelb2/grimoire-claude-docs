@@ -240,7 +240,7 @@ export interface PaymentGatewayPort {
 
 **검증 명령**:
 ```bash
-cd /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server
+cd /Users/sokol/Git/ProjectGrimoire/grimoire-server
 test -f src/application/payment/payment-reconciliation.job.ts
 grep -nE '^\s*@Injectable\s*\(' src/application/payment/payment-reconciliation.job.ts
 grep -nE "^\s*@Cron\s*\(" src/application/payment/payment-reconciliation.job.ts
@@ -261,7 +261,7 @@ grep -n "@nestjs/schedule" package.json
 
 **검증 명령**:
 ```bash
-cd /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server
+cd /Users/sokol/Git/ProjectGrimoire/grimoire-server
 grep -nE 'listRecentCheckouts' src/domain/port/outbound/payment-gateway.port.ts
 grep -nE 'listRecentCheckouts' src/adapter/outbound/payment/polar.adapter.ts
 grep -nE 'listRecentCheckouts|since|limit:\s*100' src/application/payment/payment-reconciliation.job.ts
@@ -278,7 +278,7 @@ grep -nE 'listRecentCheckouts' src/application/payment/payment-reconciliation.jo
 
 **검증 명령**:
 ```bash
-cd /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server
+cd /Users/sokol/Git/ProjectGrimoire/grimoire-server
 grep -nE 'pending.*success|boost|completePaymentAtomically' src/application/payment/payment-reconciliation.job.spec.ts
 grep -nE 'refund.*mismatch|refunded.*completed' src/application/payment/payment-reconciliation.job.spec.ts
 grep -nE 'expire|pending.*24h|expirePayment' src/application/payment/payment-reconciliation.job.spec.ts
@@ -299,7 +299,7 @@ npm test -- payment-reconciliation 2>&1 | tail -30
 
 **검증 명령**:
 ```bash
-cd /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server
+cd /Users/sokol/Git/ProjectGrimoire/grimoire-server
 grep -nE "system_reconciliation" src/application/payment/payment-reconciliation.job.ts
 grep -nE 'reconciliation_boost|reconciliation_refund_mismatch|reconciliation_expire' src/application/payment/payment-reconciliation.job.ts
 grep -nE "system_reconciliation" src/application/payment/payment-reconciliation.job.spec.ts
@@ -314,7 +314,7 @@ grep -nE "system_reconciliation" src/application/payment/payment-reconciliation.
 
 **검증 명령**:
 ```bash
-cd /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server
+cd /Users/sokol/Git/ProjectGrimoire/grimoire-server
 grep -nE 'isRunning|locked|lockCheck|이미.*실행' src/application/payment/payment-reconciliation.job.ts
 grep -nE 'concurrent|동시.*실행|이미.*진행|이미.*실행' src/application/payment/payment-reconciliation.job.spec.ts
 ```
@@ -328,12 +328,12 @@ grep -nE 'concurrent|동시.*실행|이미.*진행|이미.*실행' src/applicati
 
 **검증 명령**:
 ```bash
-cat /Users/sokol/Desktop/Git/ProjectGrimoire/eval/tasks/regression-53-payment-reconciliation.json
-ls /Users/sokol/Desktop/Git/ProjectGrimoire/eval/tasks/regression-*.json | wc -l
-ls -la /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/scripts/sensor-payment-reconciliation.sh
-bash /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/scripts/sensor-payment-reconciliation.sh
+cat /Users/sokol/Git/ProjectGrimoire/eval/tasks/regression-53-payment-reconciliation.json
+ls /Users/sokol/Git/ProjectGrimoire/eval/tasks/regression-*.json | wc -l
+ls -la /Users/sokol/Git/ProjectGrimoire/.claude/scripts/sensor-payment-reconciliation.sh
+bash /Users/sokol/Git/ProjectGrimoire/.claude/scripts/sensor-payment-reconciliation.sh
 echo "exit code: $?"
-bash /Users/sokol/Desktop/Git/ProjectGrimoire/eval/scripts/eval-runner.sh 2>&1 | tail -10
+bash /Users/sokol/Git/ProjectGrimoire/eval/scripts/eval-runner.sh 2>&1 | tail -10
 ```
 
 **기대 raw 출력**:
@@ -354,10 +354,10 @@ bash /Users/sokol/Desktop/Git/ProjectGrimoire/eval/scripts/eval-runner.sh 2>&1 |
 
 **검증 명령**:
 ```bash
-cd /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server
+cd /Users/sokol/Git/ProjectGrimoire/grimoire-server
 grep -nE "@Cron\('[^']+'\)" src/application/payment/payment-reconciliation.job.ts
-grep -E 'COST_AUDIT.*reconciliation|cron.*주기|Polar.*rate.*limit' /Users/sokol/Desktop/Git/ProjectGrimoire/reports/COST_AUDIT_REPORT.md 2>/dev/null
-grep -E '§3-5|cron 주기' /Users/sokol/Desktop/Git/ProjectGrimoire/reports/sprint-pay-p0-2-payment-reconciliation-cron-progress.md
+grep -E 'COST_AUDIT.*reconciliation|cron.*주기|Polar.*rate.*limit' /Users/sokol/Git/ProjectGrimoire/reports/COST_AUDIT_REPORT.md 2>/dev/null
+grep -E '§3-5|cron 주기' /Users/sokol/Git/ProjectGrimoire/reports/sprint-pay-p0-2-payment-reconciliation-cron-progress.md
 ```
 
 **기대 raw 출력 (cost-accountant 보고서 도착 시)**:

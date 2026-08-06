@@ -16,7 +16,7 @@
 
 set +u
 
-ROOT="/Users/sokol/Desktop/Git/ProjectGrimoire"
+ROOT="/Users/sokol/Git/ProjectGrimoire"
 CONSTITUTION="$ROOT/.claude/knowledge/red-team-constitution.md"
 PASS=0
 WARN=0
@@ -140,7 +140,7 @@ fi
 # Principle 9 — Stop hook 메모리 절대 규칙
 TODAY=$(date +%Y-%m-%d)
 TODAY_COMPACT="${TODAY//-/}"
-MEMORY_INDEX="$HOME/.claude/projects/-Users-sokol-Desktop-Git-ProjectGrimoire/memory/MEMORY.md"
+MEMORY_INDEX="$HOME/.claude/projects/-Users-sokol-Git-ProjectGrimoire/memory/MEMORY.md"
 HAS_TODAY_COMMITS=$(git -C "$ROOT" log --since="$TODAY 00:00:00" --oneline 2>/dev/null | wc -l | tr -d ' ')
 if [ "$HAS_TODAY_COMMITS" -gt 0 ] && ! grep -q "$TODAY_COMPACT" "$MEMORY_INDEX" 2>/dev/null; then
   check 9 "Stop hook 메모리 박제" "WARN" "오늘 commit 있는데 MEMORY.md 미박제"

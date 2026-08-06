@@ -9,7 +9,7 @@ trap '_rc=$?; bash "$_SENSOR_LOG_DIR/sensor-log.sh" "$_SENSOR_NAME" "$_rc" "" 2>
 
 set -u  # set -e 빼고 각 단계 수동 처리 (실패 시에도 나머지 돌려서 전체 상태 파악)
 START_TIME=$(date +%s)
-cd /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server
+cd /Users/sokol/Git/ProjectGrimoire/grimoire-server
 
 PASS_COUNT=0
 FAIL_COUNT=0

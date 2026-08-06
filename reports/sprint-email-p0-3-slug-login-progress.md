@@ -88,7 +88,7 @@ server (Phase 1) + web (Phase 2) 동시 진행. claude-docs (sensor + eval + sha
 
 **검증 명령**:
 ```bash
-cd /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server
+cd /Users/sokol/Git/ProjectGrimoire/grimoire-server
 grep -nE "@IsOptional.*email|@IsOptional.*slug|@ValidateIf|@IsString.*slug" src/adapter/inbound/http/dto/auth.dto.ts
 grep -nE "email XOR slug|이메일.*슬러그|emailOrSlug" src/adapter/inbound/http/dto/auth.dto.ts
 npx jest -t "LoginDto|email XOR slug|XOR" src/adapter/inbound/http/dto 2>&1 | tail -20
@@ -160,7 +160,7 @@ npx jest -t "AccessLog|access-log" src/application/auth 2>&1 | tail -15
 
 **검증 명령**:
 ```bash
-cd /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server
+cd /Users/sokol/Git/ProjectGrimoire/grimoire-server
 npx jest src/application/auth 2>&1 | grep -E "Tests:|FAIL|email.*로그인" | tail -10
 git diff develop -- src/application/auth/auth.usecase.spec.ts | grep -E "^-.*it\\(" | wc -l   # 기존 it 삭제 0건
 ```
@@ -173,7 +173,7 @@ git diff develop -- src/application/auth/auth.usecase.spec.ts | grep -E "^-.*it\
 
 **검증 명령**:
 ```bash
-cd /Users/sokol/Desktop/Git/ProjectGrimoire
+cd /Users/sokol/Git/ProjectGrimoire
 ls eval/tasks/regression-*.json | wc -l
 cat eval/tasks/regression-59-slug-login.json | python3 -c "import json,sys;d=json.load(sys.stdin);print(len(d['eval_criteria']))"
 ls -la .claude/scripts/sensor-slug-login.sh
@@ -213,7 +213,7 @@ bash eval/scripts/eval-runner.sh 2>&1 | tail -10
 
 **검증 명령**:
 ```bash
-cd /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-web
+cd /Users/sokol/Git/ProjectGrimoire/grimoire-web
 grep -nE "이메일 또는 슬러그|emailOrSlug|EMAIL_OR_SLUG_REGEX" src/app/login/page.tsx
 grep -nE "type=\"text\"" src/app/login/page.tsx
 grep -nE "email\\?:.*string|slug\\?:.*string" src/lib/api.ts
@@ -239,11 +239,11 @@ npm test -- src/app/login src/features/auth 2>&1 | tail -15
 
 **검증 명령**:
 ```bash
-cd /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-web
+cd /Users/sokol/Git/ProjectGrimoire/grimoire-web
 grep -nE "E2E_AUTHOR_SLUG|이메일 또는 슬러그.*fill|getByLabel.*슬러그" e2e/auth.spec.ts
 grep -E "E2E_AUTHOR_SLUG" .env.example
 grep -E "E2E_AUTHOR_SLUG" ../grimoire-server/.env.example
-grep -nE "EMAIL-P0-3.*PASS|slug-login.*PASS" /Users/sokol/Desktop/Git/ProjectGrimoire/reports/VISUAL_CANON_REPORT.md
+grep -nE "EMAIL-P0-3.*PASS|slug-login.*PASS" /Users/sokol/Git/ProjectGrimoire/reports/VISUAL_CANON_REPORT.md
 npx playwright test e2e/auth.spec.ts --grep "slug" 2>&1 | tail -15
 ```
 

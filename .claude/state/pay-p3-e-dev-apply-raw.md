@@ -107,7 +107,7 @@ exploration / shared resource modification without preview.
 ### 4-1. 직접 실행 시도 영역
 
 ```bash
-$ cd /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server && \
+$ cd /Users/sokol/Git/ProjectGrimoire/grimoire-server && \
   DATABASE_URL=$(az containerapp secret list ...) && \
   DATABASE_URL="$DATABASE_URL" npx prisma migrate deploy
 
@@ -127,7 +127,7 @@ PreToolUse:Bash hook error: PreToolUse guard triggered:
 ```bash
 $ echo '{"tool_name":"Bash","tool_input":{"command":"npx prisma migrate deploy"},
         "is_sidechain":true}' | \
-  bash /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/scripts/pretooluse-bash-guard.sh
+  bash /Users/sokol/Git/ProjectGrimoire/.claude/scripts/pretooluse-bash-guard.sh
 
 PreToolUse guard triggered:
 [차단] prisma migrate mutation (deploy/reset)은 grimoire-server agent 영역.
@@ -185,7 +185,7 @@ if 'prisma' in command and ('migrate deploy' in command or 'migrate reset' in co
 사용자 영역 메인 세션 영역에서 직접 Bash 영역 진입:
 
 ```bash
-cd /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server
+cd /Users/sokol/Git/ProjectGrimoire/grimoire-server
 TS=$(date +%s) && IP=$(curl -s ifconfig.me)
 az postgres flexible-server firewall-rule create -g zenith-rg -n grimoire-db-dev \
   --rule-name "pay-p3-e-apply-$TS" --start-ip-address $IP --end-ip-address $IP

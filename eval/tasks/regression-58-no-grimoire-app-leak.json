@@ -5,15 +5,15 @@
   "source_session": "20260503_3 EMAIL-P0-1 sprint — main direct (multi-edit + sensor + regression)",
   "prompt": "EMAIL-P0-1: @grimoire.app (실존하지 않는 가짜 도메인) 코드 박제 0건 강제. (a) grimoire-server/src + scripts + prisma 0건 (b) grimoire-web/src + e2e 0건 (c) sensor-fake-email-leak.sh 신설 (d) login/page.tsx에서 'test@grimoire.app' 0건 (e) e2e/dashboard.spec.ts E2E_AUTHOR_EMAIL 환경변수화 (f) .env.example 박제. 회귀 시 박제 발견하면 즉시 FAIL.",
   "eval_criteria": [
-    {"type": "command", "command": "test -x /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/scripts/sensor-fake-email-leak.sh", "desc": "sensor-fake-email-leak.sh 실행 권한 박제"},
-    {"type": "command", "command": "! grep -rn '@grimoire\\.app' /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/src 2>/dev/null | grep -v '^Binary'", "desc": "grimoire-server/src 박제 0건"},
-    {"type": "command", "command": "! grep -rn '@grimoire\\.app' /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/scripts 2>/dev/null | grep -v '^Binary'", "desc": "grimoire-server/scripts 박제 0건"},
-    {"type": "command", "command": "! grep -rn '@grimoire\\.app' /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/prisma 2>/dev/null | grep -v '^Binary'", "desc": "grimoire-server/prisma 박제 0건"},
-    {"type": "command", "command": "! grep -rn '@grimoire\\.app' /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-web/src 2>/dev/null | grep -v '^Binary'", "desc": "grimoire-web/src 박제 0건"},
-    {"type": "command", "command": "! grep -rn '@grimoire\\.app' /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-web/e2e 2>/dev/null | grep -v '^Binary'", "desc": "grimoire-web/e2e 박제 0건"},
-    {"type": "command", "command": "grep -E 'E2E_AUTHOR_EMAIL' /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-web/e2e/dashboard.spec.ts > /dev/null", "desc": "dashboard.spec.ts E2E_AUTHOR_EMAIL 환경변수화"},
-    {"type": "command", "command": "grep -E 'E2E_AUTHOR_EMAIL' /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-web/.env.example > /dev/null", "desc": ".env.example E2E_AUTHOR_EMAIL 박제"},
-    {"type": "command", "command": "test -f /Users/sokol/Desktop/Git/ProjectGrimoire/research/EMAIL_INTEGRITY_PLAN.md", "desc": "EMAIL_INTEGRITY_PLAN.md 정본 박제"}
+    {"type": "command", "command": "test -x /Users/sokol/Git/ProjectGrimoire/.claude/scripts/sensor-fake-email-leak.sh", "desc": "sensor-fake-email-leak.sh 실행 권한 박제"},
+    {"type": "command", "command": "! grep -rn '@grimoire\\.app' /Users/sokol/Git/ProjectGrimoire/grimoire-server/src 2>/dev/null | grep -v '^Binary'", "desc": "grimoire-server/src 박제 0건"},
+    {"type": "command", "command": "! grep -rn '@grimoire\\.app' /Users/sokol/Git/ProjectGrimoire/grimoire-server/scripts 2>/dev/null | grep -v '^Binary'", "desc": "grimoire-server/scripts 박제 0건"},
+    {"type": "command", "command": "! grep -rn '@grimoire\\.app' /Users/sokol/Git/ProjectGrimoire/grimoire-server/prisma 2>/dev/null | grep -v '^Binary'", "desc": "grimoire-server/prisma 박제 0건"},
+    {"type": "command", "command": "! grep -rn '@grimoire\\.app' /Users/sokol/Git/ProjectGrimoire/grimoire-web/src 2>/dev/null | grep -v '^Binary'", "desc": "grimoire-web/src 박제 0건"},
+    {"type": "command", "command": "! grep -rn '@grimoire\\.app' /Users/sokol/Git/ProjectGrimoire/grimoire-web/e2e 2>/dev/null | grep -v '^Binary'", "desc": "grimoire-web/e2e 박제 0건"},
+    {"type": "command", "command": "grep -E 'E2E_AUTHOR_EMAIL' /Users/sokol/Git/ProjectGrimoire/grimoire-web/e2e/dashboard.spec.ts > /dev/null", "desc": "dashboard.spec.ts E2E_AUTHOR_EMAIL 환경변수화"},
+    {"type": "command", "command": "grep -E 'E2E_AUTHOR_EMAIL' /Users/sokol/Git/ProjectGrimoire/grimoire-web/.env.example > /dev/null", "desc": ".env.example E2E_AUTHOR_EMAIL 박제"},
+    {"type": "command", "command": "test -f /Users/sokol/Git/ProjectGrimoire/research/EMAIL_INTEGRITY_PLAN.md", "desc": "EMAIL_INTEGRITY_PLAN.md 정본 박제"}
   ],
   "threshold": 1.0,
   "runs": 1

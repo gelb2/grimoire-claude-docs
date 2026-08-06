@@ -22,7 +22,7 @@
 
 set -uo pipefail
 
-ROOT="/Users/sokol/Desktop/Git/ProjectGrimoire"
+ROOT="/Users/sokol/Git/ProjectGrimoire"
 USECASE="$ROOT/grimoire-server/src/application/chat/chat.usecase.ts"
 CONTROLLER="$ROOT/grimoire-server/src/adapter/inbound/http/controller/chat.controller.ts"
 

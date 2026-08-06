@@ -75,7 +75,7 @@ npm run build
 echo "[4/5] Prisma 스키마 검증..."
 npx prisma validate
 echo "[5/5] docs 동기화 검증..."
-/Users/sokol/Desktop/Git/ProjectGrimoire/.claude/scripts/sensor-docs-sync.sh
+/Users/sokol/Git/ProjectGrimoire/.claude/scripts/sensor-docs-sync.sh
 echo "=== 검증 통과 ==="
 ```
 
@@ -95,7 +95,7 @@ npm test
 echo "[3/4] 빌드 검증..."
 npm run build
 echo "[4/4] docs 동기화 검증..."
-/Users/sokol/Desktop/Git/ProjectGrimoire/.claude/scripts/sensor-docs-sync.sh
+/Users/sokol/Git/ProjectGrimoire/.claude/scripts/sensor-docs-sync.sh
 echo "=== 검증 통과 ==="
 ```
 

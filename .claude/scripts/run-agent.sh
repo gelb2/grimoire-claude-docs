@@ -12,7 +12,7 @@ AGENT_NAME="${1:?에이전트 이름 필요}"
 PROMPT_FILE="${2:?프롬프트 파일 경로 필요}"
 ALLOWED_TOOLS="${3:?allowedTools 필요}"
 
-PROJECT_DIR="/Users/sokol/Desktop/Git/ProjectGrimoire"
+PROJECT_DIR="/Users/sokol/Git/ProjectGrimoire"
 CLAUDE_BIN="/Users/sokol/.nvm/versions/node/v22.19.0/bin/claude"
 LOG_DIR="$PROJECT_DIR/.launchd-logs"
 MAX_RETRIES=3

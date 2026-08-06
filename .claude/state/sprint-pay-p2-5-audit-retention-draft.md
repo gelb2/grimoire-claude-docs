@@ -236,10 +236,10 @@ export interface MaskingResult {
 
 ## §17. 정본 참조 (file:line)
 
-- `/Users/sokol/Desktop/Git/ProjectGrimoire/research/PAYMENT_AUDIT-2026-05-07.md` §3 L84-85 + §4 P2 P0 L120-123
-- `/Users/sokol/Desktop/Git/ProjectGrimoire/research/PAYMENT_SYSTEM_PLAN.md` §3-3 P2-3 L382-389
-- `/Users/sokol/Desktop/Git/ProjectGrimoire/.claude/state/sprint-pay-p3-e-fk-cascade-draft.md` (1234 lines, 17 섹션 정본)
-- `/Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/prisma/schema.prisma` L448-460 (AdminAuditLog) / L261-273 (WebhookEvent) / L507-518 (WebhookRetryQueue) / L389-404 (AccessLog)
-- `/Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/src/adapter/outbound/persistence/prisma-audit-log.repository.ts` L1-37
-- `/Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/src/application/admin/audit-log.service.ts` L23-45 (PAY-P2-4 정합)
-- `/Users/sokol/Desktop/Git/ProjectGrimoire/.claude/shared-contracts.md` §20 L1215-1283 (AdminAuditLog beforeState/afterState)
+- `/Users/sokol/Git/ProjectGrimoire/research/PAYMENT_AUDIT-2026-05-07.md` §3 L84-85 + §4 P2 P0 L120-123
+- `/Users/sokol/Git/ProjectGrimoire/research/PAYMENT_SYSTEM_PLAN.md` §3-3 P2-3 L382-389
+- `/Users/sokol/Git/ProjectGrimoire/.claude/state/sprint-pay-p3-e-fk-cascade-draft.md` (1234 lines, 17 섹션 정본)
+- `/Users/sokol/Git/ProjectGrimoire/grimoire-server/prisma/schema.prisma` L448-460 (AdminAuditLog) / L261-273 (WebhookEvent) / L507-518 (WebhookRetryQueue) / L389-404 (AccessLog)
+- `/Users/sokol/Git/ProjectGrimoire/grimoire-server/src/adapter/outbound/persistence/prisma-audit-log.repository.ts` L1-37
+- `/Users/sokol/Git/ProjectGrimoire/grimoire-server/src/application/admin/audit-log.service.ts` L23-45 (PAY-P2-4 정합)
+- `/Users/sokol/Git/ProjectGrimoire/.claude/shared-contracts.md` §20 L1215-1283 (AdminAuditLog beforeState/afterState)

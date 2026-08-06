@@ -23,7 +23,7 @@
 
 set +u
 
-ROOT="/Users/sokol/Desktop/Git/ProjectGrimoire"
+ROOT="/Users/sokol/Git/ProjectGrimoire"
 LOG_FILE="$ROOT/.claude/state/loop-detection.jsonl"
 mkdir -p "$(dirname "$LOG_FILE")"
 
@@ -58,7 +58,7 @@ ts = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
 today = ts[:10]
 
 # 박제
-LOG_FILE = '/Users/sokol/Desktop/Git/ProjectGrimoire/.claude/state/loop-detection.jsonl'
+LOG_FILE = '/Users/sokol/Git/ProjectGrimoire/.claude/state/loop-detection.jsonl'
 entry = {
     'ts': ts,
     'date': today,

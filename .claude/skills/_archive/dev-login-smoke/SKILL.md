@@ -55,7 +55,7 @@ cat /tmp/login_resp.json | python3 -m json.tool 2>/dev/null | head -10
 ### Step 2. db-sync 정합성 (드라이런 — 실 동기화 안 함)
 
 ```bash
-cd /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server
+cd /Users/sokol/Git/ProjectGrimoire/grimoire-server
 
 echo "=== --preserve-accounts 옵션 존재 확인 ==="
 grep -n "preserve-accounts" scripts/db-sync.ts | head -3

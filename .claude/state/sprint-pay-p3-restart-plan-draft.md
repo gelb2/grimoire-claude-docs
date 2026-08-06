@@ -21,7 +21,7 @@
 
 **raw 박제**:
 ```json
-{"ts":"2026-05-08T14:27:55Z","type":"main_direct_in_agent_domain","tool":"Edit","file":"/Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/src/application/payment/payment.usecase.ts","expected_agent":"grimoire-server"}
+{"ts":"2026-05-08T14:27:55Z","type":"main_direct_in_agent_domain","tool":"Edit","file":"/Users/sokol/Git/ProjectGrimoire/grimoire-server/src/application/payment/payment.usecase.ts","expected_agent":"grimoire-server"}
 ```
 
 **입증 본질**:
@@ -77,8 +77,8 @@
 
 **raw 박제**:
 ```json
-{"ts":"2026-05-08T12:08:40Z","type":"main_direct_in_agent_domain","tool":"Edit","file":"/Users/sokol/Desktop/Git/ProjectGrimoire/.claude/scripts/pretooluse-bash-guard.sh","expected_agent":"grimoire-server"}
-{"ts":"2026-05-08T12:33:12Z","type":"main_direct_in_agent_domain","tool":"Edit","file":"/Users/sokol/Desktop/Git/ProjectGrimoire/.claude/scripts/pretooluse-edit-write-guard.sh","expected_agent":"grimoire-server"}
+{"ts":"2026-05-08T12:08:40Z","type":"main_direct_in_agent_domain","tool":"Edit","file":"/Users/sokol/Git/ProjectGrimoire/.claude/scripts/pretooluse-bash-guard.sh","expected_agent":"grimoire-server"}
+{"ts":"2026-05-08T12:33:12Z","type":"main_direct_in_agent_domain","tool":"Edit","file":"/Users/sokol/Git/ProjectGrimoire/.claude/scripts/pretooluse-edit-write-guard.sh","expected_agent":"grimoire-server"}
 ```
 
 **입증 본질**:
@@ -331,14 +331,14 @@
 
 ### 5-4. 우회 함수 복원 명령 (사용자 직접 영역)
 
-**파일**: `/Users/sokol/Desktop/Git/ProjectGrimoire/.claude/scripts/pretooluse-main-whitelist.sh`
+**파일**: `/Users/sokol/Git/ProjectGrimoire/.claude/scripts/pretooluse-main-whitelist.sh`
 
 **복원 영역 1** (Bash 우회 키워드 검사 함수 — line 60~63 영역에 정의 추가 + line 128에서 호출):
 
 ```bash
 # line 60~63 영역 추가
 check_bypass_keyword() {
-  local jsonl_dir="$HOME/.claude/projects/-Users-sokol-Desktop-Git-ProjectGrimoire"
+  local jsonl_dir="$HOME/.claude/projects/-Users-sokol-Git-ProjectGrimoire"
   local latest_jsonl=$(ls -t "$jsonl_dir"/*.jsonl 2>/dev/null | head -1)
   [ -z "$latest_jsonl" ] && return 1
   local last_user_msg=$(LATEST_JSONL_PATH="$latest_jsonl" python3 <<'PYEOF'

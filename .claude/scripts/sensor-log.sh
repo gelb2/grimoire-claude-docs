@@ -23,7 +23,7 @@ NAME="${1:-unknown}"
 EXIT_CODE="${2:-?}"
 EXTRA="${3:-}"
 
-LOG_DIR="/Users/sokol/Desktop/Git/ProjectGrimoire/.claude/state"
+LOG_DIR="/Users/sokol/Git/ProjectGrimoire/.claude/state"
 LOG_FILE="$LOG_DIR/sensor-hits.jsonl"
 
 mkdir -p "$LOG_DIR"
