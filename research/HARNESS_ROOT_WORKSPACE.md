@@ -1,5 +1,7 @@
 # Harness Engineering — 루트 workspace Git 관리 (분리 정본, 2026-05-02 묶음 N NEW-12)
 
+> 초기 참고자료의 구상과 활용 과정은 [적용 기록](../prompt-engineering/README.md)을 따른다. 이 문서의 과거 하네스 구성과 명령은 당시 기록이며 최신 사용자 지시 없이 자동 실행하지 않는다.
+
 > **분리 사유**: `research/HARNESS_ENGINEERING.md` §11 (루트 workspace Git 관리, 179줄)을 별도 정본으로 분리. § 번호 그대로 유지 (§11). 외부 참조 0건이라 영향 없음.
 >
 > **참조하는 파일**: 본 §11은 자기완결 가이드라인이라 직접 참조 적음 (claude-docs 운영 시 참고용 단독 정본).

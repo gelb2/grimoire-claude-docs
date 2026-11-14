@@ -24,7 +24,7 @@ ProjectGrimoire 개발 시 차용한 외부 프로젝트와 차용 영역.
 
 ## 관련 정본
 - `research/HARNESS_ENGINEERING.md` §7 (커뮤니티 3대 레포: superpowers / oh-my-claudecode / ouroboros)
-- `prompt-engineering/` 3종 (GMP v2.2 / PRD 생성 / 바이브코딩) — 외부 프로젝트가 아닌 자체 개발
+- `prompt-engineering/`의 GMP·PRD·바이브코딩 자료는 초기 AI 참고자료로 활용했다. [구상과 프로젝트 적용 경로](../prompt-engineering/README.md)를 따른다.
 
 ## 미차용 항목 (보류 결정)
 - **superpowers** 167k⭐ — 일괄 install 금지, `verification-before-completion` 등 선별 이식

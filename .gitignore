@@ -80,3 +80,6 @@ eval/results/baseline.db-journal
 
 # scheduled-tasks MCP 임시 lock (자동 생성, git 추적 외)
 .claude/scheduled_tasks.lock
+
+# 개발 참고책자 원본은 저장소 외부에 보관
+/V1.1 하네스 엔지니어링 완전정복.pdf

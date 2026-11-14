@@ -1,5 +1,7 @@
 # AGENTS.md — `.claude/` 하네스 레이어
 
+> 초기 참고자료의 구상과 활용 과정은 [적용 기록](../prompt-engineering/README.md)을 따른다. 이 문서의 과거 하네스 구성과 명령은 당시 기록이며 최신 사용자 지시 없이 자동 실행하지 않는다.
+
 > 워크스페이스 루트 `CLAUDE.md` §15 (Prompt Engineering 정본) 준수 + Martin Fowler 4 기둥(Constrain·Inform·Verify·Correct) 적용.
 > 본 파일은 멀티 에이전트 오케스트레이션 + 세션 메모리 + Skills/Hooks 정본을 정의한다.
 > **참조 정본**: `research/HARNESS_ENGINEERING.md` (상세 인벤토리 + 패턴 결정 근거).
@@ -164,7 +166,7 @@
 
 | 파일 | 용도 |
 |------|------|
-| `prompt-engineering/GMP-v2.2.md` | 메타 프롬프트 프로토콜 |
+| `prompt-engineering/GMP-v2.2.md` | 요구사항 분해·프롬프트 구조화 참고 |
 | `prompt-engineering/prd-generation-prompt-gmp2.md` | PRD 자동 생성 |
 | `prompt-engineering/vibe-coding-unified-guide.md` | 바이브코딩 통합 가이드 |
 

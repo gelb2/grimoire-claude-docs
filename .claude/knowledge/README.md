@@ -1,5 +1,7 @@
 # .claude/knowledge/ — Progressive Disclosure 지식 베이스
 
+> 초기 참고자료의 구상과 활용 과정은 [적용 기록](../../prompt-engineering/README.md)을 따른다. 이 문서의 과거 하네스 구성과 명령은 당시 기록이며 최신 사용자 지시 없이 자동 실행하지 않는다.
+
 > 에이전트가 필요할 때 Read 도구로 명시 호출해야만 컨텍스트에 들어온다.
 > 자동 로드되지 않는다. CLAUDE.md는 "핵심 지도"로 기능하고, 세부 규칙은 여기에.
 

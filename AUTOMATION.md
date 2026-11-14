@@ -1,5 +1,7 @@
 # AUTOMATION.md — Grimoire 멀티 에이전트 운영 문서
 
+> 초기 참고자료의 구상과 활용 과정은 [적용 기록](prompt-engineering/README.md)을 따른다. 이 문서의 과거 하네스 구성과 명령은 당시 기록이며 최신 사용자 지시 없이 자동 실행하지 않는다.
+
 > 2026-04-15 도입. projectZenith 패턴 차용 + Grimoire 고유 역할(cost-accountant, visual-canon-keeper).
 > 본 문서는 **운영 구조·규칙**(오케스트레이션 / 보고서 흐름 / 센서 대조 / 게이트 / 트러블슈팅)을 정의한다.
 >

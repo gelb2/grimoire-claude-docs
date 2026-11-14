@@ -60,13 +60,13 @@
 
 ---
 
-## 15. 프롬프트 엔지니어링 정본 (필수 참조)
+## 15. 초기 프롬프트 참고자료와 적용 기록
 
-작업 착수 전 반드시 Read하고 시작 — 예외 없음.
+GMP를 AI의 초기 참고자료로 넣고 요구사항·제약·검사 기준을 구조화하는 데 활용했다. 구상과 실제 적용 경로는 [prompt-engineering/README.md](prompt-engineering/README.md)를 읽는다. 아래는 당시 참고자료이며, 현재 실행은 최신 사용자 지시와 README를 따른다.
 
 | 파일 | 핵심 |
 |------|------|
-| `prompt-engineering/GMP-v2.2.md` | 메타 프롬프트 (XML 구조, 이중 앵커, 우선순위 라벨링) |
+| `prompt-engineering/GMP-v2.2.md` | 요구사항 분해·프롬프트 구조화 참고 (XML 구획, 핵심 제약 앞뒤 배치, 우선순위) |
 | `prompt-engineering/prd-generation-prompt-gmp2.md` | PRD 자동 생성 (도메인검증→기능설계→기술설계 핸드오프) |
 | `prompt-engineering/vibe-coding-unified-guide.md` | Phase 0~5 + 서브에이전트 7종 + 작업 프롬프트 11종 |
 

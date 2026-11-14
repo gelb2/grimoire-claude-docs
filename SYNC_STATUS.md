@@ -86,3 +86,13 @@
 - `grimoire-server/TECH_STATUS.md` — 서버 구현 상태
 - `grimoire-web/TECH_STATUS.md` — 웹 구현 상태
 - `docs/api-contract.md` — 전체 API 명세 (정본: server)
+
+
+## 로컬 공개 준비 검증 · 2026-11-13
+
+localhost에서 외부 키 없이 웹 BFF→서버→격리 DB를 연결했다. 가상 계정으로 가입·로그인,
+작품 소유권, 원고 파싱·공개, 독서 상태, 포인트 선물, 테마 공개와 관리자 접근을 검사했다.
+reCAPTCHA 미설정 폼 전송과 메일 UseCase 주입 누락을 수정했다.
+AI·Google·Polar 구독 미설정 요청은 503이며 메일 null 응답은 실제 발송 성공을 뜻하지 않는다.
+웹·API·DB의 격리 Docker 실행도 확인했다. 실제 외부 연동과 최종 공개 후보의 보안·권리 검토는 미완료다.
+공개·원격 게시·클라우드는 변경하지 않았다.
