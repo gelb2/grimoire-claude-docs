@@ -2,7 +2,12 @@
 # sensor-harness-self-diagnose.sh — 책 Ch 23 자가진단 7질문 자동화
 #
 # 책 Ch 23 권장: "3 이상 '아니오'면 쇠퇴 경로 — 즉시 보강"
-# 우리 운영: 매주 자동 실행 + Q4 사용자 보류 결정으로 영구 SKIP (6 질문만 활성)
+# 우리 운영: 매주 자동 실행 + Q4·Q6 영구 SKIP (5 질문만 활성)
+#   - Q4: 모델 개선 여지 측정 — 사용자 명시 보류 (외부 API 의존)
+#   - Q6: 태스크 비용 인지 — cost-tracker.sh producer가 2026-06-01 P2에서 dead 제거됨.
+#         frozen cost-tracker.jsonl(5/2 테스트 stub)을 PASS로 세면 producer 죽은 항목을
+#         거짓 PASS = 정직성 위반 (5/29 사태 동일 클래스) → SKIP 정직 표기.
+#         부활하려면 producer 재구축 필요(별건).
 #
 # 7 질문 매핑:
 #   Q1 작업 시간 70%+ 실제 구현?       → sensor-orchestration-ratio (ratio ≥ 0.5)
@@ -10,16 +15,17 @@
 #   Q3 하네스 수정 효과 수치?          → sensor-eval-trend (regression mean ≥ 0.95)
 #   Q4 모델 개선 여지 측정?            → 사용자 보류 (영구 SKIP)
 #   Q5 CLAUDE.md ↔ 코드 일치?          → instructions-drift-check (exit 0)
-#   Q6 태스크 비용 인지?               → cost-tracker.jsonl (≥ 1건)
+#   Q6 태스크 비용 인지?               → SKIP (cost-tracker 미운영 — 2026-06-01 P2 dead 제거, producer 없음)
 #   Q7 하네스 변경 리뷰?               → sensor-shared-contracts (PASS)
 #
-# Exit 0: 활성 6/6 PASS / Q4 SKIP — 건강 경로
+# Q4·Q6 영구 SKIP (활성 5 질문) — Q4 사용자 보류 / Q6 producer dead
+# Exit 0: 활성 5/5 PASS / Q4·Q6 SKIP — 건강 경로
 # Exit 1: 1~2건 ❌ — 보강 권장
 # Exit 2: 3건 이상 ❌ — 책 Ch 23 쇠퇴 경로 ALERT
 
 set +u
 
-ROOT="/Users/sokol/Desktop/Git/ProjectGrimoire"
+ROOT="/Users/sokol/Git/ProjectGrimoire"
 PASS=0
 FAIL=0
 SKIP=0
@@ -96,14 +102,11 @@ else
   check 5 "CLAUDE.md ↔ 코드 일치" "FAIL" "drift sensor 실패"
 fi
 
-# Q6: 태스크 비용 인지 (cost-tracker.jsonl)
-COST_LOG="$ROOT/.claude/state/cost-tracker.jsonl"
-if [ -s "$COST_LOG" ]; then
-  COUNT=$(wc -l < "$COST_LOG" | tr -d ' ')
-  check 6 "태스크 비용 인지" "PASS" "cost-tracker.jsonl ${COUNT}건 박제"
-else
-  check 6 "태스크 비용 인지" "FAIL" "cost-tracker.jsonl 없음 (BN-#4 미실행)"
-fi
+# Q6: 태스크 비용 인지 — 영구 SKIP (cost-tracker producer dead)
+# 2026-06-01 P2에서 cost-tracker.sh를 dead로 제거. live producer가 없으므로
+# frozen .claude/state/cost-tracker.jsonl(5/2 stub)을 PASS로 세지 않는다.
+# (producer 없는 동결 데이터 = 거짓 건강 신호 = 정직성 위반)
+check 6 "태스크 비용 인지" "SKIP" "cost-tracker 미운영 (2026-06-01 P2 dead 제거, producer 없음 — 부활 시 producer 재구축 별건)"
 
 # Q7: 하네스 변경 리뷰 (sensor-shared-contracts)
 if bash "$ROOT/.claude/scripts/sensor-shared-contracts.sh" >/dev/null 2>&1; then

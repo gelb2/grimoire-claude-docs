@@ -1,6 +1,6 @@
 ---
 name: sensors-overview
-description: 14개 sensor 인벤토리 + sensor-hit-rate-report (silent sensor 진단) 단축 호출. 사용자 명시 호출만 (`/sensors-overview`).
+description: 57개 sensor 인벤토리 + sensor-hit-rate-report (silent sensor 진단) 단축 호출. 사용자 명시 호출만 (`/sensors-overview`).
 disable-model-invocation: true
 allowed-tools: Bash, Read
 effort: low
@@ -17,7 +17,7 @@ owner-skill: ""
 responsibility-note: "sensor 인벤토리 조회 (qa 도메인)"
 ---
 
-# Sensors Overview — 14 sensor 인벤토리 + 진단
+# Sensors Overview — 57 sensor 인벤토리 + 진단
 
 ## 책임 영역 (2026-05-06 묶음 PP-3 박제)
 
@@ -40,7 +40,7 @@ bash eval/scripts/eval-runner.sh tasks/15-sensor-web-pass.json
 bash eval/scripts/eval-runner.sh tasks/22-shared-contracts-integrity.json
 ```
 
-## 14 sensors (2026-04-30 #10 기준)
+## 57 sensors (2026-05-30 기준) — 대표 카테고리 예시 (전체 목록은 `ls .claude/scripts/sensor-*.sh`)
 
 - sensor-server.sh / sensor-web.sh (빌드)
 - sensor-docs-sync.sh (문서 동기화)

@@ -26,7 +26,7 @@
 
 set -u
 
-PROJECT_ROOT="/Users/sokol/Desktop/Git/ProjectGrimoire"
+PROJECT_ROOT="/Users/sokol/Git/ProjectGrimoire"
 COST_TABLE="$PROJECT_ROOT/grimoire-server/docs/ai-cost-table.md"
 LOG_DIR="$PROJECT_ROOT/.claude/state"
 OUTPUT_FILE="$LOG_DIR/cost-margin.jsonl"
@@ -231,7 +231,7 @@ printf '{"ts":"%s","margin_count":%s,"min":%s,"avg":%s,"max":%s,"fail":%s,"warn"
   >> "$OUTPUT_FILE"
 
 # sensor-log 적재
-SENSOR_LOG="/Users/sokol/Desktop/Git/ProjectGrimoire/.claude/scripts/sensor-log.sh"
+SENSOR_LOG="/Users/sokol/Git/ProjectGrimoire/.claude/scripts/sensor-log.sh"
 if [ -x "$SENSOR_LOG" ]; then
   bash "$SENSOR_LOG" "sensor-cost-margin" "$EXIT_CODE" "FAIL=${TOTAL_FAIL:-0} WARN=${TOTAL_WARN:-0} min=${MIN_MARGIN:-0}×" 2>/dev/null || true
 fi

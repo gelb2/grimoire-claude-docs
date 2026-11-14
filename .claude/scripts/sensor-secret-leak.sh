@@ -23,7 +23,7 @@ trap '_rc=$?; bash "$(dirname "$0")/sensor-log.sh" "$(basename "$0" .sh)" "$_rc"
 
 set -u
 
-PROJECT_ROOT="/Users/sokol/Desktop/Git/ProjectGrimoire"
+PROJECT_ROOT="/Users/sokol/Git/ProjectGrimoire"
 REPOS=(
   "$PROJECT_ROOT"
   "$PROJECT_ROOT/grimoire-server"
@@ -75,9 +75,14 @@ scan_repo() {
 
   pushd "$repo" >/dev/null
 
-  # git tracked 파일 목록 (gitignore 처리됨)
-  local tracked
-  tracked=$(git ls-files 2>/dev/null) || { popd >/dev/null; return 0; }
+  # git repo 유효성 확인 (tracked 없으면 skip)
+  git rev-parse --is-inside-work-tree >/dev/null 2>&1 || { popd >/dev/null; return 0; }
+
+  # 2026-07-13 (H-1 이중실행 봉합): xargs -I{} grep {} 안티패턴 제거.
+  #   기존: tracked 파일 수천 개 × 패턴 18종 × 3레포 = grep 프로세스 수만 개 spawn → 28.8s.
+  #   현행: `git grep` = tracked working-tree 파일 배치 검색 (동일 파일집합·동일 ERE/-F 시맨틱) → <1s.
+  #   -I = binary skip (시크릿은 텍스트), -e = 패턴을 옵션으로 오인 방지.
+  #   FAIL/WARN 분류(INTENDED_PATHS_REGEX)·head 캡·자기제외 전부 보존.
 
   # 1) Live secret prefix
   for pattern in "${LIVE_PATTERNS[@]}"; do
@@ -90,7 +95,7 @@ scan_repo() {
         FAIL_COUNT=$((FAIL_COUNT + 1))
         FAIL_HITS+=("[$repo_name] $file:$line  (live: $pattern)")
       fi
-    done < <(echo "$tracked" | xargs -I{} grep -nHE "$pattern" {} 2>/dev/null | head -100 | awk -F: '{print $1":"$2}')
+    done < <(git grep -I -nE -e "$pattern" 2>/dev/null | head -100 | awk -F: '{print $1":"$2}')
   done
 
   # 2) Weak literals
@@ -106,7 +111,7 @@ scan_repo() {
         FAIL_COUNT=$((FAIL_COUNT + 1))
         FAIL_HITS+=("[$repo_name] $file:$line  (weak: $literal)")
       fi
-    done < <(echo "$tracked" | xargs -I{} grep -nHF "$literal" {} 2>/dev/null | head -100 | awk -F: '{print $1":"$2}')
+    done < <(git grep -I -nF -e "$literal" 2>/dev/null | head -100 | awk -F: '{print $1":"$2}')
   done
 
   popd >/dev/null

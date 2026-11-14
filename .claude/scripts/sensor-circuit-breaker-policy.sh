@@ -63,8 +63,8 @@ if ! grep -qE "circuitBreaker.*CircuitBreakerPort" "${POLAR_ADAPTER}"; then
 fi
 
 # 5. polar.adapter.ts execute 래핑 박제 (2 호출점: create + list)
-create_count=$(grep -cE "circuitBreaker\.execute\(.polar:checkouts:create" "${POLAR_ADAPTER}" || echo 0)
-list_count=$(grep -cE "circuitBreaker\.execute\(.polar:checkouts:list" "${POLAR_ADAPTER}" || echo 0)
+create_count=$(grep -cE "circuitBreaker\.execute\(.polar:checkouts:create" "${POLAR_ADAPTER}" 2>/dev/null); create_count=${create_count:-0}
+list_count=$(grep -cE "circuitBreaker\.execute\(.polar:checkouts:list" "${POLAR_ADAPTER}" 2>/dev/null); list_count=${list_count:-0}
 if [ "${create_count}" -lt 1 ] || [ "${list_count}" -lt 1 ]; then
   echo "FAIL [5/10]: polar.adapter circuitBreaker.execute 2 호출점 래핑 (create=${create_count}, list=${list_count})"
   fail_count=$((fail_count + 1))
@@ -95,7 +95,7 @@ if [ ! -f "${SPEC_FILE}" ]; then
   echo "FAIL [8/10]: in-memory-circuit-breaker.adapter.spec.ts 박제 0건"
   fail_count=$((fail_count + 1))
 else
-  spec_count=$(grep -cE "^[[:space:]]+it\(" "${SPEC_FILE}" 2>/dev/null || echo 0)
+  spec_count=$(grep -cE "^[[:space:]]+it\(" "${SPEC_FILE}" 2>/dev/null); spec_count=${spec_count:-0}
   if [ "${spec_count}" -lt 12 ]; then
     echo "FAIL [8/10]: in-memory-circuit-breaker.adapter.spec.ts it 수 부족 (${spec_count} < 12)"
     fail_count=$((fail_count + 1))

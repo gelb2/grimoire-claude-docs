@@ -147,7 +147,7 @@ export class NullSmsAdapter implements SmsServicePort {
 ## §7. 검증 명령
 
 ```bash
-cd /Users/sokol/Desktop/Git/ProjectGrimoire
+cd /Users/sokol/Git/ProjectGrimoire
 
 # PAY-P2-3 사전 작업 회귀 검증
 bash .claude/scripts/sensor-sms-service-port.sh
@@ -158,7 +158,7 @@ cd grimoire-server
 npx jest src/adapter/outbound/sms/null-sms.adapter.spec.ts
 
 # 외부 SDK import 0건 직접 검증
-cd /Users/sokol/Desktop/Git/ProjectGrimoire
+cd /Users/sokol/Git/ProjectGrimoire
 grep -rEi "from ['\"](twilio|@nhncloud|@kakao|aws-sdk/client-sns)" \
   grimoire-server/src/adapter/outbound/sms/ \
   grimoire-server/src/domain/port/outbound/sms-service.port.ts

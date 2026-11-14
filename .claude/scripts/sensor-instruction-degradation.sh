@@ -31,7 +31,7 @@
 # Exit 0: 모든 파일 PASS, Exit 1: WARN 1건 이상, Exit 2: FAIL 1건 이상.
 
 set +u
-ROOT="/Users/sokol/Desktop/Git/ProjectGrimoire"
+ROOT="/Users/sokol/Git/ProjectGrimoire"
 PASS=0
 WARN=0
 FAIL=0
@@ -75,11 +75,13 @@ check_file "$ROOT/.claude/AGENTS.md" 200 ".claude/AGENTS.md"
 check_file "$ROOT/docs/AGENTS.md" 300 "docs/AGENTS.md"
 check_file "$ROOT/.githooks/AGENTS.md" 200 ".githooks/AGENTS.md"
 
-# ── 7 에이전트 .md ──
+# ── 에이전트 .md (동적 카운트/순회 — 2026-05-30 F-3: 7 하드코딩 제거) ──
 echo ""
-echo "── [2/2] 7 에이전트 .md (각 ≤ 300줄) ──"
-for agent in cost-accountant planner qa researcher server visual-canon-keeper web; do
-  check_file "$ROOT/.claude/agents/grimoire-${agent}.md" 300 "grimoire-${agent}.md"
+AGENT_COUNT=$(ls -1 "$ROOT"/.claude/agents/grimoire-*.md 2>/dev/null | wc -l | tr -d ' ')
+echo "── [2/2] ${AGENT_COUNT} 에이전트 .md (각 ≤ 300줄) ──"
+for agent_file in "$ROOT"/.claude/agents/grimoire-*.md; do
+  [ -f "$agent_file" ] || continue
+  check_file "$agent_file" 300 "$(basename "$agent_file")"
 done
 
 # ── 종합 ──

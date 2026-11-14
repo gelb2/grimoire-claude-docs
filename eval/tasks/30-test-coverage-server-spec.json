@@ -5,7 +5,7 @@
   "source_session": "20260502 묶음 M NEW-9 — category 균형 보강",
   "prompt": "CLAUDE.md §6 테스트 전략: 새 UseCase/서비스/파서는 .spec.ts 함께. 본 task는 grimoire-server/src/application/**/*.usecase.ts마다 *.usecase.spec.ts가 존재하는지 검증 (최소 80% 페어).",
   "eval_criteria": [
-    {"type": "command", "command": "T=$(find /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/src/application -name '*.usecase.ts' ! -name '*.spec.ts' 2>/dev/null | wc -l | tr -d ' '); S=$(find /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/src/application -name '*.usecase.spec.ts' 2>/dev/null | wc -l | tr -d ' '); [ $T -eq 0 ] || [ $(awk -v s=$S -v t=$T 'BEGIN{print (s/t >= 0.8) ? 1 : 0}') -eq 1 ]", "desc": "usecase 파일 대비 spec 페어 ≥ 80%"}
+    {"type": "command", "command": "T=$(find /Users/sokol/Git/ProjectGrimoire/grimoire-server/src/application -name '*.usecase.ts' ! -name '*.spec.ts' 2>/dev/null | wc -l | tr -d ' '); S=$(find /Users/sokol/Git/ProjectGrimoire/grimoire-server/src/application -name '*.usecase.spec.ts' 2>/dev/null | wc -l | tr -d ' '); [ $T -eq 0 ] || [ $(awk -v s=$S -v t=$T 'BEGIN{print (s/t >= 0.8) ? 1 : 0}') -eq 1 ]", "desc": "usecase 파일 대비 spec 페어 ≥ 80%"}
   ],
   "threshold": 1.0,
   "runs": 1

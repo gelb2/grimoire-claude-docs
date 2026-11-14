@@ -10,7 +10,7 @@
 # 측정 정의:
 #   각 feedback 파일에 대해 다음 위치에서 참조 카운트 합산:
 #     1. 다른 memory/*.md 파일 (인덱스 MEMORY.md + 세션 기록)
-#     2. /Users/sokol/Desktop/Git/ProjectGrimoire/CLAUDE.md
+#     2. /Users/sokol/Git/ProjectGrimoire/CLAUDE.md
 #     3. PLANNING_GRIMOIRE.md / SYNC_STATUS.md
 #     4. docs/*.md (server + web)
 #     5. research/*.md
@@ -36,8 +36,8 @@
 
 set -u
 
-PROJECT_ROOT="/Users/sokol/Desktop/Git/ProjectGrimoire"
-MEMORY_DIR="/Users/sokol/.claude/projects/-Users-sokol-Desktop-Git-ProjectGrimoire/memory"
+PROJECT_ROOT="/Users/sokol/Git/ProjectGrimoire"
+MEMORY_DIR="/Users/sokol/.claude/projects/-Users-sokol-Git-ProjectGrimoire/memory"
 LOG_DIR="$PROJECT_ROOT/.claude/state"
 OUTPUT_FILE="$LOG_DIR/feedback-promotion-candidates.jsonl"
 

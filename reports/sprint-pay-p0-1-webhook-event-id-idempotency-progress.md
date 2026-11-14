@@ -192,7 +192,7 @@ export interface WebhookEventRepositoryPort {
 
 **검증 명령**:
 ```bash
-cd /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server
+cd /Users/sokol/Git/ProjectGrimoire/grimoire-server
 grep -A 13 'model WebhookEvent' prisma/schema.prisma
 ls prisma/migrations/ | grep webhook_event_idempotency
 npx prisma migrate status   # localhost — "Database schema is up to date" 출력 박제
@@ -209,7 +209,7 @@ psql $DATABASE_URL -c "\d webhook_events"   # 테이블 + 인덱스 + unique 제
 
 **검증 명령**:
 ```bash
-cd /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server
+cd /Users/sokol/Git/ProjectGrimoire/grimoire-server
 grep -nE '^\s*eventId\s*:\s*string' src/domain/port/outbound/payment-gateway.port.ts
 grep -n "headers\['webhook-id'\]\|headers\[\"webhook-id\"\]" src/adapter/outbound/payment/polar.adapter.ts
 npx tsc --noEmit 2>&1 | grep -c 'error TS' | xargs -I{} test {} -eq 0   # 0 errors
@@ -224,7 +224,7 @@ npx tsc --noEmit 2>&1 | grep -c 'error TS' | xargs -I{} test {} -eq 0   # 0 erro
 
 **검증 명령**:
 ```bash
-cd /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server
+cd /Users/sokol/Git/ProjectGrimoire/grimoire-server
 grep -n "findByEventId\|webhookEventRepo" src/application/payment/payment.usecase.ts
 grep -n "duplicate_event" src/application/payment/payment.usecase.ts
 ```
@@ -238,7 +238,7 @@ grep -n "duplicate_event" src/application/payment/payment.usecase.ts
 
 **검증 명령**:
 ```bash
-cd /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server
+cd /Users/sokol/Git/ProjectGrimoire/grimoire-server
 grep -nE 'duplicate event|동일.*event.*두 번|webhook 재전송|중복 webhook' src/application/payment/payment.usecase.spec.ts
 npm test -- payment.usecase 2>&1 | tail -30
 ```
@@ -253,10 +253,10 @@ npm test -- payment.usecase 2>&1 | tail -30
 
 **검증 명령**:
 ```bash
-ls /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/scripts/sensor-payment-idempotency.sh
-bash /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/scripts/sensor-payment-idempotency.sh
+ls /Users/sokol/Git/ProjectGrimoire/.claude/scripts/sensor-payment-idempotency.sh
+bash /Users/sokol/Git/ProjectGrimoire/.claude/scripts/sensor-payment-idempotency.sh
 echo "exit code: $?"
-grep -n "sensor-payment-idempotency\|webhook event id\|멱등성" /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/scripts/sensor-adversarial-pre-commit.sh
+grep -n "sensor-payment-idempotency\|webhook event id\|멱등성" /Users/sokol/Git/ProjectGrimoire/.claude/scripts/sensor-adversarial-pre-commit.sh
 ```
 
 **기대 raw 출력**:
@@ -272,8 +272,8 @@ grep -n "sensor-payment-idempotency\|webhook event id\|멱등성" /Users/sokol/D
 
 **검증 명령**:
 ```bash
-grep -nE '^## 11\..*WebhookEvent|^### 11-' /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/shared-contracts.md
-grep -n 'WebhookEventRepositoryPort\|eventId.*@unique\|findByEventId' /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/shared-contracts.md
+grep -nE '^## 11\..*WebhookEvent|^### 11-' /Users/sokol/Git/ProjectGrimoire/.claude/shared-contracts.md
+grep -n 'WebhookEventRepositoryPort\|eventId.*@unique\|findByEventId' /Users/sokol/Git/ProjectGrimoire/.claude/shared-contracts.md
 ```
 
 **기대 raw 출력**:
@@ -286,9 +286,9 @@ grep -n 'WebhookEventRepositoryPort\|eventId.*@unique\|findByEventId' /Users/sok
 
 **검증 명령**:
 ```bash
-cat /Users/sokol/Desktop/Git/ProjectGrimoire/eval/tasks/regression-52-webhook-event-id-idempotency.json
-ls /Users/sokol/Desktop/Git/ProjectGrimoire/eval/tasks/regression-*.json | wc -l
-bash /Users/sokol/Desktop/Git/ProjectGrimoire/eval/scripts/eval-runner.sh 2>&1 | tail -10
+cat /Users/sokol/Git/ProjectGrimoire/eval/tasks/regression-52-webhook-event-id-idempotency.json
+ls /Users/sokol/Git/ProjectGrimoire/eval/tasks/regression-*.json | wc -l
+bash /Users/sokol/Git/ProjectGrimoire/eval/scripts/eval-runner.sh 2>&1 | tail -10
 ```
 
 **기대 raw 출력**:

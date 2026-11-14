@@ -1,5 +1,8 @@
 # RESEARCH — Competitive Landscape (Live Cache)
 
+> 2026-11-14 재검토: 이 문서는 당시 조사·가설의 기록이다. 현재 커스텀 기능과 코딩 필요 여부는 [작가 공간·독서 화면 재검토](MARKET_REVIEW_2026-11-14.md)를 우선한다. “경쟁자 부재·유일·대체 불가”와 기능 부재 단정은 현행 사실로 인용하지 않는다. 시장 규모·가격·전체 사업성 수치를 이번에 재검증했다는 뜻은 아니다.
+
+
 > **계층**: 🌊 Live — 경쟁사/시장 데이터 캐시
 > **관리자**: `grimoire-researcher` 에이전트
 > **정책**: 매일 Daily Discovery + Freshness Sweep, TTL 14일, Provenance 체인 유지

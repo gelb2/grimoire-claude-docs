@@ -26,7 +26,7 @@
 
 set +u
 
-ROOT="/Users/sokol/Desktop/Git/ProjectGrimoire"
+ROOT="/Users/sokol/Git/ProjectGrimoire"
 LOG_FILE="$ROOT/.claude/state/red-team-data-pending.jsonl"
 mkdir -p "$(dirname "$LOG_FILE")"
 

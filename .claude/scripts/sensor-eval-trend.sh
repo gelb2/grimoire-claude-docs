@@ -18,7 +18,7 @@
 
 set +u
 
-ROOT="/Users/sokol/Desktop/Git/ProjectGrimoire"
+ROOT="/Users/sokol/Git/ProjectGrimoire"
 
 echo "=== sensor-eval-trend (eval 30일 추세) ==="
 echo ""

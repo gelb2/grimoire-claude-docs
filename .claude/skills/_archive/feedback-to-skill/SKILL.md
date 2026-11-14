@@ -40,7 +40,7 @@ esac
 ### Step 2. sensor-feedback-promotion 선행 실행
 
 ```bash
-bash /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/scripts/sensor-feedback-promotion.sh
+bash /Users/sokol/Git/ProjectGrimoire/.claude/scripts/sensor-feedback-promotion.sh
 ```
 
 dry-run 모드면 sensor 결과만 출력하고 종료. 사용자가 PROMOTE 후보 보고 다음 호출에서 특정 파일명 인자 줌.

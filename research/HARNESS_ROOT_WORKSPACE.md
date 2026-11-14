@@ -1,5 +1,7 @@
 # Harness Engineering — 루트 workspace Git 관리 (분리 정본, 2026-05-02 묶음 N NEW-12)
 
+> 초기 참고자료의 구상과 활용 과정은 [적용 기록](../prompt-engineering/README.md)을 따른다. 이 문서의 과거 하네스 구성과 명령은 당시 기록이며 최신 사용자 지시 없이 자동 실행하지 않는다.
+
 > **분리 사유**: `research/HARNESS_ENGINEERING.md` §11 (루트 workspace Git 관리, 179줄)을 별도 정본으로 분리. § 번호 그대로 유지 (§11). 외부 참조 0건이라 영향 없음.
 >
 > **참조하는 파일**: 본 §11은 자기완결 가이드라인이라 직접 참조 적음 (claude-docs 운영 시 참고용 단독 정본).
@@ -13,7 +15,7 @@
 ### 11.1 현재 구조 (실측)
 
 ```
-/Users/sokol/Desktop/Git/ProjectGrimoire/          ← git 아님
+/Users/sokol/Git/ProjectGrimoire/          ← git 아님
 ├── .DS_Store
 ├── .claude/                    ← 에이전트·프롬프트·센서·hook 설정
 ├── .idea/                      ← IntelliJ (로컬)
@@ -45,7 +47,7 @@
 #### 옵션 A: 루트 git init + 서브 레포 gitignore (**추천**)
 
 ```bash
-cd /Users/sokol/Desktop/Git/ProjectGrimoire
+cd /Users/sokol/Git/ProjectGrimoire
 git init -b main
 cat > .gitignore <<'EOF'
 # 서브 레포 (독립 git으로 관리 중)
@@ -136,7 +138,7 @@ gh repo create gelb2/grimoire-workspace --private --source=. --remote=origin --p
 
 ```bash
 # 1) 루트 진입
-cd /Users/sokol/Desktop/Git/ProjectGrimoire
+cd /Users/sokol/Git/ProjectGrimoire
 
 # 2) 기존 서브 repo 건드리지 않는지 확인
 ls -la grimoire-server/.git grimoire-web/.git  # 존재 확인

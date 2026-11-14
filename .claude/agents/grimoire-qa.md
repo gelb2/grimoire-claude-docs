@@ -38,15 +38,15 @@ server + web 2개 레포 전체 테스트·빌드·시각 정본·§0 원가 철
 
 ### 프롬프트 엔지니어링 정본 — 작업 시작 전 반드시 Read
 
-- `/Users/sokol/Desktop/Git/ProjectGrimoire/prompt-engineering/GMP-v2.2.md` — 프롬프트 설계 원칙 (XML 태그, 이중 앵커, Chain-of-Verification)
-- `/Users/sokol/Desktop/Git/ProjectGrimoire/prompt-engineering/vibe-coding-unified-guide.md` — Phase 0~5 + 게이트 체크 + 레이어 구조
+- `/Users/sokol/Git/ProjectGrimoire/prompt-engineering/GMP-v2.2.md` — 프롬프트 설계 원칙 (XML 태그, 이중 앵커, Chain-of-Verification)
+- `/Users/sokol/Git/ProjectGrimoire/prompt-engineering/vibe-coding-unified-guide.md` — Phase 0~5 + 게이트 체크 + 레이어 구조
 
 이 정본들의 원칙(XML 태그 구조, 이중 앵커, 우선순위 라벨 [MUST]/[SHOULD]/[NICE], Chain-of-Verification, 게이트 체크 패턴 등)을 모든 출력물(QA_REPORT, 배포 게이트 판정, 긴급 조치 요청)에 적용한다.
 
 ### 워크스페이스
-- `/Users/sokol/Desktop/Git/ProjectGrimoire/CLAUDE.md` — 전체 규칙, §11 전수검사
-- `/Users/sokol/Desktop/Git/ProjectGrimoire/PLANNING_GRIMOIRE.md` §0
-- `/Users/sokol/Desktop/Git/ProjectGrimoire/SYNC_STATUS.md` — 연결 상태
+- `/Users/sokol/Git/ProjectGrimoire/CLAUDE.md` — 전체 규칙, §11 전수검사
+- `/Users/sokol/Git/ProjectGrimoire/PLANNING_GRIMOIRE.md` §0
+- `/Users/sokol/Git/ProjectGrimoire/SYNC_STATUS.md` — 연결 상태
 
 ### 레포별
 - `grimoire-server/CLAUDE.md`, `TESTING.md`, `TECH_STATUS.md`, `SECURITY.md`, `INFRASTRUCTURE.md`
@@ -77,7 +77,7 @@ cd grimoire-web && node --version && npm --version
 
 ### 2-2. Server 검증
 ```bash
-cd /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server
+cd /Users/sokol/Git/ProjectGrimoire/grimoire-server
 git status
 npm test                # Jest 유닛 + 통합
 npm run build           # TypeScript 컴파일
@@ -87,7 +87,7 @@ npx prisma validate
 
 ### 2-3. Web 검증
 ```bash
-cd /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-web
+cd /Users/sokol/Git/ProjectGrimoire/grimoire-web
 git status
 npm test                # Vitest 유닛
 npx playwright test     # E2E (가능 시)
@@ -269,9 +269,9 @@ diff grimoire-web/docs/design-tokens.md grimoire-server/docs/design-tokens.md
 ## Skills 프로토콜 참조 (상황 매칭 시 Read — ouroboros 방식)
 QA는 실측·검증 전문이라 3개 Skill 모두 자주 해당합니다. 아래 상황 시 해당 SKILL.md를 직접 Read로 로드하세요.
 
-- `/Users/sokol/Desktop/Git/ProjectGrimoire/.claude/skills/production-bug-triage/SKILL.md` — 사용자 증상 보고를 검증할 때 (curl→코드→수치 근거 Chain-of-Verification 3단계)
-- `/Users/sokol/Desktop/Git/ProjectGrimoire/.claude/skills/claude-in-chrome-recovery/SKILL.md` — Chrome MCP 기반 시각 QA 수행 시 복구 프로토콜
-- `/Users/sokol/Desktop/Git/ProjectGrimoire/.claude/skills/macos-tcc-handling/SKILL.md` — 배포 게이트 판정 시 TCC 증상 검증
+- `/Users/sokol/Git/ProjectGrimoire/.claude/skills/production-bug-triage/SKILL.md` — 사용자 증상 보고를 검증할 때 (curl→코드→수치 근거 Chain-of-Verification 3단계)
+- `/Users/sokol/Git/ProjectGrimoire/.claude/skills/claude-in-chrome-recovery/SKILL.md` — Chrome MCP 기반 시각 QA 수행 시 복구 프로토콜
+- `/Users/sokol/Git/ProjectGrimoire/.claude/skills/macos-tcc-handling/SKILL.md` — 배포 게이트 판정 시 TCC 증상 검증
 
 
 ## Shared Contracts 참조 (인터페이스 규약 — 모든 agent 공통)

@@ -11,17 +11,17 @@
   "eval_criteria": [
     {
       "type": "command",
-      "command": "test -f /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/skills/systematic-debugging/SKILL.md",
+      "command": "test -f /Users/sokol/Git/ProjectGrimoire/.claude/skills/systematic-debugging/SKILL.md",
       "desc": "(1) systematic-debugging/SKILL.md 존재"
     },
     {
       "type": "command",
-      "command": "grep -E '원인이 뭐|왜 안 되|이상하게|가끔|재현 어려|여러 곳|근본 원인|root cause|복잡한 버그|디버깅 막힘|버그|디버그|debug' /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/skills/systematic-debugging/SKILL.md | wc -l | xargs -I{} test {} -ge 3",
+      "command": "grep -E '원인이 뭐|왜 안 되|이상하게|가끔|재현 어려|여러 곳|근본 원인|root cause|복잡한 버그|디버깅 막힘|버그|디버그|debug' /Users/sokol/Git/ProjectGrimoire/.claude/skills/systematic-debugging/SKILL.md | wc -l | xargs -I{} test {} -ge 3",
       "desc": "(2) trigger/description에 사용자 어휘 ≥3건 (planner §2-7 trigger 10건 정합)"
     },
     {
       "type": "command",
-      "command": "grep -qE 'disable-model-invocation:|trigger-mode:|triggers:' /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/skills/systematic-debugging/SKILL.md",
+      "command": "grep -qE 'disable-model-invocation:|trigger-mode:|triggers:' /Users/sokol/Git/ProjectGrimoire/.claude/skills/systematic-debugging/SKILL.md",
       "desc": "(3) 호출 메커니즘 명시 보존 (disable-model-invocation 또는 trigger-mode 또는 triggers 필드 존재) — planner §2-7 '의존 체인 + 사용자 명시 호출' 정합"
     }
   ],

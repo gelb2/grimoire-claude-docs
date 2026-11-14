@@ -34,7 +34,7 @@ responsibility-note: "Sprint 진입 전 dev 환경 영역 영역 검증 표준 �
 
 ```bash
 # 5/5 PASS 영역 임계 영역
-bash /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/scripts/sensor-deploy-health.sh dev
+bash /Users/sokol/Git/ProjectGrimoire/.claude/scripts/sensor-deploy-health.sh dev
 ```
 
 **임계 영역**: 5/5 PASS. 1건 이상 FAIL 영역 발견 시 즉시 STOP.
@@ -43,7 +43,7 @@ bash /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/scripts/sensor-deploy-heal
 
 ```bash
 # 환경 변수 + secret 영역 누락 영역 검증
-bash /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/scripts/sensor-azure-env-secret.sh dev
+bash /Users/sokol/Git/ProjectGrimoire/.claude/scripts/sensor-azure-env-secret.sh dev
 ```
 
 **임계 영역**: 누락 0건. 1건 이상 누락 영역 발견 시 즉시 STOP.
@@ -52,7 +52,7 @@ bash /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/scripts/sensor-azure-env-s
 
 ```bash
 # schema 영역 sprint 영역 정합 검증 (PAY-P3-E 영역 등)
-bash /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/scripts/sensor-fk-cascade-policy.sh
+bash /Users/sokol/Git/ProjectGrimoire/.claude/scripts/sensor-fk-cascade-policy.sh
 ```
 
 **임계 영역**: 10/10 PASS (33 FK 매트릭스 4 전략 분포 정합).
@@ -93,7 +93,7 @@ echo "revision: <revision-name> Healthy Active"
 검증 영역 진행 중 발견하는 결함 / 우회 / 거짓 보고 영역 즉시 박제:
 
 ```bash
-bash /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/scripts/incident-log.sh \
+bash /Users/sokol/Git/ProjectGrimoire/.claude/scripts/incident-log.sh \
   dev_health_check {severity} {source} "{description}"
 ```
 

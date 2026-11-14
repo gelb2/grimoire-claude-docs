@@ -33,7 +33,7 @@ from datetime import datetime, timezone
 DAILY_ALERT_KRW = 2000
 MONTHLY_LIMIT_KRW = 50000
 COST_PER_CALL_KRW = 20  # Sonnet 4.6, 2K input + 0.5K output 가정
-COST_LOG = "/Users/sokol/Desktop/Git/ProjectGrimoire/.claude/state/llm-judge-cost.jsonl"
+COST_LOG = "/Users/sokol/Git/ProjectGrimoire/.claude/state/llm-judge-cost.jsonl"
 
 
 def load_today_cost():

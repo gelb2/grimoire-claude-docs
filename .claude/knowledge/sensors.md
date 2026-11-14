@@ -4,7 +4,10 @@
 
 vibe-coding-unified-guide.md의 "증거 기반 보고" 원칙을 Grimoire에서 구현한 검증 인프라.
 
-## 스크립트 목록
+> **⚠️ 정본 = `research/HARNESS_ENGINEERING.md §14.4` (Sensors 전체 인벤토리).**
+> 본 문서는 **대표 센서 4종 + 동작 패턴(2중 검증·CoV)** 설명용 부분 발췌다. 센서 개수·전체 목록은 §14.4가 단일 정본이며, 본 표는 카운트 정본이 아니다 (드리프트 방지: 신규 센서 추가 시 §14.4만 갱신 — `bash .claude/scripts/instructions-drift-check.sh`가 §14.4 ↔ 실측 대조). 전체 분류(INJECTABLE/GUARDED/EXISTENCE/EXTERNAL/STUB)는 `bash .claude/scripts/sensor-selftest.sh --list`로 실측.
+
+## 대표 스크립트 (전체 목록 아님 — §14.4 참조)
 
 | 스크립트 | 검증 대상 | 단계 | exit 0 조건 |
 |---------|----------|------|-------------|
@@ -63,11 +66,14 @@ exit code 0이 아니면 배포 차단. raw stdout을 reports/DEV_REPORT.md / re
 
 ## 현재 미도입 센서 (TODO)
 
-- `sensor-forbidden-words.sh` — 금지어 grep (Zenith 패턴)
-- `sensor-security-gate.sh` — JwtAuthGuard/localStorage/BFF 일괄 검증
+- `sensor-forbidden-words.sh` — 금지어 grep (Zenith 패턴) — 미도입
+- ~~`sensor-security-gate.sh`~~ — **도입 완료** (2026-04-17, 위 대표 표 참조). 본 항목 superseded.
+
+> 도입 현황 단일 정본 = §14.4. 본 "미도입" 목록은 §14.4 대비 갭만 기록한다.
 
 ## 관련 문서
 
+- `research/HARNESS_ENGINEERING.md` §14.4 — **Sensors 전체 인벤토리 정본**
 - `AUTOMATION.md` §3 센서 시스템
 - `prompt-engineering/GMP-v2.2.md` §PHASE_3 CoV 기법
 - `prompt-engineering/vibe-coding-unified-guide.md` Phase 5 게이트 체크

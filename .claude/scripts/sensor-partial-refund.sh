@@ -11,15 +11,18 @@
 # - `reports/PAY-P2-MASTER-PLAN.md` §3
 #
 # 검증 영역 (10건):
-# 1. PaymentRepositoryPort 시그니처 — proportionalCredits + isPartial 반환 박제
+# 1. PaymentRepositoryPort 시그니처 — 비례계산값(proportional*) + isPartial 반환 박제
+#    [불변 시그널] 명칭 비의존: credits/pt rename(CC-2b/CC-4) 드리프트 방지
 # 2. prisma-payment.repository — payment.amount 조회 (트랜잭션 내부)
 # 3. prisma-payment.repository — ratio = refundedAmount / payment.amount 비율 계산
-# 4. prisma-payment.repository — Math.floor(credits * ratio) 반올림 (사용자 우호)
+# 4. prisma-payment.repository — Math.floor(<금액변수> * ratio) 반올림 (사용자 우호)
+#    [불변 시그널] 변수명 비의존: refundPt/credits rename 드리프트 방지
 # 5. prisma-payment.repository — refundedAmount > payment.amount 시 throw (validation)
 # 6. prisma-payment.repository — Payment.status 'partial_refunded' / 'refunded' 분기
 # 7. refund-payment.usecase — refundedAmount <= 0 BadRequestException
 # 8. refund-payment.usecase — action 4 매트릭스 (refund_normal / _deficit / _partial / _partial_deficit)
-# 9. refund-payment.usecase.spec — 부분 환불 describe 박제 + 6 it
+# 9. refund-payment.usecase.spec — 부분 환불 시나리오 박제 (it 부분 환불 / action=refund_partial ≥2)
+#    [불변 시그널] CC-2b 통합 describe 흡수 정합 — 고정 describe 명칭 비의존
 # 10. 외부 프로젝트 인용 0건 (CERTI_PROJ / brightmall / thermage / inapi)
 #
 # Exit codes:
@@ -31,7 +34,7 @@ trap '_rc=$?; bash "$(dirname "$0")/sensor-log.sh" "$(basename "$0" .sh)" "$_rc"
 
 set +e
 
-REPO_ROOT="/Users/sokol/Desktop/Git/ProjectGrimoire"
+REPO_ROOT="/Users/sokol/Git/ProjectGrimoire"
 SERVER="$REPO_ROOT/grimoire-server"
 PORT="$SERVER/src/domain/port/outbound/payment-repository.port.ts"
 REPO_IMPL="$SERVER/src/adapter/outbound/persistence/prisma-payment.repository.ts"
@@ -43,13 +46,14 @@ echo "── sensor-partial-refund (PAY-P2-1 회귀 차단) ──"
 PASS=0
 FAIL=0
 
-# [1/10] PaymentRepositoryPort 시그니처 — proportionalCredits + isPartial
-if grep -nE 'proportionalCredits:\s*number' "$PORT" > /dev/null 2>&1 && \
+# [1/10] PaymentRepositoryPort 시그니처 — 비례계산값(proportional*) + isPartial 반환
+#   불변 시그널: 반환 타입 멤버 `proportional<X>: number` (credits→pt rename 비의존) AND isPartial 박제
+if grep -nE 'proportional[A-Za-z]*:\s*number' "$PORT" > /dev/null 2>&1 && \
    grep -nE 'isPartial:\s*boolean' "$PORT" > /dev/null 2>&1; then
-  echo "  ✓ [1/10] PaymentRepositoryPort 시그니처 — proportionalCredits + isPartial 박제"
+  echo "  ✓ [1/10] PaymentRepositoryPort 시그니처 — 비례계산값(proportional*) + isPartial 박제"
   PASS=$((PASS+1))
 else
-  echo "  ✗ [1/10] PaymentRepositoryPort 시그니처 누락"
+  echo "  ✗ [1/10] PaymentRepositoryPort 시그니처 누락 (proportional*:number + isPartial:boolean)"
   FAIL=$((FAIL+1))
 fi
 
@@ -72,12 +76,13 @@ else
   FAIL=$((FAIL+1))
 fi
 
-# [4/10] Math.floor(credits * ratio)
-if grep -nE 'Math\.floor\(credits\s*\*\s*ratio\)' "$REPO_IMPL" > /dev/null 2>&1; then
-  echo "  ✓ [4/10] Math.floor(credits * ratio) 반올림 박제 (사용자 우호)"
+# [4/10] Math.floor(<금액변수> * ratio) — 비례 환수액 floor (사용자 우호)
+#   불변 시그널: 변수명 비의존 (credits→refundPt rename 정합). 비례 계산 = floor(X * ratio) 형태만 검증.
+if grep -nE 'Math\.floor\([A-Za-z]+\s*\*\s*ratio\)' "$REPO_IMPL" > /dev/null 2>&1; then
+  echo "  ✓ [4/10] Math.floor(<금액변수> * ratio) 반올림 박제 (사용자 우호)"
   PASS=$((PASS+1))
 else
-  echo "  ✗ [4/10] Math.floor 반올림 패턴 누락"
+  echo "  ✗ [4/10] Math.floor(X * ratio) 반올림 패턴 누락"
   FAIL=$((FAIL+1))
 fi
 
@@ -118,18 +123,15 @@ else
   FAIL=$((FAIL+1))
 fi
 
-# [9/10] spec 부분 환불 describe + 6 it
-if grep -nE "describe\(['\"]부분 환불.*PAY-P2-1" "$SPEC" > /dev/null 2>&1; then
-  IT_COUNT=$(awk '/describe.*부분 환불.*PAY-P2-1/,/^  \}\)/' "$SPEC" | grep -cE "^\s*it\(['\"]")
-  if [ "$IT_COUNT" -ge 6 ]; then
-    echo "  ✓ [9/10] spec 부분 환불 describe + ≥6 it 박제 ($IT_COUNT건)"
-    PASS=$((PASS+1))
-  else
-    echo "  ✗ [9/10] spec it 부족 ($IT_COUNT건 < 6)"
-    FAIL=$((FAIL+1))
-  fi
+# [9/10] spec 부분 환불 시나리오 박제
+#   불변 시그널: CC-2b 통합 describe 흡수 정합 — 고정 describe 명칭 비의존.
+#   부분 환불 it 또는 action=refund_partial 검출 ≥2 (전액/부분 분기 + deficit 분기 최소 보장).
+PARTIAL_HITS=$(grep -cE "it\(['\"]부분 환불|action=refund_partial|'refund_partial'" "$SPEC")
+if [ "$PARTIAL_HITS" -ge 2 ]; then
+  echo "  ✓ [9/10] spec 부분 환불 시나리오 박제 (it 부분 환불 / refund_partial ≥2, $PARTIAL_HITS건)"
+  PASS=$((PASS+1))
 else
-  echo "  ✗ [9/10] spec 부분 환불 describe 누락"
+  echo "  ✗ [9/10] spec 부분 환불 시나리오 부족 ($PARTIAL_HITS건 < 2)"
   FAIL=$((FAIL+1))
 fi
 

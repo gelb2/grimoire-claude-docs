@@ -19,9 +19,9 @@
 
 set -uo pipefail
 
-ROOT="/Users/sokol/Desktop/Git/ProjectGrimoire"
+ROOT="/Users/sokol/Git/ProjectGrimoire"
 SKILLS_DIR="$ROOT/.claude/skills"
-JSONL_DIR="$HOME/.claude/projects/-Users-sokol-Desktop-Git-ProjectGrimoire"
+JSONL_DIR="$HOME/.claude/projects/-Users-sokol-Git-ProjectGrimoire"
 LOG_FILE="$ROOT/.claude/state/skill-invocation-rate.jsonl"
 
 mkdir -p "$(dirname "$LOG_FILE")"

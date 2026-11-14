@@ -21,7 +21,7 @@ PAY-P3-C 사전 dedup 게이트 박제 완료 — jest 640/640 PASS (+6 it 회�
 | Node version | v22.19.0 PASS |
 | npm version | 10.9.3 PASS |
 | OS | Darwin 25.4.0 |
-| 작업 디렉토리 | `/Users/sokol/Desktop/Git/ProjectGrimoire` |
+| 작업 디렉토리 | `/Users/sokol/Git/ProjectGrimoire` |
 
 ---
 
@@ -238,7 +238,7 @@ PASS: 65 / TOTAL: 66 / FAIL: 1
 가중 점수 (TaskFlow 5차원): 0.9949 (n=66)
   - functional   : 0.9949 (n=65)
   - security     : 1.0 (n=1)
-[기록] baseline.csv + /Users/sokol/Desktop/Git/ProjectGrimoire/eval/results/2026-05-09-14-36-36/{summary.json,details.jsonl}
+[기록] baseline.csv + /Users/sokol/Git/ProjectGrimoire/eval/results/2026-05-09-14-36-36/{summary.json,details.jsonl}
 ```
 
 ### 본 sprint 직접 정합 영역

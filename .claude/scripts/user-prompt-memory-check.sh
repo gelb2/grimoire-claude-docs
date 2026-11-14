@@ -2,8 +2,8 @@
 # UserPromptSubmit 훅 — ProjectGrimoire
 # 사용자 메시지마다 경량 체크. 30분 간격, 커밋 5개 이상 + 메모리 2시간 이상 미갱신 시 리마인더.
 
-MEMORY_DIR="$HOME/.claude/projects/-Users-sokol-Desktop-Git-ProjectGrimoire/memory"
-PROJECT_DIR="/Users/sokol/Desktop/Git/ProjectGrimoire"
+MEMORY_DIR="$HOME/.claude/projects/-Users-sokol-Git-ProjectGrimoire/memory"
+PROJECT_DIR="/Users/sokol/Git/ProjectGrimoire"
 REPOS="grimoire-server grimoire-web grimoire-ios"
 MARKER_FILE="/tmp/grimoire_memory_last_remind"
 

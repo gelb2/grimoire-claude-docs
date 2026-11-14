@@ -1,5 +1,7 @@
 # .claude/knowledge/ — Progressive Disclosure 지식 베이스
 
+> 초기 참고자료의 구상과 활용 과정은 [적용 기록](../../prompt-engineering/README.md)을 따른다. 이 문서의 과거 하네스 구성과 명령은 당시 기록이며 최신 사용자 지시 없이 자동 실행하지 않는다.
+
 > 에이전트가 필요할 때 Read 도구로 명시 호출해야만 컨텍스트에 들어온다.
 > 자동 로드되지 않는다. CLAUDE.md는 "핵심 지도"로 기능하고, 세부 규칙은 여기에.
 
@@ -15,8 +17,8 @@
 | 파일 | 원 위치 | 용도 | 독자 |
 |------|---------|------|------|
 | `README.md` | 신규 | 이 디렉토리 설명 + 계층 원칙 | 전 에이전트 |
-| `agent-system.md` | CLAUDE.md §14 상세 | 에이전트 7개 인벤토리 + 오케스트레이션 + 정본 매핑 (역할 개요) | planner, qa |
-| `agent-interaction-matrix.md` (2026-04-26 신설) | research §8.8 명시 TODO | 7×7 핸드오프 매트릭스 + 산출물 정합 + 트리거 규칙 + 금지 조합 | 전 에이전트 (특히 planner/qa) |
+| `agent-system.md` | CLAUDE.md §14 상세 | 에이전트 **10개 (7 핵심 + 3 메타)** 인벤토리 + 오케스트레이션 + 정본 매핑 (역할 개요) | planner, qa |
+| `agent-interaction-matrix.md` (2026-04-26 신설) | research §8.8 명시 TODO | **7 핵심** 에이전트 7×7 핸드오프 매트릭스 + 산출물 정합 + 트리거 규칙 + 금지 조합 (도메인 작업 흐름 정본 — 3 메타는 agent-system.md 참조) | 전 에이전트 (특히 planner/qa) |
 | `sensors.md` | 신규 | 센서 스크립트 사용법 + dev/qa 대조 규칙 | server, web, qa |
 | `book-harness-engineering-completion.md` (2026-04-30 #10 D1 신설) | 책 「하네스 엔지니어링 완전 정복」 Ch 08+15+16 학습 박제 | 분할 정본 + EDD + shared-contracts 적용 패턴 정본 + 운영 데이터 누적 (L2) | 전 에이전트 (자가 검증 시) |
 | `visual-canon-inventory.md` (2026-04-30 Phase B 분할) | grimoire-visual-canon-keeper.md §2~§3 분리 | 사슴악마 정본 4 영역 인벤토리 + 6 카테고리 불일치 (Critical/High/Medium/Low) | visual-canon-keeper, web |

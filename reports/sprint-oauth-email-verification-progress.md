@@ -149,7 +149,7 @@ grep -rEi 'CERTI_PROJ|brightmall|thermage|inapi' \
 ## §7. 검증 명령
 
 ```bash
-cd /Users/sokol/Desktop/Git/ProjectGrimoire
+cd /Users/sokol/Git/ProjectGrimoire
 
 # 본 sprint 회귀 검증
 bash .claude/scripts/sensor-oauth-email-verification.sh
@@ -159,7 +159,7 @@ bash eval/scripts/eval-runner.sh tasks/regression-60-oauth-email-verification.js
 cd grimoire-server && npx jest src/application/auth/auth.usecase.spec.ts
 
 # 다른 sprint 회귀 보존 검증
-cd /Users/sokol/Desktop/Git/ProjectGrimoire
+cd /Users/sokol/Git/ProjectGrimoire
 bash eval/scripts/eval-runner.sh
 bash .claude/scripts/sensor-adversarial-pre-commit.sh
 ```

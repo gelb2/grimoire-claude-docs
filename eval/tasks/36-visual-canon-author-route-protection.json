@@ -5,7 +5,7 @@
   "source_session": "20260502 묶음 P NEW-19 — visual_canon 카테고리 균형 보강",
   "prompt": "(a) [author] 동적 라우트가 web에 존재 (작가별 공간) (b) 모든 시각 정본 sensor가 작가 본문 인용 금지 박제 (CLAUDE.md §1 + visual-canon-keeper §0).",
   "eval_criteria": [
-    {"type": "command", "command": "find /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-web/src/app/\\[author\\] -name 'page.tsx' 2>/dev/null | wc -l | tr -d ' ' | xargs -I{} test {} -ge 1", "desc": "[author] 동적 라우트 ≥1 page.tsx"},
+    {"type": "command", "command": "find /Users/sokol/Git/ProjectGrimoire/grimoire-web/src/app/\\[author\\] -name 'page.tsx' 2>/dev/null | wc -l | tr -d ' ' | xargs -I{} test {} -ge 1", "desc": "[author] 동적 라우트 ≥1 page.tsx"},
     {"type": "grep", "target": ".claude/agents/grimoire-visual-canon-keeper.md", "pattern": "작가 본문 인용|작가 콘텐츠|작가 본문 읽기", "min": 1, "desc": "VCK agent에 작가 본문 보호 박제"},
     {"type": "grep", "target": "CLAUDE.md", "pattern": "작가 콘텐츠|소설 콘텐츠|소설 본문", "min": 1, "desc": "CLAUDE.md에 작가 콘텐츠 보호 박제"}
   ],

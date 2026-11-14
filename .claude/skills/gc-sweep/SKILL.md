@@ -33,7 +33,7 @@ responsibility-note: "인프라 garbage collection (server 도메인)"
 
 ## 동기 (Fowler "Requisite Variety" 갭 해소)
 
-ProjectGrimoire는 9 skills / 9 sensors / 8 hooks / 7 agents / 7 prompts / 3 knowledge / 50+ memory 파일을 보유. 시간이 지나면 미참조·미발동 자산이 누적되어:
+ProjectGrimoire는 26 skills(현역 + 9 archive) / 57 sensors / 10 hooks(이벤트) / 10 agents(7 핵심 + 3 메타) / 7 prompts / 9 knowledge / 100+ memory 파일을 보유. 시간이 지나면 미참조·미발동 자산이 누적되어:
 
 - LLM 컨텍스트 잡음 증가 (sshh.io 임계값 150~200 instructions 위협)
 - 신규 자산 추가 시 충돌 위험
@@ -44,7 +44,7 @@ ProjectGrimoire는 9 skills / 9 sensors / 8 hooks / 7 agents / 7 prompts / 3 kno
 ## 7 카테고리 검사
 
 ### 1. Skills 미참조 (`.claude/skills/<name>/SKILL.md`)
-- 9개 skill 중 다음 중 어디에도 참조 안 됨: 다른 SKILL.md / agent .md / hook 스크립트 / settings.json / memory/ / research/HARNESS_ENGINEERING.md
+- 26개 현역 skill(+ `_archive/` 9건) 중 다음 중 어디에도 참조 안 됨: 다른 SKILL.md / agent .md / hook 스크립트 / settings.json / memory/ / research/HARNESS_ENGINEERING.md
 - 후보 식별: `grep -rn "skills/<name>" .claude/ research/ memory/ 2>/dev/null` 결과 0건
 
 ### 2. Sensors silent (`.claude/scripts/sensor-*.sh`)
@@ -60,11 +60,11 @@ ProjectGrimoire는 9 skills / 9 sensors / 8 hooks / 7 agents / 7 prompts / 3 kno
 - MEMORY.md 인덱스에는 있지만 실제 grep 결과 신규 사용 0건
 
 ### 5. Scripts 고아 (`.claude/scripts/*.sh`)
-- 22개 script 중 다음 중 어디에도 호출 안 됨: settings.json / launchd plist / 다른 script / Makefile / 문서
+- 86개 script(sensor 57 포함) 중 다음 중 어디에도 호출 안 됨: settings.json / launchd plist / 다른 script / Makefile / 문서
 - `grep -rn "scripts/<name>.sh" .claude/ Makefile 2>/dev/null` 결과 0건
 
 ### 6. Agents 미사용 (`.claude/agents/*.md`)
-- 7 agent 중 직전 30일간 Task tool 호출 이력 0회
+- 10 agent(7 핵심 + 3 메타) 중 직전 30일간 Task tool 호출 이력 0회
 - `~/.claude/projects/.../*.jsonl` 의 subagent_type 필드 grep
 
 ### 7. Prompts 고아 (`.claude/prompts/*.txt`)

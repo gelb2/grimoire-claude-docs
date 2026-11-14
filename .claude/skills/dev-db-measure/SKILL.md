@@ -118,7 +118,7 @@ unset DATABASE_URL
 측정 영역 진행 중 발견하는 결함 / 우회 / 거짓 보고 영역 즉시 박제:
 
 ```bash
-bash /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/scripts/incident-log.sh \
+bash /Users/sokol/Git/ProjectGrimoire/.claude/scripts/incident-log.sh \
   dev_db_measure {severity} {source} "{description}"
 ```
 

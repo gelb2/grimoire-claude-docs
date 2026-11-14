@@ -624,10 +624,10 @@ I Phase(server Generator 구현) 착수 전 **모두 충족 필수**. **현황(2
 
 ## §19. 정본 참조 (file:line)
 
-- `/Users/sokol/Desktop/Git/ProjectGrimoire/research/CREDIT_PRICING_OVERHAUL_PLAN.md` §8 (L219-330 — §8-1~§8-8 골격·수치 정본 v6)
-- `/Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/prisma/schema.prisma` L15-62(Author) / L137-146(CreditLog) / L211-221(Subscription=팔로우) / L243-257(Payment) / L294-319(ChatSession/ChatMessage) / L388-395(SystemSetting) / L442-458(AnalysisReport) / L481-514(ReconciliationCheckpoint/RefundLog)
-- `/Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/docs/ai-cost-table.md` (§2·§3 — cost-accountant 개정 영역, 본 Draft 수정 0건)
-- `/Users/sokol/Desktop/Git/ProjectGrimoire/.claude/shared-contracts.md` §7 L274-294(ANALYSIS_CREDIT_COST) / §13 L595-664(RefundLog deficit 패턴) / §29 L2225~(마지막 섹션 → §30 후속)
-- `/Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/ADR.md` ADR-001(트랜잭션) / ADR-007(FKCascadePolicy) / ADR-011(UserSoftDelete) — ADR-012 후속
-- `/Users/sokol/Desktop/Git/ProjectGrimoire/.claude/state/sprint-pay-p2-5-audit-retention-draft.md` (17 섹션 구조 정본)
-- `/Users/sokol/Desktop/Git/ProjectGrimoire/.claude/state/sprint-pay-p3-h-circuit-breaker-draft.md` (17 섹션 구조 정본)
+- `/Users/sokol/Git/ProjectGrimoire/research/CREDIT_PRICING_OVERHAUL_PLAN.md` §8 (L219-330 — §8-1~§8-8 골격·수치 정본 v6)
+- `/Users/sokol/Git/ProjectGrimoire/grimoire-server/prisma/schema.prisma` L15-62(Author) / L137-146(CreditLog) / L211-221(Subscription=팔로우) / L243-257(Payment) / L294-319(ChatSession/ChatMessage) / L388-395(SystemSetting) / L442-458(AnalysisReport) / L481-514(ReconciliationCheckpoint/RefundLog)
+- `/Users/sokol/Git/ProjectGrimoire/grimoire-server/docs/ai-cost-table.md` (§2·§3 — cost-accountant 개정 영역, 본 Draft 수정 0건)
+- `/Users/sokol/Git/ProjectGrimoire/.claude/shared-contracts.md` §7 L274-294(ANALYSIS_CREDIT_COST) / §13 L595-664(RefundLog deficit 패턴) / §29 L2225~(마지막 섹션 → §30 후속)
+- `/Users/sokol/Git/ProjectGrimoire/grimoire-server/ADR.md` ADR-001(트랜잭션) / ADR-007(FKCascadePolicy) / ADR-011(UserSoftDelete) — ADR-012 후속
+- `/Users/sokol/Git/ProjectGrimoire/.claude/state/sprint-pay-p2-5-audit-retention-draft.md` (17 섹션 구조 정본)
+- `/Users/sokol/Git/ProjectGrimoire/.claude/state/sprint-pay-p3-h-circuit-breaker-draft.md` (17 섹션 구조 정본)

@@ -14,7 +14,7 @@
 
 set -u
 
-ROOT="/Users/sokol/Desktop/Git/ProjectGrimoire"
+ROOT="/Users/sokol/Git/ProjectGrimoire"
 CONTRACTS="$ROOT/.claude/shared-contracts.md"
 REPORTS_DIR="$ROOT/reports"
 TODAY=$(date "+%Y-%m-%d")

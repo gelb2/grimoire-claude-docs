@@ -18,7 +18,7 @@
 
 set +u
 
-ROOT="/Users/sokol/Desktop/Git/ProjectGrimoire"
+ROOT="/Users/sokol/Git/ProjectGrimoire"
 LOG_FILE="$ROOT/.claude/state/loop-detection.jsonl"
 TODAY=$(date -u +"%Y-%m-%d")
 
@@ -65,7 +65,7 @@ print(f"오늘 Edit/Write 통계: {total_files} 파일 / {total_edits} 회")
 top5 = sorted(counts.items(), key=lambda x: -x[1])[:5]
 print(f"\n── Top 5 (편집 횟수) ──")
 for f, c in top5:
-    fname = f.replace('/Users/sokol/Desktop/Git/ProjectGrimoire/', '')
+    fname = f.replace('/Users/sokol/Git/ProjectGrimoire/', '')
     if c >= 10:
         print(f"  ❌ {c:3d}회  {fname}  (≥10 둠 루프 명백)")
     elif c >= 5:

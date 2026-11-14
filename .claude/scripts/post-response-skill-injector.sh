@@ -18,7 +18,7 @@
 
 set -uo pipefail
 
-ROOT="/Users/sokol/Desktop/Git/ProjectGrimoire"
+ROOT="/Users/sokol/Git/ProjectGrimoire"
 LOG_FILE="$ROOT/.claude/state/post-response-skill-trigger.jsonl"
 mkdir -p "$(dirname "$LOG_FILE")"
 

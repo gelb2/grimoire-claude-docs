@@ -5,8 +5,8 @@
 trap '_rc=$?; bash "$(dirname "$0")/sensor-log.sh" "$(basename "$0" .sh)" "$_rc" "" 2>/dev/null || true' EXIT
 
 set -euo pipefail
-SERVER="/Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server"
-WEB="/Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-web"
+SERVER="/Users/sokol/Git/ProjectGrimoire/grimoire-server"
+WEB="/Users/sokol/Git/ProjectGrimoire/grimoire-web"
 FAIL=0
 
 echo "=== docs 동기화 검증 ==="

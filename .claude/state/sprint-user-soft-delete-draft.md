@@ -985,18 +985,18 @@ echo "PASS: USER-SOFT-DELETE Soft delete 패턴 + GDPR 익명화 + 30일 cron �
 
 ## §19 정본 참조 (file:line)
 
-- `/Users/sokol/Desktop/Git/ProjectGrimoire/.claude/state/sprint-user-soft-delete-candidate.md` (431 lines, 선행 candidate 영역, 5/9 박제) — §0~§3 + §11 + §13 + §14 + §15 영역 정합
-- `/Users/sokol/Desktop/Git/ProjectGrimoire/.claude/state/sprint-pay-p3-e-fk-cascade-draft.md` §0-1 + §2-2 + §2-3 + §6-4 + §11-5 — PAY-P3-E sprint Initializer 영역 사용자 결정 박제 정합
-- `/Users/sokol/Desktop/Git/ProjectGrimoire/.claude/state/sprint-pay-p2-5-audit-retention-draft.md` (PAY-P2-5 정본 구조 차용, 17 섹션 정합)
-- `/Users/sokol/Desktop/Git/ProjectGrimoire/.claude/state/sprint-pay-p3-h-circuit-breaker-draft.md` (PAY-P3-H 정본 구조 차용, 17 섹션 정합)
-- `/Users/sokol/Desktop/Git/ProjectGrimoire/.claude/shared-contracts.md` §25 FKCascadePolicy + §26 AuditRetentionPolicy + §27 CircuitBreakerPolicy (PAY-P3-H 예정 박제) — §28 UserSoftDeletePolicy 신설 위치 정합
-- `/Users/sokol/Desktop/Git/ProjectGrimoire/research/PAYMENT_SYSTEM_PLAN.md` USER-SOFT-DELETE 영역 정합 (회계 8건 Restrict 정합 강제 박제)
-- `/Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/prisma/schema.prisma:11-29` Author 모델 — 본 sprint 영역 (deletedAt 컬럼 신설 영역)
-- `/Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/prisma/schema.prisma:347-360` RefreshToken 모델 — 본 sprint 영역 (Author Cascade 정합, soft delete 시 즉시 무효 영역)
-- `/Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/prisma/schema.prisma:331-345` AccessLog 모델 — 본 sprint 영역 (Author SetNull 정합, GDPR 익명화 정합)
-- `/Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/prisma/schema.prisma:387-398` AdminAuditLog 모델 — 본 sprint 영역 (admin_force_delete + 30d_hard_delete + gdpr_anonymize 박제 영역)
-- `/Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/ADR.md` ADR-007 (FK cascade) + ADR-008 (audit retention) + ADR-009 (Circuit Breaker, 예정) + ADR-010 (PAY-P3-D, 예정) — ADR-011 박제 위치 정합
-- `/Users/sokol/Desktop/Git/ProjectGrimoire/PLANNING_GRIMOIRE.md` §0 (크레딧-원가 철칙 — soft delete 영역 외부 API 0 정합)
+- `/Users/sokol/Git/ProjectGrimoire/.claude/state/sprint-user-soft-delete-candidate.md` (431 lines, 선행 candidate 영역, 5/9 박제) — §0~§3 + §11 + §13 + §14 + §15 영역 정합
+- `/Users/sokol/Git/ProjectGrimoire/.claude/state/sprint-pay-p3-e-fk-cascade-draft.md` §0-1 + §2-2 + §2-3 + §6-4 + §11-5 — PAY-P3-E sprint Initializer 영역 사용자 결정 박제 정합
+- `/Users/sokol/Git/ProjectGrimoire/.claude/state/sprint-pay-p2-5-audit-retention-draft.md` (PAY-P2-5 정본 구조 차용, 17 섹션 정합)
+- `/Users/sokol/Git/ProjectGrimoire/.claude/state/sprint-pay-p3-h-circuit-breaker-draft.md` (PAY-P3-H 정본 구조 차용, 17 섹션 정합)
+- `/Users/sokol/Git/ProjectGrimoire/.claude/shared-contracts.md` §25 FKCascadePolicy + §26 AuditRetentionPolicy + §27 CircuitBreakerPolicy (PAY-P3-H 예정 박제) — §28 UserSoftDeletePolicy 신설 위치 정합
+- `/Users/sokol/Git/ProjectGrimoire/research/PAYMENT_SYSTEM_PLAN.md` USER-SOFT-DELETE 영역 정합 (회계 8건 Restrict 정합 강제 박제)
+- `/Users/sokol/Git/ProjectGrimoire/grimoire-server/prisma/schema.prisma:11-29` Author 모델 — 본 sprint 영역 (deletedAt 컬럼 신설 영역)
+- `/Users/sokol/Git/ProjectGrimoire/grimoire-server/prisma/schema.prisma:347-360` RefreshToken 모델 — 본 sprint 영역 (Author Cascade 정합, soft delete 시 즉시 무효 영역)
+- `/Users/sokol/Git/ProjectGrimoire/grimoire-server/prisma/schema.prisma:331-345` AccessLog 모델 — 본 sprint 영역 (Author SetNull 정합, GDPR 익명화 정합)
+- `/Users/sokol/Git/ProjectGrimoire/grimoire-server/prisma/schema.prisma:387-398` AdminAuditLog 모델 — 본 sprint 영역 (admin_force_delete + 30d_hard_delete + gdpr_anonymize 박제 영역)
+- `/Users/sokol/Git/ProjectGrimoire/grimoire-server/ADR.md` ADR-007 (FK cascade) + ADR-008 (audit retention) + ADR-009 (Circuit Breaker, 예정) + ADR-010 (PAY-P3-D, 예정) — ADR-011 박제 위치 정합
+- `/Users/sokol/Git/ProjectGrimoire/PLANNING_GRIMOIRE.md` §0 (크레딧-원가 철칙 — soft delete 영역 외부 API 0 정합)
 
 ---
 

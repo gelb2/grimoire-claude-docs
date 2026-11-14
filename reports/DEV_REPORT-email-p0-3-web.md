@@ -52,9 +52,9 @@ server / claude-docs / shared-contracts §15 / regression-59 / sensor-slug-login
 ## 3. raw vitest stdout (G4 검증)
 
 ```
-$ cd /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-web && npx vitest run
+$ cd /Users/sokol/Git/ProjectGrimoire/grimoire-web && npx vitest run
 
- RUN  v4.1.0 /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-web
+ RUN  v4.1.0 /Users/sokol/Git/ProjectGrimoire/grimoire-web
 
 
  Test Files  11 passed (11)
@@ -72,7 +72,7 @@ EXIT_CODE=0
 ## 4. raw tsc stdout (G1 검증)
 
 ```
-$ cd /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-web && npx tsc --noEmit
+$ cd /Users/sokol/Git/ProjectGrimoire/grimoire-web && npx tsc --noEmit
 EXIT_CODE=0
 ```
 
@@ -83,7 +83,7 @@ stdout 비어있음 = 0 errors PASS.
 ## 5. raw build stdout (G5 검증, tail -45)
 
 ```
-$ cd /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-web && npm run build
+$ cd /Users/sokol/Git/ProjectGrimoire/grimoire-web && npm run build
 
 ✓ Compiled successfully in 4.4s
   Running TypeScript ...
@@ -140,13 +140,13 @@ EXIT_CODE=0
 ## 6. raw lint stdout (G2 검증, 전문)
 
 ```
-$ cd /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-web && npm run lint
+$ cd /Users/sokol/Git/ProjectGrimoire/grimoire-web && npm run lint
 
 > deer-devil@0.1.0 lint
 > eslint
 
 
-/Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-web/src/app/dashboard/analysis/page.tsx
+/Users/sokol/Git/ProjectGrimoire/grimoire-web/src/app/dashboard/analysis/page.tsx
   77:7  warning  Error: Calling setState synchronously within an effect can trigger cascading renders
 
 Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
@@ -155,7 +155,7 @@ Effects are intended to synchronize state between React and external systems suc
 
 Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
 
-/Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-web/src/app/dashboard/analysis/page.tsx:77:7
+/Users/sokol/Git/ProjectGrimoire/grimoire-web/src/app/dashboard/analysis/page.tsx:77:7
   75 |   useEffect(() => {
   76 |     if (!userSlug || !selectedWorkSlug) {
 > 77 |       setEpisodes([])
@@ -164,18 +164,18 @@ Calling setState synchronously within an effect body causes cascading renders th
   79 |       return
   80 |     }  react-hooks/set-state-in-effect
 
-/Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-web/src/app/explore/page.tsx
+/Users/sokol/Git/ProjectGrimoire/grimoire-web/src/app/explore/page.tsx
   67:6  warning  React Hook useCallback has a missing dependency: 'fetchWithRetry'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
 
-/Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-web/src/components/HorizontalScroll.tsx
+/Users/sokol/Git/ProjectGrimoire/grimoire-web/src/components/HorizontalScroll.tsx
   45:5  warning  Error: Calling setState synchronously within an effect can trigger cascading renders
 ... (생략, 동일 패턴)
 
-/Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-web/src/features/reader/ui/AuthorSpace.tsx
+/Users/sokol/Git/ProjectGrimoire/grimoire-web/src/features/reader/ui/AuthorSpace.tsx
   35:7  warning  Error: Calling setState synchronously within an effect can trigger cascading renders
 ... (생략)
 
-/Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-web/src/features/reader/ui/CardTransition.tsx
+/Users/sokol/Git/ProjectGrimoire/grimoire-web/src/features/reader/ui/CardTransition.tsx
   99:5  warning  Error: Calling setState synchronously within an effect can trigger cascading renders
 ... (생략)
 
@@ -195,7 +195,7 @@ Sprint progress §6-2 G6 정책: "playwright 서버 미실행 시 dry-run skip �
 본 작업 환경에서는 grimoire-web localhost (port 3001) + grimoire-server localhost (port 3000)이 미실행 상태이므로 실제 e2e 실행 대신 `--list`로 신규 it 박제만 검증 (dry-run).
 
 ```
-$ cd /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-web && npx playwright test e2e/auth.spec.ts --list
+$ cd /Users/sokol/Git/ProjectGrimoire/grimoire-web && npx playwright test e2e/auth.spec.ts --list
 
 Listing tests:
   [chromium] › auth.spec.ts:8:7 › 로그인 페이지 (/login) › renders login form with email-or-slug and password fields
@@ -223,9 +223,9 @@ dev 환경 또는 사용자가 `E2E_AUTHOR_SLUG=deerdevil` + `E2E_AUTHOR_PASSWOR
 
 ```
 $ grep -rE 'CERTI_PROJ|brightmall|thermage|inapi|admin-certilife|no1-sass' \
-    /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-web/src/ \
-    /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-web/e2e/ \
-    /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-web/docs/ 2>/dev/null | wc -l
+    /Users/sokol/Git/ProjectGrimoire/grimoire-web/src/ \
+    /Users/sokol/Git/ProjectGrimoire/grimoire-web/e2e/ \
+    /Users/sokol/Git/ProjectGrimoire/grimoire-web/docs/ 2>/dev/null | wc -l
 
        0
 ```

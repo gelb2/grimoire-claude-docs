@@ -8,8 +8,14 @@
 #   - task_calls: 메인 Claude가 spawn한 subagent 호출 (Task tool, isSidechain=false)
 #
 # 데이터 소스:
-#   - $HOME/.claude/projects/-Users-sokol-Desktop-Git-ProjectGrimoire/*.jsonl
-#   - 최근 7일 (mtime 기준)
+#   - 메인: $HOME/.claude/projects/-Users-sokol-Git-ProjectGrimoire/*.jsonl (최상위, isSidechain=false)
+#   - 에이전트(sidechain): 위 경로/{session-uuid}/subagents/agent-*.jsonl (isSidechain=true)
+#     · 2026-06-01 결함정정: 종전 글롭이 최상위 *.jsonl만 봐서 subagents/ 하위 308 jsonl(Edit/Write/Bash 실재)을
+#       전혀 안 읽음 → sidechain_edits/writes가 643 전 엔트리 (0,0) 고정 = "에이전트 0편집" 거짓 측정.
+#       실제로는 에이전트 작업이 {uuid}/subagents/agent-*.jsonl 에 100% isSidechain=true로 실재.
+#       에이전트 종류는 같은 디렉토리 agent-*.meta.json 의 agentType 필드로 식별 (hook payload 아님).
+#     · 이중집계 검증: 최상위 Edit/Write tool_use id ∩ 서브에이전트 id = 0 (중복 없음, 합산 안전).
+#   - 최근 7일 (mtime 기준) — 최상위/서브에이전트 동일 필터
 #
 # 임계값 (Fowler "Steering Loop" + 패턴 1 권장):
 #   - ratio ≥ 0.20: PASS (5건당 1건 이상 subagent 위임)
@@ -22,17 +28,19 @@
 #   - jsonl flush 지연 검증: 가장 최근 세션 mtime ≤ 5분 시 "in-progress" 마크 (다음 측정 보강 예상)
 #
 # 추가 산출물:
-#   - subagent type 분포 (어떤 에이전트가 자주 호출되는지)
-#   - sidechain edits (subagent 내부 작업량)
+#   - subagent type 분포 (어떤 에이전트가 자주 호출되는지 — meta.json agentType 정본)
+#   - sidechain edits/writes/bash (subagent 내부 실작업량 — subagents/ 하위 실측)
+#   - sidechain_share: sidechain code edits / (main + sidechain code edits)
+#     = "무거운 일을 에이전트가 했나" 직접 지표 (높을수록 위임 충실, 메트릭 본래 의도 강화)
 #
 # 적재 위치:
 #   - .claude/state/orchestration-ratio.jsonl (시계열 누적)
 
 set -u
 
-LOG_DIR="/Users/sokol/Desktop/Git/ProjectGrimoire/.claude/state"
+LOG_DIR="/Users/sokol/Git/ProjectGrimoire/.claude/state"
 RATIO_FILE="$LOG_DIR/orchestration-ratio.jsonl"
-JSONL_DIR="$HOME/.claude/projects/-Users-sokol-Desktop-Git-ProjectGrimoire"
+JSONL_DIR="$HOME/.claude/projects/-Users-sokol-Git-ProjectGrimoire"
 
 mkdir -p "$LOG_DIR"
 
@@ -67,20 +75,30 @@ JSONL_DIR = os.environ['JSONL_DIR']
 DAYS = int(os.environ['DAYS'])
 
 cutoff = time.time() - DAYS * 86400
-files = sorted(
+
+# 메인 transcript: 최상위 *.jsonl (isSidechain=false 검증됨)
+top_files = sorted(
     glob.glob(JSONL_DIR + "/*.jsonl"),
     key=lambda f: os.path.getmtime(f),
     reverse=True
 )
-recent = [f for f in files if os.path.getmtime(f) > cutoff]
+recent = [f for f in top_files if os.path.getmtime(f) > cutoff]
+
+# 에이전트 transcript: {session-uuid}/subagents/agent-*.jsonl (isSidechain=true)
+# 2026-06-01 결함정정 — 종전 미스캔으로 sidechain 전 엔트리 0 고정 거짓측정 해소
+sub_files = glob.glob(JSONL_DIR + "/*/subagents/agent-*.jsonl")
+sub_recent = [f for f in sub_files if os.path.getmtime(f) > cutoff]
 
 main_edits = 0
 main_writes = 0
 task_calls = 0
 sidechain_edits = 0
 sidechain_writes = 0
-stypes = Counter()
+sidechain_bash = 0
+stypes = Counter()           # spawn 시점 호출 분포 (메인 Task/Agent tool_use input.subagent_type)
+agent_work_types = Counter() # 실제 작업한 에이전트 분포 (meta.json agentType 정본)
 file_count = len(recent)
+sub_file_count = len(sub_recent)
 
 # 도메인 분류 (§15.7 위임 가치 가이드라인 적용)
 domain_counter = Counter()  # 메인 직접 작업의 도메인 분포
@@ -104,6 +122,9 @@ def classify_domain(path):
         return 'root-doc'
     return 'other'
 
+# === 메인 transcript 집계 (최상위 jsonl) ===
+# 최상위는 isSidechain=false 검증됨. 단 방어적으로 sidechain 분기 유지
+# (혹시 최상위에 sidechain=true 라인 섞여도 sidechain으로 집계 — 이중집계는 위 id-교집합 0 검증으로 배제).
 for fpath in recent:
     try:
         with open(fpath) as f:
@@ -139,6 +160,9 @@ for fpath in recent:
                             main_writes += 1
                             fp = c.get('input', {}).get('file_path', '')
                             domain_counter[classify_domain(fp)] += 1
+                    elif name == 'Bash':
+                        if sidechain:
+                            sidechain_bash += 1
                     elif name in ('Task', 'Agent') and not sidechain:  # 2026-05-06 INCIDENT KK': Claude Code tool name이 'Agent'로 변경됨 — 'Task'만 매칭하던 결함 → 7일간 0건 거짓 측정 → 메인 Claude 거짓 보고 사슬 유발
                         task_calls += 1
                         stype = c.get('input', {}).get('subagent_type', 'unknown')
@@ -146,8 +170,57 @@ for fpath in recent:
     except Exception as e:
         print("WARN: " + fpath + " skip (" + str(e) + ")", file=sys.stderr)
 
+# === 에이전트(sidechain) transcript 집계 (subagents/agent-*.jsonl) ===
+# 2026-06-01 결함정정 신설. 서브에이전트 transcript는 100% isSidechain=true (실측 27225라인 전부 true).
+# 방어적으로 isSidechain 값을 그대로 신뢰하되, 필드 부재/false여도 subagents/ 경로면 sidechain으로 귀속
+# (저장 위치 자체가 에이전트 격리 transcript이므로). 에이전트 종류는 짝 meta.json agentType 으로 박제.
+for fpath in sub_recent:
+    try:
+        with open(fpath) as f:
+            for line in f:
+                try:
+                    obj = json.loads(line)
+                except:
+                    continue
+                msg = obj.get('message', {})
+                if not isinstance(msg, dict):
+                    continue
+                if msg.get('role') != 'assistant':
+                    continue
+                content = msg.get('content', [])
+                if not isinstance(content, list):
+                    continue
+                for c in content:
+                    if not isinstance(c, dict) or c.get('type') != 'tool_use':
+                        continue
+                    name = c.get('name', '')
+                    if name == 'Edit':
+                        sidechain_edits += 1
+                    elif name == 'Write':
+                        sidechain_writes += 1
+                    elif name == 'Bash':
+                        sidechain_bash += 1
+    except Exception as e:
+        print("WARN(sub): " + fpath + " skip (" + str(e) + ")", file=sys.stderr)
+    # 짝 meta.json 에서 agentType 박제 (type=unknown 해소 정본)
+    meta_path = fpath[:-len('.jsonl')] + '.meta.json' if fpath.endswith('.jsonl') else None
+    if meta_path and os.path.exists(meta_path):
+        try:
+            with open(meta_path) as mf:
+                md = json.load(mf)
+            agent_work_types[md.get('agentType', 'unknown')] += 1
+        except Exception:
+            agent_work_types['unknown'] += 1
+
 m_total = main_edits + main_writes
 ratio = task_calls / m_total if m_total > 0 else 0
+
+# 2026-06-01 — sidechain_share: 코드 편집(Edit+Write) 중 에이전트가 수행한 비중
+# 메트릭 본래 의도("메인이 직접 너무 많이 편집하지 않고 에이전트가 무거운 일을 한다")의 직접 지표.
+# ratio(task spawn 빈도)는 "얼마나 자주 위임했나", sidechain_share는 "실제 작업량을 얼마나 위임했나".
+sidechain_code = sidechain_edits + sidechain_writes
+total_code = m_total + sidechain_code
+sidechain_share = sidechain_code / total_code if total_code > 0 else 0
 
 # §15.7 합치 분석
 unique_domains = len([d for d, c in domain_counter.items() if c > 0])
@@ -156,21 +229,25 @@ multi_domain_pct = sum(c for d, c in domain_counter.items() if d not in ('claude
 # 2026-05-03 묶음 II — 메타 세션 비율 (FAIL → META_PASS 다운그레이드 판정용)
 meta_pct = sum(c for d, c in domain_counter.items() if d in ('claude', 'memory', 'docs', 'research', 'root-doc')) / m_total if m_total > 0 else 0
 
-# jsonl in-progress 검증 — 가장 최근 mtime ≤ 5분 시 마크
+# jsonl in-progress 검증 — 가장 최근 mtime ≤ 5분 시 마크 (메인+서브에이전트 둘 다 고려)
 in_progress = False
-if recent:
-    most_recent_mtime = max(os.path.getmtime(f) for f in recent)
+_mtimes = [os.path.getmtime(f) for f in recent] + [os.path.getmtime(f) for f in sub_recent]
+if _mtimes:
+    most_recent_mtime = max(_mtimes)
     if time.time() - most_recent_mtime < 300:  # 5 minutes
         in_progress = True
 
 # stdout: pipe-separated for shell parsing
 print("FILES|" + str(file_count))
+print("SUB_FILES|" + str(sub_file_count))
 print("MAIN_EDITS|" + str(main_edits))
 print("MAIN_WRITES|" + str(main_writes))
 print("MAIN_TOTAL|" + str(m_total))
 print("TASK_CALLS|" + str(task_calls))
 print("SIDECHAIN_EDITS|" + str(sidechain_edits))
 print("SIDECHAIN_WRITES|" + str(sidechain_writes))
+print("SIDECHAIN_BASH|" + str(sidechain_bash))
+print("SIDECHAIN_SHARE|" + ("%.4f" % sidechain_share))
 print("RATIO|" + ("%.4f" % ratio))
 print("UNIQUE_DOMAINS|" + str(unique_domains))
 print("MULTI_DOMAIN_PCT|" + ("%.4f" % multi_domain_pct))
@@ -178,6 +255,8 @@ print("META_PCT|" + ("%.4f" % meta_pct))
 print("IN_PROGRESS|" + ("1" if in_progress else "0"))
 for s, c in stypes.most_common():
     print("STYPE|" + s + "|" + str(c))
+for a, c in agent_work_types.most_common():
+    print("AGENTWORK|" + a + "|" + str(c))
 for d, c in domain_counter.most_common():
     print("DOMAIN|" + d + "|" + str(c))
 PYEOF
@@ -185,12 +264,15 @@ PYEOF
 
 # 결과 파싱
 FILES=$(echo "$RESULT" | grep "^FILES|" | cut -d'|' -f2)
+SUB_FILES=$(echo "$RESULT" | grep "^SUB_FILES|" | cut -d'|' -f2)
 MAIN_EDITS=$(echo "$RESULT" | grep "^MAIN_EDITS|" | cut -d'|' -f2)
 MAIN_WRITES=$(echo "$RESULT" | grep "^MAIN_WRITES|" | cut -d'|' -f2)
 MAIN_TOTAL=$(echo "$RESULT" | grep "^MAIN_TOTAL|" | cut -d'|' -f2)
 TASK_CALLS=$(echo "$RESULT" | grep "^TASK_CALLS|" | cut -d'|' -f2)
 SIDECHAIN_EDITS=$(echo "$RESULT" | grep "^SIDECHAIN_EDITS|" | cut -d'|' -f2)
 SIDECHAIN_WRITES=$(echo "$RESULT" | grep "^SIDECHAIN_WRITES|" | cut -d'|' -f2)
+SIDECHAIN_BASH=$(echo "$RESULT" | grep "^SIDECHAIN_BASH|" | cut -d'|' -f2)
+SIDECHAIN_SHARE=$(echo "$RESULT" | grep "^SIDECHAIN_SHARE|" | cut -d'|' -f2)
 RATIO=$(echo "$RESULT" | grep "^RATIO|" | cut -d'|' -f2)
 UNIQUE_DOMAINS=$(echo "$RESULT" | grep "^UNIQUE_DOMAINS|" | cut -d'|' -f2)
 MULTI_DOMAIN_PCT=$(echo "$RESULT" | grep "^MULTI_DOMAIN_PCT|" | cut -d'|' -f2)
@@ -198,10 +280,11 @@ META_PCT=$(echo "$RESULT" | grep "^META_PCT|" | cut -d'|' -f2)
 IN_PROGRESS=$(echo "$RESULT" | grep "^IN_PROGRESS|" | cut -d'|' -f2)
 
 if [ "$QUIET" -eq 0 ]; then
-  echo "분석 jsonl 파일: $FILES"
+  echo "분석 jsonl 파일: 메인 $FILES / 서브에이전트 $SUB_FILES"
   echo "메인 Edit / Write: $MAIN_EDITS / $MAIN_WRITES (총 $MAIN_TOTAL)"
   echo "메인 → Task 호출: $TASK_CALLS"
-  echo "Sidechain Edit / Write: $SIDECHAIN_EDITS / $SIDECHAIN_WRITES"
+  echo "Sidechain Edit / Write / Bash: $SIDECHAIN_EDITS / $SIDECHAIN_WRITES / $SIDECHAIN_BASH"
+  echo "Sidechain 코드편집 비중(에이전트가 한 무거운 일): $SIDECHAIN_SHARE"
   echo "Ratio: $RATIO (Task / Main code edits)"
   echo ""
   echo "도메인 분포 (§15.7 위임 가치 분석):"
@@ -210,9 +293,14 @@ if [ "$QUIET" -eq 0 ]; then
   done
   echo "  → unique 도메인: $UNIQUE_DOMAINS / 위임 가치 도메인(server/web) 비율: $MULTI_DOMAIN_PCT"
   echo ""
-  echo "Subagent 분포:"
+  echo "Subagent spawn 분포 (메인 Task tool input.subagent_type):"
   echo "$RESULT" | grep "^STYPE|" | while IFS='|' read -r _ s c; do
     echo "  $s: $c"
+  done
+  echo ""
+  echo "에이전트 실작업 분포 (meta.json agentType — 실제 일한 에이전트):"
+  echo "$RESULT" | grep "^AGENTWORK|" | while IFS='|' read -r _ a c; do
+    echo "  $a: $c (jsonl)"
   done
   echo ""
   # §15.7 합치 분석
@@ -264,11 +352,11 @@ if [ "$IN_PROGRESS" = "1" ] && [ "$QUIET" -eq 0 ]; then
   echo "[NOTE] in-progress 세션 검출 (mtime ≤ 5분) — 다음 측정에서 추가 박제 예상"
 fi
 
-# JSONL 적재 (§15.7 합치 데이터 포함)
+# JSONL 적재 (§15.7 합치 데이터 + 2026-06-01 sidechain 실측 필드 포함)
 TS=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-printf '{"ts":"%s","files":%s,"main_edits":%s,"main_writes":%s,"main_total":%s,"task_calls":%s,"sidechain_edits":%s,"sidechain_writes":%s,"ratio":%s,"status":"%s","days":%s,"unique_domains":%s,"multi_domain_pct":%s,"meta_pct":%s,"in_progress":%s}\n' \
-  "$TS" "$FILES" "$MAIN_EDITS" "$MAIN_WRITES" "$MAIN_TOTAL" "$TASK_CALLS" \
-  "$SIDECHAIN_EDITS" "$SIDECHAIN_WRITES" "$RATIO" "$RESULT_STATUS" "$DAYS" \
+printf '{"ts":"%s","files":%s,"sub_files":%s,"main_edits":%s,"main_writes":%s,"main_total":%s,"task_calls":%s,"sidechain_edits":%s,"sidechain_writes":%s,"sidechain_bash":%s,"sidechain_share":%s,"ratio":%s,"status":"%s","days":%s,"unique_domains":%s,"multi_domain_pct":%s,"meta_pct":%s,"in_progress":%s}\n' \
+  "$TS" "$FILES" "$SUB_FILES" "$MAIN_EDITS" "$MAIN_WRITES" "$MAIN_TOTAL" "$TASK_CALLS" \
+  "$SIDECHAIN_EDITS" "$SIDECHAIN_WRITES" "$SIDECHAIN_BASH" "$SIDECHAIN_SHARE" "$RATIO" "$RESULT_STATUS" "$DAYS" \
   "$UNIQUE_DOMAINS" "$MULTI_DOMAIN_PCT" "$META_PCT" "$IN_PROGRESS" \
   >> "$RATIO_FILE"
 
@@ -279,6 +367,6 @@ printf '{"ts":"%s","files":%s,"main_edits":%s,"main_writes":%s,"main_total":%s,"
 LOG_TAG="$RESULT_STATUS"
 [ "$LOG_TAG" = "SKIP" ] && LOG_TAG="PASS"  # SKIP은 PASS로 간주 (실측 불가, 데이터 없음)
 [ "$LOG_TAG" = "META_PASS" ] && LOG_TAG="PASS"  # META_PASS는 PASS (메타 세션 정합)
-bash "$(dirname "$0")/sensor-log.sh" "sensor-orchestration-ratio" "$LOG_TAG" "ratio=$RATIO main=$MAIN_TOTAL task=$TASK_CALLS meta=$META_PCT days=$DAYS" 2>/dev/null || true
+bash "$(dirname "$0")/sensor-log.sh" "sensor-orchestration-ratio" "$LOG_TAG" "ratio=$RATIO main=$MAIN_TOTAL task=$TASK_CALLS sc_share=$SIDECHAIN_SHARE meta=$META_PCT days=$DAYS" 2>/dev/null || true
 
 exit $EXIT_CODE

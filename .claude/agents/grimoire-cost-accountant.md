@@ -43,14 +43,14 @@ model: opus
 ## 1. 절대적 참조 문서
 
 ### 정본
-- `/Users/sokol/Desktop/Git/ProjectGrimoire/CLAUDE.md` §0
-- `/Users/sokol/Desktop/Git/ProjectGrimoire/PLANNING_GRIMOIRE.md` §0 — **성경**
+- `/Users/sokol/Git/ProjectGrimoire/CLAUDE.md` §0
+- `/Users/sokol/Git/ProjectGrimoire/PLANNING_GRIMOIRE.md` §0 — **성경**
 
 ### 본 에이전트가 관리하는 문서
 - `grimoire-server/docs/ai-cost-table.md` — **본 에이전트가 단독으로 관리** (server 에이전트도 수정 전 여기 승인 필수)
 
 ### Live 캐시 (researcher가 관리)
-- `/Users/sokol/Desktop/Git/ProjectGrimoire/AI_COST_MONITOR.md` — AI 모델 가격 Live 캐시 (researcher가 갱신, 본 에이전트가 소비)
+- `/Users/sokol/Git/ProjectGrimoire/AI_COST_MONITOR.md` — AI 모델 가격 Live 캐시 (researcher가 갱신, 본 에이전트가 소비)
 
 ### 가격 설정 문서
 - `grimoire-server/docs/data-model.md` — credit_packages 테이블
@@ -284,7 +284,7 @@ researcher로부터 "차감 N 재산정" 트리거 핸드오프(환율 ₩1,624.
 ## Skills 프로토콜 참조 (상황 매칭 시 Read — ouroboros 방식)
 cost-accountant는 원가 계산 전담이라 Skills 직접 활용은 드뭅니다. 단 다음 상황 시 해당 SKILL.md를 Read로 로드하세요.
 
-- `/Users/sokol/Desktop/Git/ProjectGrimoire/.claude/skills/production-bug-triage/SKILL.md` — 마진 급변의 원인을 **운영 증상**(API 응답 지연·환불 발생 등)과 연결할 때 curl/psql 실측 근거 요구
+- `/Users/sokol/Git/ProjectGrimoire/.claude/skills/production-bug-triage/SKILL.md` — 마진 급변의 원인을 **운영 증상**(API 응답 지연·환불 발생 등)과 연결할 때 curl/psql 실측 근거 요구
 
 
 ## Shared Contracts 참조 (인터페이스 규약 — 모든 agent 공통)

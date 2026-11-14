@@ -6,7 +6,9 @@
   "prompt": "사용자가 AI 분석 진행 중 cancel 클릭 시 크레딧이 자동 환불되고 Anthropic API 호출도 즉시 cancel되는가?",
   "eval_criteria": [
     {"type": "grep", "target": "grimoire-server/src/application/analysis/novel-analysis.usecase.ts", "pattern": "abortableRace", "min": 3, "desc": "abortableRace 호출 ≥3건"},
-    {"type": "grep", "target": "grimoire-server/src/application/analysis/novel-analysis.usecase.ts", "pattern": "NOVEL_ANALYSIS_REFUND", "min": 1, "desc": "환불 분기 존재 (CreditReason.NOVEL_ANALYSIS_REFUND)"},
+    {"type": "grep", "target": "grimoire-server/src/application/analysis/novel-analysis.usecase.ts", "pattern": "\\.refundAnalysis\\(", "min": 1, "desc": "실패 시 환불 호출 — chargePoints.refundAnalysis(authorId, undefined, spentBySource) [2026-06-01 현행화: 구 CreditReason.NOVEL_ANALYSIS_REFUND enum이 CC-1 §5-D 출처별 복원 리팩토링(refundAnalysis 메서드 + ledger.earn reason='novel_analysis_refund')로 대체됨. 환불 기능 자체는 생존 — git 1c99123/93aa6f5][2026-07-12 현행화: F-10(8d4cc6f)이 deficitIncurred 4번째 인자 추가하며 멀티라인 재포맷 — 한줄 패턴 무효화. 환불 기능 생존]"},
+    {"type": "grep", "target": "grimoire-server/src/application/analysis/novel-analysis.usecase.ts", "pattern": "deficitIncurred", "min": 1, "desc": "F-10 deficit 역전 인자 전달 확인"},
+    {"type": "grep", "target": "grimoire-server/src/application/credit/charge-points.usecase.ts", "pattern": "reason: 'novel_analysis_refund'", "min": 1, "desc": "refundAnalysis 내부 적립 reason='novel_analysis_refund' (구 NOVEL_ANALYSIS_REFUND 의미 보존 — ledger.earn 출처별 복원)"},
     {"type": "grep", "target": "grimoire-server/src/lib/claude.ts", "pattern": "signal: options\\.signal|options\\?\\.signal", "min": 1, "desc": "askClaude SDK signal 전달"},
     {"type": "grep", "target": "grimoire-server/src/lib/rag/novel-analyzer.ts", "pattern": "signal\\?:\\s*AbortSignal", "min": 4, "desc": "AskFn + checkXxx 4함수 모두 signal 시그니처"},
     {"type": "test", "command": "cd grimoire-server && npx jest src/application/analysis/novel-analysis.usecase.spec.ts --silent", "desc": "novel-analysis spec 통과"}

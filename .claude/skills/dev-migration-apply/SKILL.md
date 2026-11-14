@@ -63,7 +63,7 @@ echo "DATABASE_URL len=$(echo -n "$DATABASE_URL" | wc -c)"
 ### 단계 3 — Prisma migrate deploy 영역
 
 ```bash
-cd /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server
+cd /Users/sokol/Git/ProjectGrimoire/grimoire-server
 DATABASE_URL="$DATABASE_URL" npx prisma migrate deploy
 ```
 
@@ -84,7 +84,7 @@ DATABASE_URL="$DATABASE_URL" npx prisma migrate status
 curl -sS -w "%{http_code} %{time_total}s\n" https://dev-api.grimoire-book.com/api/payments/products
 
 # 4-3. sensor-deploy-health 영역 (5/5 PASS 영역)
-bash /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/scripts/sensor-deploy-health.sh
+bash /Users/sokol/Git/ProjectGrimoire/.claude/scripts/sensor-deploy-health.sh
 ```
 
 ### 단계 5 — 정리 영역
@@ -125,7 +125,7 @@ unset DATABASE_URL
 명령 묶음 영역 진행 중 발견하는 결함 / 우회 / 거짓 보고 영역 즉시 박제:
 
 ```bash
-bash /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/scripts/incident-log.sh \
+bash /Users/sokol/Git/ProjectGrimoire/.claude/scripts/incident-log.sh \
   dev_migration_apply {severity} {source} "{description}"
 ```
 

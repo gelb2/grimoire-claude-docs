@@ -87,7 +87,7 @@ curl -s -o /dev/null -w "%{http_code} %{time_total}s\n" {url}
 
 ### Playwright E2E (grimoire-web)
 ```bash
-cd /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-web
+cd /Users/sokol/Git/ProjectGrimoire/grimoire-web
 npm run test:e2e -- {pattern}
 ```
 

@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# sensor-adversarial-pre-commit.sh — Red Team Constitution 16 principles 적대적 검증
+# sensor-adversarial-pre-commit.sh — Red Team Constitution 20 principles 적대적 검증
 #
 # 책 Ch 17 Constitutional AI + Ch 23 자가진단 패턴 차용.
-# .claude/knowledge/red-team-constitution.md 16 principles 자동 검증.
+# .claude/knowledge/red-team-constitution.md 20 principles 자동 검증.
 # 위반 1건이라도 발견 시 commit 차단.
 #
 # 발동 조건:
@@ -10,13 +10,13 @@
 #   - 사용자/Claude 명시 호출 가능 (`bash sensor-adversarial-pre-commit.sh`)
 #
 # Exit:
-#   0 — 16 principles 모두 PASS (commit 허용)
+#   0 — 20 principles 모두 PASS (commit 허용)
 #   1 — WARN 1건 이상 (검토 권장, commit 허용)
 #   2 — FAIL 1건 이상 (commit 차단 — Constitutional AI 자기-비판 발동 권장)
 
 set +u
 
-ROOT="/Users/sokol/Desktop/Git/ProjectGrimoire"
+ROOT="/Users/sokol/Git/ProjectGrimoire"
 CONSTITUTION="$ROOT/.claude/knowledge/red-team-constitution.md"
 PASS=0
 WARN=0
@@ -35,7 +35,7 @@ check() {
   esac
 }
 
-echo "=== sensor-adversarial-pre-commit (Red Team Constitution 16 Principles) ==="
+echo "=== sensor-adversarial-pre-commit (Red Team Constitution 20 Principles) ==="
 echo ""
 
 # Constitution 파일 존재 검증
@@ -43,6 +43,13 @@ if [ ! -f "$CONSTITUTION" ]; then
   echo "❌ FAIL: red-team-constitution.md 없음 (Phase α-1 미실행)"
   exit 2
 fi
+
+# 2026-07-13 (H-1 이중실행 봉합): 아래 sensor 2종은 여러 Principle에서 중복 호출되던 것.
+#   sensor-secret-leak  → P8(핵심 loop) + P13(보안) 2회
+#   sensor-credit-atomicity → P8(핵심 loop) + P16(원자성) 2회
+#   동일 commit 안에서 git 상태 불변 → 결과 동일. 1회만 실행하고 exit code 재사용.
+bash "$ROOT/.claude/scripts/sensor-secret-leak.sh" >/dev/null 2>&1; SECRET_LEAK_EC=$?
+bash "$ROOT/.claude/scripts/sensor-credit-atomicity.sh" >/dev/null 2>&1; CREDIT_ATOM_EC=$?
 
 # Principle 1 — §0 ZERO-TOLERANCE: commit 메시지에 추정 패턴
 echo "── 절대 규정 (Critical) ──"
@@ -113,13 +120,17 @@ esac
 # 2026-05-04 묶음 KK: PAY-P0 신규 sensor 3건 추가
 # 2026-05-06 묶음 OO-1: sensor-chat-domain 추가 (chat 회귀 차단)
 SENSOR_FAIL=0
-for s in sensor-server sensor-web sensor-docs-sync sensor-secret-leak sensor-credit-atomicity \
+# secret-leak / credit-atomicity 는 상단에서 1회 실행 (SECRET_LEAK_EC / CREDIT_ATOM_EC) — loop에서 제외 (중복 봉합)
+for s in sensor-server sensor-web sensor-docs-sync \
          sensor-payment-idempotency sensor-payment-reconciliation sensor-admin-credit-ui \
          sensor-chat-domain; do
   bash "$ROOT/.claude/scripts/$s.sh" >/dev/null 2>&1
   EC=$?
   [ "$EC" -gt 2 ] && SENSOR_FAIL=$((SENSOR_FAIL+1))
 done
+# 상단 1회 실행분 반영 (9 핵심 sensor 커버리지 동일 유지)
+[ "$SECRET_LEAK_EC" -gt 2 ] && SENSOR_FAIL=$((SENSOR_FAIL+1))
+[ "$CREDIT_ATOM_EC" -gt 2 ] && SENSOR_FAIL=$((SENSOR_FAIL+1))
 if [ "$SENSOR_FAIL" -eq 0 ]; then
   check 8 "핵심 Sensor exit ≤2" "PASS" "9 핵심 sensor 모두 통과 (PAY-P0 3건 + chat-domain 1건 포함)"
 else
@@ -129,7 +140,7 @@ fi
 # Principle 9 — Stop hook 메모리 절대 규칙
 TODAY=$(date +%Y-%m-%d)
 TODAY_COMPACT="${TODAY//-/}"
-MEMORY_INDEX="$HOME/.claude/projects/-Users-sokol-Desktop-Git-ProjectGrimoire/memory/MEMORY.md"
+MEMORY_INDEX="$HOME/.claude/projects/-Users-sokol-Git-ProjectGrimoire/memory/MEMORY.md"
 HAS_TODAY_COMMITS=$(git -C "$ROOT" log --since="$TODAY 00:00:00" --oneline 2>/dev/null | wc -l | tr -d ' ')
 if [ "$HAS_TODAY_COMMITS" -gt 0 ] && ! grep -q "$TODAY_COMPACT" "$MEMORY_INDEX" 2>/dev/null; then
   check 9 "Stop hook 메모리 박제" "WARN" "오늘 commit 있는데 MEMORY.md 미박제"
@@ -138,7 +149,7 @@ else
 fi
 
 # Principle 10 — 한국어 존댓말 (commit 메시지 한국어 비율 검사)
-RECENT_KOR=$(git -C "$ROOT" log -10 --format=%B 2>/dev/null | grep -cE "[가-힣]" || echo 0)
+RECENT_KOR=$(git -C "$ROOT" log -10 --format=%B 2>/dev/null | grep -cE "[가-힣]" 2>/dev/null); RECENT_KOR=${RECENT_KOR:-0}
 if [ "$RECENT_KOR" -ge 5 ]; then
   check 10 "한국어 존댓말" "PASS" "최근 10 commit 중 ${RECENT_KOR}건 한국어 사용"
 else
@@ -166,8 +177,7 @@ fi
 # Principle 13 — 시크릿 평문 금지 (lenient)
 echo ""
 echo "── 보안 규정 ──"
-bash "$ROOT/.claude/scripts/sensor-secret-leak.sh" >/dev/null 2>&1
-EC=$?
+EC=$SECRET_LEAK_EC   # 상단 1회 실행분 재사용 (중복 봉합)
 if [ "$EC" -eq 0 ]; then
   check 13 "시크릿 평문 금지" "PASS" "sensor-secret-leak PASS"
 elif [ "$EC" -le 2 ]; then
@@ -229,8 +239,7 @@ else
 fi
 
 # Principle 16 — 결제 원자성 (lenient — sensor-credit-atomicity가 WARN exit 2 컨벤션 사용)
-bash "$ROOT/.claude/scripts/sensor-credit-atomicity.sh" >/dev/null 2>&1
-EC=$?
+EC=$CREDIT_ATOM_EC   # 상단 1회 실행분 재사용 (중복 봉합)
 if [ "$EC" -eq 0 ]; then
   check 16 "결제 원자성 (transaction)" "PASS" "sensor-credit-atomicity PASS"
 elif [ "$EC" -le 2 ]; then
@@ -246,8 +255,7 @@ echo "── 박제 의무 규정 (Mitchell Ghostty + Cuneiform Chat 정합) ─
 INCIDENT_LOG="$ROOT/.claude/state/incident-log.jsonl"
 TODAY=$(date -u +%Y-%m-%d)  # UTC — incident-log.sh가 UTC ts 박제하므로 정합 (2026-05-06 자기 결함 박제 후 수정)
 if [ -f "$INCIDENT_LOG" ]; then
-  TODAY_INCIDENTS=$(grep -c "\"ts\":\"${TODAY}T" "$INCIDENT_LOG" 2>/dev/null || echo 0)
-  TODAY_INCIDENTS=${TODAY_INCIDENTS:-0}
+  TODAY_INCIDENTS=$(grep -c "\"ts\":\"${TODAY}T" "$INCIDENT_LOG" 2>/dev/null); TODAY_INCIDENTS=${TODAY_INCIDENTS:-0}
   HAS_TODAY_COMMITS=$(git -C "$ROOT" log --since="$TODAY 00:00:00" --oneline 2>/dev/null | wc -l | tr -d ' ')
   if [ "$HAS_TODAY_COMMITS" -gt 0 ] && [ "$TODAY_INCIDENTS" -eq 0 ]; then
     check 20 "incident-log 박제 의무 (Mitchell Ghostty)" "WARN" "오늘 commit ${HAS_TODAY_COMMITS}건 있으나 incident 박제 0건"
@@ -258,10 +266,45 @@ else
   check 20 "incident-log 박제 의무 (Mitchell Ghostty)" "FAIL" "incident-log.jsonl 자체 부재 — 박제 시스템 미도입"
 fi
 
+# ── P3 증분 배선 (HARNESS_P3_SENSOR_WIRING_PROPOSAL.md §4-2, 2026-05-30) ──
+# A군 clean 센서 16종을 WARN 등급으로 증분 디스패치. 커밋 시점 1곳 집중(이 디스패처는
+# .githooks/pre-commit + pretooluse-redteam-gate가 공유). **WARN 강제** — 추가 센서가
+# FAIL/비정상 종료해도 커밋을 차단하지 않음(FAIL 카운트 미증가, WARN 카운트만). 기존 FAIL 게이트 보존.
+# 제외(노이즈/선행의존): sensor-partial-refund(exit2)·sensor-payment-race-condition(exit1)·
+#   sensor-instruction-degradation(P7 이미 등록, over-length WARN).
+# 멱등: 16종 전부 read-only grep — incident-log/state append 0, git index 변경 0(실측).
+echo ""
+echo "── P3 도메인 정책 센서 (WARN 등급 — 보고 전용, commit 비차단) ──"
+P3_PID=21
+P3_WARN_LOCAL=0
+for s in sensor-refund-atomicity sensor-payment-status-mapping sensor-payment-retry-reuse \
+         sensor-subscription-pool-no-rollover sensor-credit-denomination sensor-credit-overhaul-recalc \
+         sensor-credit-source-accounting sensor-chat-charge-tier sensor-polar-timeout-policy \
+         sensor-audit-retention-policy sensor-audit-log-before-after sensor-circuit-breaker-policy \
+         sensor-user-soft-delete-policy sensor-oauth-email-verification \
+         sensor-slug-login sensor-webhook-dlq; do
+  SCRIPT="$ROOT/.claude/scripts/$s.sh"
+  if [ ! -f "$SCRIPT" ]; then
+    check "$P3_PID" "$s" "WARN" "센서 파일 부재 (배선 누락 — commit 비차단)"
+    P3_WARN_LOCAL=$((P3_WARN_LOCAL+1))
+  else
+    bash "$SCRIPT" >/dev/null 2>&1
+    P3_EC=$?
+    if [ "$P3_EC" -eq 0 ]; then
+      check "$P3_PID" "$s" "PASS" "exit 0 (정책 정합)"
+    else
+      check "$P3_PID" "$s" "WARN" "exit=$P3_EC (검토 권장 — commit 비차단, P3 WARN 격리)"
+      P3_WARN_LOCAL=$((P3_WARN_LOCAL+1))
+    fi
+  fi
+  P3_PID=$((P3_PID+1))
+done
+echo "  (P3 배선 16종 — WARN 격리: 이 블록은 FAIL 미발생, commit 차단 신호 없음. 로컬 WARN=$P3_WARN_LOCAL)"
+
 # 종합
 echo ""
-echo "── 종합 (20 Principles, OWASP LLM Top 10 + Mitchell Ghostty 통합) ──"
-echo "PASS: $PASS / WARN: $WARN / FAIL: $FAIL (총 20)"
+echo "── 종합 (20 Principles + P3 도메인 16, OWASP LLM Top 10 + Mitchell Ghostty 통합) ──"
+echo "PASS: $PASS / WARN: $WARN / FAIL: $FAIL (Constitution 20 + P3 16)"
 
 if [ "$FAIL" -gt 0 ]; then
   echo ""
@@ -281,7 +324,7 @@ elif [ "$WARN" -gt 0 ]; then
   exit 1
 else
   echo ""
-  echo "✅ 16 Principles 모두 PASS — Commit 허용 (Constitutional AI 정합)"
+  echo "✅ 20 Principles 모두 PASS — Commit 허용 (Constitutional AI 정합)"
   bash "$ROOT/.claude/scripts/sensor-log.sh" "sensor-adversarial-pre-commit" "PASS" "PASS=$PASS WARN=$WARN FAIL=$FAIL" 2>/dev/null || true
   exit 0
 fi

@@ -38,7 +38,7 @@
 
 set +u
 
-PROJECT_ROOT="/Users/sokol/Desktop/Git/ProjectGrimoire"
+PROJECT_ROOT="/Users/sokol/Git/ProjectGrimoire"
 EVAL_DIR="$PROJECT_ROOT/eval"
 TASKS_DIR="$EVAL_DIR/tasks"
 TASKS_EDD_DIR="$EVAL_DIR/tasks-edd"
@@ -47,6 +47,25 @@ BASELINE_FILE="$EVAL_DIR/results/baseline.csv"
 EDD_BASELINE_FILE="$EVAL_DIR/results/edd-baseline.csv"
 GRADE_PY="$EVAL_DIR/scripts/grade.py"
 GRADE_LLM_PY="$EVAL_DIR/scripts/grade-llm.py"
+
+# baseline.csv rolling cap (2026-06-02 P2: 무한누적 차단).
+# 매 commit(pre-commit→eval-precommit→eval-runner)마다 1행 append 되던 무한증가를
+# "헤더 1행 + 최근 BASELINE_CAP 데이터행" rolling window 로 제한.
+# - 회귀 판정(eval-precommit tail-1=이번/tail-2=직전) 의미 보존 (마지막 행들 그대로).
+# - sensor-eval-trend 30일 추세 모수도 충분히 보존 (cap=100 ≈ 수일~2주분).
+# - per-run 전체 이력은 eval/results/{timestamp}/ summary.json+details.jsonl 에 영구 보존.
+BASELINE_CAP=100
+
+# trim_baseline <csv_file> — 헤더 보존, 최근 BASELINE_CAP 데이터행만 유지 (멱등).
+trim_baseline() {
+  local f="$1"
+  [ -f "$f" ] || return 0
+  local data_lines
+  data_lines=$(( $(wc -l < "$f") - 1 ))
+  [ "$data_lines" -le "$BASELINE_CAP" ] && return 0
+  local tmp="$f.trim.$$"
+  { head -1 "$f"; tail -n +2 "$f" | tail -n "$BASELINE_CAP"; } > "$tmp" && mv "$tmp" "$f"
+}
 
 mkdir -p "$RESULTS_DIR"
 
@@ -229,9 +248,11 @@ if [ -n "$SINGLE_TASK" ]; then
 elif [ "$MODE" = "edd" ]; then
   [ ! -f "$EDD_BASELINE_FILE" ] && echo "ts,mode,runs,llm,total,pass,fail,pass_rate" > "$EDD_BASELINE_FILE"
   echo "$TS,$MODE,$RUNS,$LLM_JUDGE,$TOTAL_TASKS,$PASS_TASKS,$FAIL_TASKS,$PASS_RATE" >> "$EDD_BASELINE_FILE"
+  trim_baseline "$EDD_BASELINE_FILE"
 else
   [ ! -f "$BASELINE_FILE" ] && echo "ts,total,pass,fail,pass_rate" > "$BASELINE_FILE"
   echo "$TS,$TOTAL_TASKS,$PASS_TASKS,$FAIL_TASKS,$PASS_RATE" >> "$BASELINE_FILE"
+  trim_baseline "$BASELINE_FILE"
 fi
 
 # summary.json

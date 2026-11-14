@@ -17,7 +17,7 @@
 # Exit 0 PASS / 1 WARN / 2 FAIL
 
 set +u
-ROOT="/Users/sokol/Desktop/Git/ProjectGrimoire"
+ROOT="/Users/sokol/Git/ProjectGrimoire"
 SKILLS_DIR="$ROOT/.claude/skills"
 PASS=0
 WARN=0

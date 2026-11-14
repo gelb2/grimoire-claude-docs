@@ -48,7 +48,7 @@ docker info 2>&1 | grep -E "Server Version|ID:" | head -2
 ### Step 2. 양 레포 git 정합성
 
 ```bash
-for REPO in /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-web; do
+for REPO in /Users/sokol/Git/ProjectGrimoire/grimoire-server /Users/sokol/Git/ProjectGrimoire/grimoire-web; do
   echo "=== $REPO ==="
   cd "$REPO"
   echo "branch: $(git rev-parse --abbrev-ref HEAD)"
@@ -73,7 +73,7 @@ done
 ### Step 3. 시크릿 누출 검사 (sensor-secret-leak.sh)
 
 ```bash
-bash /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/scripts/sensor-secret-leak.sh
+bash /Users/sokol/Git/ProjectGrimoire/.claude/scripts/sensor-secret-leak.sh
 EXIT=$?
 case $EXIT in
   0) echo "✅ secret-leak PASS" ;;
@@ -87,7 +87,7 @@ esac
 ### Step 4. docs 동기화 검증 (server ↔ web 9종)
 
 ```bash
-bash /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/scripts/sensor-docs-sync.sh
+bash /Users/sokol/Git/ProjectGrimoire/.claude/scripts/sensor-docs-sync.sh
 ```
 
 판정: FAIL 시 정본 문서 복사 후 재시도
@@ -96,13 +96,13 @@ bash /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/scripts/sensor-docs-sync.s
 
 server 배포면:
 ```bash
-cd /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server
+cd /Users/sokol/Git/ProjectGrimoire/grimoire-server
 npx tsc --noEmit && npm test && npm run build
 ```
 
 web 배포면:
 ```bash
-cd /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-web
+cd /Users/sokol/Git/ProjectGrimoire/grimoire-web
 npx tsc --noEmit && npm test -- --run && npm run build
 ```
 
@@ -125,7 +125,7 @@ az containerapp show -g zenith-rg -n "$APP" --query "{revision: properties.lates
 ```bash
 case "$ENV" in
   dev|prod)
-    cd /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server
+    cd /Users/sokol/Git/ProjectGrimoire/grimoire-server
     bash scripts/preflight.sh "$ENV"
     ;;
 esac

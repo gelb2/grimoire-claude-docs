@@ -13,8 +13,8 @@
 
 set +e
 
-SKILLS_DIR="/Users/sokol/Desktop/Git/ProjectGrimoire/.claude/skills"
-STATE_DIR="/Users/sokol/Desktop/Git/ProjectGrimoire/.claude/state"
+SKILLS_DIR="/Users/sokol/Git/ProjectGrimoire/.claude/skills"
+STATE_DIR="/Users/sokol/Git/ProjectGrimoire/.claude/state"
 STATE_FILE="$STATE_DIR/skill-sessions.json"
 
 mkdir -p "$STATE_DIR"

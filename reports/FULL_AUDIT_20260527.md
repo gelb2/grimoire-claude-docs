@@ -5,7 +5,7 @@
 >
 > 컨텍스트: 5/22 CC-5+PAY-S2 prod 배포 → 5/23 PAY-S3 (Circuit Breaker admin UI) prod 배포 → 5/27 GCP 마이그레이션 Phase 0~6 + 잔여 4작업 (Auth Proxy + Secret Manager + DB Sync Nightly + Phase 8 문서) 완전 종결.
 >
-> 정본 종속: `/Users/sokol/Desktop/Git/ProjectGrimoire/prompt-engineering/GMP-v2.2.md` (CoV) + `prompt-engineering/vibe-coding-unified-guide.md` (Phase 5 게이트) + `CLAUDE.md §0` (상태 추정 금지 / 정책 강제 종속).
+> 정본 종속: `/Users/sokol/Git/ProjectGrimoire/prompt-engineering/GMP-v2.2.md` (CoV) + `prompt-engineering/vibe-coding-unified-guide.md` (Phase 5 게이트) + `CLAUDE.md §0` (상태 추정 금지 / 정책 강제 종속).
 
 ---
 

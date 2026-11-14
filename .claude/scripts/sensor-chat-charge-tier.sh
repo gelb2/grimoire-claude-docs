@@ -23,7 +23,7 @@ trap '_rc=$?; bash "$(dirname "$0")/sensor-log.sh" "$(basename "$0" .sh)" "$_rc"
 
 set -uo pipefail
 
-ROOT="/Users/sokol/Desktop/Git/ProjectGrimoire"
+ROOT="/Users/sokol/Git/ProjectGrimoire"
 SERVER="$ROOT/grimoire-server"
 SCHEMA="$SERVER/prisma/schema.prisma"
 TIER_MODEL="$SERVER/src/domain/model/chat-charge-tier.ts"
@@ -39,7 +39,7 @@ echo "=== sensor-chat-charge-tier ($(date '+%H:%M:%S')) ==="
 echo ""
 
 # 1. CHAT_CHARGE_TIERS 정확히 4구간 — short/normal/long/xlong
-TIER_COUNT=$(grep -cE "tier: '(short|normal|long|xlong)'" "$TIER_MODEL" 2>/dev/null || echo 0)
+TIER_COUNT=$(grep -cE "tier: '(short|normal|long|xlong)'" "$TIER_MODEL" 2>/dev/null); TIER_COUNT=${TIER_COUNT:-0}
 if [ "$TIER_COUNT" -eq 4 ] \
   && grep -qE "tier: 'xlong'" "$TIER_MODEL" 2>/dev/null; then
   echo "  [PASS] CHAT_CHARGE_TIERS 정확히 4구간 (short/normal/long/xlong)"

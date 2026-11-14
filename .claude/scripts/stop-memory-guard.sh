@@ -13,8 +13,8 @@
 #   - project_remaining_tasks.md 7일 이상 stale WARN
 #   - grimoire-ios 제거 (ProjectGrimoire에 없음 — drift 해소)
 
-MEMORY_DIR="$HOME/.claude/projects/-Users-sokol-Desktop-Git-ProjectGrimoire/memory"
-PROJECT_DIR="/Users/sokol/Desktop/Git/ProjectGrimoire"
+MEMORY_DIR="$HOME/.claude/projects/-Users-sokol-Git-ProjectGrimoire/memory"
+PROJECT_DIR="/Users/sokol/Git/ProjectGrimoire"
 REPOS="grimoire-server grimoire-web"
 
 TODAY=$(date "+%Y-%m-%d")
@@ -81,7 +81,7 @@ fi
 INCIDENT_LOG="$PROJECT_DIR/.claude/state/incident-log.jsonl"
 TODAY_UTC=$(date -u +%Y-%m-%d)  # incident-log.sh가 UTC ts 박제하므로 정합
 if [ -f "$INCIDENT_LOG" ] && [ "$HAS_TODAY_COMMITS" = true ]; then
-  TODAY_INCIDENTS=$(grep -c "\"ts\":\"${TODAY_UTC}T" "$INCIDENT_LOG" 2>/dev/null || echo 0)
+  TODAY_INCIDENTS=$(grep -c "\"ts\":\"${TODAY_UTC}T" "$INCIDENT_LOG" 2>/dev/null); TODAY_INCIDENTS=${TODAY_INCIDENTS:-0}
   if [ "${TODAY_INCIDENTS:-0}" = "0" ]; then
     echo ""
     echo "⚠️ [ProjectGrimoire] WARN: 오늘 commit 있으나 incident-log.jsonl 박제 0건"

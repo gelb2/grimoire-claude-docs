@@ -5,17 +5,17 @@
   "source_session": "20260508 sprint-infra-1-mutation-guard — prod revision 97 ActivationFailed 사고 직후 INFRA-1 sprint 신설",
   "prompt": "INFRA-1: Azure Container Apps 인프라 변경 안전망. (a) infra-mutation-guard SKILL.md (다른 세션 박제) (b) rollback-revision SKILL.md (다른 세션 박제) (c) sensor-deploy-health.sh 신설 (5 검증: HealthState/Traffic/RunningState/curl/startup time) (d) sensor-azure-env-secret.sh 신설 (14 검증: 8 시크릿 + PUBLIC_API_BASE_URL + Polar 5건 + CORS) (e) shared-contracts §21 InfraMutationGuard. 회귀 시 임의 영역 누락 즉시 FAIL.",
   "eval_criteria": [
-    {"type": "command", "command": "test -f /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/skills/infra-mutation-guard/SKILL.md", "desc": "infra-mutation-guard SKILL.md 박제"},
-    {"type": "command", "command": "test -f /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/skills/rollback-revision/SKILL.md", "desc": "rollback-revision SKILL.md 박제"},
-    {"type": "command", "command": "test -x /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/scripts/sensor-deploy-health.sh", "desc": "sensor-deploy-health.sh 실행 권한"},
-    {"type": "command", "command": "test -x /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/scripts/sensor-azure-env-secret.sh", "desc": "sensor-azure-env-secret.sh 실행 권한"},
-    {"type": "command", "command": "grep -qE 'HealthState=Healthy' /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/scripts/sensor-deploy-health.sh", "desc": "sensor-deploy-health HealthState 검증"},
-    {"type": "command", "command": "grep -qE 'Traffic=100' /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/scripts/sensor-deploy-health.sh", "desc": "sensor-deploy-health Traffic 100 검증"},
-    {"type": "command", "command": "grep -qE 'startup time' /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/scripts/sensor-deploy-health.sh", "desc": "sensor-deploy-health startup time 검증"},
-    {"type": "command", "command": "grep -qE 'PUBLIC_API_BASE_URL' /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/scripts/sensor-azure-env-secret.sh", "desc": "sensor-azure-env-secret PUBLIC_API_BASE_URL 검증"},
-    {"type": "command", "command": "grep -qE 'DATABASE_URL.*JWT_SECRET' /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/scripts/sensor-azure-env-secret.sh || grep -cE 'DATABASE_URL|JWT_SECRET|RECAPTCHA_SECRET_KEY|ANTHROPIC_API_KEY|OPENAI_API_KEY|POLAR_ACCESS_TOKEN|POLAR_WEBHOOK_SECRET|AZURE_STORAGE_ACCOUNT_KEY' /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/scripts/sensor-azure-env-secret.sh | xargs test 8 -le", "desc": "sensor-azure-env-secret 8 시크릿 매트릭스"},
-    {"type": "command", "command": "grep -qE '## 21\\. InfraMutationGuard' /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/shared-contracts.md", "desc": "shared-contracts §21 InfraMutationGuard 박제"},
-    {"type": "command", "command": "test -f /Users/sokol/Desktop/Git/ProjectGrimoire/reports/sprint-infra-1-mutation-guard-progress.md", "desc": "Sprint progress 박제"}
+    {"type": "command", "command": "test -f /Users/sokol/Git/ProjectGrimoire/.claude/skills/infra-mutation-guard/SKILL.md", "desc": "infra-mutation-guard SKILL.md 박제"},
+    {"type": "command", "command": "test -f /Users/sokol/Git/ProjectGrimoire/.claude/skills/rollback-revision/SKILL.md", "desc": "rollback-revision SKILL.md 박제"},
+    {"type": "command", "command": "test -x /Users/sokol/Git/ProjectGrimoire/.claude/scripts/sensor-deploy-health.sh", "desc": "sensor-deploy-health.sh 실행 권한"},
+    {"type": "command", "command": "test -x /Users/sokol/Git/ProjectGrimoire/.claude/scripts/sensor-azure-env-secret.sh", "desc": "sensor-azure-env-secret.sh 실행 권한"},
+    {"type": "command", "command": "grep -qE 'Ready=True' /Users/sokol/Git/ProjectGrimoire/.claude/scripts/sensor-deploy-health.sh", "desc": "sensor-deploy-health GCP Cloud Run Ready=True health 검증 (H-2 이관, 구 Azure HealthState=Healthy)"},
+    {"type": "command", "command": "grep -qE 'Traffic=100' /Users/sokol/Git/ProjectGrimoire/.claude/scripts/sensor-deploy-health.sh", "desc": "sensor-deploy-health Traffic 100 검증"},
+    {"type": "command", "command": "grep -qE 'startup time' /Users/sokol/Git/ProjectGrimoire/.claude/scripts/sensor-deploy-health.sh", "desc": "sensor-deploy-health startup time 검증"},
+    {"type": "command", "command": "grep -qE 'PUBLIC_API_BASE_URL' /Users/sokol/Git/ProjectGrimoire/.claude/scripts/sensor-azure-env-secret.sh", "desc": "sensor-azure-env-secret PUBLIC_API_BASE_URL 검증"},
+    {"type": "command", "command": "grep -qE 'DATABASE_URL.*JWT_SECRET' /Users/sokol/Git/ProjectGrimoire/.claude/scripts/sensor-azure-env-secret.sh || grep -cE 'DATABASE_URL|JWT_SECRET|RECAPTCHA_SECRET_KEY|ANTHROPIC_API_KEY|OPENAI_API_KEY|POLAR_ACCESS_TOKEN|POLAR_WEBHOOK_SECRET|AZURE_STORAGE_ACCOUNT_KEY' /Users/sokol/Git/ProjectGrimoire/.claude/scripts/sensor-azure-env-secret.sh | xargs test 8 -le", "desc": "sensor-azure-env-secret 8 시크릿 매트릭스"},
+    {"type": "command", "command": "grep -qE '## 21\\. InfraMutationGuard' /Users/sokol/Git/ProjectGrimoire/.claude/shared-contracts.md", "desc": "shared-contracts §21 InfraMutationGuard 박제"},
+    {"type": "command", "command": "test -f /Users/sokol/Git/ProjectGrimoire/reports/sprint-infra-1-mutation-guard-progress.md", "desc": "Sprint progress 박제"}
   ],
   "threshold": 1.0,
   "runs": 1

@@ -16,7 +16,7 @@
 set -u
 START_TIME=$(date +%s)
 
-PROJECT_ROOT="/Users/sokol/Desktop/Git/ProjectGrimoire"
+PROJECT_ROOT="/Users/sokol/Git/ProjectGrimoire"
 SERVER_DIR="$PROJECT_ROOT/grimoire-server"
 WEB_DIR="$PROJECT_ROOT/grimoire-web"
 
@@ -66,6 +66,10 @@ GUARD = re.compile(r'@UseGuards\([^)]*(?:JwtAuthGuard|AdminGuard|OptionalAuthGua
 ALLOW_PUBLIC = re.compile(r'@Public\(\)|@AllowAnonymous\(\)')
 
 # 의도적 공개 허용 리스트 (login/register/refresh/logout/google/social anon)
+# [2026-06-01] password reset 2종 추가 — EMAIL-POLAR-READY Phase C (server 2bafb4f, 5/27 도입).
+#   비로그인 호출 본질 필수(비밀번호 잊은 사용자) → JWT 가드 불가. 보호 수단:
+#   @Throttle(reset-request 분당3 / reset-confirm 분당10) + enumeration 차단 응답 + 토큰 purpose 검증.
+#   register/login/refresh 와 동일 '인증 전' 범주. server 코드 정상 = sensor 화이트리스트 stale 갭 해소.
 ALLOWED_UNPROTECTED = {
     "POST login (admin.controller.ts)",
     "POST register (auth.controller.ts)",
@@ -73,6 +77,8 @@ ALLOWED_UNPROTECTED = {
     "POST google (auth.controller.ts)",
     "POST refresh (auth.controller.ts)",
     "POST logout (auth.controller.ts)",
+    "POST password/reset-request (auth.controller.ts)",
+    "POST password/reset-confirm (auth.controller.ts)",
     "POST likes/:episodeId (social.controller.ts)",
     "POST comments/:episodeId (social.controller.ts)",
     "DELETE comments/:commentId (social.controller.ts)",

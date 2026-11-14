@@ -1,0 +1,29 @@
+#!/bin/sh
+# claude-docs pre-push hook — eval 회귀 게이트 (75 task, regression-tolerance 0.05, HARD-BLOCK)
+#
+# 2026-07-13 (H-1 이중실행 봉합) 신설.
+#   pre-commit에 있던 eval-precommit(eval-runner 75 task, 실측 ~240s)을 push 경계로 이관.
+#   근거:
+#     - 매 커밋마다 240s 회귀 실행 → Bash 기본 2분 timeout 초과 → 커밋 파싱실패·salvage 빈발 (H-1 근원).
+#     - eval은 "통합(push) 시점" 게이트가 적합 — server/web pre-push가 tsc/test/build 돌리는 것과 동일 패턴.
+#     - .githooks/AGENTS.md §1 "Pre-push hook: 아직 미도입 (server/web 참고하여 추후 도입 권장)" 정합.
+#   커버리지: eval 75/75 그대로 (eval/scripts/eval-precommit.sh 무변경 호출).
+#            HARD-BLOCK(must-pass FAIL 차단) + regression-tolerance 0.05 게이트 그대로 유지 = 강도 약화 0.
+#   주의: root 레포는 지금까지 pre-push 게이트가 없었음 → 본 hook은 net "게이트 신설(강화)" (약화 아님).
+#
+# 활성화: git config core.hooksPath .githooks (이미 설정됨)
+# 우회: git push --no-verify (긴급 시만 — pretooluse-redteam-gate가 push 시 적대검증 별도 강제)
+# 실행: push는 timeout=600000로 (사용자 규칙 — eval 240s는 2분 초과)
+
+set -e
+
+PROJECT_ROOT="/Users/sokol/Git/ProjectGrimoire"
+
+echo "=== claude-docs pre-push 검증 ==="
+
+echo ""
+echo "[1/1] eval-precommit.sh (75 task, regression-tolerance 0.05, HARD-BLOCK) ..."
+bash "$PROJECT_ROOT/eval/scripts/eval-precommit.sh"
+
+echo ""
+echo "=== pre-push 검증 통과 ==="

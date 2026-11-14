@@ -39,28 +39,28 @@ case "$MODE" in dry-run|apply) ;; *) echo "MODE must be dry-run|apply"; exit 1 ;
 
 ```bash
 # 3 레포 git log (최근 5 커밋)
-for REPO in /Users/sokol/Desktop/Git/ProjectGrimoire \
-            /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server \
-            /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-web; do
+for REPO in /Users/sokol/Git/ProjectGrimoire \
+            /Users/sokol/Git/ProjectGrimoire/grimoire-server \
+            /Users/sokol/Git/ProjectGrimoire/grimoire-web; do
   echo "=== $(basename $REPO) ==="
   cd "$REPO" && git log --oneline -5
 done
 
 # 최신 메모리 세션 5개
-ls -t /Users/sokol/.claude/projects/-Users-sokol-Desktop-Git-ProjectGrimoire/memory/project_session_*.md | head -5
+ls -t /Users/sokol/.claude/projects/-Users-sokol-Git-ProjectGrimoire/memory/project_session_*.md | head -5
 
 # sensor 스냅샷
-bash /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/scripts/sensor-secret-leak.sh 2>&1 | tail -3
-bash /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/scripts/sensor-docs-sync.sh 2>&1 | tail -3
-bash /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/scripts/sensor-hit-rate-report.sh 2>&1 | tail -10
+bash /Users/sokol/Git/ProjectGrimoire/.claude/scripts/sensor-secret-leak.sh 2>&1 | tail -3
+bash /Users/sokol/Git/ProjectGrimoire/.claude/scripts/sensor-docs-sync.sh 2>&1 | tail -3
+bash /Users/sokol/Git/ProjectGrimoire/.claude/scripts/sensor-hit-rate-report.sh 2>&1 | tail -10
 
 # 배포 상태 (curl health)
 curl -s -o /dev/null -w "%{http_code} %{time_total}s\n" https://dev-api.grimoire-book.com/api/health
 curl -s -o /dev/null -w "%{http_code} %{time_total}s\n" https://api.grimoire-book.com/api/health
 
 # TODO 미체크 카운트
-grep -c "^- \[ \]" /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/TODO.md
-grep -c "^- \[ \]" /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-web/TODO.md
+grep -c "^- \[ \]" /Users/sokol/Git/ProjectGrimoire/grimoire-server/TODO.md
+grep -c "^- \[ \]" /Users/sokol/Git/ProjectGrimoire/grimoire-web/TODO.md
 ```
 
 ### Step 3. HANDOVER.md 갱신안 작성

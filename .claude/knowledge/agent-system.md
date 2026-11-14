@@ -1,14 +1,19 @@
 ---
-name: 멀티 에이전트 구조 (7개)
-description: .claude/agents/ 7개 파일, PLANNING §0 원가 철칙 게이트, 사슴악마 시각 정본 수호, 매일 Daily Discovery + Sweep, launchd 18:00~23:00 시간대
+name: 멀티 에이전트 구조 (10개 = 7 핵심 + 3 메타)
+description: .claude/agents/ 10개 파일 — 7 핵심 기능(planner/researcher/cost-accountant/visual-canon-keeper/server/web/qa) + 3 메타·인프라(infrastructure/harness/verifier). PLANNING §0 원가 철칙 게이트, 사슴악마 시각 정본 수호.
 type: project
 ---
 
-**구조:** 메인 Claude가 6개 에이전트를 계층적으로 호출. researcher → cost-accountant/planner → visual-canon-keeper → server/web → qa. 2026-04-15에 Zenith 패턴 차용해 최초 도입. 2026-04-17 GMP v2.2 구조로 프롬프트 전면 전환 (XML 태그 + 이중 앵커링 + SELF_VERIFICATION).
+**구조:** 현행 10 에이전트 = **7 핵심 기능** + **3 메타·인프라**.
+
+- **7 핵심 기능 (도메인 작업)**: planner / researcher / cost-accountant / visual-canon-keeper / server / web / qa. 메인 Claude가 계층적으로 호출 — researcher → cost-accountant/planner → visual-canon-keeper → server/web → qa. 2026-04-15에 Zenith 패턴 차용해 최초 도입. 2026-04-17 GMP v2.2 구조로 프롬프트 전면 전환 (XML 태그 + 이중 앵커링 + SELF_VERIFICATION).
+- **3 메타·인프라 (시스템 자체)**: infrastructure (2026-05-08 신설 — Azure/Cloud Run 배포·secret·cron) / harness (2026-05-09 신설 — 하네스 메타 영역 `.claude/*` 전담) / verifier (2026-05-29 신설 — 읽기전용 독립 검증). 도메인 기능 흐름의 바깥에서 배포·하네스·검증을 담당한다.
+
+> **핸드오프 매트릭스 (`agent-interaction-matrix.md`)는 7 핵심 기준이 정본** — 도메인 작업 흐름(기획→구현→검증)은 7 핵심 사이에서만 발생한다. 3 메타 에이전트는 그 흐름의 트리거 대상이 아니라 시스템 운영 주체이므로 별도 명시(아래 §3 메타 에이전트)한다.
 
 **인터페이스 정본 (2026-04-30 #10 신설, 책 Ch 16):**
-- `.claude/shared-contracts.md` — 7 에이전트 공유 인터페이스 10개 정본 (PLANNER_REPORT / COST_AUDIT_REPORT / VISUAL_CANON_REPORT / DEV_REPORT / QA_REPORT / AskOptions / ANALYSIS_CREDIT_COST=4 / Eval task 형식 / LLM-Judge 가드 / PostToolUseFailure hook)
-- 7 에이전트 .md 모두 §0 직후 1줄 동기 참조 박제 — 인터페이스 변경 시 shared-contracts.md 먼저 갱신 → 7 .md 자동 정합
+- `.claude/shared-contracts.md` — 7 핵심 에이전트 공유 인터페이스 10개 정본 (PLANNER_REPORT / COST_AUDIT_REPORT / VISUAL_CANON_REPORT / DEV_REPORT / QA_REPORT / AskOptions / ANALYSIS_CREDIT_COST=4 / Eval task 형식 / LLM-Judge 가드 / PostToolUseFailure hook)
+- 7 핵심 에이전트 .md 모두 §0 직후 1줄 동기 참조 박제 — 인터페이스 변경 시 shared-contracts.md 먼저 갱신 → 7 .md 자동 정합 (산출물 reports/*.md를 주고받는 도메인 흐름은 7 핵심에 한정)
 - 자동 검증: `sensor-shared-contracts.sh` (FAIL/WARN 0건 박제 강제)
 
 **프롬프트 정본 3개 (역할별 차등 Read):**
@@ -34,20 +39,29 @@ type: project
 - 신규 UI 컴포넌트: visual-canon-keeper 사슴악마 정본 검수 없이 구현 불가
 - 커스텀 에이전트는 세션 재시작 후 로드
 
-## 에이전트 파일 위치 (5개 + dev 2 = 7개 파일)
+## 에이전트 파일 위치 (10개 = 7 핵심 + 3 메타)
+
+> 초기 참고자료의 구상과 활용 과정은 [적용 기록](../../prompt-engineering/README.md)을 따른다. 이 문서의 과거 하네스 구성과 명령은 당시 기록이며 최신 사용자 지시 없이 자동 실행하지 않는다.
 
 ```
 .claude/agents/
+│  # ── 7 핵심 기능 (도메인 작업) ──
 ├── grimoire-planner.md              ← 기획 + §0 게이트 트리거 (opus)
 ├── grimoire-researcher.md           ← 경쟁사 + AI 가격 모니터링 (opus)
 ├── grimoire-cost-accountant.md      ← §0 원가 수호자 (opus, Grimoire 고유)
 ├── grimoire-visual-canon-keeper.md  ← 사슴악마 정본 수호자 (opus, Grimoire 고유)
 ├── grimoire-qa.md                   ← 전수검사 (opus)
 ├── grimoire-server.md               ← NestJS + Prisma + pgvector (opus)
-└── grimoire-web.md                  ← Next.js + Tailwind 4 (opus)
+├── grimoire-web.md                  ← Next.js + Tailwind 4 (opus)
+│  # ── 3 메타·인프라 (시스템 자체) ──
+├── grimoire-infrastructure.md       ← Azure/Cloud Run 배포·secret·cron (2026-05-08 신설)
+├── grimoire-harness.md              ← 하네스 메타 영역 .claude/* 전담 (2026-05-09 신설)
+└── grimoire-verifier.md             ← 읽기전용 독립 검증 (2026-05-29 신설)
 ```
 
 ## 역할 분담
+
+### 7 핵심 기능 (도메인 작업)
 
 | 에이전트 | 도구 | 담당 |
 |---------|------|------|
@@ -58,6 +72,14 @@ type: project
 | **qa** | +Bash | server + web 테스트·빌드·타입·시각 정본·§0 원가·보안 게이트 |
 | **server** | +Bash | NestJS 헥사고날, Prisma, pgvector, 인증, 결제, 테마 생성 UseCase |
 | **web** | +Bash | Next.js FSD, Tailwind 4, 사슴악마 정본 준수, BFF 프록시 |
+
+### 3 메타·인프라 (시스템 자체)
+
+| 에이전트 | 도구 | 담당 |
+|---------|------|------|
+| **infrastructure** (2026-05-08 신설) | Read/Bash | Azure/Cloud Run 배포·secret·cron. 수동 배포 1차(`make deploy-{env}`), GitHub Actions 자동배포 차단. INFRA-1 자동배포 사고 후속 신설 |
+| **harness** (2026-05-09 신설) | Read/Write/Edit/Bash | 하네스 메타 영역 `.claude/*` 전담 — sensor/hook/skill/agent 정의/settings.json/state/knowledge. PP-7 라우팅 매트릭스 ↔ agent 정의 불일치(메타 영역 책임 누락) 정정 신설 |
+| **verifier** (2026-05-29 신설) | Read/Bash/Glob/Grep | 읽기전용 독립 검증 (작업 주체 ↔ 검증 주체 분리). Edit/Write/commit 없음 — 거짓 PASS 검출 전담. 정직성 사태 후속 신설 |
 
 ## 작업 플로우
 
@@ -92,7 +114,7 @@ qa 전수검사 → reports/QA_REPORT.md → 배포 게이트 판정
 - `PLANNING_GRIMOIRE.md` (§0 크레딧-원가 철칙 — ※ 원가 철칙은 PLANNING의 §0이지 CLAUDE.md §0이 아님. CLAUDE.md §0은 ZERO-TOLERANCE PROTOCOL)
 - `SYNC_STATUS.md`
 
-특수:
+특수 (7 핵심):
 - planner: PLANNING + research/FEATURE_AI_ANALYSIS.md + research/FUNDING_*
 - researcher: research/* + 두 Live 캐시 + AI 제공자 공식 가격 페이지
 - cost-accountant: PLANNING §0 + ai-cost-table.md (grimoire-server/docs/) + reports/AI_COST_MONITOR.md
@@ -100,6 +122,11 @@ qa 전수검사 → reports/QA_REPORT.md → 배포 게이트 판정
 - qa: TESTING.md + TECH_STATUS.md + cost-accountant/visual-canon-keeper 리포트
 - server: grimoire-server/CLAUDE.md + 모든 docs/*
 - web: grimoire-web/CLAUDE.md + DESIGN.md + SCREENS.md + 디자인 토큰 + 사슴악마 소스
+
+특수 (3 메타):
+- infrastructure: docs/INFRASTRUCTURE.md + docs/DEPLOY.md + Makefile + docs/environments.md + memory/feedback_manual_deploy_primary.md
+- harness: research/HARNESS_ENGINEERING.md (§14 인벤토리 정본) + .claude/AGENTS.md + .claude/shared-contracts.md + 본 agent-system.md
+- verifier: `.claude/skills/verifier-protocol/SKILL.md` + 검증 대상 작업의 산출물 (commit diff / sensor raw / 리포트)
 
 ## 스케줄 (매일, 18:00~23:30 KST)
 
@@ -144,6 +171,10 @@ qa 전수검사 → reports/QA_REPORT.md → 배포 게이트 판정
 ```
 Agent(subagent_type="general-purpose",
       prompt="당신은 grimoire-cost-accountant 에이전트입니다.
-              /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/agents/grimoire-cost-accountant.md
+              /Users/sokol/Git/ProjectGrimoire/.claude/agents/grimoire-cost-accountant.md
               를 먼저 읽고 §0 크레딧-원가 철칙 전용 수호자 역할을 숙지한 후...")
 ```
+
+## 변경 이력
+
+- 2026-05-30 (harness): 7 에이전트 → **10 에이전트 (7 핵심 + 3 메타)** 전면 정합. 3 메타·인프라(infrastructure 2026-05-08 / harness 2026-05-09 / verifier 2026-05-29) 항목 추가 — frontmatter·도입부·파일 위치 트리·역할 분담 표(7+3 분리)·필수 참조 문서. 핸드오프 매트릭스(agent-interaction-matrix.md)는 도메인 흐름 정본인 7 핵심 기준 유지 명시. 실측 기준(`research/HARNESS_ENGINEERING.md` §14.1 Agents 10개 표).

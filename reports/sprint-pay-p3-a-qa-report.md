@@ -92,7 +92,7 @@
 ### 3-1. jest server 회귀 (qa 독립 재실행)
 
 ```
-$ cd /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server && npx jest
+$ cd /Users/sokol/Git/ProjectGrimoire/grimoire-server && npx jest
 
 PASS src/application/stats/stats.usecase.spec.ts
 PASS src/application/author/author.usecase.spec.ts
@@ -129,7 +129,7 @@ Ran all test suites.
 ### 3-2. sensor-payment-race-condition.sh 독립 재실행
 
 ```
-$ bash /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/scripts/sensor-payment-race-condition.sh
+$ bash /Users/sokol/Git/ProjectGrimoire/.claude/scripts/sensor-payment-race-condition.sh
 
 === sensor-payment-race-condition (02:44:18) ===
 
@@ -155,7 +155,7 @@ PASS: 8 / FAIL: 0
 $ bash eval/scripts/eval-runner.sh eval/tasks/regression-66-payment-race-condition.json
 
 === ProjectGrimoire Eval [mode=regression, runs=1, llm-judge=0] (2026-05-09 02:44:20) ===
-결과 디렉토리: /Users/sokol/Desktop/Git/ProjectGrimoire/eval/results/2026-05-09-02-44-20
+결과 디렉토리: /Users/sokol/Git/ProjectGrimoire/eval/results/2026-05-09-02-44-20
 
 ▶ [regression-66-payment-race-condition]
   ✅ PASS (11/11 criteria)
@@ -167,7 +167,7 @@ PASS: 1 / TOTAL: 1 / FAIL: 0
 가중 점수 (TaskFlow 5차원): 1.0 (n=1)
   - functional   : 1.0 (n=1)
 [skip] single-task 모드 — baseline.csv 적재 안 함
-[기록] baseline.csv + /Users/sokol/Desktop/Git/ProjectGrimoire/eval/results/2026-05-09-02-44-20/{summary.json,details.jsonl}
+[기록] baseline.csv + /Users/sokol/Git/ProjectGrimoire/eval/results/2026-05-09-02-44-20/{summary.json,details.jsonl}
 [RESULT] PASS — 전체 통과
 ```
 
@@ -204,7 +204,7 @@ PASS: 65 / TOTAL: 65 / FAIL: 0
 가중 점수 (TaskFlow 5차원): 1.0 (n=65)
   - functional   : 1.0 (n=64)
   - security     : 1.0 (n=1)
-[기록] baseline.csv + /Users/sokol/Desktop/Git/ProjectGrimoire/eval/results/2026-05-09-02-47-48/{summary.json,details.jsonl}
+[기록] baseline.csv + /Users/sokol/Git/ProjectGrimoire/eval/results/2026-05-09-02-47-48/{summary.json,details.jsonl}
 [RESULT] PASS — 전체 통과
 ```
 

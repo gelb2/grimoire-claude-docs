@@ -27,7 +27,7 @@ import sys
 import argparse
 from pathlib import Path
 
-ROOT = Path("/Users/sokol/Desktop/Git/ProjectGrimoire")
+ROOT = Path("/Users/sokol/Git/ProjectGrimoire")
 DEFAULT_DB = ROOT / "eval" / "results" / "baseline.db"
 REG_CSV = ROOT / "eval" / "results" / "baseline.csv"
 EDD_CSV = ROOT / "eval" / "results" / "edd-baseline.csv"

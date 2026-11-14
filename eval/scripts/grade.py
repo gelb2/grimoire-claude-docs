@@ -55,7 +55,7 @@ def grade_grep_count(target_dir, include, exclude, pattern, min_count=0, max_cou
         find_cmd.append(')')
 
     try:
-        files = subprocess.run(find_cmd, capture_output=True, text=True, timeout=30).stdout.strip().split('\n')
+        files = subprocess.run(find_cmd, capture_output=True, text=True, timeout=30, stdin=subprocess.DEVNULL).stdout.strip().split('\n')
     except Exception as e:
         return False, "find 실패: " + str(e)
 
@@ -90,7 +90,8 @@ def grade_command(command, project_root=""):
         result = subprocess.run(
             ['bash', '-c', command],
             capture_output=True,
-            timeout=300, cwd=project_root
+            timeout=300, cwd=project_root,
+            stdin=subprocess.DEVNULL,  # stdin 대기 sensor hang 방어 (2026-06-01)
         )
         if result.returncode == 0:
             return True, "command exit 0"
@@ -114,7 +115,7 @@ def grade_inventory_match(doc, pattern, actual, project_root=""):
             return False, "패턴 미매치: " + pattern[:60]
         doc_count = int(m.group(1))
 
-        result = subprocess.run(actual, shell=True, capture_output=True, text=True, cwd=project_root)
+        result = subprocess.run(actual, shell=True, capture_output=True, text=True, cwd=project_root, stdin=subprocess.DEVNULL)
         actual_count = int(result.stdout.strip())
 
         if doc_count == actual_count:

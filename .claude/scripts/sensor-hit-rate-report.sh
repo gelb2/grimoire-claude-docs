@@ -10,7 +10,7 @@
 
 set -u
 
-LOG_FILE="/Users/sokol/Desktop/Git/ProjectGrimoire/.claude/state/sensor-hits.jsonl"
+LOG_FILE="/Users/sokol/Git/ProjectGrimoire/.claude/state/sensor-hits.jsonl"
 
 if [ ! -f "$LOG_FILE" ]; then
   echo "[sensor-hit-rate] sensor-hits.jsonl 없음. sensor-log.sh로 적재 필요."
@@ -114,7 +114,7 @@ echo "  - subagent-stop                : 메타 hook 영역. subagent 종료 트
 echo ""
 echo "─── silent sensor 식별 (마지막 호출 시간 + 30일 stale) ───"
 echo "(.claude/scripts/sensor-*.sh 중 호출 없거나 stale)"
-ALL_SENSORS=$(ls /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/scripts/sensor-*.sh 2>/dev/null | xargs -I{} basename {} .sh | sort -u)
+ALL_SENSORS=$(ls /Users/sokol/Git/ProjectGrimoire/.claude/scripts/sensor-*.sh 2>/dev/null | xargs -I{} basename {} .sh | sort -u)
 NOW_EPOCH=$(date "+%s")
 for s in $ALL_SENSORS; do
   # sensor-log, sensor-hit-rate-report는 메타라 제외

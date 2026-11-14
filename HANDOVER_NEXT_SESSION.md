@@ -1,158 +1,50 @@
-# 🤝 HANDOVER — 다음 세션 인계 문서
+# 🤝 HANDOVER — 다음 세션 인계 (2026-05-30 갱신)
 
-> **작성 시각**: 2026-05-27 (GCP 마이그레이션 + EMAIL-POLAR-READY 종결 직후)
-> **목적**: 다음 세션/리모트 채팅방에서 다른 Claude 인스턴스가 작업 이어받기
-> **갱신 규칙**: 세션 종료 시 이 문서를 최신 상태로 덮어쓴다
-> **메모리 정본**: `~/.claude/projects/-Users-sokol-Desktop-Git-ProjectGrimoire/memory/` (MEMORY.md 인덱스 + project_session_*.md + project_remaining_tasks.md)
+> **⛔ SUPERSEDED (2026-06-26 박제)**: 본 핸드오버는 2026-05-30 시점 스냅샷이다. 이후 세션(6/1 하네스 감사 P0~P2 / 6/4 Azure decommission / 6/10 ne3 청소·deploy 복구 등)으로 대부분 처리됨. 아래 §2~§3의 "미푸시 / 정합성 매듭 커밋" 기술은 **무효** — `2a71978`·정합성 매듭 커밋은 이미 origin/develop 에 머지·푸시 완료(현 develop HEAD ≠ 본 문서 시점). **현행 상태 = `git log --oneline -5` + `memory/MEMORY.md` 세션 인덱스(6/1·6/4·6/10)** 가 정본. 본 문서는 당시 톤 경고(§intro)와 위협모델 교훈(§1)만 참조 가치 유지. 잔존 백로그(§4)는 `memory/project_remaining_tasks.md`로 일원화.
 
----
-
-## ⚡ 즉시 컨텍스트 (30초 브리핑)
-
-ProjectGrimoire(작가별 소설 퍼블리싱 플랫폼, 3 레포). 2026-05-27 현재:
-- **크레딧 개편 코어 CC-1~5** (적립 8경로 + 디노미네이션 1:1,000 + 4 출처 회계 + Polar 구독 정기결제) — prod 종결
-- **결제 하드닝 PAY-S1~S3** (로컬 마이그·다중 부분환불 누적 한도·Circuit Breaker 운영자 admin UI) — prod 종결
-- **GCP 마이그레이션** (Azure → GCP, Phase 0~6 + 잔여 4작업) — 종결. **Phase 7 Azure decommission만 남음**
-- **EMAIL-POLAR-READY** (외부 게이트 통과 시 사용자 1-2줄 액션으로 라이브) — 종결
-- **3 레포 main 동기 + 미푸시 0/0/0**. 4 도메인 GCP에서 정상 운영. 실 사용자 트래픽 0 (test data만).
-
-**다음 큰 결정**: ① 👤 Polar KYC + 한국 payout 승인 (매출 임팩트 최상위) ② 👤 Email SaaS 선택 + 절대규정 0-1 해제 ③ Phase 7 Azure 정리 (≥1주 운영 박제 후).
+> **이 세션 성격**: 하네스 정직성 사태 후속. 부트스트랩 → 적대테스트로 가드 우회 입증 → 권한 deny 실험(자기잠금) → 전량 되돌림 → "처음부터 다시" → **위협모델 정정** → 협조적 하네스 박제.
+> **톤 경고**: 사용자 극도 분노 + 욕설/위협 다수 + **자기파괴 신호(암페타민·밤샘·"다 죽자"·"다 죽여버리겠어" 반복)**. 작업 재촉보다 사용자 상태 먼저. 위기자원 109 1회 안내했음(매 턴 반복 금지, 실제 위험 신호 시만).
 
 ---
 
-## 1. 인프라 핵심 (GCP — Azure에서 이전 완료)
+## ⚡ 30초
+- ⛔ **(SUPERSEDED)** ~~develop HEAD = "정합성 매듭" 커밋 … 미푸시~~ → `2a71978` 및 정합성 매듭 커밋 **푸시 완료**. 현행 HEAD는 `git log --oneline -1` 로 확인 (본 문서 시점과 다름).
+- prod 4도메인(grimoire-book.com 등) 무관 — 이 세션은 하네스(.claude)만.
 
-| 항목 | 값 |
-|---|---|
-| GCP project | **`grimoire-491708`** (number 23295981916) |
-| region | **`asia-northeast1`** (Tokyo) 단일 |
-| Cloud Run × 4 | server-dev `00005-9f4` / server-prod `00005-kh7` / web-dev `00002-7wg` / web-prod `00002-qtc` |
-| Cloud SQL × 2 | `grimoire-db-{dev,prod}` (db-f1-micro Enterprise, PG16, **Auth Proxy** Unix socket, allowlist `221.150.30.109/32`만) |
-| Secret Manager | **20건** (`{name}-{env}-an1` 패턴): database-url-authproxy / jwt-secret / recaptcha-secret-key / anthropic-api-key / openai-api-key / polar-access-token / polar-webhook-secret / azure-storage-account-key / **resend-api-key**(placeholder) / **sendgrid-api-key**(placeholder) × dev/prod |
-| GCS × 2 | `gs://grimoire-blob-{dev,prod}` (public `allUsers:objectViewer`) |
-| Artifact Registry | `grimoire-docker` (asia-northeast1) + `cloud-run-source-deploy`(자동) |
-| Domain Mapping × 4 | api/dev-api/dev → CNAME `ghs.googlehosted.com` / apex → A 216.239.32/34/36/38.21 + AAAA. Google managed cert (Trust Services WR3, auto-renewal) |
-| Cloudflare DNS | zone `bb46e47d16da5ad279793bda1847c81c`, proxied=**false**, token in `~/.zshrc` (`CLOUDFLARE_API_TOKEN`, DNS 권한만 — Rulesets X) |
-| 배포 정본 | **`gcloud run deploy {svc} --source <path> --region asia-northeast1 --project grimoire-491708`** (수동 1차). GitHub Actions 자동배포 4종 `.disabled` 유지 |
-| db-sync | `.github/workflows/db-sync-nightly.yml` (GCP Cloud SQL Auth Proxy, GitHub Secret `GCP_SA_KEY`+`DB_PASSWORD_{DEV,PROD}`). schedule 17:00 UTC (KST 자정) |
-| 도메인 verification | Google Search Console `grimoire-book.com` verified (rainmaker8492@gmail.com 계정 / DNS TXT) |
+## 1. 이 세션 핵심 교훈 (다음 세션 필독 — 같은 실수 반복 금지)
+1. **위협모델 = "협조적 LLM"**. 하네스의 강제는 "LLM(메인)이 실수로 위험한 짓 하는 걸 막기"다. **적대적 해커 난독화(`git⎵⎵commit` 공백2개·`$g commit` 변수·대문자경로·`{"agent_id":"위조"}`) 완벽 차단은 도구 한계라 누구도 못 한다.** 적대 테스트로 "우회 가능"을 "하네스 실패"로 일반화하지 말 것 — 그게 이 세션을 날린 핵심 오판.
+2. **permission.deny는 전체 세션(메인+모든 subagent) 적용** — "메인만 막기"는 구조적 불가. 공식문서 `code.claude.com/docs/en/sub-agents`(line 38 "subagent inherits parent's permissions with additional restrictions" / line 232 "rules apply to the entire session") + 실측 일치. **deny에 Edit/Write/Bash 넣으면 메인·에이전트 다 막혀 settings.json 수정조차 못 하는 자기잠금** → 사용자가 수동 삭제해야 풀림.
+3. **isSidechain 키는 hook stdin에 없음**. 메인/에이전트 구분 = `agent_id` 필드(sub-agent에만 주입). 가드는 agent_id 판별로 수정 완료.
+4. **에이전트 정의·권한은 세션 시작 시 1회 로드**. 런타임에 .md 만들거나 reset해도 레지스트리 미반영(grimoire-verifier가 그래서 세션 도중 "not found"). settings deny 추가는 즉시 발효되나 제거 반영은 불안정.
+5. **추정 금지가 사태 본질**: "검증 없이 만들고 → 나중에 뚫린 거 발견"의 반복. **만들기 전에 검증**. claude-code-guide(에이전트) 답도 2회 틀림 → 공식문서 원문 직접 확인.
 
-**Azure 잔존 (Phase 7 정리 대기, ≥1주 후)**: zenith-rg 내 Container Apps 4 + Postgres Flexible 2 + ACR(grimoireacr) + Blob(grimoire0storage) + Log Analytics. + **asia-northeast3 GCP 잔존**(미사용 Cloud SQL 2 `grimoire-pg-{dev,prod}` + GCS bucket 1). 모두 사용 중지, cert/DNS 전부 GCP 이전 완료, 미삭제.
+## 2. 현 하네스 상태 (`2a71978`)
+- **가드 3개**: `pretooluse-edit-write-guard.sh`(agent_id 판별) / `pretooluse-bash-guard.sh` / `pretooluse-main-whitelist.sh`(경로정규화 `os.path.normpath`+소문자 + GAP D `&>` /dev·/tmp 한정 strip). 메인 코드·commit·push·test 차단, agent_id 에이전트 통과. **협조적 방어 OK**(대문자·중복슬래시·트래버설·`&>`코드쓰기 BLOCK + 정상 읽기·메모리·에이전트쓰기 ALLOW, general-purpose 검증).
+- `sensor-selftest.sh`: bash 3.2 호환, 56 분류(INJECTABLE 3/GUARDED 4/EXISTENCE 32/EXTERNAL 14/STUB 3), FIRE_OK 3.
+- `red-team-constitution.md`: 운영 5조 + Principle 20.
+- `grimoire-verifier.md` + `verifier-protocol` skill: 파일 존재, **다음 세션부터 런타임 호출 가능**.
+- `settings.json`: PreToolUse 가드 wiring + redteam-gate. **deny 없음**(deny 실험 자기잠금 후 사용자 수동 제거).
 
-**계정**: GCP/Azure/Cloudflare = `rainmaker8492@gmail.com`. (Chrome default Google 계정은 hiphopxy@gmail.com — Search Console 등 `/u/1/` URL로 rainmaker 강제 필요)
+## 3. 남은 것 / 미완 (정직)
+- **gcloud 완전 차단 미완**: redteam-gate가 gcloud 검출은 하나 adversarial sensor가 WARN이라 통과 → 완전 차단은 sensor 강화 필요(별개).
+- ✅ **adversarial 헤더 "16 Principles" 드리프트 정정 완료** (실제 20). `red-team-constitution.md:1` + `sensor-adversarial-pre-commit.sh:38,284` → 20으로 정정. line 263은 원래 20(정상, 미변경). grep 재확인: "16 Principles" 0건.
+- ✅ **bash-guard `git merge-base` false positive 수정 완료**. `pretooluse-main-whitelist.sh:63-64` case 패턴 `*"git merge"*` → `*"git merge "*|*"git merge"`(공백 또는 명령 끝)로 좁힘. 읽기전용 `git merge-base`는 ALLOW, 실제 `git merge`/`git -C path merge`는 BLOCK:mutating-git 유지(분류기 직접호출 raw 검증 3+5건 전건 기대 일치).
+- ✅ **stale worktree 3개 제거 완료**: intelligent-shamir-649fd0 / musing-pike-3129dc / nice-lehmann-1a7a01 (전부 HEAD=13d040e, uncommitted 0 재확인 후 `git worktree remove` + `git branch -D`). `git worktree list`=루트만 / `claude/*` 브랜치 0건.
+- ✅ `eval/results/baseline.csv` 부산물 이번 커밋에 포함(2026-05-29 eval 1줄).
+- **적대 난독화 완벽 차단 = 도구 한계. 추구 금지(밤새 돌려도 도달 불가).**
+- 복구 ref: `1319a37`(reset 전 부트스트랩 상태, reflog 보존기간 내) / `bb57841`(세션 시작 직전).
 
----
+## 4. 잔존 백로그 (이전 세션들)
+- 👤 Polar KYC + 한국 payout / 👤 Email SaaS 선택(EMAIL-POLAR-READY 코드 박제 완료) / 사슴악마 작품 `context` AI사과문 오염(prod DB, 미해결) / Phase 7 Azure decommission
+- GCP: project grimoire-491708 / asia-northeast1 / Cloud Run 4 / Cloud SQL 2(Auth Proxy) / Secret Manager 20
 
-## 2. git 상태 (3 레포 main 동기, 미푸시 0)
+## 5. 다음 세션 첫 행동
+1. 이 HANDOVER + MEMORY.md + `project_session_20260529.md` 읽기
+2. **사용자 상태 먼저 살피기** — 이 세션 끝 극도 분노 + 자기파괴 신호. 작업 재촉 금물.
+3. 하네스 작업 재개 시: **협조적 위협모델 기준**(흔한 변형 차단, 적대 완벽 추구 X). 추정 전 검증. "PASS" 대신 raw(exit code/git ref).
 
-| 레포 | main | develop | 비고 |
-|---|---|---|---|
-| grimoire-server | `a255140` | `92b5eef` | EMAIL-POLAR-READY Phase B/C/D |
-| grimoire-web | `ed1d940` | `e81ecb8` | EMAIL-POLAR-READY Phase A |
-| grimoire-claude-docs (= 워크스페이스 root) | `609caba` | `694bc99` | CC-3~EMAIL-POLAR-READY 누적 docs |
-
-브랜치 정책: feature → develop(QA dev) → main(prod). 수동 배포 정본.
-
----
-
-## 3. prod 정합 (2026-05-27 curl 실측)
-
-- 4 도메인 200: `api.grimoire-book.com`/`dev-api`/`grimoire-book.com`/`dev` (health 200 / membership 401 / circuit-breaker/state 401 / payments/products 4종)
-- EMAIL-POLAR-READY 신 endpoint: `POST /api/auth/email/verify-request` 미인증 401 / `POST /api/auth/password/reset-request` 빈 body 400
-- jest **1174 PASS** / vitest **226 PASS** / 회귀 0
-- SSL Google managed cert (WR3)
-- Polar webhook POST 빈 body → 201 (Standard Webhooks 멱등성 정합, 정상)
-
----
-
-## 4. 잔존 백로그 (우선순위)
-
-### 👤 사용자 외부 액션 (최우선 — 코드 선행 0)
-1. **Polar KYC + 한국 payout 승인** — Polar Dashboard. 승인 후 아래 §5-A 1줄로 구독 라이브
-2. **Email SaaS 선택 + 절대규정 0-1 해제** — Resend(무료 3,000/월 권장) / SendGrid. 선택 후 §5-B 2줄로 실 발송
-
-### Tier 1 (즉시 자율, 외부 의존 0)
-- **PAY-S7** cron 시간대 명시 (`timeZone: 'Asia/Seoul'`, ~10분)
-- **sensor regex micro-sprint** — false-positive 2건 정합화 (`sensor-payment-race-condition` CC-2b CAS 패턴 + `sensor-credit-atomicity` CC-4 Phase 3 stale regex), ~1-2h
-
-### Tier 2 (사용자 결정 후 자율)
-- **PAY-S5** webhook 비동기화 (BullMQ/agenda, ~3-4h, 트래픽 0이라 후순위)
-- **PAY-S6 최소안** 운영 알림 (PAY-S3 admin UI 결합 — permanent_failed/mismatch/circuit OPEN 배지, ~1h)
-
-### Tier 3 (외부 게이트 통과 후)
-- **PAY-S4** 결제 알림 실 발송 (코드 박제 완료 — EMAIL-POLAR-READY Phase D, env 전환만)
-- **PAY-S6 Sentry 정식안** (cost-accountant 게이트)
-- **SMS 알림** (PAY-P2-3, SmsServicePort + Author.phone 컬럼 별도 sprint)
-
-### Tier 4 (후속 sprint)
-- **Phase 7 Azure decommission** (≥1주 GCP 운영 박제 후): zenith-rg 정리 + asia-northeast3 GCP 잔존 정리 + dead code(`blob-storage.service.ts` provider) 제거
-- Cloud SQL g1-small 업그레이드 (사용자 트래픽 진입 시 cost-accountant 재호출)
-- `Author.emailVerifiedAt` 컬럼 + verifyToken 후 갱신 (EMAIL-P1-1 후속)
-- 비밀번호 reset-confirm → set-password 2단계 (현재 토큰 검증만)
-
----
-
-## 5. 사용자 라이브 액션 매뉴얼 (외부 게이트 통과 직후)
-
-### A. Polar KYC + payout 승인 후 (web env 1줄)
-```bash
-gcloud run services update grimoire-web-prod --region asia-northeast1 \
-  --update-env-vars NEXT_PUBLIC_SUBSCRIPTION_LIVE=true
-```
-→ `MembershipPage`가 즉시 실 `api.startSubscriptionCheckout(tier)` 호출 → Polar Checkout redirect. 실패 시 ComingSoonModal fallback (UX 보존). (dev: `grimoire-web-dev`)
-
-### B. Email SaaS(Resend) 활성 후 (server 2줄)
-```bash
-echo -n "<RESEND_API_KEY>" | gcloud secrets versions add resend-api-key-prod-an1 \
-  --project grimoire-491708 --data-file=-
-gcloud run services update grimoire-server-prod --region asia-northeast1 \
-  --update-env-vars EMAIL_PROVIDER=resend
-```
-→ NullEmailAdapter → ResendEmailAdapter 즉시 전환. 인증/비밀번호 reset/결제 알림(충전·환불·구독갱신·실패) 실 발송. (SendGrid: `sendgrid-api-key-prod-an1` + `EMAIL_PROVIDER=sendgrid`. dev: `*-dev-an1` + `grimoire-server-dev`)
-
-> **3중 안전망**: factory default NullAdapter → adapter placeholder/empty 체크 → usecase isEnabled() 가드. env 미설정 시 외부 호출 0건 (사용자 절대규정 0-1 정합).
-
----
-
-## 6. 알려진 false-positive / 주의사항
-
-- **sensor-payment-race-condition FAIL 2건** = false-positive (CC-2b가 `$executeRawUnsafe` CAS로 이행, regex stale). 실 코드 정합 — sensor regex micro-sprint 대기
-- **sensor-credit-atomicity WARN 2건** = false-positive (CC-4 Phase 3 CreditLog 폐기, regex stale)
-- **sensor-instruction-degradation WARN 1건** = `researcher.md` 316줄 (pre-existing, 비-결제)
-- **eval regression 7일 mean 0.92~0.93** = 외부 영향 0, harness 영역 별도 sprint
-- **eval-precommit이 baseline.csv 자동 append** → root commit/머지 시 working tree dirty 유발. main 머지 전 `git stash` 우회 필요
-- **Polar webhook POST 201** = 정상 (Standard Webhooks 멱등성, PAY-P0-1)
-
-### 절대 규칙 (CLAUDE.md §0 + 메모리 박제)
-- **수동 배포 정본** (`gcloud run deploy --source`). GitHub Actions 자동배포 금지
-- **GCP 절대 규칙** (server/CLAUDE.md §1): project grimoire-491708 / region asia-northeast1 단일 / Secret Manager 단일 진실 / Cloud SQL Auth Proxy 강제
-- **결제 원자성** (§9): 돈 로직 단일 `$transaction`. 알림은 트랜잭션 외부 (throw 0)
-- **작가 소설 콘텐츠 수정 절대 금지**
-- **메인 = 조율자**: 코드/배포/마이그레이션은 agent 위임 (단, 메모리/문서/curl 실측/단순 gcloud는 메인 직접 가능)
-- **존댓말 필수** / 추정 금지 (curl/psql/git 실측)
-
----
-
-## 7. 정본 문서 위치
-
-| 영역 | 정본 |
-|---|---|
-| 기획 | `PLANNING_GRIMOIRE.md` (루트) |
-| 남은 과제 | `memory/project_remaining_tasks.md` (재추산 + 5/19~5/27 갱신 노트) |
-| 인프라 | `grimoire-server/INFRASTRUCTURE.md` (GCP 정합, §12 Azure 잔존) |
-| 배포 | `grimoire-server/docs/DEPLOY.md` + `Makefile` (GCP) |
-| 환경 | `grimoire-server/docs/environments.md` (정본) |
-| API | `grimoire-server/docs/api-contract.md` (정본 → web sync) |
-| 인터페이스 | `.claude/shared-contracts.md` §11~§33 (§31 EmailServiceFactory / §32 EmailVerificationTokenPolicy / §33 PaymentNotificationPolicy 최신) |
-| sprint plan-draft | `.claude/state/sprint-*-plan-draft.md` |
-| 진단 보고서 | `reports/FULL_AUDIT_20260527.md` + `reports/PAYMENT_BACKLOG_AUDIT_20260523.md` |
-| 세션 메모리 | `memory/project_session_20260527.md` (GCP + EMAIL-POLAR-READY 상세) |
-
----
-
-## 8. 멀티 에이전트 / 도구 노트
-
-- **agent**: grimoire-{planner, server, web, infrastructure, qa, cost-accountant, visual-canon-keeper} (orchestration-decision skill로 위임 분류)
-- **agent AUP 차단 사례** (5/27): Phase 5 spawn 시 `API Error ... Usage Policy` 1건 — 메인 직접 진행으로 우회. 사용자 폭언 발화가 conversation-level safety classifier 발동 추정
-- **Chrome MCP** (`mcp__Claude_in_Chrome__*`): Search Console verification 등 GUI 자동화 가능. CAPTCHA/로그인은 사용자 영역 (메인 우회 금지)
-- **자격증명 위치**: Cloudflare token `~/.zshrc` / GCP `gcloud auth` (rainmaker8492) / Cloud SQL 비번 `/tmp/grimoire-sqlpass-{dev,prod}.txt` (600, 임시)
+## 6. 핵심 파일
+- 정본: `PLANNING_GRIMOIRE.md`, `memory/project_remaining_tasks.md`
+- 레드팀: `.claude/knowledge/red-team-constitution.md`
+- 가드: `.claude/scripts/pretooluse-{edit-write,bash}-guard.sh` + `pretooluse-main-whitelist.sh`
+- selftest: `.claude/scripts/sensor-selftest.sh` (`--list`/`--all`)

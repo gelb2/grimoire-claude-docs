@@ -23,7 +23,7 @@
 
 set -u
 
-ROOT="/Users/sokol/Desktop/Git/ProjectGrimoire"
+ROOT="/Users/sokol/Git/ProjectGrimoire"
 HARNESS="$ROOT/research/HARNESS_ENGINEERING.md"
 MODE="dry-run"
 

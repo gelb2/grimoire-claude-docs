@@ -13,7 +13,7 @@
 # Exit 0 PASS / 1 WARN / 2 FAIL
 
 set +u
-ROOT="/Users/sokol/Desktop/Git/ProjectGrimoire"
+ROOT="/Users/sokol/Git/ProjectGrimoire"
 KDIR="$ROOT/.claude/knowledge"
 README="$KDIR/README.md"
 FAIL=0

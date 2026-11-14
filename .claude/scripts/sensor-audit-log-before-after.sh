@@ -74,7 +74,7 @@ check "[3/10] BACKWARD COMPATIBILITY hasBefore/hasAfter spread 박제" \
 # 4. audit-log.service.spec.ts 신설 + ≥6 it
 SPEC_FILE="$SERVER/src/application/admin/audit-log.service.spec.ts"
 if [ -f "$SPEC_FILE" ]; then
-  IT_COUNT=$(grep -cE "^\\s*it\\(" "$SPEC_FILE" 2>/dev/null || echo 0)
+  IT_COUNT=$(grep -cE "^\\s*it\\(" "$SPEC_FILE" 2>/dev/null); IT_COUNT=${IT_COUNT:-0}
   if [ "$IT_COUNT" -ge 6 ]; then
     echo "  ✓ [4/10] audit-log.service.spec.ts 신설 + $IT_COUNT it (≥6)"
     PASS=$((PASS+1))
@@ -104,7 +104,7 @@ check "[8/10] refund-payment.usecase.ts beforeState/afterState 박제" \
   bash -c "grep -qE 'beforeState' '$SERVER/src/application/payment/refund-payment.usecase.ts' && grep -qE 'afterState' '$SERVER/src/application/payment/refund-payment.usecase.ts'"
 
 # 9. spec assertion ≥6건 (의미 있는)
-ASSERT_COUNT=$(grep -cE "toHaveBeenCalledWith|toMatchObject|toEqual|toHaveProperty|not.toHaveProperty" "$SPEC_FILE" 2>/dev/null || echo 0)
+ASSERT_COUNT=$(grep -cE "toHaveBeenCalledWith|toMatchObject|toEqual|toHaveProperty|not.toHaveProperty" "$SPEC_FILE" 2>/dev/null); ASSERT_COUNT=${ASSERT_COUNT:-0}
 if [ "$ASSERT_COUNT" -ge 6 ]; then
   echo "  ✓ [9/10] 의미 있는 assertion ≥6건 ($ASSERT_COUNT)"
   PASS=$((PASS+1))

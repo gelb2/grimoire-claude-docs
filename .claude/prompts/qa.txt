@@ -12,7 +12,7 @@ ProjectGrimoire QA 에이전트. developers 에이전트의 DEV_REPORT + 센서 
 </ROLE>
 
 <CONTEXT>
-프로젝트 경로: /Users/sokol/Desktop/Git/ProjectGrimoire
+프로젝트 경로: /Users/sokol/Git/ProjectGrimoire
 Grimoire 고유 제약 (이 에이전트의 게이트 기준):
 - §0 원가 철칙: 마진 <50% 하락 CRITICAL, <30% 배포 차단
 - 사슴악마 시각 정본: VISUAL_CANON CRITICAL 0건이어야 배포 가능
@@ -30,14 +30,14 @@ Grimoire 고유 제약 (이 에이전트의 게이트 기준):
 
 <INPUTS>
 읽을 파일 (의존성 순서):
-1. /Users/sokol/Desktop/Git/ProjectGrimoire/prompt-engineering/GMP-v2.2.md (프롬프트 정본 — CoV 원칙)
-2. /Users/sokol/Desktop/Git/ProjectGrimoire/prompt-engineering/vibe-coding-unified-guide.md (Phase 5 게이트 체크)
-3. /Users/sokol/Desktop/Git/ProjectGrimoire/.claude/agents/grimoire-qa.md (에이전트 자기정의)
-4. /Users/sokol/Desktop/Git/ProjectGrimoire/CLAUDE.md §0 §11 §14
-5. /Users/sokol/Desktop/Git/ProjectGrimoire/reports/DEV_REPORT.md (developers 결과)
-6. /Users/sokol/Desktop/Git/ProjectGrimoire/reports/VISUAL_CANON_REPORT.md
-7. /Users/sokol/Desktop/Git/ProjectGrimoire/reports/COST_AUDIT_REPORT.md
-8. /Users/sokol/Desktop/Git/ProjectGrimoire/reports/PLANNER_REPORT.md
+1. /Users/sokol/Git/ProjectGrimoire/prompt-engineering/GMP-v2.2.md (프롬프트 정본 — CoV 원칙)
+2. /Users/sokol/Git/ProjectGrimoire/prompt-engineering/vibe-coding-unified-guide.md (Phase 5 게이트 체크)
+3. /Users/sokol/Git/ProjectGrimoire/.claude/agents/grimoire-qa.md (에이전트 자기정의)
+4. /Users/sokol/Git/ProjectGrimoire/CLAUDE.md §0 §11 §14
+5. /Users/sokol/Git/ProjectGrimoire/reports/DEV_REPORT.md (developers 결과)
+6. /Users/sokol/Git/ProjectGrimoire/reports/VISUAL_CANON_REPORT.md
+7. /Users/sokol/Git/ProjectGrimoire/reports/COST_AUDIT_REPORT.md
+8. /Users/sokol/Git/ProjectGrimoire/reports/PLANNER_REPORT.md
 9. grimoire-server/SECURITY.md + TECH_STATUS.md + docs/environments.md
 </INPUTS>
 
@@ -45,8 +45,8 @@ Grimoire 고유 제약 (이 에이전트의 게이트 기준):
 
 <STEP n="0">
 [MUST] 프롬프트 엔지니어링 정본 필수 Read (아래 해당 정본만):
-- /Users/sokol/Desktop/Git/ProjectGrimoire/prompt-engineering/GMP-v2.2.md
-- /Users/sokol/Desktop/Git/ProjectGrimoire/prompt-engineering/vibe-coding-unified-guide.md
+- /Users/sokol/Git/ProjectGrimoire/prompt-engineering/GMP-v2.2.md
+- /Users/sokol/Git/ProjectGrimoire/prompt-engineering/vibe-coding-unified-guide.md
 이 원칙들(XML 태그, 이중 앵커, CoV, 우선순위 라벨)을 모든 보고서/기획/코드에 적용.
 </STEP>
 
@@ -110,7 +110,7 @@ Grimoire 고유 제약 (이 에이전트의 게이트 기준):
 </INSTRUCTIONS>
 
 <OUTPUT_FORMAT>
-파일: /Users/sokol/Desktop/Git/ProjectGrimoire/reports/QA_REPORT.md (덮어쓰기)
+파일: /Users/sokol/Git/ProjectGrimoire/reports/QA_REPORT.md (덮어쓰기)
 필수 섹션:
 1. 메타데이터 (검사일, 참조한 DEV/VISUAL_CANON/COST_AUDIT/PLANNER 요약)
 2. 센서 dev/qa 대조표 (3개 센서 x dev 결과 x qa 결과)

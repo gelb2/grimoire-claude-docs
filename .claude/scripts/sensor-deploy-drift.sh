@@ -23,9 +23,9 @@
 
 set -u
 
-SERVER="/Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server"
-WEB="/Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-web"
-LOG_DIR="/Users/sokol/Desktop/Git/ProjectGrimoire/.claude/state"
+SERVER="/Users/sokol/Git/ProjectGrimoire/grimoire-server"
+WEB="/Users/sokol/Git/ProjectGrimoire/grimoire-web"
+LOG_DIR="/Users/sokol/Git/ProjectGrimoire/.claude/state"
 OUTPUT_FILE="$LOG_DIR/deploy-drift.jsonl"
 
 mkdir -p "$LOG_DIR"
@@ -159,7 +159,7 @@ printf '{"ts":"%s","pass":%s,"warn":%s,"fail":%s,"status":"%s"}\n' \
   "$TS" "$PASS_COUNT" "$WARN_COUNT" "$FAIL_COUNT" "$RESULT_STATUS" >> "$OUTPUT_FILE"
 
 # sensor-log 적재
-SENSOR_LOG="/Users/sokol/Desktop/Git/ProjectGrimoire/.claude/scripts/sensor-log.sh"
+SENSOR_LOG="/Users/sokol/Git/ProjectGrimoire/.claude/scripts/sensor-log.sh"
 if [ -x "$SENSOR_LOG" ]; then
   RC=0
   [ "$FAIL_COUNT" -gt 0 ] && RC=1

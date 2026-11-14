@@ -192,7 +192,7 @@ model SignupHistory {
 
 ```bash
 # 본 sprint 종료 검증
-cd /Users/sokol/Desktop/Git/ProjectGrimoire
+cd /Users/sokol/Git/ProjectGrimoire
 ls reports/sprint-signup-history-slug-review-progress.md  # 본 보고서
 grep -n "providerId" grimoire-server/prisma/schema.prisma  # L120-126 SignupHistory 모델
 grep -n "findByProviderId\|signupCount" grimoire-server/src/application/auth/auth.usecase.ts

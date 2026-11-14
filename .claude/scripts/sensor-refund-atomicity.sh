@@ -22,7 +22,7 @@ trap '_rc=$?; bash "$(dirname "$0")/sensor-log.sh" "$(basename "$0" .sh)" "$_rc"
 
 set -uo pipefail
 
-ROOT="/Users/sokol/Desktop/Git/ProjectGrimoire"
+ROOT="/Users/sokol/Git/ProjectGrimoire"
 SERVER="$ROOT/grimoire-server"
 SCHEMA="$SERVER/prisma/schema.prisma"
 PORT="$SERVER/src/domain/port/outbound/payment-repository.port.ts"
@@ -101,7 +101,7 @@ else
 fi
 
 # 8. 2 action 식별자 (refund_normal + refund_deficit)
-ACTIONS=$(grep -cE 'refund_normal|refund_deficit' "$USECASE" 2>/dev/null || echo 0)
+ACTIONS=$(grep -cE 'refund_normal|refund_deficit' "$USECASE" 2>/dev/null); ACTIONS=${ACTIONS:-0}
 if [ "$ACTIONS" -ge 2 ]; then
   echo "  [PASS] 2 action 식별자 박제 (refund_normal + refund_deficit)"
   PASS=$((PASS + 1))

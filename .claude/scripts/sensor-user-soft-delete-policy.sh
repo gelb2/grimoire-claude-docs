@@ -85,7 +85,10 @@ if [ ! -f "${CRON_FILE}" ]; then
   echo "FAIL [7/12]: user-hard-delete.job.ts 박제 0건"
   fail_count=$((fail_count + 1))
 else
-  if ! grep -qE "@Cron\('0 0 4 \* \* \*'\)" "${CRON_FILE}"; then
+  # 2026-06-26: server `589f683`가 운영 cron에 { timeZone: 'Asia/Seoul' } 인자 추가
+  # (Cloud Run UTC 9h 어긋남 정정, PAY-S7). 스케줄 표현은 동일하므로 뒤따르는
+  # `)` 또는 `,`(추가 옵션) 모두 허용 — 그렇지 않으면 정상 cron을 "0건"으로 거짓 FAIL.
+  if ! grep -qE "@Cron\('0 0 4 \* \* \*'[,)]" "${CRON_FILE}"; then
     echo "FAIL [7/12]: @Cron('0 0 4 * * *') 매일 새벽 4시 박제 0건 (옵션 A 정합)"
     fail_count=$((fail_count + 1))
   fi

@@ -1,9 +1,11 @@
 # AUTOMATION.md — Grimoire 멀티 에이전트 운영 문서
 
+> 초기 참고자료의 구상과 활용 과정은 [적용 기록](prompt-engineering/README.md)을 따른다. 이 문서의 과거 하네스 구성과 명령은 당시 기록이며 최신 사용자 지시 없이 자동 실행하지 않는다.
+
 > 2026-04-15 도입. projectZenith 패턴 차용 + Grimoire 고유 역할(cost-accountant, visual-canon-keeper).
-> 에이전트·Skills·Sensors·Hooks 변경 시 이 문서도 반드시 갱신.
+> 본 문서는 **운영 구조·규칙**(오케스트레이션 / 보고서 흐름 / 센서 대조 / 게이트 / 트러블슈팅)을 정의한다.
 >
-> **2026-04-26 현행화** — Skills 10 / Sensors 9 / Hooks 8 이벤트 11 스크립트 / Prompts server·web 분리 / launchd 비활성 사실 박제 / agent-interaction-matrix 신설.
+> 🔴 **인벤토리 카운트(Agents/Skills/Sensors/Hooks/Knowledge 개수) 정본 = `research/HARNESS_ENGINEERING.md §14` (실측 자동 갱신).** 본 문서는 카운트를 직접 박제하지 않고 §14를 가리킨다 — 평행 정본 부패(drift) 원천 제거. 새 자산 추가 시 `bash .claude/scripts/update-harness-inventory.sh --apply`로 §14만 갱신하면 된다.
 
 ---
 

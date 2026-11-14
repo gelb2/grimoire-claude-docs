@@ -117,9 +117,11 @@ fi
 
 # 10. spec 더미 assertion 차단 — toHaveBeenCalledWith ≥7건 합산
 USECASE_SPEC_HITS=$(grep -cE "toHaveBeenCalledWith|toHaveBeenCalledTimes" \
-  "$SERVER/src/application/payment/payment.usecase.spec.ts" 2>/dev/null || echo 0)
+  "$SERVER/src/application/payment/payment.usecase.spec.ts" 2>/dev/null)
+USECASE_SPEC_HITS=${USECASE_SPEC_HITS:-0}
 CLEANUP_SPEC_HITS=$(grep -cE "toHaveBeenCalledWith|toHaveBeenCalledTimes" \
-  "$SERVER/src/application/payment/payment-cleanup.job.spec.ts" 2>/dev/null || echo 0)
+  "$SERVER/src/application/payment/payment-cleanup.job.spec.ts" 2>/dev/null)
+CLEANUP_SPEC_HITS=${CLEANUP_SPEC_HITS:-0}
 TOTAL_HITS=$((USECASE_SPEC_HITS + CLEANUP_SPEC_HITS))
 
 if [ "$TOTAL_HITS" -ge 7 ]; then

@@ -813,15 +813,15 @@ echo "PASS: PAY-P3-H Circuit Breaker 정책 정합"
 
 ## §19 정본 참조 (file:line)
 
-- `/Users/sokol/Desktop/Git/ProjectGrimoire/.claude/state/sprint-pay-p2-5-audit-retention-draft.md` (242 lines, 17 섹션 정본 구조 차용)
-- `/Users/sokol/Desktop/Git/ProjectGrimoire/.claude/state/sprint-pay-p3-b-polar-timeout-draft.md` (PAY-P3-B 후속 위치 영역 정합)
-- `/Users/sokol/Desktop/Git/ProjectGrimoire/.claude/state/sprint-pay-p3-e-fk-cascade-draft.md` (사용자 결정 게이트 + 단계 분리 패턴 차용)
-- `/Users/sokol/Desktop/Git/ProjectGrimoire/.claude/shared-contracts.md` §24 PolarSDKTimeoutPolicy (L1780-1793) + §25 FKCascadePolicy (L1797-1898) + §26 AuditRetentionPolicy (L1902-1969)
-- `/Users/sokol/Desktop/Git/ProjectGrimoire/research/PAYMENT_SYSTEM_PLAN.md` §3-1 P1 P3-H 매트릭스 + §2-2 #11 PG↔DB 정합성 batch (회복 자동 감지 패턴)
-- `/Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/src/adapter/outbound/payment/polar.adapter.ts` L37-80 (timeoutMs 박제 + classifyPolarError 박제 — PAY-P3-B 정합)
-- `/Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/src/application/payment/payment.usecase.ts` (success/cancel 분기 catch — PAY-P3-B 정합)
-- `/Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/ADR.md` ADR-007 (FK cascade) + ADR-008 (audit retention) — ADR-009 박제 위치 정합
-- `/Users/sokol/Desktop/Git/ProjectGrimoire/PLANNING_GRIMOIRE.md` §0 (크레딧-원가 철칙 — circuit breaker는 외부 API 0 정합)
+- `/Users/sokol/Git/ProjectGrimoire/.claude/state/sprint-pay-p2-5-audit-retention-draft.md` (242 lines, 17 섹션 정본 구조 차용)
+- `/Users/sokol/Git/ProjectGrimoire/.claude/state/sprint-pay-p3-b-polar-timeout-draft.md` (PAY-P3-B 후속 위치 영역 정합)
+- `/Users/sokol/Git/ProjectGrimoire/.claude/state/sprint-pay-p3-e-fk-cascade-draft.md` (사용자 결정 게이트 + 단계 분리 패턴 차용)
+- `/Users/sokol/Git/ProjectGrimoire/.claude/shared-contracts.md` §24 PolarSDKTimeoutPolicy (L1780-1793) + §25 FKCascadePolicy (L1797-1898) + §26 AuditRetentionPolicy (L1902-1969)
+- `/Users/sokol/Git/ProjectGrimoire/research/PAYMENT_SYSTEM_PLAN.md` §3-1 P1 P3-H 매트릭스 + §2-2 #11 PG↔DB 정합성 batch (회복 자동 감지 패턴)
+- `/Users/sokol/Git/ProjectGrimoire/grimoire-server/src/adapter/outbound/payment/polar.adapter.ts` L37-80 (timeoutMs 박제 + classifyPolarError 박제 — PAY-P3-B 정합)
+- `/Users/sokol/Git/ProjectGrimoire/grimoire-server/src/application/payment/payment.usecase.ts` (success/cancel 분기 catch — PAY-P3-B 정합)
+- `/Users/sokol/Git/ProjectGrimoire/grimoire-server/ADR.md` ADR-007 (FK cascade) + ADR-008 (audit retention) — ADR-009 박제 위치 정합
+- `/Users/sokol/Git/ProjectGrimoire/PLANNING_GRIMOIRE.md` §0 (크레딧-원가 철칙 — circuit breaker는 외부 API 0 정합)
 
 ---
 

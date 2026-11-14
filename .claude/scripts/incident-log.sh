@@ -42,7 +42,7 @@
 
 set -uo pipefail
 
-INCIDENT_LOG="/Users/sokol/Desktop/Git/ProjectGrimoire/.claude/state/incident-log.jsonl"
+INCIDENT_LOG="/Users/sokol/Git/ProjectGrimoire/.claude/state/incident-log.jsonl"
 
 if [ "$#" -lt 4 ]; then
   echo "Usage: incident-log.sh <category> <severity> <source> <description> [resolution]"
@@ -79,7 +79,7 @@ esac
 mkdir -p "$(dirname "$INCIDENT_LOG")"
 
 TS=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-SESSION_ID=$(basename "$(ls -t "$HOME/.claude/projects/-Users-sokol-Desktop-Git-ProjectGrimoire/"*.jsonl 2>/dev/null | head -1)" .jsonl 2>/dev/null || echo "unknown")
+SESSION_ID=$(basename "$(ls -t "$HOME/.claude/projects/-Users-sokol-Git-ProjectGrimoire/"*.jsonl 2>/dev/null | head -1)" .jsonl 2>/dev/null || echo "unknown")
 
 # DESCRIPTION + RESOLUTION JSON-escape
 DESC_ESC=$(echo "$DESCRIPTION" | python3 -c 'import sys, json; print(json.dumps(sys.stdin.read().rstrip()))')

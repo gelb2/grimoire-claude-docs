@@ -5,8 +5,8 @@
   "source_session": "20260502 묶음 M NEW-9 — category 균형 보강",
   "prompt": "에지 케이스 박제: (a) 빈 에피소드 본문 처리 코드 존재 (b) 크레딧 0 차감 거부 로직 (c) 빈 작품 (에피소드 0개) 표시 로직. 각 항목 grep으로 검증 — 코드 변경 시 빠뜨리면 즉시 FAIL.",
   "eval_criteria": [
-    {"type": "command", "command": "grep -r -l 'empty\\|isEmpty\\|length === 0\\|length === 0' /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/src/application 2>/dev/null | wc -l | xargs -I{} test {} -ge 1", "desc": "server에 edge case (empty/length === 0) 처리 ≥1 파일"},
-    {"type": "command", "command": "grep -r -l 'amount.*0\\|credit.*0\\|<= 0' /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server/src/application 2>/dev/null | wc -l | xargs -I{} test {} -ge 1", "desc": "server에 0 크레딧/amount 거부 로직 ≥1 파일"}
+    {"type": "command", "command": "grep -r -l 'empty\\|isEmpty\\|length === 0\\|length === 0' /Users/sokol/Git/ProjectGrimoire/grimoire-server/src/application 2>/dev/null | wc -l | xargs -I{} test {} -ge 1", "desc": "server에 edge case (empty/length === 0) 처리 ≥1 파일"},
+    {"type": "command", "command": "grep -r -l 'amount.*0\\|credit.*0\\|<= 0' /Users/sokol/Git/ProjectGrimoire/grimoire-server/src/application 2>/dev/null | wc -l | xargs -I{} test {} -ge 1", "desc": "server에 0 크레딧/amount 거부 로직 ≥1 파일"}
   ],
   "threshold": 1.0,
   "runs": 1

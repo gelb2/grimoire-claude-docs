@@ -91,7 +91,7 @@ check "[7/12] spec PAY-P0-3 / EMAIL-P0-3 describe 박제" \
   grep -qE 'EMAIL-P0-3|slug 로그인' "$SERVER/src/application/auth/auth.usecase.spec.ts"
 
 # 8. spec assertion ≥6
-ASSERT_COUNT=$(grep -cE "toHaveBeenCalledWith|toHaveBeenCalledTimes|toEqual" "$SERVER/src/application/auth/auth.usecase.spec.ts" 2>/dev/null || echo 0)
+ASSERT_COUNT=$(grep -cE "toHaveBeenCalledWith|toHaveBeenCalledTimes|toEqual" "$SERVER/src/application/auth/auth.usecase.spec.ts" 2>/dev/null); ASSERT_COUNT=${ASSERT_COUNT:-0}
 if [ "$ASSERT_COUNT" -ge 6 ]; then
   echo "  ✓ [8/12] 의미 있는 assertion ≥6건 ($ASSERT_COUNT)"
   PASS=$((PASS+1))

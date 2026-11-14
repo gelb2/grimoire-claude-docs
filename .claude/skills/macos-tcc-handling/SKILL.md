@@ -93,7 +93,7 @@ az acr login --name grimoireacr
 ### 5단계 — 배포 스크립트 재실행 (검증)
 
 ```bash
-cd /Users/sokol/Desktop/Git/ProjectGrimoire/grimoire-server
+cd /Users/sokol/Git/ProjectGrimoire/grimoire-server
 SKIP_INTERACTIVE=1 make deploy-dev  # 또는 -prod
 ```
 

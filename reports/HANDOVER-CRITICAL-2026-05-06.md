@@ -206,7 +206,7 @@ npx prisma migrate deploy   # 적용 (destructive 가능성 — 사용자 명시
 ## 🔥 §6. ABSOLUTE 다음 세션 첫 명령
 
 ```bash
-cd /Users/sokol/Desktop/Git/ProjectGrimoire
+cd /Users/sokol/Git/ProjectGrimoire
 
 # 1. 본 핸드오버 우선 Read (전체)
 cat reports/HANDOVER-CRITICAL-2026-05-06.md

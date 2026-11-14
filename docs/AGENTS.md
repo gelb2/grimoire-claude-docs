@@ -1,13 +1,15 @@
 # AGENTS.md — `docs/` 워크스페이스 문서 동기화 + 피라미드 + 워크플로우
 
-> 본 파일은 ProjectGrimoire 워크스페이스(2개 레포)의 **문서 정본 관계**와 **동기화 규칙**과 **배포 전 전수검사**를 정의한다.
+> 본 파일은 ProjectGrimoire 워크스페이스의 **문서 정본 관계**와 **동기화 규칙**과 **배포 전 전수검사**를 정의한다.
 > 루트 `CLAUDE.md` §11에서 본 파일로 §3+§4+§5+§6+§11 분리 (2026-04-30, 책 Ch 08 60-line 적용).
+>
+> **레포 수 정합 (2026-06-26 통일)**: 워크스페이스는 **총 3개 레포** (루트 `CLAUDE.md §1` + `.githooks/AGENTS.md §1` 정합) = **docs 동기화 대상 코드 레포 2개** (grimoire-server / grimoire-web) **+ 박제 레포 1개** (grimoire-claude-docs, 런타임 코드 없음 — 본 §1 docs 동기화 대상 아님). 본 파일에서 "2개 레포"로 표기된 곳은 **docs 동기화 대상 코드 레포 2개**를 가리킨다 (claude-docs는 동기화할 `docs/` 정본을 두지 않으므로 §1 표에서 제외).
 
 ---
 
 ## 1. 공유 문서 동기화
 
-2개 레포 모두 `docs/` 폴더에 동일한 공유 문서를 보유한다.
+docs 동기화 대상 코드 레포 2개(server / web) 모두 `docs/` 폴더에 동일한 공유 문서를 보유한다 (claude-docs 제외 — 상단 레포 수 정합 참조).
 
 | 문서 | 정본 위치 | 동기 대상 | 용도 |
 |------|----------|----------|------|
@@ -24,9 +26,11 @@
 ### 동기화 규칙
 - 정본 위치의 레포에서 먼저 수정 → 나머지 레포에 동일하게 복사
 - 정본이 아닌 레포에서 직접 수정 금지
-- 검증: `.claude/scripts/sensor-docs-sync.sh` (pre-push hook + drift sensor에서 실행)
+- 검증: `.claude/scripts/sensor-docs-sync.sh` (pre-push hook + drift sensor에서 실행). 본 센서는 위 §1 표 **9종**의 server↔web byte-identity를 비교한다.
 
 > **주의**: 워크스페이스 루트의 `docs/` (이 폴더)는 **AGENTS.md 만 있다**. 실제 동기화 대상 정본은 `grimoire-server/docs/` 또는 `grimoire-web/docs/`에 위치한다.
+>
+> **`docs/DEPLOY.md` 예외 (2026-06-26 등재)**: DEPLOY.md는 양 레포에 존재하나 **byte-identity 복사 대상이 아니다** — server = 전체 절차 정본, web = 정본을 가리키는 **포인터 stub**(피라미드 중복 방지 정책상 의도적 비대칭). 따라서 §1 표(9종)와 `sensor-docs-sync.sh`에 **포함하지 않는다**. 피라미드 등재는 §3 명세 표(정본=server)로만 한다.
 
 ---
 
@@ -85,6 +89,7 @@
 | 디자인 토큰 | `docs/design-tokens.md` | web (정본) → server (복사) |
 | 용어 정의 | `docs/glossary.md` | server (정본) → web (복사) |
 | 환경/배포 | `docs/environments.md` | server (정본) → web (복사) |
+| 배포 절차 | `docs/DEPLOY.md` | **server (정본, 전체 절차)** → web (**포인터 stub**, 복사 아님) |
 | 구현 현황 | `TECH_STATUS.md` | server + web |
 | 서버-웹 싱크 갭 | `SYNC_STATUS.md` | root (정본) |
 | 보안 정책 | `SECURITY.md` | server only |
