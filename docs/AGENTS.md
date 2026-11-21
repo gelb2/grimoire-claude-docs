@@ -28,7 +28,7 @@ docs 동기화 대상 코드 레포 2개(server / web) 모두 `docs/` 폴더에 
 - 정본이 아닌 레포에서 직접 수정 금지
 - 검증: `.claude/scripts/sensor-docs-sync.sh` (pre-push hook + drift sensor에서 실행). 본 센서는 위 §1 표 **9종**의 server↔web byte-identity를 비교한다.
 
-> **주의**: 워크스페이스 루트의 `docs/` (이 폴더)는 **AGENTS.md 만 있다**. 실제 동기화 대상 정본은 `grimoire-server/docs/` 또는 `grimoire-web/docs/`에 위치한다.
+> 워크스페이스 루트의 `docs/`에는 [개발 회고](retrospective.md)와 [기술 문서](implementation.md)를 둔다. 동기화 대상 정본은 `grimoire-server/docs/` 또는 `grimoire-web/docs/`에 위치한다.
 >
 > **`docs/DEPLOY.md` 예외 (2026-06-26 등재)**: DEPLOY.md는 양 레포에 존재하나 **byte-identity 복사 대상이 아니다** — server = 전체 절차 정본, web = 정본을 가리키는 **포인터 stub**(피라미드 중복 방지 정책상 의도적 비대칭). 따라서 §1 표(9종)와 `sensor-docs-sync.sh`에 **포함하지 않는다**. 피라미드 등재는 §3 명세 표(정본=server)로만 한다.
 

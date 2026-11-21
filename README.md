@@ -3,7 +3,10 @@
 Grimoire는 작가가 원고를 올리고 작가 홈, 회차 목록, 읽기 화면을 꾸미는 소설 발행 플랫폼이다. 개인 소설 뷰어 DeerDevil에서 출발했다. 모두의 창업에 지원했으나 선정되지 않았고 서비스 운영을 접었다. 웹·서버 소스와 개발 문서를 공개했다.
 
 - [개발 회고](docs/retrospective.md) · 시작한 이유, 직접 한 일, 프로젝트를 접고 코드를 공개한 이유
-- [구현과 수정 기록](docs/implementation.md) · 원고 업로드, 작가 홈, 테마, 회차 카드 복원, 글꼴과 화면 밀림
+- [구현과 수정 기록](docs/implementation.md) · 서비스 전체 구조, 원고·테마·카드 복원, 글꼴과 화면 밀림
+- [웹 아키텍처](docs/web-architecture.md) · 화면 구조, 서버 렌더링, API 중계와 인증
+- [서버 아키텍처](docs/server-architecture.md) · 데이터베이스, 원고·테마·AI, 포인트와 결제
+- [인프라와 배포](docs/infrastructure.md) · Azure에서 GCP로 이전, Docker, 로컬 실행과 검사
 
 ## 저장소 배치
 
