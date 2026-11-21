@@ -26,6 +26,7 @@ flowchart LR
 | [웹 아키텍처](web-architecture.md) | App Router, SSR, BFF, 인증 갱신, 테마, 독서 화면, 상태 관리, 글꼴 |
 | [서버 아키텍처](server-architecture.md) | 컨트롤러·유스케이스·어댑터, PostgreSQL, 원고·권한, AI, 결제·구독·포인트, 관리자 |
 | [인프라와 배포](infrastructure.md) | Azure → GCP, Docker, Cloud Run·Cloud SQL·스토리지, 마이그레이션, 백업, CI, 로컬 검증 |
+| [하네스·에이전트·스킬·Doc Map](development-workflow.md) | 작업 역할과 인계, 공유 명세, 스킬·훅·센서·Eval, 두 관계도 |
 
 코드 기준은 공개 웹 [d6c1aee](https://github.com/gelb2/grimoire-web/tree/d6c1aeecc33d1114fe2b4b49ecd87b5f80161684), 공개 서버 [66da852](https://github.com/gelb2/grimoire-server/tree/66da852b3b422737d32d03e474a71907cfa368b4)다.
 
@@ -62,4 +63,4 @@ flowchart LR
 
 ## 기획, 명세와 검사
 
-허브의 기획서를 바탕으로 서버가 API·DB 명세의 원본을 관리하고, 웹이 테마·디자인 명세의 원본을 관리한다. 양쪽이 읽는 공유 명세는 두 저장소에 복사한다. 당시 개발 도구에는 사본이 바뀌었는지 바이트 단위로 대조하는 스크립트와, 역할별 작업 뒤 요구사항·검사 결과를 남기는 프롬프트가 있다. 예전에 고친 카드 레이아웃, 결제 이벤트 중복과 같이 다시 깨지기 쉬운 항목은 회귀 검사 대상으로 기록했다. [문서의 원본 위치](AGENTS.md) · [공유 명세 대조 스크립트](../.claude/scripts/sensor-docs-sync.sh) · [에이전트 작업 평가](../eval/README.md) · [개발 체계 관계도](../HARNESS_MAP.html)
+허브의 기획서를 바탕으로 서버가 API·DB 명세의 원본을 관리하고, 웹이 테마·디자인 명세의 원본을 관리한다. 공유 명세를 두 저장소에 복사하고 스크립트로 사본을 대조한다. 작업 범위와 확인 결과는 역할에 따라 넘기고, 다시 깨지기 쉬운 카드 레이아웃과 결제 중복 처리는 회귀 검사에 남겼다. [하네스·에이전트·스킬·Doc Map](development-workflow.md) · [문서의 원본 위치](AGENTS.md)

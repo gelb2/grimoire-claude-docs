@@ -7,6 +7,7 @@ Grimoire는 작가가 원고를 올리고 작가 홈, 회차 목록, 읽기 화�
 - [웹 아키텍처](docs/web-architecture.md) · 화면 구조, 서버 렌더링, API 중계와 인증
 - [서버 아키텍처](docs/server-architecture.md) · 데이터베이스, 원고·테마·AI, 포인트와 결제
 - [인프라와 배포](docs/infrastructure.md) · Azure에서 GCP로 이전, Docker, 로컬 실행과 검사
+- [하네스·에이전트·스킬·Doc Map](docs/development-workflow.md) · 역할별 개발 흐름, 자동 검사와 문서 관계도
 
 ## 저장소 배치
 
