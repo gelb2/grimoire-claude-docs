@@ -1,13 +1,13 @@
 # Grimoire
 
-작가가 원고를 올리고 작품마다 읽기 공간을 꾸미는 소설 퍼블리싱 플랫폼이다.
-‘모두의 창업’ 지원을 목적으로 만들었으나 선정되지 않았다. 웹·서버 구현과 당시의
-하네스·에이전트·스킬·문서 체계를 개발 증빙으로 공개하기 위해 준비하고 있다.
+Grimoire는 작가가 원고를 올리고 작가 홈, 회차 목록, 읽기 화면을 꾸미는 소설 발행 플랫폼이다. 개인 소설 뷰어 DeerDevil에서 출발했다. 모두의 창업에 지원했으나 선정되지 않았고 서비스 운영을 접었다. 웹·서버 소스와 개발 문서를 공개했다.
+
+- [개발 회고](docs/retrospective.md) · 시작한 이유, 직접 한 일, 프로젝트를 접고 코드를 공개한 이유
+- [구현과 수정 기록](docs/implementation.md) · 원고 업로드, 작가 홈, 테마, 회차 카드 복원, 글꼴과 화면 밀림
 
 ## 저장소 배치
 
-세 개의 독립 저장소를 사용한다. 허브만 clone해도 웹·서버가 내려오지는 않는다.
-자신이 접근할 수 있는 각 저장소 URL을 확인한 뒤 아래 구조로 받는다.
+공개 저장소 세 곳을 아래 구조로 받는다.
 
 ```text
 ProjectGrimoire/              ← grimoire-claude-docs (이 허브)
@@ -20,20 +20,18 @@ ProjectGrimoire/              ← grimoire-claude-docs (이 허브)
 ```
 
 ```sh
-git clone <hub-repository-url> ProjectGrimoire
-git clone <web-repository-url> ProjectGrimoire/grimoire-web
-git clone <server-repository-url> ProjectGrimoire/grimoire-server
+git clone https://github.com/gelb2/grimoire-claude-docs.git ProjectGrimoire
+git clone https://github.com/gelb2/grimoire-web.git ProjectGrimoire/grimoire-web
+git clone https://github.com/gelb2/grimoire-server.git ProjectGrimoire/grimoire-server
 ```
 
-DeerDevil 원고는 사용자가 직접 쓴 저작물이며, 고전문학 원문은 저작권이 없는 자료라는
-사용자 확인을 받았다. 외부 참고책자 원본과 자격증명은 공개 후보에서 제외한다.
-공개 URL과 자체 소스 라이선스는 아직 확정하지 않았다. 새 DB의 실행 확인에는 가상 시드를 사용할 수 있다.
+DeerDevil 원고는 이 프로젝트를 만든 사람이 직접 썼다. 빈 데이터베이스에서 실행할 때는 서버의 가상 시드를 사용할 수 있다.
 
 ## 로컬 실행
 
 Node.js 22.19 이상/npm과 별도 PostgreSQL을 준비한다. 기존 DB와 환경 파일을 보존한다.
 설치·설정·마이그레이션·가상 시드·관리자·시작 명령은
-[환경 정본](grimoire-server/docs/environments.md#공개-준비용-로컬-실행-2026-11-13)을 따른다.
+[환경 정본](https://github.com/gelb2/grimoire-server/blob/main/docs/environments.md#공개-준비용-로컬-실행-2026-11-13)을 따른다.
 로컬 실행 명령은 외부 키와 주기 작업을 비활성화하고 API 3000/웹 3001에 연결한다.
 DB는 기존 기본 포트와 분리한 루프백 55432를 사용한다.
 
@@ -52,11 +50,7 @@ GMP를 AI의 초기 참고자료로 넣고 요구사항을 기능·제약·입�
 - [하네스 관계도](HARNESS_MAP.html): 당시 역할·훅·센서·스킬의 시각 자료.
 - [현행 문서 정본 관계](docs/AGENTS.md): 서버/웹 공유 명세의 소유자와 동기화 규칙.
 - [하네스 조사 정본](research/HARNESS_ENGINEERING.md): 당시 구성과 도입 이유.
-- 외부 자료 고지: [웹·글꼴](grimoire-web/THIRD_PARTY_NOTICES.md), [서버 의존성](grimoire-server/THIRD_PARTY_NOTICES.md). 설치 후 `npm run notices`로 실제 운영 의존성의 원문과 출처를 갱신한다.
-- [서버 검사 전략](grimoire-server/TESTING.md), [웹 검사 전략](grimoire-web/TESTING.md).
+- 외부 자료 고지 · [웹·글꼴](https://github.com/gelb2/grimoire-web/blob/main/THIRD_PARTY_NOTICES.md), [서버 의존성](https://github.com/gelb2/grimoire-server/blob/main/THIRD_PARTY_NOTICES.md)
+- [서버 검사 전략](https://github.com/gelb2/grimoire-server/blob/main/TESTING.md), [웹 검사 전략](https://github.com/gelb2/grimoire-web/blob/main/TESTING.md)
 
-과거 하네스·배포·운영 문서는 해당 시점의 기록이다. 파일이 있다는 사실과 실제 실행된
-근거를 구분한다. 설치 직후 오래된 훅·센서·배포 스크립트를 자동 실행하지 않는다.
-현재 작업은 로컬 공개 준비이며 공개 전환·원격 게시·클라우드 변경을 수행하지 않는다.
-
-개발에 참고한 외부 책자 원본은 저장소 밖에 보관한다. 이 저장소에는 직접 작성한 조사·적용 기록과 원문 출처만 남긴다.
+과거 하네스·배포 문서는 당시 개발 기록이다. 지금 로컬에서 실행할 때는 위 환경 문서의 순서를 따른다.
